@@ -3,7 +3,7 @@ import time
 
 class State:
     MODE_DJ = 0
-    MODE_TRIVIA = 1
+    MODE_GAME = 1
 
     def __init__(self):
         self.mode = self.MODE_DJ
@@ -24,5 +24,9 @@ class State:
 
     def set_message(self, msg, duration=2.0):
         self.set_status(msg, duration)
+
+    def toggle_mode(self):
+        self.mode = self.MODE_GAME if self.mode == self.MODE_DJ else self.MODE_DJ
+        self.set_message("MODE: DJ" if self.mode == self.MODE_DJ else "MODE: GAME")
 
 state = State()
