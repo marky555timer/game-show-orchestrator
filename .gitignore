@@ -1,0 +1,4 @@
+__pycache__/
+*.pyc
+.vscode/
+ocr_debug_*.png
