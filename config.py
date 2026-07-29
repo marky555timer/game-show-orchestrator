@@ -178,6 +178,12 @@ BUTTON_DEBOUNCE_SECONDS = 0.15
 # physical press can never stack duplicate fetches/sounds.
 QUIZ_GATE_DEBOUNCE_SECONDS = 0.4
 
+# Hard tripwire on the Btn6 fetch: if it hasn't resolved (success or failure)
+# within this many seconds of the press, force a local fallback_questions.json
+# question in and enter GAME_MODE anyway so the DJ is never left hanging on a
+# stuck/slow API call.
+QUIZ_GATE_TIMEOUT_SECONDS = 5.0
+
 # ==========================================
 # DMX: 11-FIXTURE / 176-CHANNEL RIG
 # ==========================================

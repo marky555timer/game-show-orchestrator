@@ -253,5 +253,36 @@
     ],
     "correct_index": 2,
     "ts": 1785356461.113762
+  },
+  "i have nothing|whitney houston": {
+    "headline": "Whitney's Power Ballad Masterpiece",
+    "full": "Released in 1992 for 'The Bodyguard' soundtrack, this emotional ballad became one of Whitney Houston's signature power ballads and a global hit.",
+    "question": "What year was 'I Have Nothing' released?",
+    "choices": [
+      "1993",
+      "1990",
+      "1991",
+      "1992"
+    ],
+    "correct_index": 3,
+    "ts": 1785361448.720107
+  },
+  "i want it that way|brooklyn duo": {
+    "status": "failed",
+    "reason": "AI_NOT_CONFIDENT",
+    "ts": 1785361560.420484
+  },
+  "if i let you go - radio edit|westlife": {
+    "headline": "Westlife's debut hit from 1999",
+    "full": "If I Let You Go was Westlife's first single, released in 1999. It reached #2 on UK charts and launched the Irish-Norwegian boy band to stardom across Europe and beyond.",
+    "question": "How many members did Westlife have?",
+    "choices": [
+      "5",
+      "7",
+      "6",
+      "4"
+    ],
+    "correct_index": 0,
+    "ts": 1785361694.5134478
   }
 }

@@ -50,6 +50,7 @@ class State:
         # --- Quiz API gate (Btn6 in DJ mode: fetch, auto-enters on success) ---
         self.quiz_gate_status = "idle"   # idle | fetching
         self.quiz_gate_key = ""
+        self.quiz_gate_started_at = 0.0  # time.time() when the Btn6 fetch was kicked off
         self.coin_pop_flash_until = 0.0  # panel-3 "out of credits" indicator
 
         # --- Scoring ---

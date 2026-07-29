@@ -1,8 +1,10 @@
 import time
+import json
 import pygame
 from config import (
     VOLUME_HOLD_INITIAL_DELAY_SECONDS, VOLUME_HOLD_REPEAT_INTERVAL_SECONDS,
-    BUTTON_DEBOUNCE_SECONDS, QUIZ_GATE_DEBOUNCE_SECONDS, TEMPO_TAP_WINDOW,
+    BUTTON_DEBOUNCE_SECONDS, QUIZ_GATE_DEBOUNCE_SECONDS, QUIZ_GATE_TIMEOUT_SECONDS,
+    TEMPO_TAP_WINDOW,
     TEMPO_PERIOD_MIN_SECONDS, TEMPO_PERIOD_MAX_SECONDS,
     DJ_THEME_COUNT, DJ_COLOR_PALETTE,
     QUIZ_CELEBRATION_HOLD_SECONDS,
@@ -10,7 +12,7 @@ from config import (
 from state import state
 from drivers.midi_driver import handle_dj_volume
 from drivers.rekordbox_driver import get_rekordbox_track
-from drivers.factoid_engine import request_factoid, build_mock_question
+from drivers.factoid_engine import request_factoid, build_mock_question, load_forced_fallback_question
 from drivers import deck_orchestrator
 from audio.audio_engine import (
     play_processed_sound, raw_buzzer, raw_bigwin, raw_clear, raw_ding,
@@ -86,6 +88,8 @@ def trigger_clear_latches():
 
     if state.quiz_is_test:
         mock = build_mock_question()
+        print("=== INCOMING QUESTION DATA (MOCK/TEST REROLL) ===")
+        print(json.dumps(mock, indent=2))
         state.factoid_question = mock["question"]
         state.factoid_choices = mock["choices"]
         state.factoid_correct_index = mock["correct_index"]
@@ -198,25 +202,70 @@ def handle_quiz_gate_button():
     request_factoid(title, artist, confident)
     state.quiz_gate_status = "fetching"
     state.quiz_gate_key = key
+    state.quiz_gate_started_at = time.time()
 
 def _process_quiz_gate():
-    """Per-frame poll: reacts once a Btn6-triggered fetch resolves."""
+    """Per-frame poll: reacts once a Btn6-triggered fetch resolves, or force-
+    falls-back once QUIZ_GATE_TIMEOUT_SECONDS elapses since the press -- the
+    DJ is never left hanging on a stuck/slow API call; a local fallback
+    question is forced in and GAME_MODE is entered either way."""
     if state.quiz_gate_status != "fetching":
         return
-    if state.factoid_track_key != state.quiz_gate_key:
-        return
 
-    if state.factoid_status == "" and state.factoid_headline:
+    resolved_success = (
+        state.factoid_track_key == state.quiz_gate_key
+        and state.factoid_status == ""
+        and state.factoid_headline
+    )
+    if resolved_success:
         state.quiz_gate_status = "idle"
         state.mode = state.MODE_GAME
         state.set_message("QUIZ MODE", 1.0)
         print("[BUTTON] Btn6 fetch resolved -> auto-entering GAME_MODE")
-    elif state.factoid_status not in _BENIGN_QUIZ_GATE_STATUSES:
-        state.quiz_gate_status = "idle"
-        print(f"[BUTTON] Btn6 fetch failed -> staying in DJ mode ({state.factoid_status!r})")
-        state.coin_pop_flash_until = time.time() + 2.0
+        return
+
+    resolved_failure = (
+        state.factoid_track_key == state.quiz_gate_key
+        and state.factoid_status not in _BENIGN_QUIZ_GATE_STATUSES
+    )
+    timed_out = (time.time() - state.quiz_gate_started_at) >= QUIZ_GATE_TIMEOUT_SECONDS
+    if not resolved_failure and not timed_out:
+        return  # still legitimately waiting, still inside the tripwire window
+
+    state.quiz_gate_status = "idle"
+    reason = state.factoid_status if resolved_failure else "5s TIMEOUT TRIPWIRE"
+    print(f"[BUTTON ERROR] Btn6 Question Fetch Failed/Timed Out ({reason}). Loading Fallback.")
+    state.coin_pop_flash_until = time.time() + 2.0
+    try:
         play_processed_sound(raw_buzz_short, volume=1.0)
-        state.set_message("OUT OF CREDITS / API ERROR", 1.5)
+    except Exception as e:
+        print(f"[AUDIO ERROR] Btn6 fallback buzz failed to play: {e}")
+
+    load_forced_fallback_question("BTN6_TIMEOUT_FALLBACK")
+    state.mode = state.MODE_GAME
+    state.set_message("QUIZ MODE (OFFLINE FALLBACK)", 1.2)
+
+# ------------------------------------------
+# SECTION 1B: EMERGENCY OVERRIDE (Btn1 / pygame index 0, DJ mode only)
+# ------------------------------------------
+def handle_force_override():
+    """Btn1 (pygame index 0) in DJ mode: emergency manual override for when
+    Btn6's fetch path is stuck or unresponsive. Skips the AI fetch and track
+    matching entirely -- plays the coin chime instantly and force-enters
+    GAME_MODE with a question pulled straight from fallback_questions.json.
+    Scoped to DJ mode only so it never collides with the GAME_MODE Btn1
+    binding (select Answer 4)."""
+    stop_previous_audio()
+    try:
+        play_processed_sound(raw_coin, volume=1.0)
+    except Exception as e:
+        print(f"[AUDIO ERROR] Btn0 override coin chime failed to play: {e}")
+
+    print("FORCE OVERRIDE: Button 0 triggered GAME_MODE")
+    state.quiz_gate_status = "idle"
+    load_forced_fallback_question("BTN0_FORCE_OVERRIDE")
+    state.mode = state.MODE_GAME
+    state.set_message("FORCE OVERRIDE: QUIZ MODE", 1.0)
 
 # ------------------------------------------
 # SECTION 3: DJ-MODE LIGHTING CONTROLS (Btns 5/7/8)
@@ -347,7 +396,10 @@ def process_events():
             print(f"[BUTTON] Raw Button Pressed: {btn}")
 
             if state.mode == state.MODE_DJ:
-                if btn in (1, 2):
+                if btn == 0:  # Physical Btn1: EMERGENCY FORCE OVERRIDE -> GAME_MODE
+                    if _debounced(btn):
+                        handle_force_override()
+                elif btn in (1, 2):
                     deck_orchestrator.trigger_track_move("back")
                 elif btn == 4:  # Physical Btn5: tempo tap
                     if _debounced(btn):

@@ -58,6 +58,55 @@ def _http_error_detail(resp, limit=200):
     return text[:limit] if text else "empty response body"
 
 
+def log_incoming_question(source, data):
+    """Mandatory evidence-tracking log: prints the full question payload no
+    matter how it arrived (fresh AI call, disk cache hit, or local
+    fallback_questions.json), before it ever reaches state/render."""
+    print(f"=== INCOMING QUESTION DATA ({source}) ===")
+    print(json.dumps({
+        "question": data.get("question", ""),
+        "choices": data.get("choices", []),
+        "correct_index": data.get("correct_index", -1),
+    }, indent=2))
+
+
+def _apply_question_to_state(key, data, source):
+    log_incoming_question(source, data)
+    state.factoid_track_key = key
+    state.factoid_headline = data.get("headline", "")
+    state.factoid_full = data.get("full", "")
+    state.factoid_question = data.get("question", "")
+    state.factoid_choices = list(data.get("choices", []))
+    state.factoid_correct_index = data.get("correct_index", -1)
+    state.factoid_status = ""
+    state.quiz_is_test = False
+    state.quiz_selected_index = -1
+    state.quiz_locked = False
+    state.fixture1_mode = "off"  # Reset rule: new question -> Fixture 1 black
+
+
+def load_forced_fallback_question(source_label="FORCED_FALLBACK"):
+    """Bypasses the AI fetch and track-matching entirely: grabs a random
+    question from fallback_questions.json (or the built-in mock question if
+    that file is unavailable/empty) and applies it straight to state. Used by
+    the Btn6 5s timeout tripwire and the Btn0 emergency override so the show
+    is never left without a playable question."""
+    fallback = _load_fallback_question()
+    if not fallback:
+        mock = build_mock_question()
+        fallback = {
+            "headline": "offline trivia",
+            "full": "",
+            "question": mock["question"],
+            "choices": mock["choices"],
+            "correct_index": mock["correct_index"],
+            "ts": time.time(),
+        }
+    key = f"{source_label}|{time.time()}"
+    _apply_question_to_state(key, fallback, source_label)
+    return fallback
+
+
 def _make_key(title, artist):
     t = re.sub(r'\s+', ' ', str(title).strip().lower())
     a = re.sub(r'\s+', ' ', str(artist).strip().lower())
@@ -177,17 +226,7 @@ class FactoidEngine:
         state.fixture1_mode = "off"  # Reset rule: new question -> Fixture 1 black
 
     def _apply_result(self, key, data):
-        state.factoid_track_key = key
-        state.factoid_headline = data.get("headline", "")
-        state.factoid_full = data.get("full", "")
-        state.factoid_question = data.get("question", "")
-        state.factoid_choices = list(data.get("choices", []))
-        state.factoid_correct_index = data.get("correct_index", -1)
-        state.factoid_status = ""
-        state.quiz_is_test = False
-        state.quiz_selected_index = -1
-        state.quiz_locked = False
-        state.fixture1_mode = "off"  # Reset rule: new question -> Fixture 1 black
+        _apply_question_to_state(key, data, "AI/CACHE")
 
     # ------------------------------------------------------------
     # Background worker
