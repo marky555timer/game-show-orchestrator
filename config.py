@@ -6,13 +6,116 @@ import os
 ENTTEC_PORT = "COM5"
 MIDI_PORT_NAME = "Python_PMC_Port"
 
-MATRIX_WIDTH = 256
-MATRIX_HEIGHT = 64
-PIXEL_SCALE = 5
+# ==========================================
+# PHYSICAL PANEL LAYOUT
+# ==========================================
+# 6 independent 32x16 LED panels: 2 on top (combined into one 64x16
+# logical surface), 4 spaced evenly underneath (128x16), centered under
+# the top pair. Panel IDs match the physical button numbering used by
+# the game-show console (Btn1..Btn6).
+PANEL_W = 32
+PANEL_H = 16
+ROW_GAP = 4  # simulator-only visual seam between the two rows
+
+BOTTOM_ROW_WIDTH = PANEL_W * 4
+TOP_ROW_WIDTH = PANEL_W * 2
+TOP_ROW_X_OFFSET = (BOTTOM_ROW_WIDTH - TOP_ROW_WIDTH) // 2
+BOTTOM_ROW_Y = PANEL_H + ROW_GAP
+
+PANELS = {
+    1: (TOP_ROW_X_OFFSET, 0, PANEL_W, PANEL_H),
+    2: (TOP_ROW_X_OFFSET + PANEL_W, 0, PANEL_W, PANEL_H),
+    3: (0, BOTTOM_ROW_Y, PANEL_W, PANEL_H),
+    4: (PANEL_W, BOTTOM_ROW_Y, PANEL_W, PANEL_H),
+    5: (PANEL_W * 2, BOTTOM_ROW_Y, PANEL_W, PANEL_H),
+    6: (PANEL_W * 3, BOTTOM_ROW_Y, PANEL_W, PANEL_H),
+}
+
+# Panels 1+2 treated as a single logical 64x16 surface for headline text.
+TOP_COMBINED = (TOP_ROW_X_OFFSET, 0, TOP_ROW_WIDTH, PANEL_H)
+
+# Bottom answer/animation panels, left-to-right.
+BOTTOM_PANELS = [PANELS[3], PANELS[4], PANELS[5], PANELS[6]]
+
+MATRIX_WIDTH = BOTTOM_ROW_WIDTH
+MATRIX_HEIGHT = BOTTOM_ROW_Y + PANEL_H
+PIXEL_SCALE = 10
 GAP = 1
 
 WINDOW_W = MATRIX_WIDTH * PIXEL_SCALE
 WINDOW_H = MATRIX_HEIGHT * PIXEL_SCALE
+
+# ==========================================
+# SCROLLING / MARQUEE TEXT ENGINE
+# ==========================================
+SCROLL_SPEED_PX_PER_SEC = 15.0
+SCROLL_PAUSE_SECONDS = 1.0
+
+# How long each "page" stays up on the DJ-mode top display before
+# cycling to the next one.
+TOP_CYCLE_TRACK_SECONDS = 7.0
+TOP_CYCLE_FACTOID_SECONDS = 6.0
+
+# How long a volume adjustment holds panel 6's overlay before it
+# rejoins the idle animation rotation.
+VOLUME_OVERLAY_HOLD_SECONDS = 2.0
+
+# TV-remote-style hold-to-repeat: holding the volume control fires one
+# immediate step, waits INITIAL_DELAY, then keeps stepping every
+# REPEAT_INTERVAL seconds until released.
+VOLUME_HOLD_INITIAL_DELAY_SECONDS = 0.35
+VOLUME_HOLD_REPEAT_INTERVAL_SECONDS = 0.10
+
+# ==========================================
+# AI TITLE CLEANUP (background OCR polish)
+# ==========================================
+# Set this in your environment before launching, e.g. (PowerShell):
+#   $env:ANTHROPIC_API_KEY = "sk-ant-..."
+# Never hardcode the key here directly.
+ANTHROPIC_API_KEY = os.environ.get("ANTHROPIC_API_KEY", "")
+AI_CLEANUP_MODEL = "claude-sonnet-5"
+
+# Master on/off switch. If False, the background AI cleanup worker never
+# starts and everything falls back to the existing regex/XML sanitizer only.
+AI_CLEANUP_ENABLED = bool(ANTHROPIC_API_KEY)
+
+# Minimum seconds between AI cleanup requests, PER DECK. Prevents spamming
+# the API during a fast-mixing set where OCR text is changing rapidly.
+AI_CLEANUP_MIN_GAP_SECONDS = 4.0
+
+# Hard timeout per API call so a slow/hung request can never back up the
+# cleanup queue or bleed into the next track's cleanup attempt.
+AI_CLEANUP_TIMEOUT_SECONDS = 2.5
+
+# Where the on-disk cleanup cache lives (raw OCR string -> cleaned title/artist).
+# Persists across runs so a track you've already cleaned up once doesn't cost
+# another API call the next time it's cued up.
+AI_CLEANUP_CACHE_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "ai_cleanup_cache.json")
+
+# To force-clear the cache for testing, set this env var to match before
+# launching, e.g. (PowerShell):
+#   $env:CLEAR_AI_CACHE = "wipe-it"
+# Change the string below to whatever secret you want.
+AI_CLEANUP_CACHE_CLEAR_SECRET = "wipe-it"
+
+# ==========================================
+# AI TRACK FACTOIDS + QUIZ CONTENT
+# ==========================================
+# Reuses the same Anthropic API key/model as the title cleanup above.
+# One AI call per confidently-identified track produces both the DJ-mode
+# "did you know" factoid AND the quiz-mode question/answers, so it never
+# costs more than one request per track. Results are cached to disk
+# forever (factoids don't go stale) so a replayed track costs nothing.
+FACTOID_AI_ENABLED = AI_CLEANUP_ENABLED
+FACTOID_TIMEOUT_SECONDS = 6.0
+
+FACTOID_CACHE_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "factoid_cache.json")
+
+# Negative-result cache TTLs, so a transient network hiccup can be
+# retried later but an AI "I don't actually know this song" verdict
+# doesn't get re-asked every time the track comes back up.
+FACTOID_FAILURE_RETRY_SECONDS = 300        # network/timeout/parse errors
+FACTOID_UNKNOWN_RETRY_SECONDS = 86400      # AI explicitly wasn't confident
 
 # ==========================================
 # COLOR PALETTE
@@ -21,6 +124,21 @@ RED_FULL = (255, 0, 0)
 RED_DIM = (120, 0, 0)
 RED_OFF = (20, 0, 0)
 BLACK = (0, 0, 0)
+GREEN_FULL = (40, 255, 90)
+GREEN_DIM = (10, 80, 30)
+
+# ==========================================
+# QUIZ MODE: SELECT-THEN-GRADE FLOW
+# ==========================================
+# Dim border drawn around a panel the instant its answer is armed
+# (selected but not yet graded).
+SELECT_OUTLINE_DIM = (70, 90, 130)
+
+# Neutral "armed" DMX color shown the instant an answer is selected,
+# before grading. Kept distinct from the green win celebration so hosts
+# never confuse "selected" with "correct".
+QUIZ_SELECT_DMX_RGB = (60, 110, 255)
+QUIZ_SELECT_DMX_DIMMER = 200
 
 # ==========================================
 # BITMAP PIXEL FONT ENGINE (5x7 Grid)
@@ -68,5 +186,14 @@ FONT_5X7 = {
     '#': ["01010","11111","01010","01010","11111","01010","00000"],
     ' ': ["00000","00000","00000","00000","00000","00000","00000"],
     '-': ["00000","00000","00000","11111","00000","00000","00000"],
-    '>': ["10000","01000","00100","00010","00100","01000","10000"]
+    '>': ["10000","01000","00100","00010","00100","01000","10000"],
+    '.': ["00000","00000","00000","00000","00000","01100","01100"],
+    ',': ["00000","00000","00000","00000","00000","01100","01000"],
+    "'": ["01100","01100","01000","00000","00000","00000","00000"],
+    '?': ["01110","10001","00001","00110","00100","00000","00100"],
+    '&': ["01100","10010","10100","01000","10101","10010","01101"],
+    '(': ["00010","00100","01000","01000","01000","00100","00010"],
+    ')': ["01000","00100","00010","00010","00010","00100","01000"],
+    '/': ["00001","00010","00010","00100","01000","01000","10000"],
+    '%': ["11001","11010","00010","00100","01000","01011","10011"],
 }

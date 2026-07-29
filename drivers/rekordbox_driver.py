@@ -3,6 +3,7 @@ import re
 import json
 import time
 import queue
+import math
 import threading
 import traceback
 import mss
@@ -96,21 +97,21 @@ class RekordboxSanitizedOcrDriver:
     def __init__(self):
         state.deck1_track = ("READY FOR DECK 1", "")
         state.deck2_track = ("READY FOR DECK 2", "")
+        state.deck1_confident = False
+        state.deck2_confident = False
         state.active_deck = 1
+        state.heartbeat_x = 0  # Absolute bottom-left dot offset (0..15)
 
         self._running = False
         self._thread = None
+        self._heartbeat_thread = None
         self.db = RekordboxDbLookup()
 
-        # RECALIBRATED TITLE CROP BOUNDS
         self.deck1_bounds = (0.290, 0.045, 0.280, 0.035)
         self.deck2_bounds = (0.290, 0.545, 0.280, 0.035)
 
-        # EXACT USER PINPOINT: X=960, Y=587 (verified against screenshot:
-        # dead-center of Deck 1's STEM fader column, stable blue #1473eb
-        # across the full y=478-522 band vs Deck 2's grey #323232)
         self.fader_pixel_x = 960
-        self.fader_pixel_y = 587
+        self.fader_pixel_y = 594
         self._last_raw_pixel_rgb = None
 
         self._last_deck1_raw = ""
@@ -119,14 +120,11 @@ class RekordboxSanitizedOcrDriver:
         self._last_d1_bytes = None
         self._last_d2_bytes = None
 
-        # ------------------------------------------
-        # AI CLEANUP: cache + queue + worker thread
-        # ------------------------------------------
-        self._cleanup_cache = {}          # raw_ocr_string -> [title, artist]
+        self._cleanup_cache = {}
         self._cleanup_cache_lock = threading.Lock()
         self._cleanup_queue = queue.Queue()
-        self._cleanup_inflight = set()    # raw strings currently queued/running
-        self._last_ai_call_time = {1: 0.0, 2: 0.0}  # per-deck rate limit
+        self._cleanup_inflight = set()
+        self._last_ai_call_time = {1: 0.0, 2: 0.0}
         self._cleanup_thread = None
 
         self._maybe_clear_cache()
@@ -135,33 +133,22 @@ class RekordboxSanitizedOcrDriver:
         if config.AI_CLEANUP_ENABLED and requests is not None:
             self._cleanup_thread = threading.Thread(target=self._cleanup_worker, daemon=True)
             self._cleanup_thread.start()
-            print("[AI CLEANUP] Background worker online.")
-        elif config.AI_CLEANUP_ENABLED and requests is None:
-            print("[AI CLEANUP] 'requests' package not installed — AI cleanup disabled. Run: pip install requests")
-        else:
-            print("[AI CLEANUP] Disabled (no ANTHROPIC_API_KEY set).")
 
-    # ------------------------------------------
-    # AI CLEANUP CACHE (disk persistence)
-    # ------------------------------------------
     def _maybe_clear_cache(self):
         clear_flag = os.environ.get("CLEAR_AI_CACHE", "")
         if clear_flag and clear_flag == config.AI_CLEANUP_CACHE_CLEAR_SECRET:
             try:
                 if os.path.exists(config.AI_CLEANUP_CACHE_PATH):
                     os.remove(config.AI_CLEANUP_CACHE_PATH)
-                    print(f"[AI CLEANUP] Cache cleared via CLEAR_AI_CACHE secret: {config.AI_CLEANUP_CACHE_PATH}")
-            except Exception as e:
-                print(f"[AI CLEANUP] Failed to clear cache: {e}")
+            except Exception:
+                pass
 
     def _load_cleanup_cache(self):
         try:
             if os.path.exists(config.AI_CLEANUP_CACHE_PATH):
                 with open(config.AI_CLEANUP_CACHE_PATH, "r", encoding="utf-8") as f:
                     self._cleanup_cache = json.load(f)
-                print(f"[AI CLEANUP] Loaded {len(self._cleanup_cache)} cached entries.")
-        except Exception as e:
-            print(f"[AI CLEANUP] Cache load failed (starting fresh): {e}")
+        except Exception:
             self._cleanup_cache = {}
 
     def _save_cleanup_cache(self):
@@ -170,12 +157,9 @@ class RekordboxSanitizedOcrDriver:
                 snapshot = dict(self._cleanup_cache)
             with open(config.AI_CLEANUP_CACHE_PATH, "w", encoding="utf-8") as f:
                 json.dump(snapshot, f, indent=2)
-        except Exception as e:
-            print(f"[AI CLEANUP] Cache save failed: {e}")
+        except Exception:
+            pass
 
-    # ------------------------------------------
-    # AI CLEANUP WORKER
-    # ------------------------------------------
     def _queue_for_cleanup(self, raw_str, deck_num):
         if not config.AI_CLEANUP_ENABLED or requests is None:
             return
@@ -188,7 +172,6 @@ class RekordboxSanitizedOcrDriver:
         if raw_str in self._cleanup_inflight:
             return
 
-        # Per-deck rate limit: skip queuing if we called too recently for this deck
         now = time.time()
         if now - self._last_ai_call_time.get(deck_num, 0.0) < config.AI_CLEANUP_MIN_GAP_SECONDS:
             return
@@ -208,21 +191,16 @@ class RekordboxSanitizedOcrDriver:
                         self._cleanup_cache[raw_str] = list(cleaned)
                     self._save_cleanup_cache()
 
-                    # Only overwrite live state if this deck hasn't already
-                    # moved on to a different raw OCR string in the meantime
                     current_raw = self._last_deck1_raw if deck_num == 1 else self._last_deck2_raw
                     if raw_str == current_raw:
                         if deck_num == 1:
                             state.deck1_track = cleaned
+                            state.deck1_confident = True
                         else:
                             state.deck2_track = cleaned
-                        print(f"[AI CLEANUP] Deck {deck_num} (active deck is {state.active_deck}) '{raw_str}' -> {cleaned}")
-                    else:
-                        print(f"[AI CLEANUP] Result cached but STALE for deck {deck_num} — "
-                              f"OCR moved on ('{current_raw}' != '{raw_str}'). Will apply next time this text is seen.")
-
-            except Exception as e:
-                print(f"[AI CLEANUP ERROR] {e}")
+                            state.deck2_confident = True
+            except Exception:
+                pass
             finally:
                 self._cleanup_inflight.discard(raw_str)
 
@@ -276,24 +254,24 @@ class RekordboxSanitizedOcrDriver:
         return text
 
     def _parse_and_sanitize(self, raw_str, current_state_track, deck_num):
-        if not raw_str or not raw_str.strip():
-            return current_state_track
+        current_confident = state.deck1_confident if deck_num == 1 else state.deck2_confident
 
-        # Filter code editor leak words
+        if not raw_str or not raw_str.strip():
+            return current_state_track[0], current_state_track[1], current_confident
+
         lower_check = raw_str.lower()
         if any(system_kw in lower_check for system_kw in ["pycache", "init", "driver", "import", "def ", "class "]):
-            return current_state_track
+            return current_state_track[0], current_state_track[1], current_confident
 
         db_match = self.db.query(raw_str)
         if db_match:
             title, artist = db_match
-            return (self._truncate_text(title, 32), self._truncate_text(artist, 32))
+            return (self._truncate_text(title, 32), self._truncate_text(artist, 32), True)
 
-        # Check AI cleanup cache before falling back to regex parsing
         with self._cleanup_cache_lock:
             cached = self._cleanup_cache.get(raw_str)
         if cached:
-            return (cached[0], cached[1])
+            return (cached[0], cached[1], True)
 
         clean = raw_str.replace('\n', ' ').strip()
         clean = re.sub(r'^[é\.,~—_\|\s]+', '', clean)
@@ -325,13 +303,11 @@ class RekordboxSanitizedOcrDriver:
         short_artist = self._truncate_text(artist, max_chars=32) if artist else ""
 
         if len(short_title) < 3:
-            return current_state_track
+            return current_state_track[0], current_state_track[1], current_confident
 
-        # Regex pass is our immediate/interim value — queue the raw OCR
-        # string for AI cleanup in the background in case it can do better
         self._queue_for_cleanup(raw_str, deck_num)
 
-        return (short_title, short_artist)
+        return (short_title, short_artist, False)
 
     def _get_rekordbox_window_rect(self):
         if gw:
@@ -346,11 +322,10 @@ class RekordboxSanitizedOcrDriver:
         return None
 
     def _detect_active_deck_visually(self, sct, rect):
-        """Precision Pixel Monitor at absolute (X=960, Y=587)."""
+        """HYPER-SENSITIVE PIXEL WATCH: ANY RGB shift forces immediate deck toggle."""
         try:
             rx, ry = rect["left"], rect["top"]
 
-            # Target exact pixel offset: X=960, Y=587
             pixel_crop = {
                 "top": int(ry + self.fader_pixel_y),
                 "left": int(rx + self.fader_pixel_x),
@@ -362,20 +337,34 @@ class RekordboxSanitizedOcrDriver:
             img = Image.frombytes("RGB", sct_img.size, sct_img.bgra, "raw", "BGRX")
             r, g, b = img.getpixel((0, 0))
 
-            # Detect color shifts dynamically
-            if (r, g, b) != self._last_raw_pixel_rgb:
-                self._last_raw_pixel_rgb = (r, g, b)
-                
-                # Blue indicator threshold check
-                is_blue = (b > 120) and (b > r + 30)
-                target_deck = 1 if is_blue else 2
+            # INSTANT TOGGLE ON ANY PIXEL DIFFERENCE
+            if self._last_raw_pixel_rgb is not None and (r, g, b) != self._last_raw_pixel_rgb:
+                # Force swap deck immediately
 
-                state.active_deck = target_deck
-                active_track = state.deck1_track if target_deck == 1 else state.deck2_track
-                print(f"[PIXEL LOCK 960,587] Color shifted -> RGB({r},{g},{b}) | DECK {target_deck} ACTIVE: {active_track}")
+                # state.active_deck = 2 if state.active_deck == 1 else 1
+                state.active_deck = 2 if b < 200 else 1
+
+
+                
+
+
+                active_track = state.deck1_track if state.active_deck == 1 else state.deck2_track
+
+                # print(f"[LIVE PIXEL TRIGGER ] RGB ({r},{g},{b}) -> FORCED SWAP TO DECK {state.active_deck}: {active_track}")
+
+            self._last_raw_pixel_rgb = (r, g, b)
 
         except Exception as e:
             print(f"[FADER LOCK ERROR] {e}")
+
+    def _heartbeat_loop(self):
+        """Oscillates state.heartbeat_x across 0..15 every 3 seconds."""
+        while self._running:
+            # 3 second period = 2*pi / 3 rad/sec
+            t = time.time()
+            cycle = (math.sin(t * (2.0 * math.pi / 3.0)) + 1.0) / 2.0  # Normalized 0.0 to 1.0
+            state.heartbeat_x = int(cycle * 15)
+            time.sleep(0.02)
 
     def _ocr_crop_region(self, sct, rect, bounds, deck_num):
         rx, ry, rw, rh = rect["left"], rect["top"], rect["width"], rect["height"]
@@ -405,10 +394,8 @@ class RekordboxSanitizedOcrDriver:
 
         if deck_num == 1:
             self._last_d1_bytes = curr_bytes
-            img.save("ocr_debug_deck1.png")
         else:
             self._last_d2_bytes = curr_bytes
-            img.save("ocr_debug_deck2.png")
 
         inverted = ImageOps.invert(gray)
         thresh = inverted.point(lambda p: 255 if p > 140 else 0)
@@ -422,27 +409,18 @@ class RekordboxSanitizedOcrDriver:
         return raw_text
 
     def _poll_loop(self):
-        print("[OCR DRIVER] Pixel-Locked Precision Loop Online (X=960, Y=587).")
+        print("[OCR DRIVER] Hyper-Sensitive Pixel Engine & Heartbeat Active.")
         last_ocr_time = 0.0
-        last_no_window_warn = 0.0
 
         with mss.mss() as sct:
             while self._running:
                 try:
                     rect = self._get_rekordbox_window_rect()
                     if not rect:
-                        now_warn = time.time()
-                        if now_warn - last_no_window_warn > 3.0:
-                            print("[WINDOW LOOKUP WARNING] Rekordbox window not found/confirmed "
-                                  "by pygetwindow — falling back to primary monitor bounds for "
-                                  "pixel-lock. Deck detection continues, but coordinates assume "
-                                  "the window is at (0,0). Check window title/focus if this persists.")
-                            last_no_window_warn = now_warn
                         m = sct.monitors[1]
                         rect = {"top": m["top"], "left": m["left"], "width": m["width"], "height": m["height"]}
 
-                    # 1. Exact Pixel Crossfader Sampling (50Hz) — PRIME PRIORITY,
-                    # always runs first every iteration regardless of OCR state.
+                    # 1. Exact Pixel Crossfader Sampling (50Hz)
                     self._detect_active_deck_visually(sct, rect)
 
                     # 2. Background Track Metadata Check (200ms throttle)
@@ -455,18 +433,20 @@ class RekordboxSanitizedOcrDriver:
 
                         if deck1_raw is not None and deck1_raw != self._last_deck1_raw:
                             self._last_deck1_raw = deck1_raw
-                            parsed1 = self._parse_and_sanitize(deck1_raw, state.deck1_track, 1)
-                            state.deck1_track = parsed1
-                            print(f"[DECK 1 UPDATE] '{deck1_raw}' -> {parsed1}")
+                            title1, artist1, confident1 = self._parse_and_sanitize(deck1_raw, state.deck1_track, 1)
+                            state.deck1_track = (title1, artist1)
+                            state.deck1_confident = confident1
+                            print(f"[DECK 1 UPDATE] '{deck1_raw}' -> {(title1, artist1)} (confident={confident1})")
 
                         if deck2_raw is not None and deck2_raw != self._last_deck2_raw:
                             self._last_deck2_raw = deck2_raw
-                            parsed2 = self._parse_and_sanitize(deck2_raw, state.deck2_track, 2)
-                            state.deck2_track = parsed2
-                            print(f"[DECK 2 UPDATE] '{deck2_raw}' -> {parsed2}")
+                            title2, artist2, confident2 = self._parse_and_sanitize(deck2_raw, state.deck2_track, 2)
+                            state.deck2_track = (title2, artist2)
+                            state.deck2_confident = confident2
+                            print(f"[DECK 2 UPDATE] '{deck2_raw}' -> {(title2, artist2)} (confident={confident2})")
 
                 except Exception as e:
-                    print(f"[OCR DRIVER ERROR] Top-level shield caught exception:")
+                    print(f"[OCR DRIVER ERROR] Shield caught exception:")
                     traceback.print_exc()
 
                 time.sleep(0.02)
@@ -476,6 +456,8 @@ class RekordboxSanitizedOcrDriver:
             self._running = True
             self._thread = threading.Thread(target=self._poll_loop, daemon=True)
             self._thread.start()
+            self._heartbeat_thread = threading.Thread(target=self._heartbeat_loop, daemon=True)
+            self._heartbeat_thread.start()
 
     def stop(self):
         self._running = False

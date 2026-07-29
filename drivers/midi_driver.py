@@ -1,7 +1,7 @@
 import time
 import threading
 import pygame.midi
-from config import MIDI_PORT_NAME
+from config import MIDI_PORT_NAME, VOLUME_OVERLAY_HOLD_SECONDS
 from state import state
 
 pygame.midi.init()
@@ -85,8 +85,10 @@ def trigger_rekordbox_poke():
 def handle_dj_volume(change):
     """Updates master volume state and streams MIDI CC#11 to Rekordbox."""
     state.music_volume = max(0, min(100, state.music_volume + change))
+    state.vol_overlay_until = time.time() + VOLUME_OVERLAY_HOLD_SECONDS
     midi_val = int((state.music_volume / 100.0) * 127)
     send_midi_cc(11, midi_val)
+    send_midi_cc(12, midi_val)
     print(f"[REKORDBOX MIDI] Volume -> {state.music_volume}% (CC#11 Val:{midi_val})")
 
 
