@@ -1,0 +1,226 @@
+{
+  "beautiful day|u2": {
+    "headline": "Grammy winner for Record of the Year!",
+    "full": "'Beautiful Day' won the Grammy for Record of the Year and Best Rock Performance in 2001.",
+    "question": "What year did 'Beautiful Day' win Grammy Record of the Year?",
+    "choices": [
+      "2001",
+      "1999",
+      "2003",
+      "2000"
+    ],
+    "correct_index": 0,
+    "ts": 1785326356.1981707
+  },
+  "icarus|": {
+    "status": "failed",
+    "reason": "AI_NOT_CONFIDENT",
+    "ts": 1785339058.0521555
+  },
+  "6-panel game show mac simulator|": {
+    "status": "failed",
+    "reason": "AI_NOT_CONFIDENT",
+    "ts": 1785339060.2956333
+  },
+  "closer to fine|indigo girls": {
+    "headline": "Girls' anthem hit #1 on Modern Rock!",
+    "full": "'Closer to Fine' was the Indigo Girls' breakthrough single, reaching number one on the Billboard Modern Rock Tracks chart in 1989.",
+    "question": "What year did 'Closer to Fine' come out?",
+    "choices": [
+      "1993",
+      "1991",
+      "1987",
+      "1989"
+    ],
+    "correct_index": 3,
+    "ts": 1785339063.1969736
+  },
+  "i hate myself for loving you|joan jett & the blackhearts": {
+    "headline": "Top 10 hit for Joan Jett in 1988",
+    "full": "'I Hate Myself for Loving You' reached #8 on the Billboard Hot 100, co-written by Joan Jett and Desmond Child.",
+    "question": "What year was 'I Hate Myself for Loving You' released?",
+    "choices": [
+      "1985",
+      "1991",
+      "1988",
+      "1983"
+    ],
+    "correct_index": 2,
+    "ts": 1785339065.6578457
+  },
+  "closer to fine|": {
+    "headline": "Indigo Girls' signature anthem",
+    "full": "'Closer to Fine' by the Indigo Girls was released in 1989 and became the duo's most iconic and enduring song.",
+    "question": "What year was 'Closer to Fine' released?",
+    "choices": [
+      "1993",
+      "1989",
+      "1991",
+      "1987"
+    ],
+    "correct_index": 1,
+    "ts": 1785339103.8794613
+  },
+  "i love rock 'n roll|joan jett & the blackhearts": {
+    "headline": "Not Jett's original song!",
+    "full": "Joan Jett's version topped the charts, but the song was originally written and recorded by The Arrows in 1975.",
+    "question": "What year did The Arrows first record this song?",
+    "choices": [
+      "1971",
+      "1982",
+      "1979",
+      "1975"
+    ],
+    "correct_index": 3,
+    "ts": 1785339304.3573859
+  },
+  "i wanna dance with somebody (...|whitney houston": {
+    "headline": "1987 #1 smash for Whitney!",
+    "full": "'I Wanna Dance with Somebody' hit #1 on the Billboard Hot 100 in 1987 and won Whitney a Grammy nomination.",
+    "question": "What year did this song top the Billboard Hot 100?",
+    "choices": [
+      "1989",
+      "1991",
+      "1985",
+      "1987"
+    ],
+    "correct_index": 3,
+    "ts": 1785339348.411865
+  },
+  "i'm so excited|the pointer sisters": {
+    "headline": "Written & recorded years apart!",
+    "full": "The Pointer Sisters wrote 'I'm So Excited' in 1979 but it wasn't a hit until they re-recorded and released it in 1982.",
+    "question": "What year was 'I'm So Excited' originally written?",
+    "choices": [
+      "1982",
+      "1979",
+      "1984",
+      "1975"
+    ],
+    "correct_index": 1,
+    "ts": 1785339389.0957797
+  },
+  "let's groove|earth, wind & fire": {
+    "headline": "Let's Groove hit #1 R&B in 1981!",
+    "full": "Earth, Wind & Fire's 'Let's Groove' topped the US R&B chart and reached #3 on the Billboard Hot 100 in 1981.",
+    "question": "What year was 'Let's Groove' released?",
+    "choices": [
+      "1979",
+      "1977",
+      "1983",
+      "1981"
+    ],
+    "correct_index": 3,
+    "ts": 1785339442.1243412
+  },
+  "let's hear it for the boy - f...|deniece williams": {
+    "status": "failed",
+    "reason": "AI HTTP ERROR (400): invalid_request_error: Your credit balance is too low to access the Anthropic API. Please go to Plans & Billing to upgrade or purchase credits.",
+    "ts": 1785341628.9417846
+  },
+  "lost in love|air supply": {
+    "status": "failed",
+    "reason": "AI HTTP ERROR (400): invalid_request_error: Your credit balance is too low to access the Anthropic API. Please go to Plans & Billing to upgrade or purchase credits.",
+    "ts": 1785341634.5490718
+  },
+  "maneater|daryl hall & john oates": {
+    "status": "failed",
+    "reason": "AI HTTP ERROR (400): invalid_request_error: Your credit balance is too low to access the Anthropic API. Please go to Plans & Billing to upgrade or purchase credits.",
+    "ts": 1785341646.7539303
+  },
+  "never gonna give you up|rick astley": {
+    "status": "failed",
+    "reason": "AI HTTP ERROR (400): invalid_request_error: Your credit balance is too low to access the Anthropic API. Please go to Plans & Billing to upgrade or purchase credits.",
+    "ts": 1785341661.4287584
+  },
+  "never let me down again|depeche mode": {
+    "status": "failed",
+    "reason": "AI HTTP ERROR (400): invalid_request_error: Your credit balance is too low to access the Anthropic API. Please go to Plans & Billing to upgrade or purchase credits.",
+    "ts": 1785341721.3550391
+  },
+  "never too much|luther vandross": {
+    "status": "failed",
+    "reason": "AI HTTP ERROR (400): invalid_request_error: Your credit balance is too low to access the Anthropic API. Please go to Plans & Billing to upgrade or purchase credits.",
+    "ts": 1785341724.5100892
+  },
+  "oh sherrie|steve perry": {
+    "status": "failed",
+    "reason": "AI HTTP ERROR (400): invalid_request_error: Your credit balance is too low to access the Anthropic API. Please go to Plans & Billing to upgrade or purchase credits.",
+    "ts": 1785341729.5740945
+  },
+  "private eyes|daryl hall & john oates": {
+    "status": "failed",
+    "reason": "AI HTTP ERROR (400): invalid_request_error: Your credit balance is too low to access the Anthropic API. Please go to Plans & Billing to upgrade or purchase credits.",
+    "ts": 1785341748.2719314
+  },
+  "radio ga ga - remastered 2011|queen": {
+    "status": "failed",
+    "reason": "AI HTTP ERROR (400): invalid_request_error: Your credit balance is too low to access the Anthropic API. Please go to Plans & Billing to upgrade or purchase credits.",
+    "ts": 1785341790.335665
+  },
+  "the warrior|patty smyth": {
+    "status": "failed",
+    "reason": "AI HTTP ERROR (400): invalid_request_error: Your credit balance is too low to access the Anthropic API. Please go to Plans & Billing to upgrade or purchase credits.",
+    "ts": 1785345989.7335382
+  },
+  "who can it be now?|men at work": {
+    "status": "failed",
+    "reason": "AI HTTP ERROR (400): invalid_request_error: Your credit balance is too low to access the Anthropic API. Please go to Plans & Billing to upgrade or purchase credits.",
+    "ts": 1785346598.5600457
+  },
+  "working for the weekend|loverboy": {
+    "status": "failed",
+    "reason": "AI HTTP ERROR (400): invalid_request_error: Your credit balance is too low to access the Anthropic API. Please go to Plans & Billing to upgrade or purchase credits.",
+    "ts": 1785341877.6611412
+  },
+  "you got it|roy orbison": {
+    "status": "failed",
+    "reason": "AI HTTP ERROR (400): invalid_request_error: Your credit balance is too low to access the Anthropic API. Please go to Plans & Billing to upgrade or purchase credits.",
+    "ts": 1785341880.5587196
+  },
+  "you spin me round (like a rec...|dead or alive": {
+    "status": "failed",
+    "reason": "AI HTTP ERROR (400): invalid_request_error: Your credit balance is too low to access the Anthropic API. Please go to Plans & Billing to upgrade or purchase credits.",
+    "ts": 1785341883.573979
+  },
+  "a kind of magic - remastered...|queen": {
+    "status": "failed",
+    "reason": "AI HTTP ERROR (400): invalid_request_error: Your credit balance is too low to access the Anthropic API. Please go to Plans & Billing to upgrade or purchase credits.",
+    "ts": 1785341889.8965652
+  },
+  "all out of love|air supply": {
+    "status": "failed",
+    "reason": "AI HTTP ERROR (400): invalid_request_error: Your credit balance is too low to access the Anthropic API. Please go to Plans & Billing to upgrade or purchase credits.",
+    "ts": 1785341913.6570299
+  },
+  "crazy train|ozzy osbourne": {
+    "status": "failed",
+    "reason": "AI HTTP ERROR (400): invalid_request_error: Your credit balance is too low to access the Anthropic API. Please go to Plans & Billing to upgrade or purchase credits.",
+    "ts": 1785342204.9390156
+  },
+  "cum on feel the noize|quiet riot": {
+    "status": "failed",
+    "reason": "AI HTTP ERROR (400): invalid_request_error: Your credit balance is too low to access the Anthropic API. Please go to Plans & Billing to upgrade or purchase credits.",
+    "ts": 1785342224.6116018
+  },
+  "don't stop believin' (2024 re...|journey": {
+    "status": "failed",
+    "reason": "AI HTTP ERROR (400): invalid_request_error: Your credit balance is too low to access the Anthropic API. Please go to Plans & Billing to upgrade or purchase credits.",
+    "ts": 1785342241.9395127
+  },
+  "everything she wants|wham!": {
+    "status": "failed",
+    "reason": "AI HTTP ERROR (400): invalid_request_error: Your credit balance is too low to access the Anthropic API. Please go to Plans & Billing to upgrade or purchase credits.",
+    "ts": 1785342276.4975371
+  },
+  "eye in the sky|the alan parsons project": {
+    "status": "failed",
+    "reason": "AI HTTP ERROR (400): invalid_request_error: Your credit balance is too low to access the Anthropic API. Please go to Plans & Billing to upgrade or purchase credits.",
+    "ts": 1785342289.1095142
+  },
+  "thunderstruck|ac/dc": {
+    "status": "failed",
+    "reason": "AI HTTP ERROR (400): invalid_request_error: Your credit balance is too low to access the Anthropic API. Please go to Plans & Billing to upgrade or purchase credits.",
+    "ts": 1785346596.1455307
+  }
+}

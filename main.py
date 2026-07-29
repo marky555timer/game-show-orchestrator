@@ -19,8 +19,8 @@ def main():
     print("  DJ MODE          : Vol = MIDI CC#11, Reject = POKE CC#10")
     print("                     Up/Down or joystick = Volume (hold to keep advancing)")
     print("  GAME SHOW MODE   : Btn 4=Select Ans1, Btn 2=Select Ans2, Btn 3=Select Ans3, Btn 1=Select Ans4")
-    print("                     Btn 5=Grade Selection, Btn 6=Manual Win Override")
-    print("                     Keyboard: 1-4=Select Answer 1-4, 5=Grade, 6=Manual Win, C=Clear")
+    print("                     Btn 5=Grade Selection, Btn 6=Clear Selection")
+    print("                     Keyboard: 1-4=Select Answer 1-4, 5=Grade, 6=Clear Selection, C=Clear/Reroll")
     print("  [Q] KEY          : Quit")
     print("==========================================\n")
 

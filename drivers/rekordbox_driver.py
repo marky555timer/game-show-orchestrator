@@ -110,6 +110,18 @@ class RekordboxSanitizedOcrDriver:
         self.deck1_bounds = (0.290, 0.045, 0.280, 0.035)
         self.deck2_bounds = (0.290, 0.545, 0.280, 0.035)
 
+        # Per-deck (dx, dy) pixel nudge applied to the OCR crop AFTER the ratio
+        # maths, for fine alignment a fractional ratio can't express cleanly --
+        # a ratio tweak drifts as the rekordbox window is resized, a pixel
+        # offset doesn't. It moves the crop's TOP-LEFT corner and grows
+        # width/height to compensate, so the right/bottom edges stay put and
+        # the capture is always a superset of the old one.
+        #
+        # Deck 1's top-left was landing 5px too far right, clipping the first
+        # glyph of the title, hence dx = -5.
+        self.deck1_crop_offset = (-5, 0)
+        self.deck2_crop_offset = (0, 0)
+
         self.fader_pixel_x = 960
         self.fader_pixel_y = 594
         self._last_raw_pixel_rgb = None
@@ -199,8 +211,23 @@ class RekordboxSanitizedOcrDriver:
                         else:
                             state.deck2_track = cleaned
                             state.deck2_confident = True
-            except Exception:
-                pass
+            # A silent failure here is expensive: no cleanup means the deck
+            # never becomes "confident", which means no factoid or quiz
+            # question is ever requested for the track. Report the API's own
+            # message so a bad key / exhausted balance / rejected parameter is
+            # visible instead of looking like the AI simply had nothing to say.
+            except requests.exceptions.HTTPError as e:
+                resp = e.response
+                status = resp.status_code if resp is not None else None
+                body = ""
+                if resp is not None:
+                    try:
+                        body = str((resp.json().get("error") or {}).get("message", ""))[:200]
+                    except Exception:
+                        body = (resp.text or "")[:200]
+                print(f"[AI CLEANUP FAILED] HTTP {status} on {raw_str!r}: {body}")
+            except Exception as e:
+                print(f"[AI CLEANUP FAILED] {type(e).__name__} on {raw_str!r}: {e}")
             finally:
                 self._cleanup_inflight.discard(raw_str)
 
@@ -225,7 +252,16 @@ class RekordboxSanitizedOcrDriver:
             },
             json={
                 "model": config.AI_CLEANUP_MODEL,
-                "max_tokens": 60,
+                "max_tokens": 120,
+                # Sonnet 5 runs adaptive thinking by default when "thinking"
+                # is omitted, and max_tokens caps thinking + output COMBINED.
+                # On a tiny budget that can burn the whole allowance before a
+                # single character of 'Title|Artist' is written, so this
+                # returns empty text -> no cleanup -> the deck never becomes
+                # "confident" -> no factoid or quiz question is ever requested
+                # for the track. Cleanup is a formatting task, not a reasoning
+                # task, so disabling thinking is both correct and cheaper.
+                "thinking": {"type": "disabled"},
                 "messages": [{"role": "user", "content": prompt}],
             },
             timeout=config.AI_CLEANUP_TIMEOUT_SECONDS,
@@ -370,11 +406,15 @@ class RekordboxSanitizedOcrDriver:
         rx, ry, rw, rh = rect["left"], rect["top"], rect["width"], rect["height"]
         top_r, left_r, width_r, height_r = bounds
 
+        dx, dy = self.deck1_crop_offset if deck_num == 1 else self.deck2_crop_offset
+
         crop = {
-            "top": int(ry + rh * top_r),
-            "left": int(rx + rw * left_r),
-            "width": int(rw * width_r),
-            "height": int(rh * height_r)
+            "top": int(ry + rh * top_r) + dy,
+            "left": int(rx + rw * left_r) + dx,
+            # Grow by the same amount we shifted so the right/bottom edges
+            # hold still; max(1, ...) keeps mss from choking on a 0px grab.
+            "width": max(1, int(rw * width_r) - dx),
+            "height": max(1, int(rh * height_r) - dy)
         }
 
         sct_img = sct.grab(crop)

@@ -71,6 +71,21 @@ def trigger_loss():
     sound_len = raw_buzzer.get_length() + (0.3 if reverb_enabled else 0)
     active_animation = {"func": anim, "start": time.time(), "duration": sound_len}
 
+def clear_quiz_selection():
+    """Physical Btn6 / keyboard 6: clears whichever answer is currently
+    armed (or, if already graded, un-grades it) without replaying a
+    win/loss -- lets the host recover from a mis-press."""
+    global active_animation, latched_rgb
+    stop_previous_audio()
+    active_animation = None
+    latched_rgb = None
+    state.active_option = None
+    state.quiz_selected_index = -1
+    state.quiz_locked = False
+    state.set_message("SELECTION CLEARED", 1.0)
+    print("[ACTION] Btn6 -> CLEAR SELECTION")
+    dmx.blackout()
+
 def trigger_clear_latches():
     """Keyboard 'C': manual reset escape hatch. Clears any armed/graded
     selection and, if the currently-loaded question is the local TEST
@@ -99,9 +114,10 @@ def trigger_clear_latches():
     dmx.blackout()
 
 def select_quiz_answer(index):
-    """Arms (but does not grade) the chosen answer: dim outline + bright
-    green fill on that panel, neutral blue/white DMX 'selected' color.
-    Grading happens separately via grade_quiz_selection() on Btn5."""
+    """Arms (but does not grade) the chosen answer: dim red fill on that
+    panel (matrix_canvas._draw_selected_panel), neutral blue/white DMX
+    'selected' color. Grading happens separately via
+    grade_quiz_selection() on Btn5."""
     global active_animation, latched_rgb
     if state.quiz_locked:
         return
@@ -293,10 +309,8 @@ def process_events():
                     select_quiz_answer(0)
                 elif btn == 4:      # Physical Btn5: grade the current selection
                     grade_quiz_selection()
-                elif btn == 5:      # Physical Btn6: manual win override
-                    state.quiz_locked = True
-                    state.quiz_graded_at = time.time()
-                    trigger_big_win()
+                elif btn == 5:      # Physical Btn6: clear the current selection
+                    clear_quiz_selection()
 
         elif event.type == pygame.JOYHATMOTION:
             hat_x, hat_y = event.value
@@ -348,9 +362,7 @@ def process_events():
                 elif event.key == pygame.K_5:
                     grade_quiz_selection()
                 elif event.key == pygame.K_6:
-                    state.quiz_locked = True
-                    state.quiz_graded_at = time.time()
-                    trigger_big_win()
+                    clear_quiz_selection()
                 elif event.key == pygame.K_c:
                     trigger_clear_latches()
 

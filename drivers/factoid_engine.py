@@ -16,6 +16,47 @@ from state import state
 
 _PLACEHOLDER_PREFIXES = ("ready for deck", "no track loaded")
 
+# Reasons that just mean "nothing to report yet" (no track cued up, or a
+# request already in flight) -- NOT a failure, so no banner for these.
+_BENIGN_STATUS_REASONS = ("NO CONFIDENT TRACK ID", "FETCHING FACTOID...")
+
+
+def _print_failure_banner(title, artist, reason):
+    """Large, hard-to-miss console echo of why an AI factoid/question
+    request failed -- printed once per failure surfaced (not spammed
+    every frame), so a bad API key, exhausted quota, or network outage
+    is obvious in the terminal instead of silently falling back to the
+    TEST placeholder question."""
+    if reason in _BENIGN_STATUS_REASONS:
+        return
+    banner = "!" * 62
+    print(f"\n{banner}")
+    print("!! AI FACTOID/QUESTION REQUEST FAILED")
+    print(f"!! TRACK  : {title!r} - {artist!r}")
+    print(f"!! REASON : {reason}")
+    print(f"{banner}\n")
+
+
+def _http_error_detail(resp, limit=200):
+    """Pull the Anthropic API's human-readable error message out of a failed
+    response body. The API returns {"error": {"type": ..., "message": ...}},
+    so the message is the one field worth surfacing; falls back to raw text
+    when the body isn't the JSON envelope we expect."""
+    if resp is None:
+        return "no response body"
+    try:
+        payload = resp.json()
+        err = payload.get("error") or {}
+        msg = err.get("message") or ""
+        etype = err.get("type") or ""
+        combined = f"{etype}: {msg}".strip(": ") if etype else msg
+        if combined:
+            return combined[:limit]
+    except Exception:
+        pass
+    text = (resp.text or "").strip()
+    return text[:limit] if text else "empty response body"
+
 
 def _make_key(title, artist):
     t = re.sub(r'\s+', ' ', str(title).strip().lower())
@@ -98,6 +139,7 @@ class FactoidEngine:
                        else config.FACTOID_FAILURE_RETRY_SECONDS)
                 if time.time() - cached.get("ts", 0) < ttl:
                     self._clear_state(reason, key)
+                    _print_failure_banner(title, artist, reason)
                     return
                 # negative cache expired -- fall through and retry
             else:
@@ -106,9 +148,11 @@ class FactoidEngine:
 
         if not config.FACTOID_AI_ENABLED:
             self._clear_state("AI DISABLED (NO API KEY)", key)
+            _print_failure_banner(title, artist, "AI DISABLED (NO API KEY)")
             return
         if requests is None:
             self._clear_state("AI DISABLED (REQUESTS NOT INSTALLED)", key)
+            _print_failure_banner(title, artist, "AI DISABLED (REQUESTS NOT INSTALLED)")
             return
 
         self._clear_state("FETCHING FACTOID...", key)
@@ -166,11 +210,12 @@ class FactoidEngine:
                     self._save_cache()
                     if state.factoid_track_key == key:
                         state.factoid_status = reason
-                    print(f"[FACTOID] Could not get factoid for '{title}' - '{artist}': {reason}")
+                    _print_failure_banner(title, artist, reason)
             except Exception as e:
-                print(f"[FACTOID ERROR] '{title}' - '{artist}': {e}")
+                reason = f"ERROR: {e}"
                 if state.factoid_track_key == key:
-                    state.factoid_status = f"ERROR: {e}"
+                    state.factoid_status = reason
+                _print_failure_banner(title, artist, reason)
             finally:
                 self._inflight.discard(key)
 
@@ -189,11 +234,15 @@ class FactoidEngine:
             "with these keys: \"headline\" (a punchy factoid teaser, max 40 "
             "characters, for a scrolling LED sign), \"full\" (a fuller "
             "interesting factoid, max 200 characters), \"question\" (a trivia "
-            "question derived from that same factoid, max 100 characters), "
-            "\"correct\" (the correct answer, max 24 characters), and "
-            "\"wrong1\", \"wrong2\", \"wrong3\" (three plausible but incorrect "
-            "answers in the same style/format as the correct answer, max 24 "
-            "characters each)."
+            "question derived from that same factoid, max 100 characters -- "
+            "PREFER a question whose correct answer is naturally short, such "
+            "as a year or a number, e.g. \"What year was this track "
+            "released?\", since answers are shown on a small LED display), "
+            "\"correct\" (the correct answer -- if the question allows it, "
+            "answer with just a number/year/single short word, max 24 "
+            "characters), and \"wrong1\", \"wrong2\", \"wrong3\" (three "
+            "plausible but incorrect answers in the same short style/format "
+            "as the correct answer, max 24 characters each)."
         )
 
         try:
@@ -221,6 +270,18 @@ class FactoidEngine:
             resp.raise_for_status()
         except requests.exceptions.Timeout:
             return None, "REQUEST TIMED OUT"
+        except requests.exceptions.HTTPError as e:
+            status = e.response.status_code if e.response is not None else None
+            # Always carry the API's own error message through. A bare
+            # "AI HTTP ERROR (400)" is undebuggable -- the same status covers a
+            # malformed request, an unsupported parameter for the chosen model,
+            # and an exhausted credit balance, and only the body says which.
+            detail = _http_error_detail(e.response)
+            if status == 429:
+                return None, f"AI QUOTA/RATE LIMIT EXHAUSTED (HTTP 429): {detail}"
+            if status in (401, 403):
+                return None, f"AI AUTH ERROR (HTTP {status}) -- CHECK API KEY: {detail}"
+            return None, f"AI HTTP ERROR ({status}): {detail}"
         except requests.exceptions.RequestException as e:
             return None, f"NETWORK ERROR: {e}"
 
@@ -290,8 +351,8 @@ def request_factoid(title, artist, confident):
 # available yet (no confident track ID, AI disabled, network down, etc.)
 # so the select -> grade -> DMX/sound flow can still be tested end to end.
 # ------------------------------------------------------------
-_MOCK_QUESTION_TEXT = "TEST MODE: PICK ANY ANSWER TO TRY THE FLOW"
-_MOCK_CHOICES = ["OPTION A", "OPTION B", "OPTION C", "OPTION D"]
+_MOCK_QUESTION_TEXT = "test mode: pick any answer to try the flow"
+_MOCK_CHOICES = ["option a", "option b", "option c", "option d"]
 
 
 def build_mock_question():

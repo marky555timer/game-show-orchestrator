@@ -2,25 +2,46 @@ import time
 import pygame
 from config import RED_FULL, BLACK, FONT_5X7, SCROLL_SPEED_PX_PER_SEC, SCROLL_PAUSE_SECONDS
 
-CHAR_PITCH = 6  # 5px glyph + 1px gap
+GLYPH_GAP = 1        # 1px gap between adjacent glyphs
 GLYPH_HEIGHT = 7
+TRAIL_GAP = 6         # blank runway added after the last char before a marquee loops
 
 # Per-key marquee timers, e.g. {"panel3_answer": {"text":..., "box_width":..., "start":...}}
 _scroll_state = {}
+
+
+def _glyph_for(char):
+    """Bitmap font is case-sensitive (distinct upper/lower glyphs, since
+    lowercase is deliberately narrower to save pixels). Falls back to the
+    other case, then to a blank space, for characters we don't have art for."""
+    return FONT_5X7.get(char) or FONT_5X7.get(char.upper()) or FONT_5X7.get(char.lower()) or FONT_5X7[' ']
+
+
+def _glyph_width(glyph):
+    return len(glyph[0]) if glyph else 5
+
+
+def char_width(char):
+    return _glyph_width(_glyph_for(char))
 
 
 def text_width(text):
     text = str(text)
     if not text:
         return 0
-    return len(text) * CHAR_PITCH - 1
+    total = 0
+    for char in text:
+        total += char_width(char) + GLYPH_GAP
+    return total - GLYPH_GAP
 
 
 def draw_bitmap_text(surface, text, x, y, color=RED_FULL, invert=False, clip_rect=None):
-    """Blits 5x7 bitmap glyphs at (x, y). If clip_rect (x0, y0, w, h) is given,
-    pixels outside it are skipped -- lets callers confine text to one panel."""
+    """Blits variable-width bitmap glyphs at (x, y), preserving the text's
+    original case (lowercase glyphs are narrower, condensing pixel usage).
+    If clip_rect (x0, y0, w, h) is given, pixels outside it are skipped --
+    lets callers confine text to one panel."""
     curr_x = x
-    text = str(text).upper()
+    text = str(text)
 
     surf_w, surf_h = surface.get_width(), surface.get_height()
     if clip_rect:
@@ -30,7 +51,7 @@ def draw_bitmap_text(surface, text, x, y, color=RED_FULL, invert=False, clip_rec
         cx0, cy0, cx1, cy1 = 0, 0, surf_w, surf_h
 
     for char in text:
-        glyph = FONT_5X7.get(char, FONT_5X7[' '])
+        glyph = _glyph_for(char)
         for row_idx, row in enumerate(glyph):
             for col_idx, pixel in enumerate(row):
                 if pixel == '1':
@@ -38,7 +59,7 @@ def draw_bitmap_text(surface, text, x, y, color=RED_FULL, invert=False, clip_rec
                     py = y + row_idx
                     if cx0 <= px < cx1 and cy0 <= py < cy1 and 0 <= px < surf_w and 0 <= py < surf_h:
                         surface.set_at((px, py), BLACK if invert else color)
-        curr_x += CHAR_PITCH
+        curr_x += _glyph_width(glyph) + GLYPH_GAP
 
 
 def get_scroll_offset(key, text, box_width, speed=None, pause=None):
@@ -58,7 +79,7 @@ def get_scroll_offset(key, text, box_width, speed=None, pause=None):
         entry = {"text": text, "box_width": box_width, "start": now}
         _scroll_state[key] = entry
 
-    scroll_distance = tw - box_width + CHAR_PITCH
+    scroll_distance = tw - box_width + TRAIL_GAP
     scroll_time = scroll_distance / speed
     cycle = pause * 2 + scroll_time
     phase = (now - entry["start"]) % cycle

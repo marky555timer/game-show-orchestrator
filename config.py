@@ -56,9 +56,26 @@ SCROLL_PAUSE_SECONDS = 1.0
 TOP_CYCLE_TRACK_SECONDS = 7.0
 TOP_CYCLE_FACTOID_SECONDS = 6.0
 
+# Panels 1+2 are driven as one logical 64x16 surface dedicated to the
+# artist/track headline -- they are never dealt an idle animation (only
+# panels 3-6 are), so the pair always works together for maximum text width.
+#
+# Set this True to let the top pair ALSO cycle to a "did you know" factoid
+# page every TOP_CYCLE_FACTOID_SECONDS. False keeps artist/track up
+# permanently, which is what the live rig asked for -- flip it back to True
+# if you'd rather have the factoid share the top display again.
+TOP_SHOW_FACTOID_PAGE = False
+
 # How long a volume adjustment holds panel 6's overlay before it
 # rejoins the idle animation rotation.
 VOLUME_OVERLAY_HOLD_SECONDS = 2.0
+
+# How long panel 3's AI-pipeline status indicator (star burst on success,
+# dancing cat on failure) holds after the status changes. Once it expires,
+# panel 3 rejoins the random idle animation deal so all four bottom panels
+# stay lively. The failure reason is also echoed loudly to the console, so
+# nothing is lost when the indicator steps aside.
+STATUS_PANEL_HOLD_SECONDS = 4.0
 
 # TV-remote-style hold-to-repeat: holding the volume control fires one
 # immediate step, waits INITIAL_DELAY, then keeps stepping every
@@ -124,15 +141,15 @@ RED_FULL = (255, 0, 0)
 RED_DIM = (120, 0, 0)
 RED_OFF = (20, 0, 0)
 BLACK = (0, 0, 0)
-GREEN_FULL = (40, 255, 90)
-GREEN_DIM = (10, 80, 30)
 
 # ==========================================
 # QUIZ MODE: SELECT-THEN-GRADE FLOW
 # ==========================================
-# Dim border drawn around a panel the instant its answer is armed
-# (selected but not yet graded).
-SELECT_OUTLINE_DIM = (70, 90, 130)
+# The physical LED matrix panels are red-only hardware -- unlike the DMX
+# RGB par can (below), they cannot reproduce green/blue. All matrix-side
+# quiz states (armed/winning/wrong/reveal) use RED_FULL/RED_DIM/BLACK
+# only, distinguished by brightness and motion (pulsing/blinking)
+# instead of hue.
 
 # Neutral "armed" DMX color shown the instant an answer is selected,
 # before grading. Kept distinct from the green win celebration so hosts
@@ -170,6 +187,38 @@ FONT_5X7 = {
     'X': ["10001","10001","01010","00100","01010","10001","10001"],
     'Y': ["10001","10001","01010","00100","00100","00100","00100"],
     'Z': ["11111","00001","00010","00100","01000","10000","11111"],
+
+    # Lowercase -- narrower than uppercase where the letterform allows it
+    # (i/j/l/f/k/r/t), which is the main lever for condensing pixel usage
+    # since most real-world display text (track titles, factoids) is
+    # naturally mixed/lower case rather than shouted uppercase.
+    'a': ["00000","00000","01110","00001","01111","10001","01111"],
+    'b': ["10000","10000","11110","10001","10001","10001","11110"],
+    'c': ["00000","00000","01111","10000","10000","10000","01111"],
+    'd': ["00001","00001","01111","10001","10001","10001","01111"],
+    'e': ["00000","00000","01110","10001","11111","10000","01111"],
+    'f': ["0011","0100","1110","0100","0100","0100","0100"],
+    'g': ["00000","00000","01111","10001","10001","01111","00001"],
+    'h': ["10000","10000","11110","10001","10001","10001","10001"],
+    'i': ["01","00","01","01","01","01","01"],
+    'j': ["001","000","001","001","001","101","011"],
+    'k': ["1000","1000","1010","1100","1010","1010","1001"],
+    'l': ["10","10","10","10","10","10","11"],
+    'm': ["00000","00000","11010","10101","10101","10101","10101"],
+    'n': ["00000","00000","10110","11001","10001","10001","10001"],
+    'o': ["00000","00000","01110","10001","10001","10001","01110"],
+    'p': ["00000","00000","11110","10001","10001","11110","10000"],
+    'q': ["00000","00000","01111","10001","10001","01111","00001"],
+    'r': ["0000","0000","1011","1100","1000","1000","1000"],
+    's': ["00000","00000","01111","10000","01110","00001","11110"],
+    't': ["0100","0100","1111","0100","0100","0100","0011"],
+    'u': ["00000","00000","10001","10001","10001","10001","01111"],
+    'v': ["00000","00000","10001","10001","10001","01010","00100"],
+    'w': ["00000","00000","10001","10001","10101","10101","01010"],
+    'x': ["00000","00000","10001","01010","00100","01010","10001"],
+    'y': ["00000","00000","10001","10001","01111","00001","01110"],
+    'z': ["00000","00000","11111","00010","00100","01000","11111"],
+
     '0': ["01110","10001","10011","10101","11001","10001","01110"],
     '1': ["00100","01100","00100","00100","00100","00100","01110"],
     '2': ["01110","10001","00001","00110","01000","10000","11111"],
@@ -184,7 +233,7 @@ FONT_5X7 = {
     '!': ["00100","00100","00100","00100","00100","00000","00100"],
     '*': ["00000","10101","01110","11111","01110","10101","00000"],
     '#': ["01010","11111","01010","01010","11111","01010","00000"],
-    ' ': ["00000","00000","00000","00000","00000","00000","00000"],
+    ' ': ["000","000","000","000","000","000","000"],  # narrow -- avoids huge whitespace gaps
     '-': ["00000","00000","00000","11111","00000","00000","00000"],
     '>': ["10000","01000","00100","00010","00100","01000","10000"],
     '.': ["00000","00000","00000","00000","00000","01100","01100"],
