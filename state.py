@@ -23,16 +23,29 @@ class State:
         self.deck1_confident = False
         self.deck2_confident = False
 
-        # AI-generated "did you know" factoid + quiz content for the
-        # currently identified track. factoid_track_key ties this content
-        # to a specific track so a deck change doesn't show stale info.
+        # AI-generated "did you know" factoid preview + AI pipeline status for
+        # the currently buffered track. factoid_track_key ties this content
+        # to a specific track so a deck change doesn't show stale info. This
+        # mirrors track_question_queue[0] (peek only) -- it drives the DJ-mode
+        # panel3 status indicator and optional top-page factoid display, and
+        # is separate from the ACTIVE round question below.
         self.factoid_track_key = ""
         self.factoid_headline = ""
         self.factoid_full = ""
+        self.factoid_status = ""           # human-readable reason, console only
+
+        # The ACTIVE on-screen round question -- only populated when a
+        # question is actually pulled into play (Btn6 pop, multi-question
+        # auto-advance, or an offline fallback), not merely prefetched.
         self.factoid_question = ""
         self.factoid_choices = []          # list of 4 answer strings
         self.factoid_correct_index = -1    # index into factoid_choices
-        self.factoid_status = ""           # human-readable reason, console only
+
+        # Background pre-fetch queue (Section 1): up to TRACK_QUESTIONS_PER_TRACK
+        # question dicts, pre-fetched for factoid_track_key and not yet asked
+        # this session. Btn6 and the multi-question auto-advance loop both pop
+        # from this list. drivers/factoid_engine.py owns writing to it.
+        self.track_question_queue = []
 
         # Volume overlay: panel 6 shows VOL% + bar until this timestamp.
         self.vol_overlay_until = 0.0

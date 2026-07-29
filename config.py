@@ -122,21 +122,28 @@ AI_CLEANUP_CACHE_CLEAR_SECRET = "wipe-it"
 # ==========================================
 # AI TRACK FACTOIDS + QUIZ CONTENT
 # ==========================================
-# Reuses the same Anthropic API key/model as the title cleanup above.
-# One AI call per confidently-identified track produces both the DJ-mode
-# "did you know" factoid AND the quiz-mode question/answers, so it never
-# costs more than one request per track. Results are cached to disk
-# forever (factoids don't go stale) so a replayed track costs nothing.
+# Reuses the same Anthropic API key/model as the title cleanup above -- both
+# are pinned to AI_CLEANUP_MODEL (Haiku). Runtime question generation never
+# spends Sonnet/Opus tokens.
 FACTOID_AI_ENABLED = AI_CLEANUP_ENABLED
 FACTOID_TIMEOUT_SECONDS = 6.0
-
-FACTOID_CACHE_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "factoid_cache.json")
 
 # Negative-result cache TTLs, so a transient network hiccup can be
 # retried later but an AI "I don't actually know this song" verdict
 # doesn't get re-asked every time the track comes back up.
 FACTOID_FAILURE_RETRY_SECONDS = 300        # network/timeout/parse errors
 FACTOID_UNKNOWN_RETRY_SECONDS = 86400      # AI explicitly wasn't confident
+
+# ==========================================
+# TRACK QUESTION PRE-FETCH QUEUE (3-per-track background buffer)
+# ==========================================
+# As soon as a deck's track is confidently identified (no Btn6 press
+# required), drivers/factoid_engine.py background-fetches quiz questions for
+# it, one Haiku call at a time, until the local cache holds this many
+# distinct questions. Once full, the cache is never re-queried for that
+# track (replays cost nothing) until a question is consumed by gameplay.
+TRACK_QUESTIONS_PER_TRACK = 3
+TRACK_CACHE_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "track_cache.json")
 
 # ==========================================
 # COLOR PALETTE
@@ -160,13 +167,17 @@ BLACK = (0, 0, 0)
 # lamp) -- "armed" feedback is now shown purely on the LED matrix panel via
 # _draw_selected_panel(). See drivers/lighting_engine.py.
 
-# How long the win/loss celebration (matrix pulse + DMX) holds before the
-# quiz mode shows the score-stats page on panels 1+2.
-QUIZ_CELEBRATION_HOLD_SECONDS = 2.5
+# Multi-question game loop: total seconds the scorecard (win/loss
+# celebration + "SCORE: X/Y" page) holds after grading before either
+# auto-advancing to the next pre-fetched question for the same track (if
+# one is queued) or returning to DJ_MODE.
+GAME_SCORECARD_HOLD_SECONDS = 5.0
 
-# How long the "SCORE: X/Y" stats page holds on panels 1+2 after grading,
-# before the app auto-returns to DJ mode.
-QUIZ_STATS_HOLD_SECONDS = 3.0
+# How long of that window is the win/loss celebration (matrix pulse + DMX)
+# before it switches to the "SCORE: X/Y" stats page. The remainder of
+# GAME_SCORECARD_HOLD_SECONDS is the stats page.
+QUIZ_CELEBRATION_HOLD_SECONDS = 2.5
+QUIZ_STATS_HOLD_SECONDS = GAME_SCORECARD_HOLD_SECONDS - QUIZ_CELEBRATION_HOLD_SECONDS
 
 # ==========================================
 # GAMEPAD BUTTON DEBOUNCE (Btns 5-8)
@@ -178,11 +189,13 @@ BUTTON_DEBOUNCE_SECONDS = 0.15
 # physical press can never stack duplicate fetches/sounds.
 QUIZ_GATE_DEBOUNCE_SECONDS = 0.4
 
-# Hard tripwire on the Btn6 fetch: if it hasn't resolved (success or failure)
-# within this many seconds of the press, force a local fallback_questions.json
-# question in and enter GAME_MODE anyway so the DJ is never left hanging on a
-# stuck/slow API call.
-QUIZ_GATE_TIMEOUT_SECONDS = 5.0
+# Btn6 now pulls instantly from the pre-fetched track_cache.json queue --
+# no network call happens at press time. This timeout only covers the
+# cold-start case (brand new track, cache still filling, or no internet): if
+# the queue is still empty this many seconds after the press, force a local
+# fallback_questions.json question in and enter GAME_MODE anyway so the DJ is
+# never left hanging.
+QUIZ_GATE_EMPTY_CACHE_TIMEOUT_SECONDS = 10.0
 
 # ==========================================
 # DMX: 11-FIXTURE / 176-CHANNEL RIG

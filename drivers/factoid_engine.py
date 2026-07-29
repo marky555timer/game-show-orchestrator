@@ -22,11 +22,11 @@ _BENIGN_STATUS_REASONS = ("NO CONFIDENT TRACK ID", "FETCHING FACTOID...")
 
 
 def _print_failure_banner(title, artist, reason):
-    """Large, hard-to-miss console echo of why an AI factoid/question
-    request failed -- printed once per failure surfaced (not spammed
-    every frame), so a bad API key, exhausted quota, or network outage
-    is obvious in the terminal instead of silently falling back to the
-    TEST placeholder question."""
+    """Large, hard-to-miss console echo of why an AI question request
+    failed -- printed once per failure surfaced (not spammed every frame),
+    so a bad API key, exhausted quota, or network outage is obvious in the
+    terminal instead of silently falling back to the local fallback
+    question set."""
     if reason in _BENIGN_STATUS_REASONS:
         return
     banner = "!" * 62
@@ -60,57 +60,64 @@ def _http_error_detail(resp, limit=200):
 
 def log_incoming_question(source, data):
     """Mandatory evidence-tracking log: prints the full question payload no
-    matter how it arrived (fresh AI call, disk cache hit, or local
+    matter how it arrived (fresh Haiku call, disk cache hit, or local
     fallback_questions.json), before it ever reaches state/render."""
-    print(f"=== INCOMING QUESTION DATA ({source}) ===")
+    print("=== CACHED / FETCHED QUESTION DATA ===")
     print(json.dumps({
+        "source": source,
+        "headline": data.get("headline", ""),
+        "full": data.get("full", ""),
         "question": data.get("question", ""),
         "choices": data.get("choices", []),
         "correct_index": data.get("correct_index", -1),
     }, indent=2))
 
 
-def _apply_question_to_state(key, data, source):
-    log_incoming_question(source, data)
-    state.factoid_track_key = key
-    state.factoid_headline = data.get("headline", "")
-    state.factoid_full = data.get("full", "")
-    state.factoid_question = data.get("question", "")
-    state.factoid_choices = list(data.get("choices", []))
-    state.factoid_correct_index = data.get("correct_index", -1)
-    state.factoid_status = ""
-    state.quiz_is_test = False
-    state.quiz_selected_index = -1
-    state.quiz_locked = False
-    state.fixture1_mode = "off"  # Reset rule: new question -> Fixture 1 black
-
-
-def load_forced_fallback_question(source_label="FORCED_FALLBACK"):
-    """Bypasses the AI fetch and track-matching entirely: grabs a random
-    question from fallback_questions.json (or the built-in mock question if
-    that file is unavailable/empty) and applies it straight to state. Used by
-    the Btn6 5s timeout tripwire and the Btn0 emergency override so the show
-    is never left without a playable question."""
-    fallback = _load_fallback_question()
-    if not fallback:
-        mock = build_mock_question()
-        fallback = {
-            "headline": "offline trivia",
-            "full": "",
-            "question": mock["question"],
-            "choices": mock["choices"],
-            "correct_index": mock["correct_index"],
-            "ts": time.time(),
-        }
-    key = f"{source_label}|{time.time()}"
-    _apply_question_to_state(key, fallback, source_label)
-    return fallback
-
-
-def _make_key(title, artist):
+def _sanitize_track_key(title, artist):
+    """Section 1 cache key format: "artist - title" (lowercased,
+    whitespace-collapsed). Falls back to just the title if no artist is
+    known yet."""
     t = re.sub(r'\s+', ' ', str(title).strip().lower())
     a = re.sub(r'\s+', ' ', str(artist).strip().lower())
-    return f"{t}|{a}"
+    return f"{a} - {t}" if a else t
+
+
+# Small distinct fallback strings swapped in when the AI repeats a
+# name/word across distractor slots (Section 2.3 guardrail) despite the
+# prompt instruction not to. Kept short/generic since they must fit the
+# same small LED-panel choice boxes as real answers.
+_FALLBACK_DISTRACTOR_POOL = ["N/A", "Unknown", "Not Sure", "None Of These"]
+
+
+def _dedupe_distractors(correct, wrong):
+    """Case-insensitively deduplicates `wrong` against `correct` and
+    against itself so a played round never shows the same name/choice
+    string in two option slots. Duplicates are swapped for a distinct
+    fallback string where one is available; if the fallback pool is
+    exhausted the slot is dropped entirely (shrinking the returned list)
+    rather than risk a duplicate -- matrix_canvas.py already renders any
+    option index beyond len(choices) as a blank "----" panel, and
+    select_quiz_answer() already refuses to select it."""
+    seen = {correct.strip().lower()}
+    fallback_pool = list(_FALLBACK_DISTRACTOR_POOL)
+    deduped = []
+    for w in wrong:
+        key = w.strip().lower()
+        if w and key not in seen:
+            deduped.append(w)
+            seen.add(key)
+            continue
+        replacement = None
+        while fallback_pool:
+            candidate = fallback_pool.pop(0)
+            if candidate.lower() not in seen:
+                replacement = candidate
+                break
+        if replacement:
+            deduped.append(replacement)
+            seen.add(replacement.lower())
+        # else: drop the slot cleanly rather than keep a duplicate.
+    return deduped
 
 
 def _looks_like_real_track(title, artist):
@@ -123,32 +130,92 @@ def _looks_like_real_track(title, artist):
     return True
 
 
-class FactoidEngine:
-    """Fetches a single AI 'did you know' factoid + quiz question/answers per
-    confidently-identified track, caching to disk so replays and repeated
-    frames never cost more than one API call per track (mirrors the AI
-    cleanup worker pattern in drivers/rekordbox_driver.py)."""
+def _apply_active_question(data, source):
+    """Loads `data` as the CURRENTLY ACTIVE on-screen round question (Btn6
+    pop, multi-question auto-advance, or an offline fallback) -- distinct
+    from the background prefetch status preview (factoid_headline/full/
+    status), which only peeks at the queue."""
+    log_incoming_question(source, data)
+    state.factoid_question = data.get("question", "")
+    state.factoid_choices = list(data.get("choices", []))
+    state.factoid_correct_index = data.get("correct_index", -1)
+    state.quiz_is_test = False
+    state.quiz_selected_index = -1
+    state.quiz_locked = False
+    state.quiz_graded_at = 0.0
+    state.fixture1_mode = "off"  # Reset rule: new question -> Fixture 1 black
+
+
+def load_forced_fallback_question(source_label="FORCED_FALLBACK"):
+    """Bypasses the AI fetch and pre-fetch queue entirely: grabs a random
+    question from fallback_questions.json (or the built-in mock question if
+    that file is unavailable/empty) and applies it straight to state as the
+    active round question. Used by the Btn6 empty-cache timeout tripwire and
+    the Btn0 emergency override so the show is never left without a playable
+    question."""
+    fallback = _load_fallback_question()
+    if not fallback:
+        mock = build_mock_question()
+        fallback = {
+            "headline": "offline trivia",
+            "full": "",
+            "question": mock["question"],
+            "choices": mock["choices"],
+            "correct_index": mock["correct_index"],
+            "ts": time.time(),
+        }
+    _apply_active_question(fallback, source_label)
+    return fallback
+
+
+def pull_next_from_queue(key):
+    """Btn6: instantly pop the next pre-fetched question for `key` off the
+    runtime queue and make it the active round question. Returns True if a
+    question was available, False if the queue for that track is empty."""
+    if key != state.factoid_track_key or not state.track_question_queue:
+        return False
+    nxt = state.track_question_queue.pop(0)
+    _apply_active_question(nxt, "QUEUE/BTN6")
+    return True
+
+
+def advance_to_next_queued_question():
+    """Multi-question game loop: pops the next pre-fetched question off the
+    active track's runtime queue and makes it the active round question,
+    staying in GAME_MODE. Returns False (caller should return to DJ_MODE) if
+    no more questions are queued for this track."""
+    if not state.track_question_queue:
+        return False
+    nxt = state.track_question_queue.pop(0)
+    _apply_active_question(nxt, "QUEUE/AUTO-ADVANCE")
+    return True
+
+
+class TrackQuestionEngine:
+    """Background-prefetches up to TRACK_QUESTIONS_PER_TRACK distinct quiz
+    questions (Haiku-generated) per confidently-identified track, caching
+    them to disk (track_cache.json) so a replayed track never costs another
+    API call once its cache is full. Runs continuously as soon as a valid
+    track/artist is identified -- no button press required."""
 
     def __init__(self):
-        self._cache = {}
+        self._cache = {}  # key -> list[question dict], up to TRACK_QUESTIONS_PER_TRACK
         self._cache_lock = threading.Lock()
         self._queue = queue.Queue()
         self._inflight = set()
-        self._worker_thread = None
 
         self._load_cache()
 
         if config.FACTOID_AI_ENABLED and requests is not None:
-            self._worker_thread = threading.Thread(target=self._worker_loop, daemon=True)
-            self._worker_thread.start()
+            threading.Thread(target=self._worker_loop, daemon=True).start()
 
     # ------------------------------------------------------------
     # Disk cache
     # ------------------------------------------------------------
     def _load_cache(self):
         try:
-            if os.path.exists(config.FACTOID_CACHE_PATH):
-                with open(config.FACTOID_CACHE_PATH, "r", encoding="utf-8") as f:
+            if os.path.exists(config.TRACK_CACHE_PATH):
+                with open(config.TRACK_CACHE_PATH, "r", encoding="utf-8") as f:
                     self._cache = json.load(f)
         except Exception:
             self._cache = {}
@@ -157,76 +224,114 @@ class FactoidEngine:
         try:
             with self._cache_lock:
                 snapshot = dict(self._cache)
-            with open(config.FACTOID_CACHE_PATH, "w", encoding="utf-8") as f:
+            with open(config.TRACK_CACHE_PATH, "w", encoding="utf-8") as f:
                 json.dump(snapshot, f, indent=2)
         except Exception:
             pass
 
     # ------------------------------------------------------------
-    # Public entry point -- cheap, safe to call every frame.
+    # Public entry point -- cheap, safe to call every frame regardless of
+    # mode (DJ or GAME); it's how track identification triggers pre-fetch
+    # without waiting for Btn6.
     # ------------------------------------------------------------
-    def request_factoid(self, title, artist, confident):
-        key = None
-        if confident and _looks_like_real_track(title, artist):
-            key = _make_key(title, artist)
-
-        if not key:
-            if state.factoid_track_key:
-                self._clear_state("NO CONFIDENT TRACK ID", "")
+    def ensure_prefetch(self, title, artist, confident):
+        if not confident or not _looks_like_real_track(title, artist):
+            if not confident and state.factoid_track_key:
+                state.factoid_track_key = ""
+                state.factoid_headline = ""
+                state.factoid_full = ""
+                state.factoid_status = "NO CONFIDENT TRACK ID"
+                state.track_question_queue = []
             return
 
-        if key == state.factoid_track_key:
-            return  # already showing (or pending) this track's factoid
+        key = _sanitize_track_key(title, artist)
 
         with self._cache_lock:
-            cached = self._cache.get(key)
+            cached = list(self._cache.get(key, []))
 
-        if cached:
-            if cached.get("status") == "failed":
-                reason = cached.get("reason", "unknown failure")
-                ttl = (config.FACTOID_UNKNOWN_RETRY_SECONDS if reason == "AI_NOT_CONFIDENT"
-                       else config.FACTOID_FAILURE_RETRY_SECONDS)
-                if time.time() - cached.get("ts", 0) < ttl:
-                    self._clear_state(reason, key)
-                    _print_failure_banner(title, artist, reason)
-                    return
-                # negative cache expired -- fall through and retry
+        if key != state.factoid_track_key:
+            state.factoid_track_key = key
+            state.track_question_queue = list(cached)
+            if cached:
+                print(f"[TRACK CACHE] {len(cached)} cached question(s) already on disk for "
+                      f"'{title}' - '{artist}'")
+                for q in cached:
+                    log_incoming_question("CACHE HIT", q)
+                self._set_status(key, cached[0])
             else:
-                self._apply_result(key, cached)
-                return
+                self._set_status(key, None, "FETCHING FACTOID...")
+
+        if len(cached) >= config.TRACK_QUESTIONS_PER_TRACK:
+            return  # Cache limit reached (Section 1) -- no API requests.
 
         if not config.FACTOID_AI_ENABLED:
-            self._clear_state("AI DISABLED (NO API KEY)", key)
-            _print_failure_banner(title, artist, "AI DISABLED (NO API KEY)")
+            self._set_status(key, None, "AI DISABLED (NO API KEY)")
             return
         if requests is None:
-            self._clear_state("AI DISABLED (REQUESTS NOT INSTALLED)", key)
-            _print_failure_banner(title, artist, "AI DISABLED (REQUESTS NOT INSTALLED)")
+            self._set_status(key, None, "AI DISABLED (REQUESTS NOT INSTALLED)")
             return
 
-        self._clear_state("FETCHING FACTOID...", key)
-        if key not in self._inflight:
-            self._inflight.add(key)
-            self._queue.put((key, title, artist))
+        if key in self._inflight:
+            return  # already filling the next slot for this track
+        self._inflight.add(key)
+        self._queue.put((key, title, artist))
 
     # ------------------------------------------------------------
-    # State sync helpers
+    # State sync helpers -- these drive the DJ-mode panel3 AI-pipeline
+    # status indicator (star/cat/coin) and the optional top-page factoid
+    # preview, mirroring queue[0] without consuming it.
     # ------------------------------------------------------------
-    def _clear_state(self, reason, key):
+    def _set_status(self, key, first_question, reason=""):
         state.factoid_track_key = key
-        state.factoid_headline = ""
-        state.factoid_full = ""
-        state.factoid_question = ""
-        state.factoid_choices = []
-        state.factoid_correct_index = -1
-        state.factoid_status = reason
-        state.quiz_is_test = False
-        state.quiz_selected_index = -1
-        state.quiz_locked = False
-        state.fixture1_mode = "off"  # Reset rule: new question -> Fixture 1 black
+        if first_question:
+            state.factoid_headline = first_question.get("headline", "")
+            state.factoid_full = first_question.get("full", "")
+            state.factoid_status = ""
+        else:
+            state.factoid_headline = ""
+            state.factoid_full = ""
+            state.factoid_status = reason
 
-    def _apply_result(self, key, data):
-        _apply_question_to_state(key, data, "AI/CACHE")
+    # Question-style variety (Section 4.1 legacy numbering): each of the 3
+    # buffered slots uses a different style hint so a track's 3 questions
+    # actually vary instead of drifting toward whatever the model defaults
+    # to. Each hint carries a "type" -- "multiple_choice" (4 options) or
+    # "true_false" (Options 1/2 = True/False, Options 3/4 disabled -- see
+    # _call_ai and inputs/gamepad.py's select_quiz_answer bounds check) --
+    # so _call_ai and the response parser know which shape to build/expect.
+    _QUESTION_STYLE_HINTS = [
+        {"type": "multiple_choice", "hint": "Ask what year this track was released."},
+        {"type": "multiple_choice", "hint":
+            "Ask a numeric fact about the artist's career -- album count, chart "
+            "position, band member count, etc -- phrased like a punchy short "
+            "news headline (e.g. \"How many albums did AC/DC make?\")."},
+        {"type": "multiple_choice", "hint":
+            "Ask a one-word-answer question about the artist -- a real name, "
+            "who started the band, etc -- phrased like a punchy short news "
+            "headline (e.g. \"What is Eminem's real last name?\", \"Who "
+            "started this band?\")."},
+        {"type": "multiple_choice", "hint":
+            "Ask what THIS SONG is about / its meaning or subject matter, in "
+            "simple terms. The correct answer must be a short, simple phrase "
+            "summarizing the song's theme (e.g. \"heartbreak\", \"a breakup\", "
+            "\"partying all night\", \"losing a friend\")."},
+        {"type": "true_false", "hint":
+            "Ask a True/False question about fan gossip, rumors, or "
+            "pop-culture trivia tied to this artist or song (e.g. \"T/F: "
+            "Morrissey loves meat.\"). Keep it fun and juicy, but only state "
+            "claims whose truth value you actually know -- never invent a "
+            "specific rumor you're not confident is true or false."},
+    ]
+
+    def _style_hints_for_track(self, key):
+        """Deterministic per-track shuffle (seeded on the track's cache key)
+        of _QUESTION_STYLE_HINTS, so the 3 buffered slots for one track are
+        always distinct styles, but which 3 of the 5 categories show up
+        (including the newer song-meaning / true-false ones) varies track
+        to track instead of the same first 3 winning every time."""
+        order = list(range(len(self._QUESTION_STYLE_HINTS)))
+        random.Random(key).shuffle(order)
+        return [self._QUESTION_STYLE_HINTS[i] for i in order]
 
     # ------------------------------------------------------------
     # Background worker
@@ -235,71 +340,102 @@ class FactoidEngine:
         while True:
             key, title, artist = self._queue.get()
             try:
-                result, reason = self._call_ai(title, artist)
-
-                if result:
-                    with self._cache_lock:
-                        self._cache[key] = result
-                    self._save_cache()
-                    if state.factoid_track_key == key:
-                        self._apply_result(key, result)
-                    print(f"[FACTOID] Got factoid for '{title}' - '{artist}'")
-                else:
-                    negative = {"status": "failed", "reason": reason, "ts": time.time()}
-                    with self._cache_lock:
-                        self._cache[key] = negative
-                    self._save_cache()
-                    if state.factoid_track_key == key:
-                        state.factoid_status = reason
-                    _print_failure_banner(title, artist, reason)
-            except Exception as e:
-                reason = f"ERROR: {e}"
-                if state.factoid_track_key == key:
-                    state.factoid_status = reason
-                _print_failure_banner(title, artist, reason)
+                self._fill_one_slot(key, title, artist)
             finally:
                 self._inflight.discard(key)
 
-    # Question-style variety (Section 4.1): a style is picked client-side
-    # per request rather than left entirely to the model's whim, so a run
-    # of tracks actually alternates between year questions, numeric/career
-    # facts, and one-word-answer headlines instead of drifting to whatever
-    # the model defaults to.
-    _QUESTION_STYLE_HINTS = [
-        "Ask what year this track was released.",
-        "Ask a numeric fact about the artist's career -- album count, chart "
-        "position, band member count, etc -- phrased like a punchy short "
-        "news headline (e.g. \"How many albums did AC/DC make?\").",
-        "Ask a one-word-answer question about the artist -- a real name, "
-        "who started the band, etc -- phrased like a punchy short news "
-        "headline (e.g. \"What is Eminem's real last name?\", \"Who "
-        "started this band?\").",
-    ]
+    def _fill_one_slot(self, key, title, artist):
+        """Fetches exactly one question and appends it to the disk cache +
+        the live runtime queue (if this track is still the active one).
+        Retries a couple of times in place if the model happens to repeat a
+        question already in the cache; ensure_prefetch()'s per-frame polling
+        picks up filling any remaining slots on the next call."""
+        with self._cache_lock:
+            existing = list(self._cache.get(key, []))
+        if len(existing) >= config.TRACK_QUESTIONS_PER_TRACK:
+            return
+        style_hint = self._style_hints_for_track(key)[len(existing) % len(self._QUESTION_STYLE_HINTS)]
 
-    def _call_ai(self, title, artist):
+        for _attempt in range(3):
+            result, reason = self._call_ai(title, artist, style_hint)
+            if not result:
+                print(f"[TRACK PREFETCH] Question {len(existing) + 1}/{config.TRACK_QUESTIONS_PER_TRACK} "
+                      f"for '{title}' - '{artist}' failed: {reason}")
+                if state.factoid_track_key == key and not existing:
+                    self._set_status(key, None, reason)
+                _print_failure_banner(title, artist, reason)
+                return
+
+            with self._cache_lock:
+                existing = list(self._cache.get(key, []))
+                if any(q.get("question") == result.get("question") for q in existing):
+                    continue  # duplicate -- retry within the attempt budget
+                existing = existing + [result]
+                self._cache[key] = existing
+
+            self._save_cache()
+            log_incoming_question("FRESH FETCH", result)
+            print(f"[TRACK PREFETCH] Cached question {len(existing)}/{config.TRACK_QUESTIONS_PER_TRACK} "
+                  f"for '{title}' - '{artist}'")
+
+            if state.factoid_track_key == key:
+                state.track_question_queue.append(result)
+                if len(existing) == 1:
+                    self._set_status(key, result)
+            return
+
+    def _call_ai(self, title, artist, style_hint):
         """Returns (result_dict, None) on success, or (None, reason_str) on failure."""
         if not config.ANTHROPIC_API_KEY:
             return None, "AI DISABLED (NO API KEY)"
 
-        style_hint = random.choice(self._QUESTION_STYLE_HINTS)
-        prompt = (
-            "You are a music trivia assistant for a live DJ show's LED display. "
-            f"Song title: {title!r}. Artist: {artist!r}. "
-            "If you are NOT at least 90% confident this is a real, specific "
-            "song you actually know true facts about, reply with EXACTLY the "
-            "single word UNKNOWN and nothing else. Otherwise reply with ONLY "
-            "a single-line JSON object (no markdown fences, no commentary) "
-            "with these keys: \"headline\" (a punchy factoid teaser, max 40 "
-            "characters, for a scrolling LED sign), \"full\" (a fuller "
-            "interesting factoid, max 200 characters), \"question\" (a trivia "
-            f"question, max 100 characters. {style_hint} Since answers are "
-            "shown on a small LED display, the correct answer must be "
-            "naturally short), \"correct\" (the correct answer -- a "
-            "number/year/single short word, max 24 characters), and "
-            "\"wrong1\", \"wrong2\", \"wrong3\" (three plausible but "
-            "incorrect answers in the same short style/format as the "
-            "correct answer, max 24 characters each)."
-        )
+        is_true_false = style_hint["type"] == "true_false"
+        hint = style_hint["hint"]
+
+        if is_true_false:
+            # True/False shape: choices are fixed to ["True", "False"]
+            # below (Options 1/2) -- Options 3/4 are never populated, which
+            # matrix_canvas.py already renders blank and
+            # inputs/gamepad.py::select_quiz_answer already refuses to
+            # select (index >= len(choices)), so no extra button-disable
+            # logic is needed for Options 3/4.
+            prompt = (
+                "You are a music trivia assistant for a live DJ show's LED "
+                f"display. Song title: {title!r}. Artist: {artist!r}. "
+                "If you are NOT at least 90% confident this is a real, "
+                "specific song/artist you actually know true facts about, "
+                "reply with EXACTLY the single word UNKNOWN and nothing "
+                "else. Otherwise reply with ONLY a single-line JSON object "
+                "(no markdown fences, no commentary) with these keys: "
+                "\"headline\" (a punchy factoid teaser, max 40 characters, "
+                "for a scrolling LED sign), \"full\" (a fuller interesting "
+                "factoid, max 200 characters), \"question\" (a True/False "
+                f"statement, max 100 characters, starting with \"T/F: \". "
+                f"{hint}), and \"correct\" -- the single word \"True\" or "
+                "\"False\" (exactly, capitalized, nothing else)."
+            )
+        else:
+            prompt = (
+                "You are a music trivia assistant for a live DJ show's LED display. "
+                f"Song title: {title!r}. Artist: {artist!r}. "
+                "If you are NOT at least 90% confident this is a real, specific "
+                "song you actually know true facts about, reply with EXACTLY the "
+                "single word UNKNOWN and nothing else. Otherwise reply with ONLY "
+                "a single-line JSON object (no markdown fences, no commentary) "
+                "with these keys: \"headline\" (a punchy factoid teaser, max 40 "
+                "characters, for a scrolling LED sign), \"full\" (a fuller "
+                "interesting factoid, max 200 characters), \"question\" (a trivia "
+                f"question, max 100 characters. {hint} Since answers are "
+                "shown on a small LED display, the correct answer must be "
+                "naturally short), \"correct\" (the correct answer -- a "
+                "number/year/short word or phrase, max 24 characters), and "
+                "\"wrong1\", \"wrong2\", \"wrong3\" (three plausible but "
+                "incorrect answers in the same short style/format as the "
+                "correct answer, max 24 characters each). \"correct\", "
+                "\"wrong1\", \"wrong2\", and \"wrong3\" must all be distinct "
+                "strings -- never reuse the same name/word/number across "
+                "more than one of those four fields."
+            )
 
         try:
             resp = requests.post(
@@ -310,6 +446,9 @@ class FactoidEngine:
                     "content-type": "application/json",
                 },
                 json={
+                    # Runtime question generation is cost-gated to Haiku only
+                    # (Section 1) -- AI_CLEANUP_MODEL is pinned to Haiku, never
+                    # Sonnet/Opus, in config.py.
                     "model": config.AI_CLEANUP_MODEL,
                     "max_tokens": 500,
                     "messages": [{"role": "user", "content": prompt}],
@@ -320,18 +459,14 @@ class FactoidEngine:
         except requests.exceptions.Timeout:
             return None, "REQUEST TIMED OUT"
         except requests.exceptions.ConnectionError:
-            # Offline/network-down (Section 5.4): fall back to a local
-            # question rather than surfacing a bare failure.
+            # Offline/network-down: fall back to a local question rather
+            # than surfacing a bare failure.
             fallback = _load_fallback_question()
             if fallback:
                 return fallback, None
             return None, "NETWORK ERROR: no internet connection and no local fallback available"
         except requests.exceptions.HTTPError as e:
             status = e.response.status_code if e.response is not None else None
-            # Always carry the API's own error message through. A bare
-            # "AI HTTP ERROR (400)" is undebuggable -- the same status covers a
-            # malformed request, an unsupported parameter for the chosen model,
-            # and an exhausted credit balance, and only the body says which.
             detail = _http_error_detail(e.response)
             if status == 429:
                 return None, f"AI QUOTA/RATE LIMIT EXHAUSTED (HTTP 429): {detail}"
@@ -375,14 +510,28 @@ class FactoidEngine:
         full = str(obj.get("full", "")).strip()
         question = str(obj.get("question", "")).strip()
         correct = str(obj.get("correct", "")).strip()
-        wrong = [str(obj.get(k, "")).strip() for k in ("wrong1", "wrong2", "wrong3")]
 
-        if not headline or not question or not correct or not all(wrong):
+        if not headline or not question or not correct:
             return None, "INCOMPLETE AI RESPONSE"
 
-        choices = [correct] + wrong
-        random.shuffle(choices)
-        correct_index = choices.index(correct)
+        if is_true_false:
+            correct_lower = correct.lower()
+            if correct_lower not in ("true", "false"):
+                return None, "MALFORMED TRUE/FALSE ANSWER"
+            # Options 1/2 = True/False; Options 3/4 intentionally absent.
+            choices = ["True", "False"]
+            correct_index = 0 if correct_lower == "true" else 1
+        else:
+            wrong = [str(obj.get(k, "")).strip() for k in ("wrong1", "wrong2", "wrong3")]
+            if not all(wrong):
+                return None, "INCOMPLETE AI RESPONSE"
+            # Guardrail: the model can still repeat a name/word across
+            # choices despite the prompt instruction -- dedupe defensively
+            # rather than trust it.
+            wrong = _dedupe_distractors(correct, wrong)
+            choices = [correct] + wrong
+            random.shuffle(choices)
+            correct_index = choices.index(correct)
 
         result = {
             "headline": headline[:40],
@@ -396,7 +545,7 @@ class FactoidEngine:
 
 
 def _load_fallback_question():
-    """Section 5.4 offline fallback: picks a random pre-written question from
+    """Offline fallback: picks a random pre-written question from
     fallback_questions.json so quiz mode still gets a playable question when
     an Anthropic API call fails due to a network outage. Returns a result
     dict shaped like a normal successful _call_ai() response, or None if the
@@ -420,11 +569,11 @@ def _load_fallback_question():
         return None
 
 
-factoid_engine = FactoidEngine()
+track_engine = TrackQuestionEngine()
 
 
-def request_factoid(title, artist, confident):
-    factoid_engine.request_factoid(title, artist, confident)
+def ensure_prefetch(title, artist, confident):
+    track_engine.ensure_prefetch(title, artist, confident)
 
 
 # ------------------------------------------------------------

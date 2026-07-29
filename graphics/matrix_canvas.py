@@ -10,7 +10,7 @@ from config import (
 )
 from state import state
 from drivers.rekordbox_driver import get_rekordbox_track
-from drivers.factoid_engine import build_mock_question
+from drivers.factoid_engine import build_mock_question, advance_to_next_queued_question
 from drivers.branding_engine import get_current_text
 from graphics.text_render import draw_marquee, wrap_two_lines
 from graphics.animations import (
@@ -252,8 +252,11 @@ def _draw_demo_winner_hint(rect, key, text, t):
 
 def _render_quiz_stats_or_return(t, elapsed):
     """Called once the win/loss celebration window has elapsed. Shows a
-    "SCORE: X/Y" stats page on panels 1+2 for QUIZ_STATS_HOLD_SECONDS, then
-    auto-returns to DJ mode (the Btn6-only quiz mode flow)."""
+    "SCORE: X/Y" stats page on panels 1+2 for the remainder of
+    GAME_SCORECARD_HOLD_SECONDS (QUIZ_CELEBRATION_HOLD_SECONDS +
+    QUIZ_STATS_HOLD_SECONDS = 5s total), then either auto-advances to the
+    next pre-fetched question for this track (staying in GAME_MODE) or
+    returns to DJ mode if none remain."""
     stats_elapsed = elapsed - QUIZ_CELEBRATION_HOLD_SECONDS
     if stats_elapsed < QUIZ_STATS_HOLD_SECONDS:
         tx, ty, tw, th = TOP_COMBINED
@@ -266,6 +269,11 @@ def _render_quiz_stats_or_return(t, elapsed):
                      "NICE ROUND!" if was_correct else "TRY AGAIN!", line2_rect, align="center")
         return
 
+    if advance_to_next_queued_question():
+        state.set_message("NEXT QUESTION", 1.0)
+        print("[QUIZ] Auto-advancing to next pre-fetched question for this track -- staying in GAME_MODE.")
+        return
+
     # Reset rule: Fixture 1 -> black (lighting_engine.py also forces this
     # every frame in DJ mode; this just makes the intent explicit here).
     state.mode = state.MODE_DJ
@@ -274,7 +282,7 @@ def _render_quiz_stats_or_return(t, elapsed):
     state.quiz_selected_index = -1
     state.active_option = None
     state.set_message("MODE: DJ", 1.5)
-    print("[QUIZ] Round complete -- auto-returning to DJ mode.")
+    print("[QUIZ] No more queued questions for this track -- auto-returning to DJ mode.")
 
 
 def _render_quiz_mode(t):

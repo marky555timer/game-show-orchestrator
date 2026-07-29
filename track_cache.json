@@ -1,0 +1,207 @@
+{
+  "westlife - if i let you go - radio edit": [
+    {
+      "headline": "Westlife's debut single smash!",
+      "full": "Westlife's first single 'If I Let You Go' reached #2 in the UK charts and became a major hit across Europe in 1999.",
+      "question": "What year was 'If I Let You Go' released?",
+      "choices": [
+        "1999",
+        "2001",
+        "2000",
+        "1998"
+      ],
+      "correct_index": 0,
+      "ts": 1785364659.8108442
+    },
+    {
+      "headline": "Westlife's debut hit from 1999",
+      "full": "If I Let You Go was Westlife's debut single, released in 1999 and reaching #2 on UK charts. The radio edit became their breakthrough track across Europe.",
+      "question": "How many members were in Westlife's original lineup?",
+      "choices": [
+        "4",
+        "5",
+        "6",
+        "7"
+      ],
+      "correct_index": 1,
+      "ts": 1785364661.3655975
+    },
+    {
+      "headline": "Westlife's debut hit from 1999",
+      "full": "If I Let You Go was Westlife's debut single, released in 1999. It reached #2 on the UK Singles Chart and launched the Irish-American boy band to international stardom.",
+      "question": "Who managed and created Westlife?",
+      "choices": [
+        "Simon Cowell",
+        "Louis Walsh",
+        "Barry Gibb",
+        "Nigel Martin-Smith"
+      ],
+      "correct_index": 1,
+      "ts": 1785364662.9874353
+    }
+  ],
+  "swedish house mafia, john martin - don't you worry child - radio...": [
+    {
+      "headline": "2012 EDM anthem ft. John Martin",
+      "full": "Swedish House Mafia's 'Don't You Worry Child' features vocalist John Martin and became a massive global hit, reaching top 10 in multiple countries and defining progressive house.",
+      "question": "What year was 'Don't You Worry Child' released?",
+      "choices": [
+        "2013",
+        "2011",
+        "2012",
+        "2010"
+      ],
+      "correct_index": 2,
+      "ts": 1785364789.022088
+    },
+    {
+      "headline": "2012 Grammy Hit From Swedish House Mafia",
+      "full": "Don't You Worry Child featuring John Martin became Swedish House Mafia's biggest hit, reaching #1 on UK charts and earning Grammy nomination for Best Dance Recording in 2013.",
+      "question": "How many Grammy nominations did Swedish House Mafia receive?",
+      "choices": [
+        "3",
+        "7",
+        "1",
+        "5"
+      ],
+      "correct_index": 0,
+      "ts": 1785364795.5163589
+    },
+    {
+      "headline": "2012 EDM anthem hits #1 globally",
+      "full": "Swedish House Mafia's 'Don't You Worry Child' ft. John Martin became a massive global hit in 2012, reaching #1 in multiple countries and defining progressive house for a generation.",
+      "question": "Who is the lead vocalist on this track?",
+      "choices": [
+        "John Martin",
+        "Tim Bergling",
+        "Joel Zimmerman",
+        "Sander Kleinenberg"
+      ],
+      "correct_index": 0,
+      "ts": 1785364797.2891276
+    }
+  ],
+  "chris brown - forever": [
+    {
+      "headline": "Chris Brown's 'Forever' - A Timeless Hit",
+      "full": "Released in 2008, 'Forever' became one of Chris Brown's signature tracks, reaching #2 on the Billboard Hot 100 and earning multi-platinum certification worldwide.",
+      "question": "What year was Chris Brown's 'Forever' released?",
+      "choices": [
+        "2007",
+        "2010",
+        "2009",
+        "2008"
+      ],
+      "correct_index": 3,
+      "ts": 1785364942.2719107
+    },
+    {
+      "headline": "Chris Brown's 'Forever' certified 7x Pla",
+      "full": "'Forever' became Chris Brown's signature hit from 2008, reaching #2 on Billboard Hot 100 and earning multi-platinum status worldwide.",
+      "question": "How many Grammy Awards has Chris Brown won?",
+      "choices": [
+        "11",
+        "7",
+        "9",
+        "15"
+      ],
+      "correct_index": 0,
+      "ts": 1785364943.808258
+    },
+    {
+      "headline": "Chris Brown's 2008 chart-topper",
+      "full": "Forever was Chris Brown's biggest hit, reaching #2 on Billboard Hot 100 in 2008. The track features Drake and Tity 2 Dope, produced by Boi-1da.",
+      "question": "What's Chris Brown's real first name?",
+      "choices": [
+        "Christian",
+        "Christopher",
+        "Cristopher",
+        "Carlton"
+      ],
+      "correct_index": 1,
+      "ts": 1785364945.7592764
+    }
+  ],
+  "britney spears - gimme more": [
+    {
+      "headline": "Britney's Blackout Banger",
+      "full": "Lead single from Britney's 2008 album 'Blackout'. Features a minimalist electro-pop sound and became a massive club hit worldwide.",
+      "question": "What year was 'Gimme More' released?",
+      "choices": [
+        "2006",
+        "2007",
+        "2009",
+        "2008"
+      ],
+      "correct_index": 1,
+      "ts": 1785365016.8016949
+    },
+    {
+      "headline": "Britney's Circus album standout track",
+      "full": "'Gimme More' is the lead single from Britney Spears' 2008 album 'Circus,' produced by The Neptunes. It peaked at #2 on the Billboard Hot 100.",
+      "question": "What year was Britney's 'Circus' album released?",
+      "choices": [
+        "2008",
+        "2009",
+        "2010",
+        "2007"
+      ],
+      "correct_index": 0,
+      "ts": 1785365018.9088118
+    },
+    {
+      "headline": "Britney's 2007 comeback hit",
+      "full": "Lead single from 'Blackout' album, produced by The Neptunes. Peaked at #2 on Billboard Hot 100. Became iconic for its party vibe and 'Gimme more' hook.",
+      "question": "What is Britney Spears' real first name?",
+      "choices": [
+        "Britney",
+        "Briana",
+        "Brittany",
+        "Brianna"
+      ],
+      "correct_index": 0,
+      "ts": 1785365021.1912758
+    }
+  ],
+  "lady gaga, colby o'donis - just dance": [
+    {
+      "headline": "Lady Gaga's debut single!",
+      "full": "Lady Gaga's breakthrough hit featuring Colby O'Donis, released in 2008. Topped charts worldwide and launched her iconic career with infectious pop-dance energy.",
+      "question": "What year was 'Just Dance' released?",
+      "choices": [
+        "2007",
+        "2009",
+        "2008",
+        "2010"
+      ],
+      "correct_index": 2,
+      "ts": 1785365121.1183362
+    },
+    {
+      "headline": "Lady Gaga's debut single hit #1 worldwid",
+      "full": "Released in 2008, 'Just Dance' featuring Colby O'Donis became Lady Gaga's breakthrough hit, topping charts globally and launching her iconic career.",
+      "question": "How many Grammy Awards did 'Just Dance' win?",
+      "choices": [
+        "3",
+        "2",
+        "4",
+        "6"
+      ],
+      "correct_index": 2,
+      "ts": 1785365122.8188102
+    },
+    {
+      "headline": "Lady Gaga's debut single debut",
+      "full": "Released in 2008, 'Just Dance' was Lady Gaga's breakthrough hit featuring Colby O'Donis. It topped charts worldwide and launched her iconic career.",
+      "question": "What is Lady Gaga's real first name?",
+      "choices": [
+        "Gabriella",
+        "Stefani",
+        "Margot",
+        "Francesca"
+      ],
+      "correct_index": 1,
+      "ts": 1785365124.3977315
+    }
+  ]
+}

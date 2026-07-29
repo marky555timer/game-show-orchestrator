@@ -3,7 +3,7 @@ import json
 import pygame
 from config import (
     VOLUME_HOLD_INITIAL_DELAY_SECONDS, VOLUME_HOLD_REPEAT_INTERVAL_SECONDS,
-    BUTTON_DEBOUNCE_SECONDS, QUIZ_GATE_DEBOUNCE_SECONDS, QUIZ_GATE_TIMEOUT_SECONDS,
+    BUTTON_DEBOUNCE_SECONDS, QUIZ_GATE_DEBOUNCE_SECONDS, QUIZ_GATE_EMPTY_CACHE_TIMEOUT_SECONDS,
     TEMPO_TAP_WINDOW,
     TEMPO_PERIOD_MIN_SECONDS, TEMPO_PERIOD_MAX_SECONDS,
     DJ_THEME_COUNT, DJ_COLOR_PALETTE,
@@ -12,15 +12,14 @@ from config import (
 from state import state
 from drivers.midi_driver import handle_dj_volume
 from drivers.rekordbox_driver import get_rekordbox_track
-from drivers.factoid_engine import request_factoid, build_mock_question, load_forced_fallback_question
+from drivers.factoid_engine import (
+    ensure_prefetch, pull_next_from_queue, build_mock_question, load_forced_fallback_question,
+)
 from drivers import deck_orchestrator
 from audio.audio_engine import (
     play_processed_sound, raw_buzzer, raw_bigwin, raw_clear, raw_ding,
     raw_coin, raw_buzz_short, stop_previous_audio, reverb_enabled
 )
-
-# Statuses that just mean "nothing to report yet" -- not a real API failure.
-_BENIGN_QUIZ_GATE_STATUSES = ("", "NO CONFIDENT TRACK ID", "FETCHING FACTOID...")
 
 # Gamepad Axis State Tracking
 last_axis_x = 0
@@ -53,7 +52,7 @@ def trigger_loss():
     stop_previous_audio()
     state.active_option = None
     state.set_message("WRONG ANSWER! (LOSS BUZZER)", 1.5)
-    print("[ACTION] Btn5 GRADE -> LOSS")
+    print("[ACTION] Btn6 GRADE -> LOSS")
     play_processed_sound(raw_buzzer)
 
     # Fixture 1 (win/loss indicator lamp): solid red, latched until an
@@ -63,16 +62,17 @@ def trigger_loss():
     state.fixture1_mode_set_at = time.time()
 
 def clear_quiz_selection():
-    """Physical Btn6 / keyboard 6: clears whichever answer is currently
-    armed (or, if already graded, un-grades it) without replaying a
-    win/loss -- lets the host recover from a mis-press."""
+    """Physical Btn5 (GAME_MODE-only swap with Btn6, see process_events) /
+    keyboard 6: clears whichever answer is currently armed (or, if already
+    graded, un-grades it) without replaying a win/loss -- lets the host
+    recover from a mis-press."""
     stop_previous_audio()
     state.active_option = None
     state.quiz_selected_index = -1
     state.quiz_locked = False
     state.fixture1_mode = "off"  # Reset rule: board clear -> Fixture 1 black
     state.set_message("SELECTION CLEARED", 1.0)
-    print("[ACTION] Btn6 -> CLEAR SELECTION")
+    print("[ACTION] Btn5 -> CLEAR SELECTION")
 
 def trigger_clear_latches():
     """Keyboard 'C': manual reset escape hatch. Clears any armed/graded
@@ -104,7 +104,7 @@ def select_quiz_answer(index):
     """Arms (but does not grade) the chosen answer: dim red fill on that
     panel (matrix_canvas._draw_selected_panel). A short ding confirms the
     selection prior to lock-in. Grading happens separately via
-    grade_quiz_selection() on Btn5."""
+    grade_quiz_selection() on Btn6 (GAME_MODE-only swap with Btn5)."""
     if state.quiz_locked:
         return
     if not state.factoid_choices or state.factoid_correct_index < 0:
@@ -122,12 +122,13 @@ def select_quiz_answer(index):
     play_processed_sound(raw_ding)
 
 def grade_quiz_selection():
-    """Physical Btn5 / keyboard 5: grades whichever answer is currently
-    armed via select_quiz_answer()."""
+    """Physical Btn6 (GAME_MODE-only swap with Btn5, see process_events) /
+    keyboard 5: grades whichever answer is currently armed via
+    select_quiz_answer()."""
     if state.quiz_locked:
         return
     if state.quiz_selected_index < 0:
-        print("[ACTION] Btn5 pressed but no answer is selected yet.")
+        print("[ACTION] Btn6 pressed but no answer is selected yet.")
         state.set_message("SELECT AN ANSWER FIRST", 1.2)
         return
 
@@ -135,7 +136,7 @@ def grade_quiz_selection():
     state.quiz_graded_at = time.time()
     letter = "ABCD"[state.quiz_selected_index]
     is_correct = (state.quiz_selected_index == state.factoid_correct_index)
-    print(f"[ACTION] Btn5 GRADE -> Answer {letter} is {'CORRECT' if is_correct else 'WRONG'}")
+    print(f"[ACTION] Btn6 GRADE -> Answer {letter} is {'CORRECT' if is_correct else 'WRONG'}")
 
     state.quiz_score_total += 1
     if is_correct:
@@ -143,6 +144,26 @@ def grade_quiz_selection():
         trigger_big_win()
     else:
         trigger_loss()
+
+def abort_game_mode_early():
+    """Btn7, at ANY point in GAME_MODE (question live, grading, or the
+    scorecard display): immediately kills the round and returns to DJ_MODE.
+    This is an abort, not a grade -- no score is recorded for an
+    in-progress question and no win/loss sound plays. Clearing
+    quiz_graded_at/quiz_locked stops the celebration/scorecard/auto-advance
+    sequence in graphics/matrix_canvas.py from firing after the mode
+    switch; DMX reverts to DJ-mode uplighting on the very next frame since
+    drivers/lighting_engine.py renders purely off state.mode."""
+    stop_previous_audio()
+    state.mode = state.MODE_DJ
+    state.quiz_locked = False
+    state.quiz_selected_index = -1
+    state.active_option = None
+    state.quiz_graded_at = 0.0
+    state.fixture1_mode = "off"  # Reset rule: leaving GAME_MODE -> Fixture 1 black
+    state.quiz_gate_status = "idle"
+    state.set_message("MODE: DJ (GAME ABORTED)", 1.5)
+    print("GAME MODE EXIT: Aborted early via Gamepad Button 7")
 
 def trigger_big_win():
     stop_previous_audio()
@@ -167,15 +188,19 @@ def _current_dj_track():
 
 def handle_quiz_gate_button():
     """Btn6 in DJ mode: every accepted press plays an immediate confirmation
-    chime BEFORE anything async happens -- the sound never waits on the
-    fetch or cache lookup, and playback is wrapped so a mixer hiccup can
-    never block the state transition below it.
+    chime BEFORE anything else happens -- the sound never waits on a lookup,
+    and playback is wrapped so a mixer hiccup can never block the state
+    transition below it.
 
-    If no fetch is already in flight, this also kicks off the (already
-    async/non-blocking) quiz-question fetch. _process_quiz_gate() polls the
-    result every frame: success auto-enters GAME_MODE the instant the
-    question is ready (no second press needed), failure plays buzzShort.wav
-    and leaves the DJ in DJ mode so the show never freezes."""
+    Track questions are pre-fetched continuously in the background as soon
+    as a deck's track is confidently identified (see
+    drivers/factoid_engine.py::ensure_prefetch, called every frame from
+    process_events() below) -- so this instantly pops the next cached
+    question off state.track_question_queue and enters GAME_MODE, with NO
+    network call at press time. Only a cold-start track (queue still empty --
+    brand new track, still filling, or offline) falls through to the
+    QUIZ_GATE_EMPTY_CACHE_TIMEOUT_SECONDS wait-then-fallback path below,
+    polled every frame by _process_quiz_gate()."""
     if state.mode != state.MODE_DJ:
         return
 
@@ -187,54 +212,52 @@ def handle_quiz_gate_button():
         print(f"[AUDIO ERROR] Btn6 coin chime failed to play: {e}")
 
     if state.quiz_gate_status == "fetching":
-        print("[ACTION] Btn6 pressed while a quiz fetch is already in flight.")
+        print("[ACTION] Btn6 pressed while already waiting on the pre-fetch queue to fill.")
         return
 
-    title, artist = _current_dj_track()
     confident = state.deck1_confident if state.active_deck == 1 else state.deck2_confident
-    if not confident:
+    if not confident or not state.factoid_track_key:
         state.set_message("NO CONFIDENT TRACK ID YET", 1.2)
-        print("[ACTION] Btn6 pressed but no confident track ID -- not spending an API call.")
+        print("[ACTION] Btn6 pressed but no confident track ID -- nothing buffered yet.")
         return
 
-    key = f"{title}|{artist}"
-    print(f"[ACTION] Btn6 -> Fetching quiz question for '{title}' - '{artist}'")
-    request_factoid(title, artist, confident)
+    key = state.factoid_track_key
+    if pull_next_from_queue(key):
+        state.quiz_gate_status = "idle"
+        state.mode = state.MODE_GAME
+        state.set_message("QUIZ MODE", 1.0)
+        print("[BUTTON] Btn6 -> instant pull from pre-fetch queue -> GAME_MODE")
+        return
+
+    print("[ACTION] Btn6 -> pre-fetch queue empty (cold start), waiting on background fetch.")
     state.quiz_gate_status = "fetching"
     state.quiz_gate_key = key
     state.quiz_gate_started_at = time.time()
 
 def _process_quiz_gate():
-    """Per-frame poll: reacts once a Btn6-triggered fetch resolves, or force-
-    falls-back once QUIZ_GATE_TIMEOUT_SECONDS elapses since the press -- the
-    DJ is never left hanging on a stuck/slow API call; a local fallback
+    """Per-frame poll: only relevant right after a cold-start Btn6 press
+    (queue was empty). Reacts the instant the background pre-fetch lands a
+    question for this track, or force-falls-back once
+    QUIZ_GATE_EMPTY_CACHE_TIMEOUT_SECONDS elapses since the press -- the DJ
+    is never left hanging on a stuck/slow API call; a local fallback
     question is forced in and GAME_MODE is entered either way."""
     if state.quiz_gate_status != "fetching":
         return
 
-    resolved_success = (
-        state.factoid_track_key == state.quiz_gate_key
-        and state.factoid_status == ""
-        and state.factoid_headline
-    )
-    if resolved_success:
+    if state.factoid_track_key == state.quiz_gate_key and pull_next_from_queue(state.quiz_gate_key):
         state.quiz_gate_status = "idle"
         state.mode = state.MODE_GAME
         state.set_message("QUIZ MODE", 1.0)
-        print("[BUTTON] Btn6 fetch resolved -> auto-entering GAME_MODE")
+        print("[BUTTON] Btn6 background fetch resolved -> auto-entering GAME_MODE")
         return
 
-    resolved_failure = (
-        state.factoid_track_key == state.quiz_gate_key
-        and state.factoid_status not in _BENIGN_QUIZ_GATE_STATUSES
-    )
-    timed_out = (time.time() - state.quiz_gate_started_at) >= QUIZ_GATE_TIMEOUT_SECONDS
-    if not resolved_failure and not timed_out:
+    timed_out = (time.time() - state.quiz_gate_started_at) >= QUIZ_GATE_EMPTY_CACHE_TIMEOUT_SECONDS
+    if not timed_out:
         return  # still legitimately waiting, still inside the tripwire window
 
     state.quiz_gate_status = "idle"
-    reason = state.factoid_status if resolved_failure else "5s TIMEOUT TRIPWIRE"
-    print(f"[BUTTON ERROR] Btn6 Question Fetch Failed/Timed Out ({reason}). Loading Fallback.")
+    print(f"[BUTTON ERROR] Btn6 pre-fetch queue still empty after "
+          f"{QUIZ_GATE_EMPTY_CACHE_TIMEOUT_SECONDS}s TIMEOUT TRIPWIRE. Loading Fallback.")
     state.coin_pop_flash_until = time.time() + 2.0
     try:
         play_processed_sound(raw_buzz_short, volume=1.0)
@@ -384,6 +407,14 @@ def _process_volume_hold():
 def process_events():
     global last_axis_x, last_axis_y
 
+    # Section 1: as soon as the active deck's track is confidently
+    # identified, keep its question queue topped up in the background --
+    # no Btn6 press required. Cheap/no-op once the track's cache holds
+    # TRACK_QUESTIONS_PER_TRACK questions.
+    title, artist = _current_dj_track()
+    confident = state.deck1_confident if state.active_deck == 1 else state.deck2_confident
+    ensure_prefetch(title, artist, confident)
+
     _process_quiz_gate()
     deck_orchestrator.update(time.time())
 
@@ -419,14 +450,19 @@ def process_events():
                     select_quiz_answer(3)
                 elif btn == 1:      # Physical Btn2: select Answer 2 (index 1)
                     select_quiz_answer(1)
+                elif btn == 2:      # Physical Btn3: select Answer 3 (index 2) -- was unmapped
+                    select_quiz_answer(2)
                 elif btn == 3:      # Physical Btn4: select Answer 1 (index 0)
                     select_quiz_answer(0)
-                elif btn == 4:      # Physical Btn5: grade the current selection
-                    if _debounced(btn):
-                        grade_quiz_selection()
-                elif btn == 5:      # Physical Btn6: clear the current selection
+                elif btn == 4:      # Physical Btn5: GAME_MODE-only swap -> clear the current selection
                     if _debounced(btn):
                         clear_quiz_selection()
+                elif btn == 5:      # Physical Btn6: GAME_MODE-only swap -> grade the current selection
+                    if _debounced(btn):
+                        grade_quiz_selection()
+                elif btn == 6:      # Physical Btn7: EARLY EXIT -> abort back to DJ_MODE
+                    if _debounced(btn):
+                        abort_game_mode_early()
 
         elif event.type == pygame.JOYHATMOTION:
             hat_x, hat_y = event.value
@@ -485,6 +521,8 @@ def process_events():
                     grade_quiz_selection()
                 elif event.key == pygame.K_6:
                     clear_quiz_selection()
+                elif event.key == pygame.K_7:
+                    abort_game_mode_early()
                 elif event.key == pygame.K_c:
                     trigger_clear_latches()
 
