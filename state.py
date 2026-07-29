@@ -47,6 +47,37 @@ class State:
         # the select/grade/DMX flow can still be tested end-to-end.
         self.quiz_is_test = False
 
+        # --- Quiz API gate (Btn6 in DJ mode: fetch, then enter) ---
+        self.quiz_gate_status = "idle"   # idle | fetching | ready | error
+        self.quiz_gate_key = ""
+        self.coin_pop_flash_until = 0.0  # panel-3 "out of credits" indicator
+
+        # --- Scoring ---
+        self.quiz_score_correct = 0
+        self.quiz_score_total = 0
+        self.quiz_stats_until = 0.0  # score page shown on panels 1+2 until this time
+
+        # --- DMX Fixture 1 (win/loss indicator lamp) ---
+        self.fixture1_mode = "off"  # off | win | loss
+        self.fixture1_mode_set_at = 0.0
+
+        # --- DJ-mode uplighting (fixtures 2-11) ---
+        self.dj_theme_index = 0
+        self.dj_color_index = 0
+        self.tempo_tap_times = []
+        self.dj_tempo_period = 0.6
+        self.tempo_flash_at = 0.0
+
+        # --- Game-mode chase pace override window (win/loss) ---
+        self.chase_pace_mode = "mid"   # mid | fast | slow
+        self.chase_pace_until = 0.0
+
+        # --- Gamepad button debounce (Btns 5-8) ---
+        self.last_button_press_time = {}
+
+        # --- Deck-switch / branding fetch cadence ---
+        self.deck_change_count = 0
+
     def set_status(self, msg, duration=2.0):
         self.status_msg = msg
         self.msg_timer = time.time() + duration

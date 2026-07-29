@@ -174,6 +174,7 @@ class FactoidEngine:
         state.quiz_is_test = False
         state.quiz_selected_index = -1
         state.quiz_locked = False
+        state.fixture1_mode = "off"  # Reset rule: new question -> Fixture 1 black
 
     def _apply_result(self, key, data):
         state.factoid_track_key = key
@@ -186,6 +187,7 @@ class FactoidEngine:
         state.quiz_is_test = False
         state.quiz_selected_index = -1
         state.quiz_locked = False
+        state.fixture1_mode = "off"  # Reset rule: new question -> Fixture 1 black
 
     # ------------------------------------------------------------
     # Background worker
@@ -219,11 +221,28 @@ class FactoidEngine:
             finally:
                 self._inflight.discard(key)
 
+    # Question-style variety (Section 4.1): a style is picked client-side
+    # per request rather than left entirely to the model's whim, so a run
+    # of tracks actually alternates between year questions, numeric/career
+    # facts, and one-word-answer headlines instead of drifting to whatever
+    # the model defaults to.
+    _QUESTION_STYLE_HINTS = [
+        "Ask what year this track was released.",
+        "Ask a numeric fact about the artist's career -- album count, chart "
+        "position, band member count, etc -- phrased like a punchy short "
+        "news headline (e.g. \"How many albums did AC/DC make?\").",
+        "Ask a one-word-answer question about the artist -- a real name, "
+        "who started the band, etc -- phrased like a punchy short news "
+        "headline (e.g. \"What is Eminem's real last name?\", \"Who "
+        "started this band?\").",
+    ]
+
     def _call_ai(self, title, artist):
         """Returns (result_dict, None) on success, or (None, reason_str) on failure."""
         if not config.ANTHROPIC_API_KEY:
             return None, "AI DISABLED (NO API KEY)"
 
+        style_hint = random.choice(self._QUESTION_STYLE_HINTS)
         prompt = (
             "You are a music trivia assistant for a live DJ show's LED display. "
             f"Song title: {title!r}. Artist: {artist!r}. "
@@ -234,15 +253,13 @@ class FactoidEngine:
             "with these keys: \"headline\" (a punchy factoid teaser, max 40 "
             "characters, for a scrolling LED sign), \"full\" (a fuller "
             "interesting factoid, max 200 characters), \"question\" (a trivia "
-            "question derived from that same factoid, max 100 characters -- "
-            "PREFER a question whose correct answer is naturally short, such "
-            "as a year or a number, e.g. \"What year was this track "
-            "released?\", since answers are shown on a small LED display), "
-            "\"correct\" (the correct answer -- if the question allows it, "
-            "answer with just a number/year/single short word, max 24 "
-            "characters), and \"wrong1\", \"wrong2\", \"wrong3\" (three "
-            "plausible but incorrect answers in the same short style/format "
-            "as the correct answer, max 24 characters each)."
+            f"question, max 100 characters. {style_hint} Since answers are "
+            "shown on a small LED display, the correct answer must be "
+            "naturally short), \"correct\" (the correct answer -- a "
+            "number/year/single short word, max 24 characters), and "
+            "\"wrong1\", \"wrong2\", \"wrong3\" (three plausible but "
+            "incorrect answers in the same short style/format as the "
+            "correct answer, max 24 characters each)."
         )
 
         try:
@@ -256,13 +273,6 @@ class FactoidEngine:
                 json={
                     "model": config.AI_CLEANUP_MODEL,
                     "max_tokens": 500,
-                    # This is a lookup/formatting task, not a reasoning task -- and
-                    # Sonnet 5 runs adaptive thinking by default when "thinking" is
-                    # omitted, with max_tokens capping thinking + output combined.
-                    # Without this, thinking tokens can eat the whole budget before
-                    # any JSON is written. Disabling it is only valid at effort
-                    # "high" or below, which is the default we're using here.
-                    "thinking": {"type": "disabled"},
                     "messages": [{"role": "user", "content": prompt}],
                 },
                 timeout=config.FACTOID_TIMEOUT_SECONDS,
@@ -270,6 +280,13 @@ class FactoidEngine:
             resp.raise_for_status()
         except requests.exceptions.Timeout:
             return None, "REQUEST TIMED OUT"
+        except requests.exceptions.ConnectionError:
+            # Offline/network-down (Section 5.4): fall back to a local
+            # question rather than surfacing a bare failure.
+            fallback = _load_fallback_question()
+            if fallback:
+                return fallback, None
+            return None, "NETWORK ERROR: no internet connection and no local fallback available"
         except requests.exceptions.HTTPError as e:
             status = e.response.status_code if e.response is not None else None
             # Always carry the API's own error message through. A bare
@@ -337,6 +354,31 @@ class FactoidEngine:
             "ts": time.time(),
         }
         return result, None
+
+
+def _load_fallback_question():
+    """Section 5.4 offline fallback: picks a random pre-written question from
+    fallback_questions.json so quiz mode still gets a playable question when
+    an Anthropic API call fails due to a network outage. Returns a result
+    dict shaped like a normal successful _call_ai() response, or None if the
+    file is missing/unreadable."""
+    try:
+        with open(config.FALLBACK_QUESTIONS_PATH, "r", encoding="utf-8") as f:
+            entries = json.load(f)
+        if not entries:
+            return None
+        entry = random.choice(entries)
+        return {
+            "headline": "offline trivia",
+            "full": "",
+            "question": entry["question"],
+            "choices": [str(c)[:24] for c in entry["choices"]],
+            "correct_index": int(entry["correct_index"]),
+            "ts": time.time(),
+        }
+    except Exception as e:
+        print(f"[FACTOID] Could not load fallback_questions.json: {e}")
+        return None
 
 
 factoid_engine = FactoidEngine()

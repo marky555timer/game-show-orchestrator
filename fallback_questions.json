@@ -1,0 +1,52 @@
+[
+  {
+    "question": "How many albums did AC/DC make?",
+    "choices": ["17", "12", "22", "9"],
+    "correct_index": 0
+  },
+  {
+    "question": "What is Eminem's real last name?",
+    "choices": ["Mathers", "Bennett", "Carter", "Combs"],
+    "correct_index": 0
+  },
+  {
+    "question": "Who started Nirvana?",
+    "choices": ["Kurt Cobain", "Dave Grohl", "Chris Cornell", "Eddie Vedder"],
+    "correct_index": 0
+  },
+  {
+    "question": "How many Grammy Awards has Beyonce won?",
+    "choices": ["32", "18", "25", "9"],
+    "correct_index": 0
+  },
+  {
+    "question": "What year did Michael Jackson release Thriller?",
+    "choices": ["1982", "1979", "1985", "1988"],
+    "correct_index": 0
+  },
+  {
+    "question": "How many members are in BTS?",
+    "choices": ["7", "5", "9", "6"],
+    "correct_index": 0
+  },
+  {
+    "question": "What is Lady Gaga's real first name?",
+    "choices": ["Stefani", "Angelina", "Nicole", "Christina"],
+    "correct_index": 0
+  },
+  {
+    "question": "How many number-one hits does Rihanna have?",
+    "choices": ["14", "8", "20", "5"],
+    "correct_index": 0
+  },
+  {
+    "question": "Who founded Fleetwood Mac?",
+    "choices": ["Peter Green", "Stevie Nicks", "Lindsey Buckingham", "Mick Fleetwood"],
+    "correct_index": 0
+  },
+  {
+    "question": "How many studio albums has Taylor Swift released?",
+    "choices": ["11", "7", "15", "9"],
+    "correct_index": 0
+  }
+]

@@ -222,5 +222,10 @@
     "status": "failed",
     "reason": "AI HTTP ERROR (400): invalid_request_error: Your credit balance is too low to access the Anthropic API. Please go to Plans & Billing to upgrade or purchase credits.",
     "ts": 1785346596.1455307
+  },
+  "my boo - hitman's club mix|ghost town djs": {
+    "status": "failed",
+    "reason": "AI_NOT_CONFIDENT",
+    "ts": 1785354346.392634
   }
 }

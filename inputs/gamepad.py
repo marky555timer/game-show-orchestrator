@@ -2,21 +2,23 @@ import time
 import pygame
 from config import (
     VOLUME_HOLD_INITIAL_DELAY_SECONDS, VOLUME_HOLD_REPEAT_INTERVAL_SECONDS,
-    QUIZ_SELECT_DMX_RGB, QUIZ_SELECT_DMX_DIMMER,
+    BUTTON_DEBOUNCE_SECONDS, TEMPO_TAP_WINDOW,
+    TEMPO_PERIOD_MIN_SECONDS, TEMPO_PERIOD_MAX_SECONDS,
+    DJ_THEME_COUNT, DJ_COLOR_PALETTE,
+    QUIZ_CELEBRATION_HOLD_SECONDS,
 )
 from state import state
-from drivers.midi_driver import handle_dj_volume, handle_dj_reject
-from drivers.rekordbox_driver import trigger_next_track
-from drivers.dmx_driver import dmx
-from drivers.factoid_engine import build_mock_question
+from drivers.midi_driver import handle_dj_volume
+from drivers.rekordbox_driver import get_rekordbox_track
+from drivers.factoid_engine import request_factoid, build_mock_question
+from drivers import deck_orchestrator
 from audio.audio_engine import (
-    play_processed_sound, raw_buzzer, raw_bigwin, raw_clear,
-    stop_previous_audio, reverb_enabled
+    play_processed_sound, raw_buzzer, raw_bigwin, raw_clear, raw_ding,
+    raw_coin, raw_low_beep, stop_previous_audio, reverb_enabled
 )
 
-# Active DMX Animation State
-active_animation = None
-latched_rgb = None
+# Statuses that just mean "nothing to report yet" -- not a real API failure.
+_BENIGN_QUIZ_GATE_STATUSES = ("", "NO CONFIDENT TRACK ID", "FETCHING FACTOID...")
 
 # Gamepad Axis State Tracking
 last_axis_x = 0
@@ -43,62 +45,44 @@ def init_joysticks():
 init_joysticks()
 
 # ------------------------------------------
-# GAME SHOW & DMX ACTION HANDLERS
+# GAME SHOW ANSWER-SELECTION HANDLERS
 # ------------------------------------------
 def trigger_loss():
-    global active_animation, latched_rgb
     stop_previous_audio()
-    latched_rgb = None
     state.active_option = None
     state.set_message("WRONG ANSWER! (LOSS BUZZER)", 1.5)
     print("[ACTION] Btn5 GRADE -> LOSS")
     play_processed_sound(raw_buzzer)
 
-    def anim(elapsed, duration):
-        if elapsed < duration:
-            dmx.set_rgb(255, 0, 0, dimmer=255)
-        else:
-            fade_elapsed = elapsed - duration
-            fade_dur = 0.25
-            if fade_elapsed < fade_dur:
-                factor = 1.0 - (fade_elapsed / fade_dur)
-                dmx.set_rgb(int(255 * factor), 0, 0, dimmer=int(255 * factor))
-            else:
-                dmx.blackout()
-                return False
-        return True
-
-    sound_len = raw_buzzer.get_length() + (0.3 if reverb_enabled else 0)
-    active_animation = {"func": anim, "start": time.time(), "duration": sound_len}
+    # Fixture 1 (win/loss indicator lamp): solid red, latched until an
+    # explicit reset (board clear / new question / return to DJ mode) --
+    # drivers/lighting_engine.py renders this every frame from state.
+    state.fixture1_mode = "loss"
+    state.fixture1_mode_set_at = time.time()
 
 def clear_quiz_selection():
     """Physical Btn6 / keyboard 6: clears whichever answer is currently
     armed (or, if already graded, un-grades it) without replaying a
     win/loss -- lets the host recover from a mis-press."""
-    global active_animation, latched_rgb
     stop_previous_audio()
-    active_animation = None
-    latched_rgb = None
     state.active_option = None
     state.quiz_selected_index = -1
     state.quiz_locked = False
+    state.fixture1_mode = "off"  # Reset rule: board clear -> Fixture 1 black
     state.set_message("SELECTION CLEARED", 1.0)
     print("[ACTION] Btn6 -> CLEAR SELECTION")
-    dmx.blackout()
 
 def trigger_clear_latches():
     """Keyboard 'C': manual reset escape hatch. Clears any armed/graded
     selection and, if the currently-loaded question is the local TEST
     placeholder, rerolls a fresh one so the select/grade flow can be
     exercised repeatedly."""
-    global active_animation, latched_rgb
     import audio.audio_engine as ae
     stop_previous_audio()
-    active_animation = None
-    latched_rgb = None
     state.active_option = None
     state.quiz_selected_index = -1
     state.quiz_locked = False
+    state.fixture1_mode = "off"  # Reset rule: board clear -> Fixture 1 black
 
     if state.quiz_is_test:
         mock = build_mock_question()
@@ -111,14 +95,12 @@ def trigger_clear_latches():
     state.set_message(f"CLEAR LATCHES | REVERB: {state_str}", 1.2)
     print(f"[ACTION] Keyboard 'C' -> CLEAR LATCHES | REVERB: {state_str}")
     play_processed_sound(raw_clear)
-    dmx.blackout()
 
 def select_quiz_answer(index):
     """Arms (but does not grade) the chosen answer: dim red fill on that
-    panel (matrix_canvas._draw_selected_panel), neutral blue/white DMX
-    'selected' color. Grading happens separately via
+    panel (matrix_canvas._draw_selected_panel). A short ding confirms the
+    selection prior to lock-in. Grading happens separately via
     grade_quiz_selection() on Btn5."""
-    global active_animation, latched_rgb
     if state.quiz_locked:
         return
     if not state.factoid_choices or state.factoid_correct_index < 0:
@@ -133,10 +115,7 @@ def select_quiz_answer(index):
     print(f"[ACTION] Answer {letter} armed (not yet graded)")
 
     stop_previous_audio()
-    active_animation = None
-    latched_rgb = QUIZ_SELECT_DMX_RGB
-    dmx.set_rgb(*QUIZ_SELECT_DMX_RGB, dimmer=QUIZ_SELECT_DMX_DIMMER)
-    dmx.render()
+    play_processed_sound(raw_ding)
 
 def grade_quiz_selection():
     """Physical Btn5 / keyboard 5: grades whichever answer is currently
@@ -154,62 +133,133 @@ def grade_quiz_selection():
     is_correct = (state.quiz_selected_index == state.factoid_correct_index)
     print(f"[ACTION] Btn5 GRADE -> Answer {letter} is {'CORRECT' if is_correct else 'WRONG'}")
 
+    state.quiz_score_total += 1
     if is_correct:
+        state.quiz_score_correct += 1
         trigger_big_win()
     else:
         trigger_loss()
 
 def trigger_big_win():
-    global active_animation, latched_rgb
     stop_previous_audio()
-    latched_rgb = None
     state.set_message("CORRECT ANSWER! BIG WIN!", 2.0)
     print("[ACTION] BIG WIN")
     play_processed_sound(raw_bigwin)
 
-    sound_len = raw_bigwin.get_length() + (0.3 if reverb_enabled else 0)
+    # Fixture 1: pulsing green, rendered every frame by lighting_engine.py
+    # from this state until the next reset (board clear / new question /
+    # return to DJ mode).
+    state.fixture1_mode = "win"
+    state.fixture1_mode_set_at = time.time()
 
-    def anim(elapsed, duration):
-        if elapsed < duration:
-            cps = 4.0
-            cycle_phase = (elapsed * cps) % 1.0
-            saw_value = 1.0 - cycle_phase
-            dimmer = int(40 + (saw_value * 215))
-            dmx.set_rgb(255, 215, 0, dimmer=dimmer)
-        else:
-            fade_elapsed = elapsed - duration
-            fade_dur = 0.5
-            if fade_elapsed < fade_dur:
-                factor = 1.0 - (fade_elapsed / fade_dur)
-                dmx.set_rgb(int(255 * factor), int(215 * factor), 0, dimmer=int(255 * factor))
-            else:
-                dmx.blackout()
-                return False
-        return True
+# ------------------------------------------
+# SECTION 1: QUIZ API GATE (Btn6, DJ mode only)
+# ------------------------------------------
+def _current_dj_track():
+    track_info = get_rekordbox_track()
+    if isinstance(track_info, tuple):
+        return track_info[0], track_info[1]
+    return str(track_info), ""
 
-    active_animation = {"func": anim, "start": time.time(), "duration": sound_len}
+def handle_quiz_gate_button():
+    """Btn6 in DJ mode: first press fetches a quiz question (spends one
+    API call), second press (once the fetch resolves successfully) enters
+    Quiz Mode. Any API failure is treated as "out of credits" -- see
+    _process_quiz_gate() for the sound/animation reaction."""
+    if state.mode != state.MODE_DJ:
+        return
 
-def handle_dj_reject_action():
-    state.set_message("POKING REKORDBOX: CC#10 VAL:127", 1.8)
-    print("[REKORDBOX MIDI POKE] Fire 'NEXT TRACK' (CC#10 Val:127)")
-    handle_dj_reject()
+    if state.quiz_gate_status == "ready":
+        state.mode = state.MODE_GAME
+        state.quiz_gate_status = "idle"
+        state.set_message("QUIZ MODE", 1.0)
+        print("[ACTION] Btn6 -> ENTER QUIZ MODE")
+        return
 
-    # ADVANCE LED MATRIX TRACK DISPLAY INSTANTLY
-    try:
-        trigger_next_track()
-    except Exception:
-        pass
+    if state.quiz_gate_status == "fetching":
+        print("[ACTION] Btn6 pressed while a quiz fetch is already in flight.")
+        return
 
-    dmx.set_rgb(255, 0, 0, dimmer=255)
-    dmx.render()
+    title, artist = _current_dj_track()
+    confident = state.deck1_confident if state.active_deck == 1 else state.deck2_confident
+    if not confident:
+        state.set_message("NO CONFIDENT TRACK ID YET", 1.2)
+        print("[ACTION] Btn6 pressed but no confident track ID -- not spending an API call.")
+        return
+
+    key = f"{title}|{artist}"
+    print(f"[ACTION] Btn6 -> Fetching quiz question for '{title}' - '{artist}'")
+    request_factoid(title, artist, confident)
+    state.quiz_gate_status = "fetching"
+    state.quiz_gate_key = key
+
+def _process_quiz_gate():
+    """Per-frame poll: reacts once a Btn6-triggered fetch resolves."""
+    if state.quiz_gate_status != "fetching":
+        return
+    if state.factoid_track_key != state.quiz_gate_key:
+        return
+
+    if state.factoid_status == "" and state.factoid_headline:
+        state.quiz_gate_status = "ready"
+        play_processed_sound(raw_coin, volume=0.3)
+        state.set_message("QUESTION READY -- PRESS BTN6 AGAIN", 1.5)
+    elif state.factoid_status not in _BENIGN_QUIZ_GATE_STATUSES:
+        state.quiz_gate_status = "error"
+        state.coin_pop_flash_until = time.time() + 2.0
+        play_processed_sound(raw_low_beep)
+        state.set_message("OUT OF CREDITS / API ERROR", 1.5)
+
+# ------------------------------------------
+# SECTION 3: DJ-MODE LIGHTING CONTROLS (Btns 5/7/8)
+# ------------------------------------------
+def handle_tempo_tap():
+    """Btn5 in DJ mode: tap-tempo for the DMX uplighting themes, plus a
+    brief red flash-outline on panels 3-6 (rendered in matrix_canvas.py)."""
+    now = time.time()
+    state.tempo_tap_times.append(now)
+    state.tempo_tap_times = state.tempo_tap_times[-TEMPO_TAP_WINDOW:]
+    if len(state.tempo_tap_times) >= 2:
+        deltas = [
+            state.tempo_tap_times[i + 1] - state.tempo_tap_times[i]
+            for i in range(len(state.tempo_tap_times) - 1)
+        ]
+        avg = sum(deltas) / len(deltas)
+        state.dj_tempo_period = max(TEMPO_PERIOD_MIN_SECONDS, min(TEMPO_PERIOD_MAX_SECONDS, avg))
+    state.tempo_flash_at = now
+    print(f"[ACTION] Btn5 TEMPO TAP -> period {state.dj_tempo_period:.2f}s")
+
+def handle_color_cycle():
+    """Btn7 in DJ mode: cycles the main uplighting theme color."""
+    state.dj_color_index = (state.dj_color_index + 1) % len(DJ_COLOR_PALETTE)
+    print(f"[ACTION] Btn7 COLOR -> index {state.dj_color_index}")
+
+def handle_theme_cycle():
+    """Btn8 in DJ mode: cycles the 4 uplighting themes, with an
+    ALL-LIGHTS-OFF stop before looping back to theme 1."""
+    state.dj_theme_index = (state.dj_theme_index + 1) % (DJ_THEME_COUNT + 1)
+    label = "ALL LIGHTS OFF" if state.dj_theme_index == DJ_THEME_COUNT else f"theme {state.dj_theme_index}"
+    print(f"[ACTION] Btn8 THEME -> {label}")
+
+# ------------------------------------------
+# BUTTON DEBOUNCE (Btns 5-8, Section 5.3)
+# ------------------------------------------
+def _debounced(btn_index):
+    now = time.time()
+    last = state.last_button_press_time.get(btn_index, 0.0)
+    if now - last < BUTTON_DEBOUNCE_SECONDS:
+        return False
+    state.last_button_press_time[btn_index] = now
+    return True
 
 # ------------------------------------------
 # VOLUME HOLD-TO-REPEAT (TV remote style)
 # ------------------------------------------
 def _held_volume_direction():
     """Polls current input state (not events) so a held control keeps
-    reporting a direction every frame. Returns +1 / -1 / 0. Sign
-    conventions match the existing discrete JOYAXISMOTION handlers below."""
+    reporting a direction every frame. Returns +1 / -1 / 0. The joystick
+    axis sign convention is reversed per Section 2.1; the D-pad/hat is a
+    separate physical control and is untouched."""
     if state.mode != state.MODE_DJ:
         return 0
 
@@ -233,7 +283,9 @@ def _held_volume_direction():
             naxes = js.get_numaxes()
         except Exception:
             naxes = 0
-        for axis, positive_dir in ((1, -1), (7, -1), (0, 1), (6, 1)):
+        # Only the Y axis (1, 7) drives volume now -- X (0, 6) is
+        # reassigned to Next Track / answer-3 select (Section 2.2).
+        for axis, positive_dir in ((1, 1), (7, 1)):
             if axis >= naxes:
                 continue
             try:
@@ -273,15 +325,10 @@ def _process_volume_hold():
 # EVENT DISPATCHER
 # ------------------------------------------
 def process_events():
-    global active_animation, last_axis_x, last_axis_y
+    global last_axis_x, last_axis_y
 
-    # Process ongoing DMX animations
-    if active_animation:
-        elapsed = time.time() - active_animation["start"]
-        still_running = active_animation["func"](elapsed, active_animation["duration"])
-        dmx.render()
-        if not still_running:
-            active_animation = None
+    _process_quiz_gate()
+    deck_orchestrator.update(time.time())
 
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
@@ -291,26 +338,35 @@ def process_events():
             btn = event.button
             print(f"[BUTTON] Raw Button Pressed: {btn}")
 
-            if btn in (6, 7, 8, 9):
-                state.toggle_mode()
-
-            elif state.mode == state.MODE_DJ:
+            if state.mode == state.MODE_DJ:
                 if btn in (1, 2):
-                    handle_dj_reject_action()
+                    deck_orchestrator.trigger_track_move("back")
+                elif btn == 4:  # Physical Btn5: tempo tap
+                    if _debounced(btn):
+                        handle_tempo_tap()
+                elif btn == 5:  # Physical Btn6: quiz fetch / enter
+                    if _debounced(btn):
+                        handle_quiz_gate_button()
+                elif btn == 6:  # Physical Btn7: color cycle
+                    if _debounced(btn):
+                        handle_color_cycle()
+                elif btn == 7:  # Physical Btn8: theme cycle
+                    if _debounced(btn):
+                        handle_theme_cycle()
 
             elif state.mode == state.MODE_GAME:
                 if btn == 0:        # Physical Btn1: select Answer 4 (index 3)
                     select_quiz_answer(3)
                 elif btn == 1:      # Physical Btn2: select Answer 2 (index 1)
                     select_quiz_answer(1)
-                elif btn == 2:      # Physical Btn3: select Answer 3 (index 2)
-                    select_quiz_answer(2)
                 elif btn == 3:      # Physical Btn4: select Answer 1 (index 0)
                     select_quiz_answer(0)
                 elif btn == 4:      # Physical Btn5: grade the current selection
-                    grade_quiz_selection()
+                    if _debounced(btn):
+                        grade_quiz_selection()
                 elif btn == 5:      # Physical Btn6: clear the current selection
-                    clear_quiz_selection()
+                    if _debounced(btn):
+                        clear_quiz_selection()
 
         elif event.type == pygame.JOYHATMOTION:
             hat_x, hat_y = event.value
@@ -327,14 +383,16 @@ def process_events():
                 if event.axis in (1, 7) and val != last_axis_y:
                     last_axis_y = val
                     if val != 0 and state.mode == state.MODE_DJ:
-                        vol_delta = -5 if val == 1 else 5
+                        # Reversed per Section 2.1.
+                        vol_delta = 5 if val == 1 else -5
                         handle_dj_volume(vol_delta)
 
                 elif event.axis in (0, 6) and val != last_axis_x:
                     last_axis_x = val
-                    if val != 0 and state.mode == state.MODE_DJ:
-                        vol_delta = 5 if val == 1 else -5
-                        handle_dj_volume(vol_delta)
+                    if val == 1 and state.mode == state.MODE_GAME:
+                        select_quiz_answer(2)
+                    elif val == -1 and state.mode == state.MODE_DJ:
+                        deck_orchestrator.trigger_track_move("next")
 
         elif event.type == pygame.KEYDOWN:
             if event.key == pygame.K_TAB:
@@ -347,8 +405,12 @@ def process_events():
                     handle_dj_volume(5)
                 elif event.key == pygame.K_DOWN:
                     handle_dj_volume(-5)
-                elif event.key == pygame.K_SPACE:
-                    handle_dj_reject_action()
+                elif event.key == pygame.K_RIGHT:
+                    # Keyboard test shim for the X- "Next" axis mapping.
+                    deck_orchestrator.trigger_track_move("next")
+                elif event.key == pygame.K_LEFT:
+                    # Keyboard test shim for the Btn1/2 "Back" mapping.
+                    deck_orchestrator.trigger_track_move("back")
 
             elif state.mode == state.MODE_GAME:
                 if event.key == pygame.K_1:

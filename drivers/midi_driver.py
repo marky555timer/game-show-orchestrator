@@ -75,11 +75,14 @@ def send_midi_cc(control, value):
             print(f"[MIDI TX ERROR] {e}")
 
 
-def trigger_rekordbox_poke():
-    """Sends a MIDI CC#10 Pulse (Note On/Off behavior for Buttons)."""
-    send_midi_cc(10, 127)  # Press down
-    pygame.time.delay(30)
-    send_midi_cc(10, 0)    # Release button
+def send_cc_pulse(control, delay_ms=30):
+    """Sends a press-then-release pulse (val 127 then 0) on a MIDI CC --
+    the shape Rekordbox-style controller mappings expect for a momentary
+    button. Used by the deck-switch TrackSearch triggers in
+    drivers/deck_orchestrator.py."""
+    send_midi_cc(control, 127)
+    pygame.time.delay(delay_ms)
+    send_midi_cc(control, 0)
 
 
 def handle_dj_volume(change):
@@ -90,12 +93,6 @@ def handle_dj_volume(change):
     send_midi_cc(11, midi_val)
     send_midi_cc(12, midi_val)
     print(f"[REKORDBOX MIDI] Volume -> {state.music_volume}% (CC#11 Val:{midi_val})")
-
-
-def handle_dj_reject():
-    """Triggers Rekordbox track skip via CC#10 pulse."""
-    print("[REKORDBOX MIDI POKE] Fire 'NEXT TRACK' (CC#10 Val:127)")
-    trigger_rekordbox_poke()
 
 
 def _midi_input_listener_loop():

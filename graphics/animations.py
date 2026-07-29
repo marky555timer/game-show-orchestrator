@@ -102,6 +102,33 @@ def anim_dancing_cat(surface, rect, t, seed=0.0):
     pygame.draw.line(surface, RED_DIM, (fx + 6, fy + 2 + wig), (fx + 9, fy + 1 + wig))
 
 
+def anim_coin_pop(surface, rect, t, seed=0.0):
+    """A coin popping and fading -- shown on the DJ-mode status panel
+    right after a Btn6 quiz-fetch attempt comes back with "no credits"
+    (any API failure triggered by an explicit fetch request), distinct
+    from the passive anim_dancing_cat failure indicator."""
+    x0, y0, w, h = rect
+    cx, cy = x0 + w // 2, y0 + h // 2
+    period = 0.8
+    phase = ((t + seed) % period) / period
+
+    if phase < 0.35:
+        # Pop upward and outward.
+        rise = int(phase / 0.35 * 6)
+        r = 3 + int(phase / 0.35 * 2)
+        color = RED_FULL
+    else:
+        # Fade back down to nothing.
+        fall_phase = (phase - 0.35) / 0.65
+        rise = int((1.0 - fall_phase) * 6)
+        r = max(1, int((1.0 - fall_phase) * 5))
+        color = RED_FULL if fall_phase < 0.6 else RED_DIM
+
+    coin_y = cy - rise
+    pygame.draw.circle(surface, color, (cx, coin_y), r, 1)
+    pygame.draw.line(surface, color, (cx - 1, coin_y), (cx + 1, coin_y))
+
+
 def anim_star_burst(surface, rect, t, seed=0.0):
     """Five-point star that bursts outward from center then resets --
     shown on the DJ-mode status panel once a real AI-sourced question

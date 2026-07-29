@@ -84,7 +84,7 @@
     <TRACK TrackID="59321749" Name="CYMBAL" Artist="" Composer="" Album=""
            Grouping="" Genre="" Kind="WAV File" Size="543576" TotalTime="2"
            DiscNumber="0" TrackNumber="0" Year="0" AverageBpm="0.00" DateAdded="2024-10-01"
-           BitRate="2116" SampleRate="44100" Comments="" PlayCount="0" Rating="0"
+           BitRate="2116" SampleRate="44100" Comments="" PlayCount="1" Rating="0"
            Location="file://localhost/C:/Users/miste/Music/rekordbox/Sampler/MERGE%20FX/MergeFX%20Sample%20Sound%20104.wav"
            Remixer="" Tonality="" Label="" Mix="">
       <POSITION_MARK Name="" Type="0" Start="0.000" Num="0" Red="255" Green="55" Blue="111"/>
@@ -3541,7 +3541,7 @@
            Composer="" Album="Indigo Girls (Expanded Edition)" Grouping=""
            Genre="" Kind="MP3 File" Size="7830269" TotalTime="241" DiscNumber="1"
            TrackNumber="1" Year="1989" AverageBpm="98.37" DateAdded="2025-09-22"
-           BitRate="256" SampleRate="44100" Comments="" PlayCount="0" Rating="0"
+           BitRate="256" SampleRate="44100" Comments="" PlayCount="1" Rating="0"
            Location="file://localhost/C:/Users/miste/OneDrive/Desktop/Spot%20Music%201/80s%20HITS%20_%20TOP%20100%20SONGS/01%20Closer%20to%20Fine.mp3"
            Remixer="" Tonality="11B" Label="" Mix="">
       <TEMPO Inizio="0.257" Bpm="98.37" Metro="4/4" Battito="1"/>
@@ -3620,7 +3620,7 @@
            Composer="" Album="Up Your Alley" Grouping="" Genre="" Kind="MP3 File"
            Size="8013611" TotalTime="246" DiscNumber="1" TrackNumber="1"
            Year="1988" AverageBpm="118.21" DateAdded="2025-09-22" BitRate="256"
-           SampleRate="44100" Comments="" PlayCount="1" Rating="0" Location="file://localhost/C:/Users/miste/OneDrive/Desktop/Spot%20Music%201/80s%20HITS%20_%20TOP%20100%20SONGS/01%20I%20Hate%20Myself%20for%20Loving%20You.mp3"
+           SampleRate="44100" Comments="" PlayCount="2" Rating="0" Location="file://localhost/C:/Users/miste/OneDrive/Desktop/Spot%20Music%201/80s%20HITS%20_%20TOP%20100%20SONGS/01%20I%20Hate%20Myself%20for%20Loving%20You.mp3"
            Remixer="" Tonality="9A" Label="" Mix="">
       <TEMPO Inizio="0.277" Bpm="118.21" Metro="4/4" Battito="1"/>
     </TRACK>
@@ -3657,7 +3657,7 @@
            Composer="" Album="Raise!" Grouping="" Genre="" Kind="MP3 File"
            Size="10977553" TotalTime="339" DiscNumber="1" TrackNumber="1"
            Year="1981" AverageBpm="124.91" DateAdded="2025-09-22" BitRate="256"
-           SampleRate="44100" Comments="" PlayCount="0" Rating="0" Location="file://localhost/C:/Users/miste/OneDrive/Desktop/Spot%20Music%201/80s%20HITS%20_%20TOP%20100%20SONGS/01%20Let%27s%20Groove.mp3"
+           SampleRate="44100" Comments="" PlayCount="1" Rating="0" Location="file://localhost/C:/Users/miste/OneDrive/Desktop/Spot%20Music%201/80s%20HITS%20_%20TOP%20100%20SONGS/01%20Let%27s%20Groove.mp3"
            Remixer="" Tonality="10A" Label="" Mix="">
       <TEMPO Inizio="0.379" Bpm="124.91" Metro="4/4" Battito="4"/>
       <TEMPO Inizio="0.860" Bpm="124.91" Metro="4/4" Battito="1"/>
@@ -3794,7 +3794,7 @@
            Composer="" Album="The Works (Deluxe Remastered Version)" Grouping=""
            Genre="" Kind="MP3 File" Size="11244144" TotalTime="348" DiscNumber="1"
            TrackNumber="1" Year="1984" AverageBpm="112.32" DateAdded="2025-09-22"
-           BitRate="256" SampleRate="44100" Comments="" PlayCount="0" Rating="0"
+           BitRate="256" SampleRate="44100" Comments="" PlayCount="1" Rating="0"
            Location="file://localhost/C:/Users/miste/OneDrive/Desktop/Spot%20Music%201/80s%20HITS%20_%20TOP%20100%20SONGS/01%20Radio%20Ga%20Ga%20-%20Remastered%202011.mp3"
            Remixer="" Tonality="7B" Label="" Mix="">
       <TEMPO Inizio="0.305" Bpm="112.32" Metro="4/4" Battito="3"/>
@@ -3900,7 +3900,7 @@
            Album="Patty Smyth&apos;s Greatest Hits Featuring Scandal" Grouping=""
            Genre="" Kind="MP3 File" Size="7731844" TotalTime="237" DiscNumber="1"
            TrackNumber="1" Year="1998" AverageBpm="122.92" DateAdded="2025-09-22"
-           BitRate="256" SampleRate="44100" Comments="" PlayCount="0" Rating="0"
+           BitRate="256" SampleRate="44100" Comments="" PlayCount="1" Rating="0"
            Location="file://localhost/C:/Users/miste/OneDrive/Desktop/Spot%20Music%201/80s%20HITS%20_%20TOP%20100%20SONGS/01%20The%20Warrior.mp3"
            Remixer="" Tonality="10B" Label="" Mix="">
       <TEMPO Inizio="0.080" Bpm="122.92" Metro="4/4" Battito="1"/>
@@ -3910,7 +3910,7 @@
            Album="The Razors Edge" Grouping="" Genre="" Kind="MP3 File"
            Size="9504559" TotalTime="292" DiscNumber="1" TrackNumber="1"
            Year="1990" AverageBpm="133.32" DateAdded="2025-09-22" BitRate="256"
-           SampleRate="44100" Comments="" PlayCount="0" Rating="0" Location="file://localhost/C:/Users/miste/OneDrive/Desktop/Spot%20Music%201/80s%20HITS%20_%20TOP%20100%20SONGS/01%20Thunderstruck.mp3"
+           SampleRate="44100" Comments="" PlayCount="2" Rating="0" Location="file://localhost/C:/Users/miste/OneDrive/Desktop/Spot%20Music%201/80s%20HITS%20_%20TOP%20100%20SONGS/01%20Thunderstruck.mp3"
            Remixer="" Tonality="10A" Label="" Mix="">
       <TEMPO Inizio="0.110" Bpm="133.32" Metro="4/4" Battito="4"/>
       <TEMPO Inizio="52.314" Bpm="133.32" Metro="4/4" Battito="4"/>
@@ -3960,7 +3960,7 @@
            Composer="" Album="Business As Usual" Grouping="" Genre="" Kind="MP3 File"
            Size="6621991" TotalTime="201" DiscNumber="1" TrackNumber="1"
            Year="1981" AverageBpm="128.78" DateAdded="2025-09-22" BitRate="256"
-           SampleRate="44100" Comments="" PlayCount="1" Rating="0" Location="file://localhost/C:/Users/miste/OneDrive/Desktop/Spot%20Music%201/80s%20HITS%20_%20TOP%20100%20SONGS/01%20Who%20Can%20It%20Be%20Now_.mp3"
+           SampleRate="44100" Comments="" PlayCount="2" Rating="0" Location="file://localhost/C:/Users/miste/OneDrive/Desktop/Spot%20Music%201/80s%20HITS%20_%20TOP%20100%20SONGS/01%20Who%20Can%20It%20Be%20Now_.mp3"
            Remixer="" Tonality="12B" Label="" Mix="">
       <TEMPO Inizio="0.326" Bpm="128.78" Metro="4/4" Battito="1"/>
     </TRACK>
@@ -3985,7 +3985,7 @@
            Album="Mystery Girl" Grouping="" Genre="" Kind="MP3 File" Size="6789231"
            TotalTime="209" DiscNumber="1" TrackNumber="1" Year="1989" AverageBpm="114.70"
            DateAdded="2025-09-22" BitRate="256" SampleRate="44100" Comments=""
-           PlayCount="0" Rating="0" Location="file://localhost/C:/Users/miste/OneDrive/Desktop/Spot%20Music%201/80s%20HITS%20_%20TOP%20100%20SONGS/01%20You%20Got%20It.mp3"
+           PlayCount="1" Rating="0" Location="file://localhost/C:/Users/miste/OneDrive/Desktop/Spot%20Music%201/80s%20HITS%20_%20TOP%20100%20SONGS/01%20You%20Got%20It.mp3"
            Remixer="" Tonality="11B" Label="" Mix="">
       <TEMPO Inizio="0.030" Bpm="114.70" Metro="4/4" Battito="4"/>
       <TEMPO Inizio="37.694" Bpm="114.70" Metro="4/4" Battito="4"/>
@@ -4017,7 +4017,7 @@
            Composer="" Album="Lost in Love" Grouping="" Genre="" Kind="MP3 File"
            Size="7925448" TotalTime="243" DiscNumber="1" TrackNumber="2"
            Year="1980" AverageBpm="109.01" DateAdded="2025-09-22" BitRate="256"
-           SampleRate="44100" Comments="" PlayCount="0" Rating="0" Location="file://localhost/C:/Users/miste/OneDrive/Desktop/Spot%20Music%201/80s%20HITS%20_%20TOP%20100%20SONGS/02%20All%20Out%20of%20Love.mp3"
+           SampleRate="44100" Comments="" PlayCount="1" Rating="0" Location="file://localhost/C:/Users/miste/OneDrive/Desktop/Spot%20Music%201/80s%20HITS%20_%20TOP%20100%20SONGS/02%20All%20Out%20of%20Love.mp3"
            Remixer="" Tonality="8B" Label="" Mix="">
       <TEMPO Inizio="0.411" Bpm="109.01" Metro="4/4" Battito="4"/>
       <TEMPO Inizio="18.575" Bpm="109.01" Metro="4/4" Battito="1"/>
@@ -4079,7 +4079,7 @@
            Composer="" Album="Eye In The Sky (Expanded Edition)" Grouping=""
            Genre="" Kind="MP3 File" Size="8886492" TotalTime="276" DiscNumber="1"
            TrackNumber="2" Year="1982" AverageBpm="111.73" DateAdded="2025-09-22"
-           BitRate="256" SampleRate="44100" Comments="" PlayCount="0" Rating="0"
+           BitRate="256" SampleRate="44100" Comments="" PlayCount="1" Rating="0"
            Location="file://localhost/C:/Users/miste/OneDrive/Desktop/Spot%20Music%201/80s%20HITS%20_%20TOP%20100%20SONGS/02%20Eye%20In%20The%20Sky.mp3"
            Remixer="" Tonality="10B" Label="" Mix="">
       <TEMPO Inizio="0.298" Bpm="111.73" Metro="4/4" Battito="1"/>
@@ -6905,7 +6905,7 @@
            Album="Big Willie Style" Grouping="" Genre="" Kind="MP3 File"
            Size="6436732" TotalTime="197" DiscNumber="1" TrackNumber="8"
            Year="1997" AverageBpm="108.16" DateAdded="2025-09-22" BitRate="256"
-           SampleRate="44100" Comments="" PlayCount="1" Rating="0" Location="file://localhost/C:/Users/miste/OneDrive/Desktop/Spot%20Music%201/90s%20HITS%20_%20TOP%20100%20SONGS/08%20Miami.mp3"
+           SampleRate="44100" Comments="" PlayCount="2" Rating="0" Location="file://localhost/C:/Users/miste/OneDrive/Desktop/Spot%20Music%201/90s%20HITS%20_%20TOP%20100%20SONGS/08%20Miami.mp3"
            Remixer="" Tonality="3A" Label="" Mix="">
       <TEMPO Inizio="0.215" Bpm="108.16" Metro="4/4" Battito="1"/>
     </TRACK>
@@ -8056,7 +8056,7 @@
            Composer="" Album="#willpower" Grouping="" Genre="" Kind="MP3 File"
            Size="9179218" TotalTime="283" DiscNumber="1" TrackNumber="4"
            Year="2013" AverageBpm="130.00" DateAdded="2025-09-22" BitRate="256"
-           SampleRate="44100" Comments="" PlayCount="0" Rating="0" Location="file://localhost/C:/Users/miste/OneDrive/Desktop/Spot%20Music%201/2000s%20Throwbacks%20(Top%20100%20Hits)/04%20Scream%20%26%20Shout.mp3"
+           SampleRate="44100" Comments="" PlayCount="1" Rating="0" Location="file://localhost/C:/Users/miste/OneDrive/Desktop/Spot%20Music%201/2000s%20Throwbacks%20(Top%20100%20Hits)/04%20Scream%20%26%20Shout.mp3"
            Remixer="" Tonality="6A" Label="" Mix="">
       <TEMPO Inizio="0.221" Bpm="130.00" Metro="4/4" Battito="1"/>
     </TRACK>
@@ -8409,7 +8409,7 @@
            Album="All That You Can&apos;t Leave Behind" Grouping="" Genre=""
            Kind="MP3 File" Size="7978955" TotalTime="246" DiscNumber="1"
            TrackNumber="1" Year="2000" AverageBpm="136.26" DateAdded="2025-09-22"
-           BitRate="256" SampleRate="44100" Comments="" PlayCount="0" Rating="0"
+           BitRate="256" SampleRate="44100" Comments="" PlayCount="1" Rating="0"
            Location="file://localhost/C:/Users/miste/OneDrive/Desktop/Spot%20Music%201/2000s%20Throwbacks%20(Top%20100%20Hits)/01%20Beautiful%20Day.mp3"
            Remixer="" Tonality="11B" Label="" Mix="">
       <TEMPO Inizio="0.074" Bpm="136.26" Metro="4/4" Battito="2"/>
@@ -13931,7 +13931,7 @@
            Grouping="" Genre="" Kind="MP3 File" Size="6679693" TotalTime="204"
            DiscNumber="1" TrackNumber="3" Year="2009" AverageBpm="132.00"
            DateAdded="2025-09-26" BitRate="256" SampleRate="44100" Comments=""
-           PlayCount="1" Rating="0" Location="file://localhost/C:/Users/miste/OneDrive/Desktop/Spot%20Music%201/House%20Techno%20Mix/03%20Heads%20Will%20Roll%20-%20A-Trak%20Remix%20Radio%20Edit.mp3"
+           PlayCount="2" Rating="0" Location="file://localhost/C:/Users/miste/OneDrive/Desktop/Spot%20Music%201/House%20Techno%20Mix/03%20Heads%20Will%20Roll%20-%20A-Trak%20Remix%20Radio%20Edit.mp3"
            Remixer="" Tonality="1A" Label="" Mix="">
       <TEMPO Inizio="0.356" Bpm="132.00" Metro="4/4" Battito="1"/>
     </TRACK>
@@ -16286,7 +16286,7 @@
            Artist="" Composer="" Album="" Grouping="" Genre="" Kind="MP3 File"
            Size="3235768" TotalTime="134" DiscNumber="0" TrackNumber="0"
            Year="0" AverageBpm="155.00" DateAdded="2026-06-13" BitRate="192"
-           SampleRate="44100" Comments="" PlayCount="1" Rating="0" Location="file://localhost/C:/Users/miste/Music/DJ%20ANI%20from%20Germany/Majes,%20KX%20CHR%20-%20FAKE%20DOCTOR%20(Official%20Music%20Video).mp3"
+           SampleRate="44100" Comments="" PlayCount="2" Rating="0" Location="file://localhost/C:/Users/miste/Music/DJ%20ANI%20from%20Germany/Majes,%20KX%20CHR%20-%20FAKE%20DOCTOR%20(Official%20Music%20Video).mp3"
            Remixer="" Tonality="6A" Label="" Mix="">
       <TEMPO Inizio="0.284" Bpm="155.00" Metro="4/4" Battito="4"/>
       <TEMPO Inizio="1.833" Bpm="155.00" Metro="4/4" Battito="4"/>
@@ -16318,7 +16318,7 @@
            Album="" Grouping="" Genre="" Kind="MP3 File" Size="3561938"
            TotalTime="206" DiscNumber="0" TrackNumber="0" Year="0" AverageBpm="154.94"
            DateAdded="2026-06-13" BitRate="32" SampleRate="44100" Comments=""
-           PlayCount="3" Rating="0" Location="file://localhost/C:/Users/miste/Music/DJ%20ANI%20from%20Germany/Party%20In%20L.A..mp3"
+           PlayCount="4" Rating="0" Location="file://localhost/C:/Users/miste/Music/DJ%20ANI%20from%20Germany/Party%20In%20L.A..mp3"
            Remixer="" Tonality="1A" Label="" Mix="">
       <TEMPO Inizio="0.219" Bpm="154.94" Metro="4/4" Battito="1"/>
       <TEMPO Inizio="50.560" Bpm="154.94" Metro="4/4" Battito="3"/>

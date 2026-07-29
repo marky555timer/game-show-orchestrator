@@ -2,17 +2,20 @@ import time
 import pygame
 from config import (
     MATRIX_WIDTH, MATRIX_HEIGHT, PIXEL_SCALE, GAP, WINDOW_W, WINDOW_H,
-    RED_FULL, RED_DIM, RED_OFF, BLACK, PANELS, TOP_COMBINED,
+    RED_FULL, RED_DIM, RED_OFF, BLACK, PANELS, TOP_COMBINED, BOTTOM_COMBINED,
     TOP_CYCLE_TRACK_SECONDS, TOP_CYCLE_FACTOID_SECONDS,
     STATUS_PANEL_HOLD_SECONDS, TOP_SHOW_FACTOID_PAGE,
+    TEMPO_FLASH_DECAY_SECONDS, QUIZ_CELEBRATION_HOLD_SECONDS, QUIZ_STATS_HOLD_SECONDS,
+    BRANDING_OVERLAY_INTERVAL_SECONDS, BRANDING_OVERLAY_DURATION_SECONDS,
 )
 from state import state
 from drivers.rekordbox_driver import get_rekordbox_track
-from drivers.factoid_engine import request_factoid, build_mock_question
+from drivers.factoid_engine import build_mock_question
+from drivers.branding_engine import get_current_text
 from graphics.text_render import draw_marquee, wrap_two_lines
 from graphics.animations import (
     render_panel_animation, deal_panel_animations,
-    anim_dancing_cat, anim_star_burst,
+    anim_dancing_cat, anim_star_burst, anim_coin_pop,
 )
 
 # Initialize Pygame Display Engine
@@ -62,8 +65,9 @@ def _render_dj_mode(t):
 
     song_title, artist_name = _current_track()
 
-    confident = state.deck1_confident if state.active_deck == 1 else state.deck2_confident
-    request_factoid(song_title, artist_name, confident)
+    # Quiz/factoid content is no longer fetched automatically here -- it's
+    # gated behind DJ-mode Btn6 (see inputs/gamepad.py::handle_quiz_gate_button),
+    # so no API call is spent just by having a confident track on screen.
     has_factoid = bool(state.factoid_headline)
 
     track_key = f"{song_title}|{artist_name}"
@@ -103,14 +107,19 @@ def _render_dj_mode(t):
         _status_signature = signature
         _status_until = (t + STATUS_PANEL_HOLD_SECONDS) if kind else 0.0
 
-    for pid in (3, 4, 5, 6):
-        rect = PANELS[pid]
-        if pid == 6 and t < state.vol_overlay_until:
-            _draw_volume_overlay(rect)
-        elif pid == 3 and kind and t < _status_until:
-            _render_status_panel(rect, t, kind)
-        else:
-            render_panel_animation(matrix_surface, pid, rect, t)
+    if _branding_overlay_active(t) and get_current_text():
+        draw_marquee(matrix_surface, "dj_branding_ticker", get_current_text(), BOTTOM_COMBINED)
+    else:
+        for pid in (3, 4, 5, 6):
+            rect = PANELS[pid]
+            if pid == 6 and t < state.vol_overlay_until:
+                _draw_volume_overlay(rect)
+            elif pid == 3 and kind and t < _status_until:
+                _render_status_panel(rect, t, kind)
+            else:
+                render_panel_animation(matrix_surface, pid, rect, t)
+
+    _draw_tempo_flash(t)
 
 
 # Statuses that just mean "nothing to report yet" -- not an AI failure, so
@@ -121,9 +130,12 @@ _AI_BENIGN_STATUSES = ("", "NO CONFIDENT TRACK ID", "FETCHING FACTOID...")
 
 def _status_kind():
     """Which AI-pipeline indicator panel 3 owes the room right now:
-    "fail" if the factoid/question request failed or is unavailable, "ok" once
-    a real AI-sourced question has loaded for the current track, or None when
+    "credit" if a Btn6-triggered fetch just failed (out of credits/API
+    error), "fail" for any other factoid/question failure, "ok" once a real
+    AI-sourced question has loaded for the current track, or None when
     there's nothing to report (panel 3 then just animates)."""
+    if state.coin_pop_flash_until and time.time() < state.coin_pop_flash_until:
+        return "credit"
     if state.factoid_status not in _AI_BENIGN_STATUSES:
         return "fail"
     if state.factoid_headline and not state.quiz_is_test:
@@ -136,16 +148,44 @@ def _render_status_panel(rect, t, kind):
     pipeline: a bursting star once a real question has loaded for the current
     track, a dancing cat face if the AI request failed or is unavailable (the
     reason is also echoed loudly to the console -- see
-    drivers/factoid_engine.py)."""
+    drivers/factoid_engine.py), or a coin-pop specifically when a Btn6 quiz
+    fetch attempt itself just failed ("out of credits")."""
     old_clip = matrix_surface.get_clip()
     matrix_surface.set_clip(pygame.Rect(rect))
     try:
-        if kind == "fail":
+        if kind == "credit":
+            anim_coin_pop(matrix_surface, rect, t)
+        elif kind == "fail":
             anim_dancing_cat(matrix_surface, rect, t)
         else:
             anim_star_burst(matrix_surface, rect, t)
     finally:
         matrix_surface.set_clip(old_clip)
+
+
+def _branding_overlay_active(t):
+    """Every BRANDING_OVERLAY_INTERVAL_SECONDS, for the first
+    BRANDING_OVERLAY_DURATION_SECONDS of that window, the branding ticker
+    takes over panels 3-6 in place of the idle-animation rotation."""
+    if BRANDING_OVERLAY_INTERVAL_SECONDS <= 0:
+        return False
+    phase = t % BRANDING_OVERLAY_INTERVAL_SECONDS
+    return phase < BRANDING_OVERLAY_DURATION_SECONDS
+
+
+def _draw_tempo_flash(t):
+    """Btn5 tap-tempo visual feedback: a red outline on panels 3-6 that
+    fades to 0 over TEMPO_FLASH_DECAY_SECONDS from the moment of the tap."""
+    if not state.tempo_flash_at:
+        return
+    elapsed = t - state.tempo_flash_at
+    if elapsed >= TEMPO_FLASH_DECAY_SECONDS:
+        return
+    intensity = 1.0 - (elapsed / TEMPO_FLASH_DECAY_SECONDS)
+    color = tuple(int(c * intensity) for c in RED_FULL)
+    for pid in (3, 4, 5, 6):
+        x0, y0, w, h = PANELS[pid]
+        pygame.draw.rect(matrix_surface, color, (x0, y0, w, h), 1)
 
 
 def _draw_volume_overlay(rect):
@@ -210,24 +250,41 @@ def _draw_demo_winner_hint(rect, key, text, t):
     draw_marquee(matrix_surface, key, text, rect)
 
 
+def _render_quiz_stats_or_return(t, elapsed):
+    """Called once the win/loss celebration window has elapsed. Shows a
+    "SCORE: X/Y" stats page on panels 1+2 for QUIZ_STATS_HOLD_SECONDS, then
+    auto-returns to DJ mode (the Btn6-only quiz mode flow)."""
+    stats_elapsed = elapsed - QUIZ_CELEBRATION_HOLD_SECONDS
+    if stats_elapsed < QUIZ_STATS_HOLD_SECONDS:
+        tx, ty, tw, th = TOP_COMBINED
+        line1_rect = (tx, ty, tw, LINE_H)
+        line2_rect = (tx, ty + LINE_H, tw, LINE_H)
+        score_line = f"SCORE: {state.quiz_score_correct}/{state.quiz_score_total}"
+        was_correct = state.quiz_selected_index == state.factoid_correct_index
+        draw_marquee(matrix_surface, "quiz_stats1", score_line, line1_rect, align="center")
+        draw_marquee(matrix_surface, "quiz_stats2",
+                     "NICE ROUND!" if was_correct else "TRY AGAIN!", line2_rect, align="center")
+        return
+
+    # Reset rule: Fixture 1 -> black (lighting_engine.py also forces this
+    # every frame in DJ mode; this just makes the intent explicit here).
+    state.mode = state.MODE_DJ
+    state.fixture1_mode = "off"
+    state.quiz_locked = False
+    state.quiz_selected_index = -1
+    state.active_option = None
+    state.set_message("MODE: DJ", 1.5)
+    print("[QUIZ] Round complete -- auto-returning to DJ mode.")
+
+
 def _render_quiz_mode(t):
-    # Quiz mode has to drive the factoid/question pipeline too. Previously
-    # only _render_dj_mode called request_factoid(), so a host who booted
-    # straight into GAME mode -- or who stayed in GAME mode across a track
-    # change -- never triggered an AI request and was stuck on the local TEST
-    # placeholder question forever, no matter how good the API key was.
-    # ...but only between rounds. request_factoid() resets the question and the
-    # selection whenever the active track changes, and the crossfader watch is
-    # deliberately hyper-sensitive (any pixel change at the fader flips
-    # state.active_deck -- see rekordbox_driver), so a nudged fader used to swap
-    # the question out from under the host mid-round. While an answer is armed
-    # or graded the content is frozen; Btn6 / 'C' ends the round and the next
-    # track's question loads on the following frame.
-    round_in_progress = state.quiz_locked or state.quiz_selected_index >= 0
-    if not round_in_progress:
-        song_title, artist_name = _current_track()
-        confident = state.deck1_confident if state.active_deck == 1 else state.deck2_confident
-        request_factoid(song_title, artist_name, confident)
+    # Quiz content is loaded once, up front, by the Btn6 gate in
+    # inputs/gamepad.py -- no per-frame fetching happens here anymore.
+    if state.quiz_locked:
+        elapsed = t - state.quiz_graded_at
+        if elapsed >= QUIZ_CELEBRATION_HOLD_SECONDS:
+            _render_quiz_stats_or_return(t, elapsed)
+            return
 
     _ensure_quiz_content()
 

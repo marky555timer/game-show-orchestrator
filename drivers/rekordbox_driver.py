@@ -253,15 +253,6 @@ class RekordboxSanitizedOcrDriver:
             json={
                 "model": config.AI_CLEANUP_MODEL,
                 "max_tokens": 120,
-                # Sonnet 5 runs adaptive thinking by default when "thinking"
-                # is omitted, and max_tokens caps thinking + output COMBINED.
-                # On a tiny budget that can burn the whole allowance before a
-                # single character of 'Title|Artist' is written, so this
-                # returns empty text -> no cleanup -> the deck never becomes
-                # "confident" -> no factoid or quiz question is ever requested
-                # for the track. Cleanup is a formatting task, not a reasoning
-                # task, so disabling thinking is both correct and cheaper.
-                "thinking": {"type": "disabled"},
                 "messages": [{"role": "user", "content": prompt}],
             },
             timeout=config.AI_CLEANUP_TIMEOUT_SECONDS,

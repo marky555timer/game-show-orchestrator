@@ -90,7 +90,11 @@ VOLUME_HOLD_REPEAT_INTERVAL_SECONDS = 0.10
 #   $env:ANTHROPIC_API_KEY = "sk-ant-..."
 # Never hardcode the key here directly.
 ANTHROPIC_API_KEY = os.environ.get("ANTHROPIC_API_KEY", "")
-AI_CLEANUP_MODEL = "claude-sonnet-5"
+# Runtime features (title cleanup, factoid/quiz generation) are cost-gated to
+# Haiku -- this app never spends Sonnet-tier tokens on its own background
+# calls. claude-3-5-haiku-20241022 was retired 2026-02-19; claude-haiku-4-5
+# is its direct replacement.
+AI_CLEANUP_MODEL = "claude-haiku-4-5"
 
 # Master on/off switch. If False, the background AI cleanup worker never
 # starts and everything falls back to the existing regex/XML sanitizer only.
@@ -151,11 +155,96 @@ BLACK = (0, 0, 0)
 # only, distinguished by brightness and motion (pulsing/blinking)
 # instead of hue.
 
-# Neutral "armed" DMX color shown the instant an answer is selected,
-# before grading. Kept distinct from the green win celebration so hosts
-# never confuse "selected" with "correct".
-QUIZ_SELECT_DMX_RGB = (60, 110, 255)
-QUIZ_SELECT_DMX_DIMMER = 200
+# NOTE: Fixture 1 no longer changes color on answer-select (retired in favor
+# of a strict win/pulsing-green -> loss/solid-red -> reset/black indicator
+# lamp) -- "armed" feedback is now shown purely on the LED matrix panel via
+# _draw_selected_panel(). See drivers/lighting_engine.py.
+
+# How long the win/loss celebration (matrix pulse + DMX) holds before the
+# quiz mode shows the score-stats page on panels 1+2.
+QUIZ_CELEBRATION_HOLD_SECONDS = 2.5
+
+# How long the "SCORE: X/Y" stats page holds on panels 1+2 after grading,
+# before the app auto-returns to DJ mode.
+QUIZ_STATS_HOLD_SECONDS = 3.0
+
+# ==========================================
+# GAMEPAD BUTTON DEBOUNCE (Btns 5-8)
+# ==========================================
+BUTTON_DEBOUNCE_SECONDS = 0.15
+
+# ==========================================
+# DMX: 11-FIXTURE / 176-CHANNEL RIG
+# ==========================================
+# Fixture 1 (ch 1-16): GenericRGB Par, WIN/LOSS indicator lamp only.
+# Fixtures 2-11 (16ch each): Rockville MINIRF4 V2 uplighting.
+DMX_FIXTURE_CHANNELS = 16
+DMX_NUM_FIXTURES = 11
+DMX_TOTAL_CHANNELS = DMX_FIXTURE_CHANNELS * DMX_NUM_FIXTURES  # 176
+
+# Tap-tempo: rolling window of taps used to compute the period, and the
+# sane clamp range so a mis-tap can't produce a silly-fast/slow oscillation.
+TEMPO_TAP_WINDOW = 4
+TEMPO_PERIOD_MIN_SECONDS = 0.25
+TEMPO_PERIOD_MAX_SECONDS = 2.0
+TEMPO_PERIOD_DEFAULT_SECONDS = 0.6
+
+# Tempo-tap visual feedback: red flash outline on panels 3-6 decays to 0
+# over this long from the moment Btn5 is held.
+TEMPO_FLASH_DECAY_SECONDS = 0.1
+
+# DJ-mode uplighting: 4 themes + an "ALL LIGHTS OFF" stop in the cycle.
+DJ_THEME_COUNT = 4
+DJ_THEME_ALL_OFF_INDEX = DJ_THEME_COUNT  # index 4 == all lights off
+
+# DJ-mode main theme color palette, cycled by Btn7.
+DJ_COLOR_PALETTE = [
+    (255, 0, 0),      # red
+    (255, 120, 0),    # amber
+    (255, 255, 0),    # yellow
+    (0, 255, 60),      # green
+    (0, 180, 255),    # cyan/blue
+    (160, 0, 255),    # purple
+    (255, 0, 160),    # magenta
+]
+
+# Game-mode chase pace (seconds per step across fixtures 2-11).
+CHASE_PACE_MID_SECONDS = 0.12
+CHASE_PACE_FAST_SECONDS = 0.05
+CHASE_PACE_SLOW_SECONDS = 0.28
+
+# ==========================================
+# MIDI DECK-SWITCH / CROSSFADER AUTOMATION
+# ==========================================
+MIDI_CC_DECK1_NEXT = 0x0A  # 10
+MIDI_CC_DECK1_BACK = 0x09  # 9
+MIDI_CC_DECK2_NEXT = 0x08  # 8
+MIDI_CC_DECK2_BACK = 0x07  # 7
+MIDI_CC_CROSSFADER = 0x0D  # 13
+
+# Time given for Rekordbox to load the searched track before the crossfader
+# starts moving.
+TRACK_LOAD_WAIT_SECONDS = 3.0
+CROSSFADER_TWEEN_DURATION_SECONDS = 1.5
+
+# ==========================================
+# BRANDING TICKER (DJ mode, bottom panels)
+# ==========================================
+BRANDING_URL = "https://yannitellphotography.com/wp-content/dj/branding.txt"
+BRANDING_CACHE_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "branding_cache.txt")
+BRANDING_FETCH_EVERY_N_DECK_CHANGES = 3
+BRANDING_FETCH_TIMEOUT_SECONDS = 4.0
+BRANDING_OVERLAY_INTERVAL_SECONDS = 20.0
+BRANDING_OVERLAY_DURATION_SECONDS = 5.0
+
+# Bottom row (panels 3-6) treated as one logical wide surface for the
+# branding ticker, mirroring TOP_COMBINED for the top pair.
+BOTTOM_COMBINED = (0, BOTTOM_ROW_Y, BOTTOM_ROW_WIDTH, PANEL_H)
+
+# ==========================================
+# OFFLINE QUIZ FALLBACK
+# ==========================================
+FALLBACK_QUESTIONS_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "fallback_questions.json")
 
 # ==========================================
 # BITMAP PIXEL FONT ENGINE (5x7 Grid)
