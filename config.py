@@ -173,6 +173,11 @@ QUIZ_STATS_HOLD_SECONDS = 3.0
 # ==========================================
 BUTTON_DEBOUNCE_SECONDS = 0.15
 
+# Btn6 (quiz-gate fetch trigger) launches an API call and plays audio on
+# every accepted press -- a wider guard than the other buttons so a single
+# physical press can never stack duplicate fetches/sounds.
+QUIZ_GATE_DEBOUNCE_SECONDS = 0.4
+
 # ==========================================
 # DMX: 11-FIXTURE / 176-CHANNEL RIG
 # ==========================================

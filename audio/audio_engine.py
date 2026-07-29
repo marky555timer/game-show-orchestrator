@@ -36,14 +36,25 @@ def apply_reverb_to_sound(sound, delay_ms=45, decay=0.45, num_reflections=4):
         print(f"[REVERB ERROR] Could not apply DSP filter: {e}")
         return sound
 
-def load_sound(filepath, fallback_freq=440):
-    """Loads a WAV file from disk or generates a fallback sine wave if file is missing."""
+def load_sound(filepath, fallback_freq=440, fallback_sound_fn=None):
+    """Loads a WAV file from disk, explicitly logging success/failure.
+    Falls back to `fallback_sound_fn()` if given (e.g. a synthesized
+    stand-in), otherwise a plain sine-wave tone -- either way, a missing
+    or corrupt asset can never crash startup or leave a call site with
+    no Sound object to play()."""
     if os.path.exists(filepath):
         try:
-            return pygame.mixer.Sound(filepath)
+            sound = pygame.mixer.Sound(filepath)
+            print(f"[AUDIO] Preloaded {filepath}")
+            return sound
         except Exception as e:
             print(f"[AUDIO ERROR] Failed to load {filepath}: {e}")
-    
+    else:
+        print(f"[AUDIO ERROR] {filepath} not found on disk -- using fallback tone")
+
+    if fallback_sound_fn is not None:
+        return fallback_sound_fn()
+
     sample_rate = 44100
     n_samples = int(sample_rate * 0.4)
     buf = array.array('h', [0] * (n_samples * 2))
@@ -105,9 +116,9 @@ def generate_low_beep_sound():
 raw_buzzer = load_sound("audio/buzzer.wav", fallback_freq=120)
 raw_ding = load_sound("audio/dingSingle.wav", fallback_freq=880)
 raw_bigwin = load_sound("audio/bigWin.wav", fallback_freq=523)
+raw_coin = load_sound("audio/mario_coin.wav", fallback_sound_fn=generate_coin_sound)
 raw_clear = generate_low_clear_sound()
-raw_coin = generate_coin_sound()
-raw_low_beep = generate_low_beep_sound()
+raw_buzz_short = load_sound("audio/buzzShort.wav", fallback_sound_fn=generate_low_beep_sound)
 
 def play_processed_sound(sound_asset, volume=1.0):
     """Plays audio asset through the active reverb DSP filter if enabled,

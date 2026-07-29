@@ -2,7 +2,7 @@ import time
 import pygame
 from config import (
     VOLUME_HOLD_INITIAL_DELAY_SECONDS, VOLUME_HOLD_REPEAT_INTERVAL_SECONDS,
-    BUTTON_DEBOUNCE_SECONDS, TEMPO_TAP_WINDOW,
+    BUTTON_DEBOUNCE_SECONDS, QUIZ_GATE_DEBOUNCE_SECONDS, TEMPO_TAP_WINDOW,
     TEMPO_PERIOD_MIN_SECONDS, TEMPO_PERIOD_MAX_SECONDS,
     DJ_THEME_COUNT, DJ_COLOR_PALETTE,
     QUIZ_CELEBRATION_HOLD_SECONDS,
@@ -14,7 +14,7 @@ from drivers.factoid_engine import request_factoid, build_mock_question
 from drivers import deck_orchestrator
 from audio.audio_engine import (
     play_processed_sound, raw_buzzer, raw_bigwin, raw_clear, raw_ding,
-    raw_coin, raw_low_beep, stop_previous_audio, reverb_enabled
+    raw_coin, raw_buzz_short, stop_previous_audio, reverb_enabled
 )
 
 # Statuses that just mean "nothing to report yet" -- not a real API failure.
@@ -162,19 +162,25 @@ def _current_dj_track():
     return str(track_info), ""
 
 def handle_quiz_gate_button():
-    """Btn6 in DJ mode: first press fetches a quiz question (spends one
-    API call), second press (once the fetch resolves successfully) enters
-    Quiz Mode. Any API failure is treated as "out of credits" -- see
-    _process_quiz_gate() for the sound/animation reaction."""
+    """Btn6 in DJ mode: every accepted press plays an immediate confirmation
+    chime BEFORE anything async happens -- the sound never waits on the
+    fetch or cache lookup, and playback is wrapped so a mixer hiccup can
+    never block the state transition below it.
+
+    If no fetch is already in flight, this also kicks off the (already
+    async/non-blocking) quiz-question fetch. _process_quiz_gate() polls the
+    result every frame: success auto-enters GAME_MODE the instant the
+    question is ready (no second press needed), failure plays buzzShort.wav
+    and leaves the DJ in DJ mode so the show never freezes."""
     if state.mode != state.MODE_DJ:
         return
 
-    if state.quiz_gate_status == "ready":
-        state.mode = state.MODE_GAME
-        state.quiz_gate_status = "idle"
-        state.set_message("QUIZ MODE", 1.0)
-        print("[ACTION] Btn6 -> ENTER QUIZ MODE")
-        return
+    print(f"[BUTTON] Btn6 pressed. quiz_gate_status={state.quiz_gate_status!r}")
+
+    try:
+        play_processed_sound(raw_coin, volume=1.0)
+    except Exception as e:
+        print(f"[AUDIO ERROR] Btn6 coin chime failed to play: {e}")
 
     if state.quiz_gate_status == "fetching":
         print("[ACTION] Btn6 pressed while a quiz fetch is already in flight.")
@@ -201,13 +207,15 @@ def _process_quiz_gate():
         return
 
     if state.factoid_status == "" and state.factoid_headline:
-        state.quiz_gate_status = "ready"
-        play_processed_sound(raw_coin, volume=0.3)
-        state.set_message("QUESTION READY -- PRESS BTN6 AGAIN", 1.5)
+        state.quiz_gate_status = "idle"
+        state.mode = state.MODE_GAME
+        state.set_message("QUIZ MODE", 1.0)
+        print("[BUTTON] Btn6 fetch resolved -> auto-entering GAME_MODE")
     elif state.factoid_status not in _BENIGN_QUIZ_GATE_STATUSES:
-        state.quiz_gate_status = "error"
+        state.quiz_gate_status = "idle"
+        print(f"[BUTTON] Btn6 fetch failed -> staying in DJ mode ({state.factoid_status!r})")
         state.coin_pop_flash_until = time.time() + 2.0
-        play_processed_sound(raw_low_beep)
+        play_processed_sound(raw_buzz_short, volume=1.0)
         state.set_message("OUT OF CREDITS / API ERROR", 1.5)
 
 # ------------------------------------------
@@ -244,10 +252,10 @@ def handle_theme_cycle():
 # ------------------------------------------
 # BUTTON DEBOUNCE (Btns 5-8, Section 5.3)
 # ------------------------------------------
-def _debounced(btn_index):
+def _debounced(btn_index, min_interval=BUTTON_DEBOUNCE_SECONDS):
     now = time.time()
     last = state.last_button_press_time.get(btn_index, 0.0)
-    if now - last < BUTTON_DEBOUNCE_SECONDS:
+    if now - last < min_interval:
         return False
     state.last_button_press_time[btn_index] = now
     return True
@@ -345,7 +353,7 @@ def process_events():
                     if _debounced(btn):
                         handle_tempo_tap()
                 elif btn == 5:  # Physical Btn6: quiz fetch / enter
-                    if _debounced(btn):
+                    if _debounced(btn, QUIZ_GATE_DEBOUNCE_SECONDS):
                         handle_quiz_gate_button()
                 elif btn == 6:  # Physical Btn7: color cycle
                     if _debounced(btn):

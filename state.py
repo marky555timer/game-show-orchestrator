@@ -47,8 +47,8 @@ class State:
         # the select/grade/DMX flow can still be tested end-to-end.
         self.quiz_is_test = False
 
-        # --- Quiz API gate (Btn6 in DJ mode: fetch, then enter) ---
-        self.quiz_gate_status = "idle"   # idle | fetching | ready | error
+        # --- Quiz API gate (Btn6 in DJ mode: fetch, auto-enters on success) ---
+        self.quiz_gate_status = "idle"   # idle | fetching
         self.quiz_gate_key = ""
         self.coin_pop_flash_until = 0.0  # panel-3 "out of credits" indicator
 
