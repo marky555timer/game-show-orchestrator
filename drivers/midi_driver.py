@@ -1,7 +1,10 @@
 import time
 import threading
 import pygame.midi
-from config import MIDI_PORT_NAME, VOLUME_OVERLAY_HOLD_SECONDS
+from config import (
+    MIDI_PORT_NAME, VOLUME_OVERLAY_HOLD_SECONDS,
+    MIDI_DECK_CUE_NOTE, MIDI_DECK_PLAY_NOTE, DECK_START_SEQUENCE_TICK_MS,
+)
 from state import state
 
 pygame.midi.init()
@@ -95,6 +98,45 @@ def send_cc_pulse(control, delay_ms=30):
     send_midi_cc(control, 127)
     pygame.time.delay(delay_ms)
     send_midi_cc(control, 0)
+
+
+def send_midi_note(status, note, velocity):
+    """Sends a raw 3-byte MIDI Note On/Off message (status is the full
+    0x9n byte -- channel is baked in, unlike send_midi_cc's fixed 0xB0).
+    Used for the PMC-port Cue/Play-Pause deck-start sequence, which is
+    mapped as Note messages rather than Control Change."""
+    global midi_status_str
+    if midi_out:
+        try:
+            midi_out.write_short(int(status), int(note), int(velocity))
+            midi_status_str = f"MIDI OUT: NOTE {status:#04x}/{note} VAL:{velocity}"
+        except Exception as e:
+            midi_status_str = "MIDI: TX ERROR"
+            print(f"[MIDI TX ERROR] {e}")
+
+
+def send_note_pulse(status, note, delay_ms=30):
+    """Press-then-release Note On/Off pulse (velocity 127 then 0) -- the
+    Note-message analog of send_cc_pulse(), for momentary buttons (Cue,
+    Play/Pause) mapped as PMC ports rather than CCs."""
+    send_midi_note(status, note, 127)
+    pygame.time.delay(delay_ms)
+    send_midi_note(status, note, 0)
+
+
+def send_deck_start_sequence(deck):
+    """Deck pause/search glitch fix: TrackSearch (Next/Prev) can silently
+    fail when the deck it's sent to is paused or unstarted. Called by
+    drivers/deck_orchestrator.py right before it sends TrackSearch to
+    `deck` (1 or 2) -- the deck about to be transitioned to -- this primes
+    it with a strict Cue -> tick -> Play/Pause sequence on its PMC ports
+    (900C/900B for Deck 1, 910C/910B for Deck 2) so it's always
+    responsive."""
+    cue_status, cue_note = MIDI_DECK_CUE_NOTE[deck]
+    play_status, play_note = MIDI_DECK_PLAY_NOTE[deck]
+    send_note_pulse(cue_status, cue_note)
+    pygame.time.delay(DECK_START_SEQUENCE_TICK_MS)
+    send_note_pulse(play_status, play_note)
 
 
 def handle_dj_volume(change):

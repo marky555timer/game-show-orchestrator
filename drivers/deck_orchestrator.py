@@ -4,7 +4,7 @@ from config import (
     MIDI_CC_CROSSFADER, TRACK_LOAD_WAIT_SECONDS, CROSSFADER_TWEEN_DURATION_SECONDS,
 )
 from state import state
-from drivers.midi_driver import send_cc_pulse, send_midi_cc
+from drivers.midi_driver import send_cc_pulse, send_midi_cc, send_deck_start_sequence
 from drivers.branding_engine import notify_deck_change
 
 _NEXT_CC = {1: MIDI_CC_DECK1_NEXT, 2: MIDI_CC_DECK2_NEXT}
@@ -26,6 +26,14 @@ def trigger_track_move(direction):
 
     active = state.active_deck
     inactive = 2 if active == 1 else 1
+
+    # Deck pause/search glitch fix: prime the target deck (Cue -> tick ->
+    # Play/Pause on its PMC ports) before TrackSearch, so a paused/unstarted
+    # deck doesn't silently no-op the search.
+    try:
+        send_deck_start_sequence(inactive)
+    except Exception as e:
+        print(f"[DECK ORCHESTRATOR] Failed to send deck-start sequence: {e}")
 
     cc_table = _NEXT_CC if direction == "next" else _BACK_CC
     cc = cc_table[inactive]

@@ -139,6 +139,15 @@ class State:
         self.auto_dj_overlay_text = ""          # "AUTO ON" / "AUTO OFF", panel 3
         self.auto_dj_overlay_until = 0.0
 
+        # --- Auto-DJ: overlapping station-announcement transition ---
+        self.auto_dj_announcement_played = False  # True once this cycle's VO has fired
+        self.auto_dj_transition_at = 0.0           # scheduled time to fire the deck-start+TrackSearch transition (0 = not scheduled)
+
+        # --- Auto-Announcement toggle: Gamepad Btn1, DJ mode only ---
+        self.auto_announce_enabled = config.AUTO_ANNOUNCE_ENABLED_BY_DEFAULT
+        self.auto_announce_overlay_text = ""    # "v ON" / "v OFF", panel 3
+        self.auto_announce_overlay_until = 0.0
+
     def set_status(self, msg, duration=2.0):
         self.status_msg = msg
         self.msg_timer = time.time() + duration

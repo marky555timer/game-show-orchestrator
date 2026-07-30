@@ -13,7 +13,7 @@ from state import state
 from drivers.midi_driver import handle_dj_volume
 from drivers.rekordbox_driver import get_rekordbox_track
 from drivers.factoid_engine import (
-    ensure_prefetch, pull_next_from_queue, build_mock_question, load_forced_fallback_question,
+    ensure_prefetch, pull_next_from_queue, build_mock_question,
 )
 from drivers import deck_orchestrator
 from drivers import price_game_engine
@@ -267,8 +267,7 @@ def _process_quiz_gate():
     QUIZ_GATE_EMPTY_CACHE_TIMEOUT_SECONDS elapses with still nothing cached,
     buzzShort.wav plays as a pure audio/visual error notification (panel 3
     coin-pop) -- it does NOT alter application state. The DJ stays in
-    DJ_MODE and can retry Btn6 once the cache fills, or use the Btn1
-    Emergency Override to force a fallback question in manually."""
+    DJ_MODE and can retry Btn6 once the cache fills."""
     if state.quiz_gate_status != "fetching":
         return
 
@@ -286,7 +285,7 @@ def _process_quiz_gate():
     state.quiz_gate_status = "idle"
     print(f"[BUTTON ERROR] Btn6 pre-fetch queue still empty after "
           f"{QUIZ_GATE_EMPTY_CACHE_TIMEOUT_SECONDS}s TIMEOUT TRIPWIRE. "
-          f"Notifying only -- staying in DJ_MODE (use Btn1 to force a fallback question).")
+          f"Notifying only -- staying in DJ_MODE (retry Btn6 once the cache fills).")
     state.coin_pop_flash_until = time.time() + 2.0
     try:
         play_processed_sound(raw_buzz_short, volume=1.0)
@@ -296,26 +295,19 @@ def _process_quiz_gate():
     state.set_message("NO QUESTION READY -- TRY AGAIN", 1.5)
 
 # ------------------------------------------
-# SECTION 1B: EMERGENCY OVERRIDE (Btn1 / pygame index 0, DJ mode only)
+# SECTION 1B: AUTO-ANNOUNCEMENT TOGGLE (Btn1 / pygame index 0, DJ mode only)
 # ------------------------------------------
-def handle_force_override():
-    """Btn1 (pygame index 0) in DJ mode: emergency manual override for when
-    Btn6's fetch path is stuck or unresponsive. Skips the AI fetch and track
-    matching entirely -- plays the coin chime instantly and force-enters
-    GAME_MODE with a question pulled straight from fallback_questions.json.
-    Scoped to DJ mode only so it never collides with the GAME_MODE Btn1
-    binding (select Answer 4)."""
-    stop_previous_audio()
-    try:
-        play_processed_sound(raw_coin, volume=1.0)
-    except Exception as e:
-        print(f"[AUDIO ERROR] Btn0 override coin chime failed to play: {e}")
-
-    print("FORCE OVERRIDE: Button 0 triggered GAME_MODE")
-    state.quiz_gate_status = "idle"
-    load_forced_fallback_question("BTN0_FORCE_OVERRIDE")
-    state.mode = state.MODE_GAME
-    state.set_message("FORCE OVERRIDE: QUIZ MODE", 1.0)
+# NOTE: Btn1 previously triggered an "Emergency Force Override" (skip the
+# AI fetch, force-enter GAME_MODE with a fallback_questions.json question).
+# That binding has been fully replaced by the Auto-Announcement toggle
+# below -- the emergency override is no longer reachable from the gamepad.
+def handle_auto_announce_toggle():
+    """Btn1 (pygame index 0) in DJ mode: toggles the Auto-DJ station
+    announcement voice-over feature on/off (drivers/auto_dj_engine.py),
+    with a 1.5s "v ON"/"v OFF" confirmation overlay on panel 3. Scoped to
+    DJ mode only so it never collides with the GAME_MODE Btn1 binding
+    (select Answer 4)."""
+    auto_dj_engine.toggle_auto_announce()
 
 # ------------------------------------------
 # SECTION 3: DJ-MODE LIGHTING CONTROLS (Btns 5/7/8)
@@ -466,9 +458,9 @@ def process_events():
             print(f"[BUTTON] Raw Button Pressed: {btn}")
 
             if state.mode == state.MODE_DJ:
-                if btn == 0:  # Physical Btn1: EMERGENCY FORCE OVERRIDE -> GAME_MODE
+                if btn == 0:  # Physical Btn1: Auto-Announcement ON/OFF toggle
                     if _debounced(btn):
-                        handle_force_override()
+                        handle_auto_announce_toggle()
                 elif btn in (1, 2):
                     deck_orchestrator.trigger_track_move("back")
                     auto_dj_engine.notify_manual_track_move()

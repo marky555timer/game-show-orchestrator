@@ -156,6 +156,52 @@ def fade_out_game_music(fade_ms=1000):
         print(f"[AUDIO ERROR] Failed to fade out Price Game music: {e}")
 
 
+# ------------------------------------------------------------
+# AUTO-DJ: STATION ANNOUNCEMENT VOICE-OVERS (audio/announcements/)
+# ------------------------------------------------------------
+_announcement_cache = {}    # filename -> Sound
+_announcement_history = []  # recently-played filenames, oldest first
+
+def play_station_announcement():
+    """Auto-DJ voice-over transition (drivers/auto_dj_engine.py): randomly
+    picks a .wav from config.ANNOUNCEMENTS_DIR that hasn't played in the
+    last config.ANNOUNCEMENT_HISTORY_SIZE plays, and plays it on its own
+    Sound channel -- independent of stop_previous_audio()'s SFX fadeout, so
+    a quiz buzzer/ding elsewhere can never cut it off. Returns the clip's
+    duration in seconds so the caller can schedule the overlapping track
+    transition 2s before it ends -- 0.0 if no announcement could be played."""
+    global _announcement_history
+    try:
+        if not os.path.isdir(config.ANNOUNCEMENTS_DIR):
+            print(f"[ANNOUNCEMENT ERROR] {config.ANNOUNCEMENTS_DIR} not found on disk")
+            return 0.0
+
+        files = sorted(f for f in os.listdir(config.ANNOUNCEMENTS_DIR) if f.lower().endswith(".wav"))
+        if not files:
+            print(f"[ANNOUNCEMENT] No .wav files in {config.ANNOUNCEMENTS_DIR}")
+            return 0.0
+
+        candidates = [f for f in files if f not in _announcement_history] or files
+        choice = random.choice(candidates)
+
+        sound = _announcement_cache.get(choice)
+        if sound is None:
+            sound = pygame.mixer.Sound(os.path.join(config.ANNOUNCEMENTS_DIR, choice))
+            _announcement_cache[choice] = sound
+
+        _announcement_history.append(choice)
+        del _announcement_history[:-config.ANNOUNCEMENT_HISTORY_SIZE]
+
+        sound.set_volume(1.0)
+        sound.play()
+        duration = sound.get_length()
+        print(f"[ANNOUNCEMENT] Playing {choice!r} ({duration:.1f}s)")
+        return duration
+    except Exception as e:
+        print(f"[ANNOUNCEMENT ERROR] Failed to play station announcement: {e}")
+        return 0.0
+
+
 def play_processed_sound(sound_asset, volume=1.0):
     """Plays audio asset through the active reverb DSP filter if enabled,
     at the given volume (0.0-1.0, always applied explicitly so no call site

@@ -255,6 +255,27 @@ TRACK_LOAD_WAIT_SECONDS = 3.0
 CROSSFADER_TWEEN_DURATION_SECONDS = 1.5
 
 # ==========================================
+# MIDI DECK-START SEQUENCE (Cue -> Play/Pause) -- Python_PMC_Port note map
+# ==========================================
+# Bug fix: TrackSearch (Next/Prev) can silently fail when the deck it's
+# being sent to is paused/unstarted. drivers/deck_orchestrator.py primes
+# the target deck with a strict Cue -> tick -> Play/Pause Note On/Off
+# sequence on these PMC ports (Deck 1 on MIDI channel 1 / status 0x90,
+# Deck 2 on channel 2 / status 0x91) before sending TrackSearch, so the
+# deck is always in a responsive state.
+#   Deck 1 Cue:        900C  (status 0x90, note 0x0C)
+#   Deck 1 Play/Pause:  900B  (status 0x90, note 0x0B)
+#   Deck 2 Cue:        910C  (status 0x91, note 0x0C)
+#   Deck 2 Play/Pause:  910B  (status 0x91, note 0x0B)
+MIDI_DECK_CUE_NOTE = {1: (0x90, 0x0C), 2: (0x91, 0x0C)}
+MIDI_DECK_PLAY_NOTE = {1: (0x90, 0x0B), 2: (0x91, 0x0B)}
+
+# Delay between the Cue send and the Play/Pause send in the deck-start
+# sequence (the "small delay / frame tick" the hardware needs to register
+# Cue before Play/Pause lands).
+DECK_START_SEQUENCE_TICK_MS = 30
+
+# ==========================================
 # BRANDING TICKER (DJ mode, bottom panels)
 # ==========================================
 BRANDING_URL = "https://yannitellphotography.com/wp-content/dj/branding.txt"
@@ -381,12 +402,40 @@ AUTODJ_DEFAULT_TRACK_SECONDS = 210.0  # 3.5 minutes
 # trusted, and falls back to AUTODJ_DEFAULT_TRACK_SECONDS instead.
 AUTODJ_MIN_PLAUSIBLE_DURATION_SECONDS = 30.0
 
-# Auto-advance fires this many seconds before the calculated/fallback end
-# of the track.
-AUTODJ_PRE_SWITCH_SECONDS = 3.0
+# Auto-advance transition sequence (station announcement + deck-start MIDI
+# + TrackSearch) starts arming this many seconds before the calculated/
+# fallback end of the track -- see drivers/auto_dj_engine.py::update() and
+# the "STATION ANNOUNCEMENT VOICE-OVERS" section below for the rest of the
+# overlapping-transition timing.
+AUTODJ_PRE_SWITCH_SECONDS = 15.0
+
+# Once the station announcement voice-over starts, the actual track
+# transition (deck-start MIDI sequence + TrackSearch) fires this many
+# seconds before the announcement clip finishes -- the announcement bridges
+# the end of the outgoing track into the start of the next one.
+AUTODJ_ANNOUNCE_LEAD_SECONDS = 2.0
 
 # How long the "AUTO ON" / "AUTO OFF" toggle confirmation overlays panel 3.
 AUTODJ_TOGGLE_OVERLAY_SECONDS = 1.5
+
+# ==========================================
+# AUTO-DJ: STATION ANNOUNCEMENT VOICE-OVERS
+# ==========================================
+# Auto-DJ track transitions overlay a randomly-selected station-announcement
+# clip from this folder (see audio/audio_engine.py::play_station_announcement).
+# A small history buffer avoids repeating the same clip back-to-back.
+ANNOUNCEMENTS_DIR = "audio/announcements"
+ANNOUNCEMENT_HISTORY_SIZE = 3
+
+# ==========================================
+# AUTO-ANNOUNCEMENT TOGGLE (Gamepad Btn1, DJ mode only)
+# ==========================================
+# On by default at launch; Gamepad Btn1 (inputs/gamepad.py, JOYBUTTONDOWN
+# index 0, DJ mode only) toggles it. See drivers/auto_dj_engine.py.
+AUTO_ANNOUNCE_ENABLED_BY_DEFAULT = True
+
+# How long the "v ON" / "v OFF" toggle confirmation overlays panel 3.
+AUTO_ANNOUNCE_TOGGLE_OVERLAY_SECONDS = 1.5
 
 # ==========================================
 # DJ BRANDING ASSEMBLY ANIMATION (top strip, panels 1+2)

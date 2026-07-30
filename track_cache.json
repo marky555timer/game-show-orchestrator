@@ -2468,5 +2468,1064 @@
       "category": "song_meaning",
       "ts": 1785439628.7701645
     }
+  ],
+  "bob dylan - blowin' in the wind": [
+    {
+      "headline": "1963 protest anthem still relevant",
+      "full": "Dylan's iconic 'Blowin' in the Wind' became a civil rights anthem. The song's simple yet profound lyrics posed unanswered questions about peace, freedom, and justice.",
+      "question": "T/F: Dylan wrote 'Blowin' in the Wind' specifically for the 1963 March on Washington.",
+      "choices": [
+        "True",
+        "False"
+      ],
+      "correct_index": 1,
+      "release_year": 1963,
+      "category": "true_false",
+      "ts": 1785444770.08585
+    },
+    {
+      "headline": "Dylan's protest anthem from 1963",
+      "full": "Iconic protest song released on Dylan's second album 'The Freewheelin' Bob Dylan' in 1963. Became an anthem for civil rights and anti-war movements.",
+      "question": "What U.S. state was Bob Dylan born in?",
+      "choices": [
+        "New York",
+        "Minnesota",
+        "California",
+        "Texas"
+      ],
+      "correct_index": 1,
+      "release_year": 1963,
+      "category": "geography",
+      "ts": 1785444771.6602082
+    },
+    {
+      "headline": "Civil rights anthem from 1963",
+      "full": "Dylan's iconic protest song became a civil rights anthem. The repeated refrain 'the answer is blowin' in the wind' suggests answers to social injustice are elusive and obvious simultaneously.",
+      "question": "What is 'Blowin' in the Wind' about?",
+      "choices": [
+        "lost love",
+        "social injustice",
+        "broken dreams",
+        "environmental change"
+      ],
+      "correct_index": 1,
+      "release_year": 1963,
+      "category": "song_meaning",
+      "ts": 1785444773.8328693
+    }
+  ],
+  "frankie lymon & the teenagers - why do fools fall in love": [
+    {
+      "headline": "A 13-year-old's chart-topping debut",
+      "full": "Frankie Lymon became the youngest male to top the Billboard Hot 100 when this doo-wop classic hit #1 in 1956, launching a legendary career.",
+      "question": "How old was Frankie Lymon when this song topped the charts?",
+      "choices": [
+        "15",
+        "12",
+        "16",
+        "13"
+      ],
+      "correct_index": 3,
+      "release_year": 1956,
+      "category": "real_name",
+      "ts": 1785444775.9094641
+    },
+    {
+      "headline": "Frankie Lymon's only #1 hit",
+      "full": "Released in 1956, 'Why Do Fools Fall in Love' became Frankie Lymon & The Teenagers' signature song and their only chart-topper, making the 13-year-old lead singer a star.",
+      "question": "How old was Frankie Lymon when this hit #1?",
+      "choices": [
+        "16",
+        "15",
+        "11",
+        "13"
+      ],
+      "correct_index": 3,
+      "release_year": 1956,
+      "category": "career_stat",
+      "ts": 1785444777.6688094
+    },
+    {
+      "headline": "Frankie Lymon's only #1 hit at age 13",
+      "full": "Released in 1956, this doo-wop classic became Frankie Lymon & The Teenagers' signature song and remains a timeless standard of early rock and roll.",
+      "question": "What year was 'Why Do Fools Fall in Love' released?",
+      "choices": [
+        "1971",
+        "1956",
+        "1963",
+        "1952"
+      ],
+      "correct_index": 1,
+      "release_year": 1956,
+      "category": "date",
+      "ts": 1785444779.7953112
+    }
+  ],
+  "seals and crofts - summer breeze": [
+    {
+      "headline": "Seals and Crofts' soft-rock chart hit",
+      "full": "'Summer Breeze' was a major soft-rock success for the duo, reaching #6 on the Billboard Hot 100 and becoming one of their signature songs with its breezy, harmonious sound.",
+      "question": "What year was 'Summer Breeze' by Seals and Crofts released?",
+      "choices": [
+        "1972",
+        "1979",
+        "1985",
+        "1968"
+      ],
+      "correct_index": 0,
+      "release_year": 1972,
+      "category": "date",
+      "ts": 1785444974.6203501
+    },
+    {
+      "headline": "Soft rock classic hits #5 on Billboard",
+      "full": "1972 soft rock staple by the folk-pop duo, reaching #5 on Billboard Hot 100. Features their signature laid-back harmonies and became one of their signature songs.",
+      "question": "What US state were Seals and Crofts from?",
+      "choices": [
+        "Texas",
+        "Oklahoma",
+        "California",
+        "Arizona"
+      ],
+      "correct_index": 0,
+      "release_year": 1972,
+      "category": "geography",
+      "ts": 1785444979.3538218
+    },
+    {
+      "headline": "1970s soft rock duo's biggest hit",
+      "full": "Seals and Crofts' 'Summer Breeze' reached #6 on Billboard Hot 100 in 1972, becoming their signature song with its breezy, sophisticated pop-rock sound.",
+      "question": "T/F: Seals and Crofts were brothers.",
+      "choices": [
+        "True",
+        "False"
+      ],
+      "correct_index": 1,
+      "release_year": 1972,
+      "category": "true_false",
+      "ts": 1785444982.4391048
+    }
+  ],
+  "dusty springfield - son of a preacher man": [
+    {
+      "headline": "Dusty's sultry 1968 soul classic",
+      "full": "Dusty Springfield's signature soul song, written by John Hurley and Ronnie Wilkins, became her biggest hit and a timeless standard.",
+      "question": "What country was Dusty Springfield born in?",
+      "choices": [
+        "United States",
+        "Australia",
+        "Canada",
+        "United Kingdom"
+      ],
+      "correct_index": 3,
+      "release_year": 1968,
+      "category": "geography",
+      "ts": 1785445002.9396617
+    },
+    {
+      "headline": "1968 Soul Classic by British Icon",
+      "full": "Dusty Springfield's signature soul hit became her biggest chart success, reaching #1 in the US and UK. Written by John Hurley and Ronnie Wilkins, it remains iconic.",
+      "question": "What's Dusty Springfield's real first name?",
+      "choices": [
+        "Diana",
+        "Deborah",
+        "Mary",
+        "Dorothy"
+      ],
+      "correct_index": 2,
+      "release_year": 1968,
+      "category": "real_name",
+      "ts": 1785445004.8569734
+    },
+    {
+      "headline": "Dusty's sultry 1968 soul classic",
+      "full": "Dusty Springfield's 'Son of a Preacher Man' became a massive hit in 1968, reaching #4 on the UK charts and becoming one of her signature songs.",
+      "question": "What year was 'Son of a Preacher Man' released?",
+      "choices": [
+        "1965",
+        "1968",
+        "1972",
+        "1959"
+      ],
+      "correct_index": 1,
+      "release_year": 1968,
+      "category": "date",
+      "ts": 1785445006.3442051
+    }
+  ],
+  "simon & garfunkel - mrs. robinson - from \"the gra...": [
+    {
+      "headline": "Oscar-winning '60s icon",
+      "full": "Written for The Graduate soundtrack, this Simon & Garfunkel classic won the Academy Award for Best Original Song in 1968, becoming a cultural touchstone.",
+      "question": "T/F: Paul Simon wrote Mrs. Robinson entirely alone without Art Garfunkel's input.",
+      "choices": [
+        "True",
+        "False"
+      ],
+      "correct_index": 0,
+      "release_year": 1968,
+      "category": "true_false",
+      "ts": 1785445142.5355096
+    },
+    {
+      "headline": "Diamond Paul & Art classic",
+      "full": "Featured in The Graduate soundtrack, this 1968 hit became iconic for a generation and won a Grammy Award for Best Original Song Score.",
+      "question": "What is this song's main subject?",
+      "choices": [
+        "political protest",
+        "teenage romance",
+        "American nostalgia",
+        "unrequited love"
+      ],
+      "correct_index": 2,
+      "release_year": 1968,
+      "category": "song_meaning",
+      "ts": 1785445144.4703333
+    },
+    {
+      "headline": "Featured in The Graduate (1967)",
+      "full": "This iconic Simon & Garfunkel track became the signature song of The Graduate film, earning an Academy Award nomination for Best Original Song.",
+      "question": "Who co-wrote Mrs. Robinson with Paul Simon?",
+      "choices": [
+        "Carole King",
+        "Art Garfunkel",
+        "Van Morrison",
+        "James Taylor"
+      ],
+      "correct_index": 1,
+      "release_year": 1966,
+      "category": "real_name",
+      "ts": 1785445146.9677045
+    }
+  ],
+  "tom jones - it's not unusual": [
+    {
+      "headline": "Tom Jones' 1965 chart-topper",
+      "full": "Written by Gordon Mills, this smooth soul number became Tom Jones' signature hit, reaching #1 in the UK and top 10 globally. Its sophisticated arrangement defined early '60s pop.",
+      "question": "What is this song's main theme?",
+      "choices": [
+        "partying all night",
+        "falling in love",
+        "missing an old flame",
+        "heartbreak and loss"
+      ],
+      "correct_index": 1,
+      "release_year": 1965,
+      "category": "song_meaning",
+      "ts": 1785445346.960601
+    },
+    {
+      "headline": "Tom Jones' 1965 smash hit",
+      "full": "Released in 1965, this upbeat pop song became Tom Jones' signature tune and one of his biggest international hits, reaching #1 in multiple countries.",
+      "question": "What country is Tom Jones from?",
+      "choices": [
+        "England",
+        "Ireland",
+        "Scotland",
+        "Wales"
+      ],
+      "correct_index": 3,
+      "release_year": 1965,
+      "category": "geography",
+      "ts": 1785445348.4652462
+    },
+    {
+      "headline": "Tom Jones' signature '60s hit",
+      "full": "Released in 1965, 'It's Not Unusual' became Tom Jones' breakthrough international smash, reaching #1 in the UK and top 10 in the US. Its distinctive horn section and Jones' powerful baritone made it i",
+      "question": "T/F: Tom Jones wrote 'It's Not Unusual' himself.",
+      "choices": [
+        "True",
+        "False"
+      ],
+      "correct_index": 1,
+      "release_year": 1965,
+      "category": "true_false",
+      "ts": 1785445351.6705308
+    }
+  ],
+  "little richard - tutti frutti": [
+    {
+      "headline": "Little Richard's 1955 rock & roll classi",
+      "full": "Originally recorded by The Bees in 1954, Little Richard's 1955 cover became the definitive version, featuring his wild vocal style and helping establish rock and roll.",
+      "question": "What is 'Tutti Frutti' mainly about?",
+      "choices": [
+        "getting rich",
+        "dancing all night",
+        "lost love",
+        "nonsense fun"
+      ],
+      "correct_index": 3,
+      "release_year": 1955,
+      "category": "song_meaning",
+      "ts": 1785445460.733907
+    },
+    {
+      "headline": "Rock & Roll Pioneer's Debut Hit",
+      "full": "Little Richard's 1955 debut single that revolutionized rock and roll with its wild energy, suggestive lyrics, and piano-driven sound.",
+      "question": "What is Little Richard's real first name?",
+      "choices": [
+        "Raymond",
+        "Richard",
+        "Ronald",
+        "Robert"
+      ],
+      "correct_index": 1,
+      "release_year": 1955,
+      "category": "real_name",
+      "ts": 1785445466.8782878
+    },
+    {
+      "headline": "Rock & Roll Pioneer's Debut Hit",
+      "full": "Little Richard's 'Tutti Frutti' (1955) was a groundbreaking rock and roll anthem that helped define the genre with its energetic piano and wild vocals.",
+      "question": "What year was 'Tutti Frutti' by Little Richard released?",
+      "choices": [
+        "1968",
+        "1952",
+        "1955",
+        "1947"
+      ],
+      "correct_index": 2,
+      "release_year": 1955,
+      "category": "date",
+      "ts": 1785445468.5863826
+    }
+  ],
+  "chuck berry - roll over beethoven - single...": [
+    {
+      "headline": "Chuck Berry's rock & roll call to Beetho",
+      "full": "Chuck Berry's 1956 hit urged the classical composer to 'roll over' and make way for rock and roll, becoming an early rock classic and cover staple.",
+      "question": "What does this song ask Beethoven to do?",
+      "choices": [
+        "roll over",
+        "move over",
+        "listen up",
+        "wake up"
+      ],
+      "correct_index": 0,
+      "release_year": 1956,
+      "category": "song_meaning",
+      "ts": 1785445706.1873052
+    },
+    {
+      "headline": "Chuck Berry's rock & roll anthem",
+      "full": "Released in 1956, this Chuck Berry classic became a rock staple and was famously covered by The Beatles in 1963, introducing many to Berry's influential early rock and roll sound.",
+      "question": "What was Chuck Berry's real first name?",
+      "choices": [
+        "Charles",
+        "Charles Edward",
+        "Chester",
+        "Charlie"
+      ],
+      "correct_index": 0,
+      "release_year": 1956,
+      "category": "real_name",
+      "ts": 1785445707.9702346
+    },
+    {
+      "headline": "Chuck Berry's tribute to The Master",
+      "full": "Chuck Berry's 1956 rock & roll anthem urged listeners to 'roll over' and tell Beethoven the news - a playful nod to classical music from a pioneer of rock.",
+      "question": "What American city was Chuck Berry from?",
+      "choices": [
+        "St. Louis",
+        "Detroit",
+        "Chicago",
+        "Memphis"
+      ],
+      "correct_index": 0,
+      "release_year": 1956,
+      "category": "geography",
+      "ts": 1785445710.3758855
+    }
+  ],
+  "jackie wilson - (your love keeps lifting me)...": [
+    {
+      "headline": "Jackie Wilson's soaring soul classic",
+      "full": "Released in 1975, this uplifting soul anthem became one of Jackie Wilson's signature songs, showcasing his powerful vocals and emotional delivery.",
+      "question": "How many R&B chart hits did Jackie Wilson have?",
+      "choices": [
+        "About 20",
+        "Over 50",
+        "Exactly 35",
+        "Nearly 75"
+      ],
+      "correct_index": 1,
+      "release_year": 1975,
+      "category": "career_stat",
+      "ts": 1785446032.2899845
+    },
+    {
+      "headline": "Jackie Wilson's '60s Soul Classic",
+      "full": "Released in 1967, this uplifting soul anthem became one of Jackie Wilson's signature songs, showcasing his powerful vocal range and emotional delivery.",
+      "question": "What was Jackie Wilson's nickname?",
+      "choices": [
+        "The King",
+        "Mr. Soul",
+        "Mr. Excitement",
+        "The Godfather"
+      ],
+      "correct_index": 2,
+      "release_year": 1967,
+      "category": "real_name",
+      "ts": 1785446033.914409
+    },
+    {
+      "headline": "Jackie Wilson's soaring 1972 soul classi",
+      "full": "Released in 1972, this uplifting soul ballad became one of Jackie Wilson's signature songs, showcasing his powerful vocals and emotional delivery that defined his career.",
+      "question": "What year was Jackie Wilson's '(Your Love Keeps Lifting Me)...' released?",
+      "choices": [
+        "1968",
+        "1972",
+        "1978",
+        "1965"
+      ],
+      "correct_index": 1,
+      "release_year": 1972,
+      "category": "date",
+      "ts": 1785446035.5410817
+    }
+  ],
+  "elvis presley - blue suede shoes": [
+    {
+      "headline": "Carl Perkins' hit covered by the King",
+      "full": "Elvis's 1955 version of Carl Perkins' rockabilly classic became iconic, though Perkins' original was released first in December 1954.",
+      "question": "What year did Elvis first record Blue Suede Shoes?",
+      "choices": [
+        "1954",
+        "1957",
+        "1956",
+        "1955"
+      ],
+      "correct_index": 3,
+      "release_year": 1955,
+      "category": "career_stat",
+      "ts": 1785446234.6130488
+    },
+    {
+      "headline": "Carl Perkins' hit covered by Elvis",
+      "full": "Elvis recorded this rockabilly classic written by Carl Perkins in 1955. It became one of his signature early rock and roll songs and a cultural icon of 1950s youth rebellion.",
+      "question": "What US city was Elvis Presley born in?",
+      "choices": [
+        "Memphis, Tennessee",
+        "Nashville, Tennessee",
+        "Louisville, Kentucky",
+        "Tupelo, Mississippi"
+      ],
+      "correct_index": 3,
+      "release_year": 1955,
+      "category": "geography",
+      "ts": 1785446236.5264237
+    },
+    {
+      "headline": "Carl Perkins' rockabilly classic",
+      "full": "Elvis' 1956 cover of Carl Perkins' 'Blue Suede Shoes' became a massive hit, though Perkins' original was released first in late 1955.",
+      "question": "What year did Elvis release 'Blue Suede Shoes'?",
+      "choices": [
+        "1972",
+        "1954",
+        "1965",
+        "1956"
+      ],
+      "correct_index": 3,
+      "release_year": 1956,
+      "category": "date",
+      "ts": 1785446238.1681664
+    }
+  ],
+  "bob marley & the wailers - i shot the sheriff": [
+    {
+      "headline": "Eric Clapton's cover outsold the origina",
+      "full": "Bob Marley's 1973 reggae classic was covered by Eric Clapton in 1974, whose version became a #1 hit while Marley's original peaked lower on charts.",
+      "question": "What is this song's subject?",
+      "choices": [
+        "political revolution",
+        "police corruption",
+        "self-defense",
+        "love and loss"
+      ],
+      "correct_index": 2,
+      "release_year": 1973,
+      "category": "song_meaning",
+      "ts": 1785446343.6739278
+    },
+    {
+      "headline": "Eric Clapton's cover hit #1 in 1974",
+      "full": "Bob Marley's 1973 reggae classic was covered by Eric Clapton in 1974, becoming his first #1 hit. The song's controversial title sparked debate, though Marley explained the sheriff represented oppressi",
+      "question": "What year did Eric Clapton's cover reach #1?",
+      "choices": [
+        "1976",
+        "1975",
+        "1974",
+        "1973"
+      ],
+      "correct_index": 2,
+      "release_year": 1973,
+      "category": "career_stat",
+      "ts": 1785446345.543315
+    },
+    {
+      "headline": "Eric Clapton covered this reggae classic",
+      "full": "Bob Marley's 1973 hit was written by Junior Murvin. Eric Clapton's 1974 cover reached #1 on UK charts, outshadowing the original in some markets.",
+      "question": "Who wrote 'I Shot The Sheriff'?",
+      "choices": [
+        "Waylon Jennings",
+        "Lee Perry",
+        "Peter Tosh",
+        "Junior Murvin"
+      ],
+      "correct_index": 3,
+      "release_year": 1973,
+      "category": "real_name",
+      "ts": 1785446347.3382618
+    }
+  ],
+  "danny & the juniors - at the hop": [
+    {
+      "headline": "Rock & roll classic that topped the char",
+      "full": "'At The Hop' by Danny & The Juniors hit #1 on the Billboard Hot 100 in 1958, becoming one of the defining songs of early rock and roll and a staple of 1950s dance culture.",
+      "question": "What year did 'At The Hop' reach #1?",
+      "choices": [
+        "1957",
+        "1960",
+        "1958",
+        "1956"
+      ],
+      "correct_index": 2,
+      "release_year": 1958,
+      "category": "career_stat",
+      "ts": 1785446618.4276078
+    },
+    {
+      "headline": "1950s rock & roll classic",
+      "full": "Released in 1955, 'At The Hop' became a massive hit for Danny & The Juniors, reaching #1 on the Billboard Hot 100 and becoming one of the defining songs of early rock and roll era.",
+      "question": "What year was 'At The Hop' released?",
+      "choices": [
+        "1948",
+        "1951",
+        "1962",
+        "1955"
+      ],
+      "correct_index": 3,
+      "release_year": 1955,
+      "category": "date",
+      "ts": 1785446620.0601013
+    },
+    {
+      "headline": "1950s doo-wop classic that defined a gen",
+      "full": "Released in 1955, 'At The Hop' became a #1 hit and cultural phenomenon, capturing the spirit of 1950s teen dance culture and remaining a timeless rock and roll standard.",
+      "question": "What Philadelphia-based group recorded 'At The Hop'?",
+      "choices": [
+        "Danny & The Juniors",
+        "The Teenagers",
+        "Frankie Lymon & The Plat",
+        "The Coasters"
+      ],
+      "correct_index": 0,
+      "release_year": 1955,
+      "category": "geography",
+      "ts": 1785446622.0014098
+    }
+  ],
+  "the supremes - you can't hurry love": [
+    {
+      "headline": "Supremes' #1 Hit From 1966",
+      "full": "The Supremes' 'You Can't Hurry Love' reached #1 on the Billboard Hot 100 in 1966, becoming one of their signature songs with its infectious rhythm and memorable chorus.",
+      "question": "How many #1 hits did The Supremes have?",
+      "choices": [
+        "15",
+        "10",
+        "12",
+        "8"
+      ],
+      "correct_index": 2,
+      "release_year": 1966,
+      "category": "career_stat",
+      "ts": 1785446761.5102828
+    },
+    {
+      "headline": "Phil Collins cover went #1 in 1994",
+      "full": "The Supremes' 1966 hit was famously covered by Phil Collins in 1994, reaching #1 on the Billboard Hot 100 and winning a Grammy Award.",
+      "question": "T/F: Phil Collins' 1994 cover of this song topped the US charts.",
+      "choices": [
+        "True",
+        "False"
+      ],
+      "correct_index": 0,
+      "release_year": 1966,
+      "category": "true_false",
+      "ts": 1785446762.960402
+    },
+    {
+      "headline": "Phil Collins covered this '80s hit",
+      "full": "The Supremes' 1966 classic was famously covered by Phil Collins in 1994, reaching #1 on the UK Singles Chart and winning a Grammy.",
+      "question": "What Detroit-based record label created The Supremes?",
+      "choices": [
+        "Motown",
+        "Chess",
+        "Atlantic",
+        "Stax"
+      ],
+      "correct_index": 0,
+      "release_year": 1966,
+      "category": "geography",
+      "ts": 1785446764.6311157
+    }
+  ],
+  "the trashmen - surfin' bird - original recor...": [
+    {
+      "headline": "A Bird Came by Repeat Request",
+      "full": "The Trashmen's 1963 novelty hit features the famous repeated line 'Surfin' bird.' It became their signature song and a rock & roll classic.",
+      "question": "What year did 'Surfin' Bird' top the charts?",
+      "choices": [
+        "1963",
+        "1964",
+        "1962",
+        "1965"
+      ],
+      "correct_index": 1,
+      "release_year": 1963,
+      "category": "career_stat",
+      "ts": 1785446932.9291186
+    },
+    {
+      "headline": "A one-hit wonder bird song",
+      "full": "Released in 1963, \"Surfin' Bird\" became The Trashmen's only major hit, reaching #4 on the Billboard Hot 100 and becoming a novelty classic.",
+      "question": "Which state was The Trashmen from?",
+      "choices": [
+        "Florida",
+        "California",
+        "Minnesota",
+        "Hawaii"
+      ],
+      "correct_index": 2,
+      "release_year": 1963,
+      "category": "real_name",
+      "ts": 1785446934.5851333
+    },
+    {
+      "headline": "Novelty hit banned by some radio station",
+      "full": "The Trashmen's 1964 one-hit wonder featured repetitive 'bird' lyrics and nonsensical humor that made it both wildly popular and controversial on radio.",
+      "question": "What US city were The Trashmen from?",
+      "choices": [
+        "Chicago",
+        "Seattle",
+        "Minneapolis",
+        "Detroit"
+      ],
+      "correct_index": 2,
+      "release_year": 1964,
+      "category": "geography",
+      "ts": 1785446936.1014254
+    }
+  ],
+  "aerosmith - sweet emotion": [
+    {
+      "headline": "1975 chart-topper from Boston rockers",
+      "full": "This Aerosmith classic peaked at #6 on the Billboard Hot 100 and became one of the band's signature songs, featured prominently in 'Wayne's World'.",
+      "question": "Who is Aerosmith's lead singer?",
+      "choices": [
+        "Steven Tyler",
+        "Tom Hamilton",
+        "Brad Whitford",
+        "Joe Perry"
+      ],
+      "correct_index": 0,
+      "release_year": 1975,
+      "category": "real_name",
+      "ts": 1785447079.9406674
+    },
+    {
+      "headline": "Aerosmith's swaggering 1975 chart-topper",
+      "full": "Released in 1975, 'Sweet Emotion' became one of Aerosmith's signature songs, featuring the iconic bassline by Tom Hamilton and reaching #6 on the Billboard Hot 100.",
+      "question": "T/F: 'Sweet Emotion' sampled a horn section from a 1970s Funkadelic record.",
+      "choices": [
+        "True",
+        "False"
+      ],
+      "correct_index": 1,
+      "release_year": 1975,
+      "category": "true_false",
+      "ts": 1785447081.7386997
+    },
+    {
+      "headline": "Aerosmith's funkiest hit from '75",
+      "full": "'Sweet Emotion' became Aerosmith's first top-5 hit on the Billboard Hot 100, peaking at #3 in 1975. The song features a distinctive bassline and horn section.",
+      "question": "What position did 'Sweet Emotion' reach on Billboard Hot 100?",
+      "choices": [
+        "#1",
+        "#7",
+        "#3",
+        "#5"
+      ],
+      "correct_index": 2,
+      "release_year": 1975,
+      "category": "career_stat",
+      "ts": 1785447083.396404
+    }
+  ],
+  "ray charles - i've got a woman": [
+    {
+      "headline": "Ray Charles' blues-rock classic",
+      "full": "Released in 1954, 'I've Got a Woman' became one of Ray Charles' signature songs, blending gospel, blues, and R&B elements that defined his revolutionary sound.",
+      "question": "How many Grammy Awards did Ray Charles win?",
+      "choices": [
+        "12",
+        "25",
+        "9",
+        "18"
+      ],
+      "correct_index": 3,
+      "release_year": 1954,
+      "category": "career_stat",
+      "ts": 1785447202.4098337
+    },
+    {
+      "headline": "Ray Charles' 1954 R&B classic",
+      "full": "Originally recorded by The Clovers in 1951, Ray Charles' powerful 1954 version became his signature tune and a cornerstone of soul music history.",
+      "question": "What U.S. state was Ray Charles born in?",
+      "choices": [
+        "Texas",
+        "Florida",
+        "Louisiana",
+        "Georgia"
+      ],
+      "correct_index": 1,
+      "release_year": 1954,
+      "category": "geography",
+      "ts": 1785447203.9235418
+    },
+    {
+      "headline": "Ray Charles' first hit & signature song",
+      "full": "Released in 1954, this blues-gospel fusion became Ray Charles' breakout hit and signature song, showcasing his revolutionary blend of country, blues, and R&B that defined his legendary career.",
+      "question": "T/F: Ray Charles wrote 'I've Got a Woman' entirely by himself.",
+      "choices": [
+        "True",
+        "False"
+      ],
+      "correct_index": 1,
+      "release_year": 1954,
+      "category": "true_false",
+      "ts": 1785447205.532795
+    }
+  ],
+  "janis joplin - me and bobby mcgee": [
+    {
+      "headline": "Janis Joplin's iconic cover hit",
+      "full": "Written by Kris Kristofferson, this became Janis Joplin's signature song and her only top-10 hit on the Billboard Hot 100.",
+      "question": "What year was 'Me and Bobby McGee' released?",
+      "choices": [
+        "1980",
+        "1975",
+        "1971",
+        "1968"
+      ],
+      "correct_index": 2,
+      "release_year": 1971,
+      "category": "date",
+      "ts": 1785447224.4439206
+    },
+    {
+      "headline": "Written by Kris Kristofferson",
+      "full": "Though Janis Joplin's 1971 version is iconic, Kris Kristofferson wrote 'Me and Bobby McGee' and recorded it first in 1969. Janis's posthumous release became the definitive version.",
+      "question": "T/F: Janis Joplin wrote 'Me and Bobby McGee' herself.",
+      "choices": [
+        "True",
+        "False"
+      ],
+      "correct_index": 1,
+      "release_year": 1971,
+      "category": "true_false",
+      "ts": 1785447226.0616417
+    },
+    {
+      "headline": "Written by Kris Kristofferson",
+      "full": "Though Janis Joplin's 1971 version became iconic, Kris Kristofferson wrote this song. It became her final studio recording before her death.",
+      "question": "What city was Janis Joplin born in?",
+      "choices": [
+        "Dallas, Texas",
+        "Port Arthur, Texas",
+        "Austin, Texas",
+        "Houston, Texas"
+      ],
+      "correct_index": 1,
+      "release_year": 1971,
+      "category": "geography",
+      "ts": 1785447228.3736973
+    }
+  ],
+  "living colour - cult of personality (2023 rem...": [
+    {
+      "headline": "Living Colour's Iconic Protest Anthem",
+      "full": "Originally released in 1988, 'Cult of Personality' became Living Colour's signature song and Grammy-winning hit, addressing conformity and blind allegiance.",
+      "question": "What year did Living Colour's 'Cult of Personality' win a Grammy?",
+      "choices": [
+        "1990",
+        "1991",
+        "1989",
+        "1988"
+      ],
+      "correct_index": 0,
+      "release_year": 1988,
+      "category": "career_stat",
+      "ts": 1785447258.6364417
+    },
+    {
+      "headline": "Living Colour's 1988 metal-funk classic",
+      "full": "Living Colour's 'Cult of Personality' became a Grammy-winning hit blending heavy metal with funk, featuring iconic riffing and political commentary on celebrity worship.",
+      "question": "T/F: 'Cult of Personality' won a Grammy Award for Best Metal Performance.",
+      "choices": [
+        "True",
+        "False"
+      ],
+      "correct_index": 0,
+      "release_year": 1988,
+      "category": "true_false",
+      "ts": 1785447260.851305
+    },
+    {
+      "headline": "Living Colour's 1988 protest anthem",
+      "full": "Cult of Personality became Living Colour's biggest hit, addressing blind obedience & charismatic leaders. The 2023 remix modernizes this classic thrash-funk statement.",
+      "question": "What year was Cult of Personality originally released?",
+      "choices": [
+        "1992",
+        "1985",
+        "1979",
+        "1988"
+      ],
+      "correct_index": 3,
+      "release_year": 1988,
+      "category": "date",
+      "ts": 1785447277.7186544
+    }
+  ],
+  "living colour - cult of personality": [
+    {
+      "headline": "Living Colour's 1988 debut hit",
+      "full": "Cult of Personality peaked at #13 on Billboard Hot 100, became Living Colour's signature song, and won a Grammy. Featured iconic music video with bold social commentary.",
+      "question": "Who is Living Colour's lead guitarist?",
+      "choices": [
+        "Corey Glover",
+        "Doug Wimbish",
+        "Will Calhoun",
+        "Vernon Reid"
+      ],
+      "correct_index": 3,
+      "release_year": 1988,
+      "category": "real_name",
+      "ts": 1785447323.1431859
+    },
+    {
+      "headline": "Living Colour's 1988 funk-metal classic",
+      "full": "This 1988 hit single blends funk, metal, and social commentary. It became Living Colour's biggest chart success and is known for its infectious guitar riff and critique of celebrity worship.",
+      "question": "What year did Living Colour release 'Cult of Personality'?",
+      "choices": [
+        "1990",
+        "1989",
+        "1988",
+        "1986"
+      ],
+      "correct_index": 2,
+      "release_year": 1988,
+      "category": "career_stat",
+      "ts": 1785447324.8244796
+    },
+    {
+      "headline": "Living Colour's 1988 funk-metal protest ",
+      "full": "This Living Colour debut single blends heavy guitar with funk grooves and political commentary on celebrity worship and conformity, becoming their signature hit.",
+      "question": "T/F: Living Colour was the first all-Black hard rock band to achieve mainstream success.",
+      "choices": [
+        "True",
+        "False"
+      ],
+      "correct_index": 1,
+      "release_year": 1988,
+      "category": "true_false",
+      "ts": 1785447326.8360877
+    }
+  ],
+  "katrina & the waves - walking on sunshine": [
+    {
+      "headline": "1985 feel-good anthem that won a Grammy",
+      "full": "This infectious British-American new wave classic became a massive hit globally and earned the band their only Grammy Award. Its optimistic lyrics and irresistible melody made it a staple of 80s pop.",
+      "question": "T/F: 'Walking On Sunshine' was originally written by Katrina & The Waves.",
+      "choices": [
+        "True",
+        "False"
+      ],
+      "correct_index": 1,
+      "release_year": 1985,
+      "category": "true_false",
+      "ts": 1785447721.0081432
+    },
+    {
+      "headline": "1985 feel-good anthem that never gets ol",
+      "full": "This infectious 1985 hit became famous globally after appearing in the film 'Walking on Sunshine' (2014), introducing it to a whole new generation decades later.",
+      "question": "What country is Katrina & The Waves from?",
+      "choices": [
+        "Australia",
+        "United States",
+        "Canada",
+        "United Kingdom"
+      ],
+      "correct_index": 3,
+      "release_year": 1985,
+      "category": "geography",
+      "ts": 1785447722.681622
+    },
+    {
+      "headline": "1985 Feel-Good Anthem",
+      "full": "Katrina & The Waves' infectious 1985 hit 'Walking On Sunshine' reached #1 in the UK and became their signature song, later featured in films and commercials.",
+      "question": "What UK chart position did 'Walking On Sunshine' reach?",
+      "choices": [
+        "Number 5",
+        "Number 2",
+        "Number 1",
+        "Number 3"
+      ],
+      "correct_index": 2,
+      "release_year": 1985,
+      "category": "career_stat",
+      "ts": 1785447724.795954
+    }
+  ],
+  "pet shop boys - west end girls": [
+    {
+      "headline": "Pet Shop Boys' synth-pop masterpiece fro",
+      "full": "Synth-pop classic that topped UK charts. Featured a music video set in a post-apocalyptic London, becoming iconic 80s new wave.",
+      "question": "What British city are Pet Shop Boys from?",
+      "choices": [
+        "Manchester",
+        "Liverpool",
+        "Leeds",
+        "London"
+      ],
+      "correct_index": 3,
+      "release_year": 1985,
+      "category": "geography",
+      "ts": 1785447824.696202
+    },
+    {
+      "headline": "Synth-pop classic from the 80s",
+      "full": "Pet Shop Boys' debut hit single, featuring iconic synthesizer production and lyrics about London's class divide. Became a massive worldwide success and launched their career.",
+      "question": "What year was 'West End Girls' released?",
+      "choices": [
+        "1981",
+        "1985",
+        "1983",
+        "1988"
+      ],
+      "correct_index": 1,
+      "release_year": 1985,
+      "category": "date",
+      "ts": 1785447829.9698262
+    },
+    {
+      "headline": "Pet Shop Boys' synth-pop masterpiece fro",
+      "full": "Debut hit that reached #2 in UK charts. Features iconic synthesizer riff and explores class, aspiration & romance in London's West End district.",
+      "question": "What does 'West End Girls' explore?",
+      "choices": [
+        "Class and aspiration",
+        "Forbidden love",
+        "Gang violence",
+        "Drug addiction"
+      ],
+      "correct_index": 0,
+      "release_year": 1985,
+      "category": "song_meaning",
+      "ts": 1785447832.0294764
+    }
+  ],
+  "bruce springsteen - dancing in the dark": [
+    {
+      "headline": "Born in the U.S.A. album standout",
+      "full": "This 1984 hit from Springsteen's massive Born in the U.S.A. album became one of his most iconic songs, featuring a memorable synth line and exploring themes of depression and escapism.",
+      "question": "What year was 'Dancing In the Dark' released?",
+      "choices": [
+        "1984",
+        "1991",
+        "1975",
+        "1978"
+      ],
+      "correct_index": 0,
+      "release_year": 1984,
+      "category": "date",
+      "ts": 1785447913.2067838
+    },
+    {
+      "headline": "Born in the USA album's biggest hit",
+      "full": "From Bruce Springsteen's 1984 Born in the USA album, this synth-driven anthem became his biggest chart success, reaching #2 on the Billboard Hot 100.",
+      "question": "What is 'Dancing in the Dark' mainly about?",
+      "choices": [
+        "a night out partying",
+        "depression and isolation",
+        "falling in love",
+        "lost childhood memories"
+      ],
+      "correct_index": 1,
+      "release_year": 1984,
+      "category": "song_meaning",
+      "ts": 1785447915.0871437
+    },
+    {
+      "headline": "Born in the USA album track",
+      "full": "1984 hit from Springsteen's Born in the USA album, featuring iconic Stevie Van Zandt guitar work and themes of isolation despite dancing.",
+      "question": "What New Jersey city is Bruce Springsteen from?",
+      "choices": [
+        "Atlantic City",
+        "Long Branch",
+        "Newark",
+        "Trenton"
+      ],
+      "correct_index": 1,
+      "release_year": 1984,
+      "category": "geography",
+      "ts": 1785447916.6756063
+    }
+  ],
+  "cyndi lauper - time after time": [
+    {
+      "headline": "Cyndi Lauper's biggest hit from '84",
+      "full": "Released in 1984, 'Time After Time' became Cyndi Lauper's signature ballad and biggest chart success, reaching #1 on the Billboard Hot 100.",
+      "question": "What is 'Time After Time' about?",
+      "choices": [
+        "passing years",
+        "lost friendship",
+        "eternal love",
+        "nostalgic memories"
+      ],
+      "correct_index": 2,
+      "release_year": 1984,
+      "category": "song_meaning",
+      "ts": 1785448164.029293
+    },
+    {
+      "headline": "MTV icon's synth-pop masterpiece",
+      "full": "Cyndi Lauper's signature 1984 hit features iconic music video with time-travel imagery and became one of the decade's most recognizable songs worldwide.",
+      "question": "What is Cyndi Lauper's real first name?",
+      "choices": [
+        "Constance",
+        "Cynthia",
+        "Candace",
+        "Christine"
+      ],
+      "correct_index": 1,
+      "release_year": 1984,
+      "category": "real_name",
+      "ts": 1785448166.4739642
+    },
+    {
+      "headline": "80s icon's timeless power ballad",
+      "full": "Cyndi Lauper's 1984 power ballad became a global hit, reaching #1 on multiple charts. The song showcases her vocal range and remains her signature power ballad.",
+      "question": "What year was 'Time After Time' released?",
+      "choices": [
+        "1987",
+        "1984",
+        "1982",
+        "1979"
+      ],
+      "correct_index": 1,
+      "release_year": 1984,
+      "category": "date",
+      "ts": 1785448168.087472
+    }
   ]
 }

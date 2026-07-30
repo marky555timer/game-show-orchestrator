@@ -182,6 +182,10 @@ def _render_dj_mode(t):
                 # Section 4: Gamepad Btn4 Auto-DJ toggle confirmation.
                 draw_marquee(matrix_surface, "auto_dj_overlay", state.auto_dj_overlay_text,
                              rect, align="center")
+            elif pid == 3 and t < state.auto_announce_overlay_until:
+                # Gamepad Btn1 Auto-Announcement toggle confirmation ("v ON"/"v OFF").
+                draw_marquee(matrix_surface, "auto_announce_overlay", state.auto_announce_overlay_text,
+                             rect, align="center")
             elif pid == 3 and kind and t < _status_until:
                 _render_status_panel(rect, t, kind)
             else:
