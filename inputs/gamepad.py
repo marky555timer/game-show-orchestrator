@@ -16,6 +16,7 @@ from drivers.factoid_engine import (
     ensure_prefetch, pull_next_from_queue, build_mock_question, load_forced_fallback_question,
 )
 from drivers import deck_orchestrator
+from drivers import price_game_engine
 from audio.audio_engine import (
     play_processed_sound, raw_buzzer, raw_bigwin, raw_clear, raw_ding,
     raw_coin, raw_buzz_short, stop_previous_audio, reverb_enabled
@@ -222,6 +223,14 @@ def handle_quiz_gate_button():
         return
 
     key = state.factoid_track_key
+
+    if state.price_game_pending and state.price_game_decade:
+        decade = state.price_game_decade
+        print(f"[BUTTON] Btn6 -> {decade.upper()} PRICE GAME triggered for '{key}'")
+        price_game_engine.start_price_game(key, decade)
+        state.set_message(f"{decade.upper()} PRICE GAME!", 1.5)
+        return
+
     if pull_next_from_queue(key):
         state.quiz_gate_status = "idle"
         state.mode = state.MODE_GAME
@@ -417,6 +426,7 @@ def process_events():
 
     _process_quiz_gate()
     deck_orchestrator.update(time.time())
+    price_game_engine.update(time.time())
 
     for event in pygame.event.get():
         if event.type == pygame.QUIT:

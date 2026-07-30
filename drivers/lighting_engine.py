@@ -77,6 +77,16 @@ def _render_game_chase(t, now):
         dmx.set_uplight(i + 2, 255 if on else 15, 255, 255, 255)
 
 
+def _render_price_strobe(t):
+    """70s/80s Price Game intro, phase 1: rapid on/off strobe across all 10
+    uplights (fixtures 2-11), ~10Hz full white/black alternation."""
+    on = int(t * 10.0) % 2 == 0
+    if on:
+        dmx.set_all_uplights(255, 255, 255, 255)
+    else:
+        dmx.set_all_uplights(0, 0, 0, 0)
+
+
 def _render_fixture1(t):
     mode = state.fixture1_mode
     if mode == "win":
@@ -96,11 +106,18 @@ def update(now):
     """Per-frame DMX renderer, called once per frame from main.py. Owns
     the entire 176-channel frame and calls dmx.render() itself, replacing
     the old event-driven closures that used to live in inputs/gamepad.py."""
-    if state.mode == state.MODE_DJ:
+    if state.price_game_active and state.price_game_phase == "strobe":
+        # Price Game intro, phase 1 -- overrides whatever mode we're in.
+        _render_price_strobe(now)
+    elif state.mode == state.MODE_DJ and not state.price_game_active:
         # Reset rule: Fixture 1 is strictly black during DJ mode.
         state.fixture1_mode = "off"
         _render_dj_uplights(now)
     else:
+        # GAME_MODE chase, and also the Price Game intro's banner/
+        # question-wait phases -- "return to the standard mid-pace chase"
+        # per the bonus-round spec (chase_pace_mode is reset to "mid" by
+        # price_game_engine.start_price_game()).
         _render_game_chase(now, now)
 
     _render_fixture1(now)

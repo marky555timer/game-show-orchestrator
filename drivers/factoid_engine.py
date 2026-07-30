@@ -120,6 +120,32 @@ def _dedupe_distractors(correct, wrong):
     return deduped
 
 
+def _decade_label(year):
+    """1970-1979 -> "70s", 1980-1989 -> "80s", else None -- the trigger for
+    the 70s/80s Price Game bonus round (config.PRICE_GAME_MIN_YEAR/MAX_YEAR)."""
+    if year is None:
+        return None
+    if config.PRICE_GAME_MIN_YEAR <= year <= 1979:
+        return "70s"
+    if 1980 <= year <= config.PRICE_GAME_MAX_YEAR:
+        return "80s"
+    return None
+
+
+_CURRENT_YEAR = time.localtime().tm_year
+
+
+def _parse_release_year(raw):
+    """Validates the AI-reported "release_year" field: must be a plain
+    4-digit numeral in a sane historical range, else the field is treated
+    as unknown (None) rather than trusted blindly."""
+    s = str(raw).strip()
+    if not re.fullmatch(r'\d{4}', s):
+        return None
+    year = int(s)
+    return year if 1900 <= year <= _CURRENT_YEAR else None
+
+
 def _looks_like_real_track(title, artist):
     t = str(title).strip()
     if len(t) < 3:
@@ -203,6 +229,7 @@ class TrackQuestionEngine:
         self._cache_lock = threading.Lock()
         self._queue = queue.Queue()
         self._inflight = set()
+        self._price_offered = set()  # track keys already armed/offered a Price Game this session
 
         self._load_cache()
 
@@ -242,6 +269,8 @@ class TrackQuestionEngine:
                 state.factoid_full = ""
                 state.factoid_status = "NO CONFIDENT TRACK ID"
                 state.track_question_queue = []
+                state.price_game_pending = False
+                state.price_game_decade = ""
             return
 
         key = _sanitize_track_key(title, artist)
@@ -252,11 +281,19 @@ class TrackQuestionEngine:
         if key != state.factoid_track_key:
             state.factoid_track_key = key
             state.track_question_queue = list(cached)
+            # New track -- any Price Game armed for the previous track is no
+            # longer relevant. Re-armed just below if this track's own
+            # cached questions already carry an eligible release_year.
+            state.price_game_pending = False
+            state.price_game_decade = ""
             if cached:
                 print(f"[TRACK CACHE] {len(cached)} cached question(s) already on disk for "
                       f"'{title}' - '{artist}'")
                 for q in cached:
                     log_incoming_question("CACHE HIT", q)
+                    year = q.get("release_year")
+                    if year:
+                        self._maybe_arm_price_game(key, year)
                 self._set_status(key, cached[0])
             else:
                 self._set_status(key, None, "FETCHING FACTOID...")
@@ -292,6 +329,23 @@ class TrackQuestionEngine:
             state.factoid_full = ""
             state.factoid_status = reason
 
+    # ------------------------------------------------------------
+    # 70s/80s Price Game trigger: arms once per track key (never re-armed
+    # for the same key this session) the first time an AI-tagged
+    # release_year for that track lands in the 1970-1989 range. Btn6
+    # (inputs/gamepad.py::handle_quiz_gate_button) checks state.price_game_
+    # pending and hands off to drivers/price_game_engine.py instead of
+    # pulling a normal question.
+    # ------------------------------------------------------------
+    def _maybe_arm_price_game(self, key, year):
+        decade = _decade_label(year)
+        if not decade or key in self._price_offered:
+            return
+        self._price_offered.add(key)
+        state.price_game_pending = True
+        state.price_game_decade = decade
+        print(f"[PRICE GAME] Armed {decade.upper()} price game for '{key}' (release_year={year}).")
+
     # Question-style variety (Section 4.1 legacy numbering): each of the 3
     # buffered slots uses a different style hint so a track's 3 questions
     # actually vary instead of drifting toward whatever the model defaults
@@ -299,8 +353,19 @@ class TrackQuestionEngine:
     # "true_false" (Options 1/2 = True/False, Options 3/4 disabled -- see
     # _call_ai and inputs/gamepad.py's select_quiz_answer bounds check) --
     # so _call_ai and the response parser know which shape to build/expect.
+    # 6 categories total (one is True/False) -- 3 of them get rolled per
+    # track (see _style_hints_for_track), so geography/real-name/etc show up
+    # periodically rather than every single track.
     _QUESTION_STYLE_HINTS = [
-        {"type": "multiple_choice", "hint": "Ask what year this track was released."},
+        {"type": "multiple_choice", "hint":
+            "Ask what year this track was released. Guardrail: work out how "
+            "long ago that real year was relative to today. If the track is "
+            "MORE than 20 years old, the three wrong-answer years MUST span "
+            "noticeably different decades/eras from the correct year and "
+            "from each other (e.g. correct=1974 -> wrong answers could be "
+            "1959, 1965, 1988) rather than clustering close together. If the "
+            "track is LESS than 20 years old, a tighter spread is fine (e.g. "
+            "correct=2014 -> wrong answers 2011, 2017, 2019)."},
         {"type": "multiple_choice", "hint":
             "Ask a numeric fact about the artist's career -- album count, chart "
             "position, band member count, etc -- phrased like a punchy short "
@@ -309,12 +374,26 @@ class TrackQuestionEngine:
             "Ask a one-word-answer question about the artist -- a real name, "
             "who started the band, etc -- phrased like a punchy short news "
             "headline (e.g. \"What is Eminem's real last name?\", \"Who "
-            "started this band?\")."},
+            "started this band?\"). Guardrail: ONLY ask a \"what is their "
+            "real name\" question if this artist actually performs under a "
+            "stage name/pseudonym distinct from their legal name (e.g. "
+            "Eminem, Lady Gaga, Sting, Elton John). If the artist already "
+            "performs under their own real/legal name (e.g. Adele, Ed "
+            "Sheeran, Bruno Mars, Dolly Parton), do NOT ask a real-name "
+            "question -- ask who started the band, a band member's name, or "
+            "a similar one-word artist fact instead."},
         {"type": "multiple_choice", "hint":
             "Ask what THIS SONG is about / its meaning or subject matter, in "
             "simple terms. The correct answer must be a short, simple phrase "
             "summarizing the song's theme (e.g. \"heartbreak\", \"a breakup\", "
             "\"partying all night\", \"losing a friend\")."},
+        {"type": "multiple_choice", "hint":
+            "Ask a music-geography question about the artist or song -- e.g. "
+            "what city or country the artist/band is from, what city they "
+            "were formed in, where they first performed live, or where a "
+            "famous recording/performance took place -- phrased like a "
+            "punchy short news headline (e.g. \"What city did the Beatles "
+            "first play in?\", \"Where was this band formed?\")."},
         {"type": "true_false", "hint":
             "Ask a True/False question about fan gossip, rumors, or "
             "pop-culture trivia tied to this artist or song (e.g. \"T/F: "
@@ -326,9 +405,10 @@ class TrackQuestionEngine:
     def _style_hints_for_track(self, key):
         """Deterministic per-track shuffle (seeded on the track's cache key)
         of _QUESTION_STYLE_HINTS, so the 3 buffered slots for one track are
-        always distinct styles, but which 3 of the 5 categories show up
-        (including the newer song-meaning / true-false ones) varies track
-        to track instead of the same first 3 winning every time."""
+        always distinct styles, but which 3 of the 6 categories show up
+        (including the newer song-meaning / geography / true-false ones)
+        varies track to track instead of the same first 3 winning every
+        time."""
         order = list(range(len(self._QUESTION_STYLE_HINTS)))
         random.Random(key).shuffle(order)
         return [self._QUESTION_STYLE_HINTS[i] for i in order]
@@ -382,6 +462,8 @@ class TrackQuestionEngine:
                 state.track_question_queue.append(result)
                 if len(existing) == 1:
                     self._set_status(key, result)
+                if result.get("release_year"):
+                    self._maybe_arm_price_game(key, result["release_year"])
             return
 
     def _call_ai(self, title, artist, style_hint):
@@ -391,157 +473,255 @@ class TrackQuestionEngine:
 
         is_true_false = style_hint["type"] == "true_false"
         hint = style_hint["hint"]
+        prompt = (_build_true_false_prompt(title, artist, hint) if is_true_false
+                  else _build_mc_prompt(title, artist, hint))
 
-        if is_true_false:
-            # True/False shape: choices are fixed to ["True", "False"]
-            # below (Options 1/2) -- Options 3/4 are never populated, which
-            # matrix_canvas.py already renders blank and
-            # inputs/gamepad.py::select_quiz_answer already refuses to
-            # select (index >= len(choices)), so no extra button-disable
-            # logic is needed for Options 3/4.
-            prompt = (
-                "You are a music trivia assistant for a live DJ show's LED "
-                f"display. Song title: {title!r}. Artist: {artist!r}. "
-                "If you are NOT at least 90% confident this is a real, "
-                "specific song/artist you actually know true facts about, "
-                "reply with EXACTLY the single word UNKNOWN and nothing "
-                "else. Otherwise reply with ONLY a single-line JSON object "
-                "(no markdown fences, no commentary) with these keys: "
-                "\"headline\" (a punchy factoid teaser, max 40 characters, "
-                "for a scrolling LED sign), \"full\" (a fuller interesting "
-                "factoid, max 200 characters), \"question\" (a True/False "
-                f"statement, max 100 characters, starting with \"T/F: \". "
-                f"{hint}), and \"correct\" -- the single word \"True\" or "
-                "\"False\" (exactly, capitalized, nothing else)."
-            )
-        else:
-            prompt = (
-                "You are a music trivia assistant for a live DJ show's LED display. "
-                f"Song title: {title!r}. Artist: {artist!r}. "
-                "If you are NOT at least 90% confident this is a real, specific "
-                "song you actually know true facts about, reply with EXACTLY the "
-                "single word UNKNOWN and nothing else. Otherwise reply with ONLY "
-                "a single-line JSON object (no markdown fences, no commentary) "
-                "with these keys: \"headline\" (a punchy factoid teaser, max 40 "
-                "characters, for a scrolling LED sign), \"full\" (a fuller "
-                "interesting factoid, max 200 characters), \"question\" (a trivia "
-                f"question, max 100 characters. {hint} Since answers are "
-                "shown on a small LED display, the correct answer must be "
-                "naturally short), \"correct\" (the correct answer -- a "
-                "number/year/short word or phrase, max 24 characters), and "
-                "\"wrong1\", \"wrong2\", \"wrong3\" (three plausible but "
-                "incorrect answers in the same short style/format as the "
-                "correct answer, max 24 characters each). \"correct\", "
-                "\"wrong1\", \"wrong2\", and \"wrong3\" must all be distinct "
-                "strings -- never reuse the same name/word/number across "
-                "more than one of those four fields."
-            )
-
-        try:
-            resp = requests.post(
-                "https://api.anthropic.com/v1/messages",
-                headers={
-                    "x-api-key": config.ANTHROPIC_API_KEY,
-                    "anthropic-version": "2023-06-01",
-                    "content-type": "application/json",
-                },
-                json={
-                    # Runtime question generation is cost-gated to Haiku only
-                    # (Section 1) -- AI_CLEANUP_MODEL is pinned to Haiku, never
-                    # Sonnet/Opus, in config.py.
-                    "model": config.AI_CLEANUP_MODEL,
-                    "max_tokens": 500,
-                    "messages": [{"role": "user", "content": prompt}],
-                },
-                timeout=config.FACTOID_TIMEOUT_SECONDS,
-            )
-            resp.raise_for_status()
-        except requests.exceptions.Timeout:
-            return None, "REQUEST TIMED OUT"
-        except requests.exceptions.ConnectionError:
-            # Offline/network-down: fall back to a local question rather
-            # than surfacing a bare failure.
-            fallback = _load_fallback_question()
-            if fallback:
-                return fallback, None
-            return None, "NETWORK ERROR: no internet connection and no local fallback available"
-        except requests.exceptions.HTTPError as e:
-            status = e.response.status_code if e.response is not None else None
-            detail = _http_error_detail(e.response)
-            if status == 429:
-                return None, f"AI QUOTA/RATE LIMIT EXHAUSTED (HTTP 429): {detail}"
-            if status in (401, 403):
-                return None, f"AI AUTH ERROR (HTTP {status}) -- CHECK API KEY: {detail}"
-            return None, f"AI HTTP ERROR ({status}): {detail}"
-        except requests.exceptions.RequestException as e:
-            return None, f"NETWORK ERROR: {e}"
-
-        try:
-            data = resp.json()
-            text = "".join(
-                block.get("text", "") for block in data.get("content", []) if block.get("type") == "text"
-            ).strip()
-        except Exception:
-            return None, "MALFORMED AI RESPONSE"
-
-        if not text:
-            return None, "EMPTY AI RESPONSE"
+        text, reason = _post_haiku(prompt)
+        if text is None:
+            if reason and reason.startswith("NETWORK ERROR"):
+                # Offline/network-down: fall back to a local question rather
+                # than surfacing a bare failure.
+                fallback = _load_fallback_question()
+                if fallback:
+                    return fallback, None
+                return None, "NETWORK ERROR: no internet connection and no local fallback available"
+            return None, reason
 
         if text.strip().upper().startswith("UNKNOWN"):
             return None, "AI_NOT_CONFIDENT"
 
-        cleaned = text.strip()
-        if cleaned.startswith("```"):
-            cleaned = re.sub(r'^```(?:json)?\s*|\s*```$', '', cleaned).strip()
+        return _parse_question_json(text, is_true_false)
 
-        # Defensive: with thinking disabled, stray tags can occasionally leak
-        # into the visible text. Slice out the JSON object itself rather than
-        # trusting the response to be pure JSON.
-        start, end = cleaned.find("{"), cleaned.rfind("}")
-        if start != -1 and end != -1 and end > start:
-            cleaned = cleaned[start:end + 1]
 
-        try:
-            obj = json.loads(cleaned)
-        except Exception:
-            return None, "JSON PARSE ERROR"
+def _post_haiku(prompt, max_tokens=500, timeout=None):
+    """Shared Anthropic Haiku call + response-text extraction, reused by
+    every AI prompt in this module (track trivia and the Price Game pricing
+    question below). Returns (text, None) on success, or (None, reason_str)
+    on failure -- reason strings match the taxonomy this module has always
+    surfaced (timeout, network, HTTP status, malformed body)."""
+    try:
+        resp = requests.post(
+            "https://api.anthropic.com/v1/messages",
+            headers={
+                "x-api-key": config.ANTHROPIC_API_KEY,
+                "anthropic-version": "2023-06-01",
+                "content-type": "application/json",
+            },
+            json={
+                # Runtime question generation is cost-gated to Haiku only
+                # (Section 1) -- AI_CLEANUP_MODEL is pinned to Haiku, never
+                # Sonnet/Opus, in config.py.
+                "model": config.AI_CLEANUP_MODEL,
+                "max_tokens": max_tokens,
+                "messages": [{"role": "user", "content": prompt}],
+            },
+            timeout=timeout or config.FACTOID_TIMEOUT_SECONDS,
+        )
+        resp.raise_for_status()
+    except requests.exceptions.Timeout:
+        return None, "REQUEST TIMED OUT"
+    except requests.exceptions.ConnectionError as e:
+        return None, f"NETWORK ERROR: no internet connection ({e})"
+    except requests.exceptions.HTTPError as e:
+        status = e.response.status_code if e.response is not None else None
+        detail = _http_error_detail(e.response)
+        if status == 429:
+            return None, f"AI QUOTA/RATE LIMIT EXHAUSTED (HTTP 429): {detail}"
+        if status in (401, 403):
+            return None, f"AI AUTH ERROR (HTTP {status}) -- CHECK API KEY: {detail}"
+        return None, f"AI HTTP ERROR ({status}): {detail}"
+    except requests.exceptions.RequestException as e:
+        return None, f"NETWORK ERROR: {e}"
 
-        headline = str(obj.get("headline", "")).strip()
-        full = str(obj.get("full", "")).strip()
-        question = str(obj.get("question", "")).strip()
-        correct = str(obj.get("correct", "")).strip()
+    try:
+        data = resp.json()
+        text = "".join(
+            block.get("text", "") for block in data.get("content", []) if block.get("type") == "text"
+        ).strip()
+    except Exception:
+        return None, "MALFORMED AI RESPONSE"
 
-        if not headline or not question or not correct:
+    if not text:
+        return None, "EMPTY AI RESPONSE"
+
+    return text, None
+
+
+def _build_true_false_prompt(title, artist, hint):
+    # True/False shape: choices are fixed to ["True", "False"] by
+    # _parse_question_json (Options 1/2) -- Options 3/4 are never
+    # populated, which matrix_canvas.py already renders blank and
+    # inputs/gamepad.py::select_quiz_answer already refuses to select
+    # (index >= len(choices)), so no extra button-disable logic is needed.
+    return (
+        "You are a music trivia assistant for a live DJ show's LED "
+        f"display. Song title: {title!r}. Artist: {artist!r}. "
+        "If you are NOT at least 90% confident this is a real, "
+        "specific song/artist you actually know true facts about, "
+        "reply with EXACTLY the single word UNKNOWN and nothing "
+        "else. Otherwise reply with ONLY a single-line JSON object "
+        "(no markdown fences, no commentary) with these keys: "
+        "\"headline\" (a punchy factoid teaser, max 40 characters, "
+        "for a scrolling LED sign), \"full\" (a fuller interesting "
+        "factoid, max 200 characters), \"release_year\" (the 4-digit "
+        "real-world calendar year this exact song/track was originally "
+        "released, as a plain numeral string e.g. \"1984\" -- empty "
+        "string \"\" only if you genuinely don't know), \"question\" "
+        f"(a True/False statement, max 100 characters, starting with "
+        f"\"T/F: \". {hint}), and \"correct\" -- the single word \"True\" "
+        "or \"False\" (exactly, capitalized, nothing else)."
+    )
+
+
+def _build_mc_prompt(title, artist, hint):
+    return (
+        "You are a music trivia assistant for a live DJ show's LED display. "
+        f"Song title: {title!r}. Artist: {artist!r}. "
+        "If you are NOT at least 90% confident this is a real, specific "
+        "song you actually know true facts about, reply with EXACTLY the "
+        "single word UNKNOWN and nothing else. Otherwise reply with ONLY "
+        "a single-line JSON object (no markdown fences, no commentary) "
+        "with these keys: \"headline\" (a punchy factoid teaser, max 40 "
+        "characters, for a scrolling LED sign), \"full\" (a fuller "
+        "interesting factoid, max 200 characters), \"release_year\" (the "
+        "4-digit real-world calendar year this exact song/track was "
+        "originally released, as a plain numeral string e.g. \"1984\" -- "
+        "empty string \"\" only if you genuinely don't know), \"question\" "
+        f"(a trivia question, max 100 characters. {hint} Since answers are "
+        "shown on a small LED display, the correct answer must be "
+        "naturally short), \"correct\" (the correct answer -- a "
+        "number/year/short word or phrase, max 24 characters), and "
+        "\"wrong1\", \"wrong2\", \"wrong3\" (three plausible but "
+        "incorrect answers in the same short style/format as the "
+        "correct answer, max 24 characters each). \"correct\", "
+        "\"wrong1\", \"wrong2\", and \"wrong3\" must all be distinct "
+        "strings -- never reuse the same name/word/number across "
+        "more than one of those four fields."
+    )
+
+
+def _parse_question_json(text, is_true_false):
+    """Shared response parser for both the true_false and multiple_choice
+    track-trivia shapes. Returns (result_dict, None) on success or
+    (None, reason_str) on failure."""
+    cleaned = text.strip()
+    if cleaned.startswith("```"):
+        cleaned = re.sub(r'^```(?:json)?\s*|\s*```$', '', cleaned).strip()
+
+    # Defensive: with thinking disabled, stray tags can occasionally leak
+    # into the visible text. Slice out the JSON object itself rather than
+    # trusting the response to be pure JSON.
+    start, end = cleaned.find("{"), cleaned.rfind("}")
+    if start != -1 and end != -1 and end > start:
+        cleaned = cleaned[start:end + 1]
+
+    try:
+        obj = json.loads(cleaned)
+    except Exception:
+        return None, "JSON PARSE ERROR"
+
+    headline = str(obj.get("headline", "")).strip()
+    full = str(obj.get("full", "")).strip()
+    question = str(obj.get("question", "")).strip()
+    correct = str(obj.get("correct", "")).strip()
+    release_year = _parse_release_year(obj.get("release_year", ""))
+
+    if not headline or not question or not correct:
+        return None, "INCOMPLETE AI RESPONSE"
+
+    if is_true_false:
+        correct_lower = correct.lower()
+        if correct_lower not in ("true", "false"):
+            return None, "MALFORMED TRUE/FALSE ANSWER"
+        # Options 1/2 = True/False; Options 3/4 intentionally absent.
+        choices = ["True", "False"]
+        correct_index = 0 if correct_lower == "true" else 1
+    else:
+        wrong = [str(obj.get(k, "")).strip() for k in ("wrong1", "wrong2", "wrong3")]
+        if not all(wrong):
             return None, "INCOMPLETE AI RESPONSE"
+        # Guardrail: the model can still repeat a name/word across
+        # choices despite the prompt instruction -- dedupe defensively
+        # rather than trust it.
+        wrong = _dedupe_distractors(correct, wrong)
+        choices = [correct] + wrong
+        random.shuffle(choices)
+        correct_index = choices.index(correct)
 
-        if is_true_false:
-            correct_lower = correct.lower()
-            if correct_lower not in ("true", "false"):
-                return None, "MALFORMED TRUE/FALSE ANSWER"
-            # Options 1/2 = True/False; Options 3/4 intentionally absent.
-            choices = ["True", "False"]
-            correct_index = 0 if correct_lower == "true" else 1
-        else:
-            wrong = [str(obj.get(k, "")).strip() for k in ("wrong1", "wrong2", "wrong3")]
-            if not all(wrong):
-                return None, "INCOMPLETE AI RESPONSE"
-            # Guardrail: the model can still repeat a name/word across
-            # choices despite the prompt instruction -- dedupe defensively
-            # rather than trust it.
-            wrong = _dedupe_distractors(correct, wrong)
-            choices = [correct] + wrong
-            random.shuffle(choices)
-            correct_index = choices.index(correct)
+    result = {
+        "headline": headline[:40],
+        "full": full[:200],
+        "question": question[:100],
+        "choices": [c[:24] for c in choices],
+        "correct_index": correct_index,
+        "release_year": release_year,
+        "ts": time.time(),
+    }
+    return result, None
 
-        result = {
-            "headline": headline[:40],
-            "full": full[:200],
-            "question": question[:100],
-            "choices": [c[:24] for c in choices],
-            "correct_index": correct_index,
-            "ts": time.time(),
-        }
-        return result, None
+
+# ------------------------------------------------------------
+# 70s/80s "Price Game" pricing trivia (see drivers/price_game_engine.py for
+# the strobe/banner/question-wait state machine that calls this).
+# ------------------------------------------------------------
+_PRICE_GAME_ITEM_EXAMPLES = (
+    "a 16oz can of hairspray, a gallon of whole milk, a dozen eggs, a "
+    "movie ticket, an LP vinyl record, a pair of name-brand sneakers, a "
+    "tube of lipstick, a loaf of bread, a candy bar, a pack of pantyhose"
+)
+
+
+def _build_price_prompt(decade_label, era_years):
+    return (
+        "You are running a 'Price Is Right'-style pricing trivia bonus "
+        f"round for a live DJ show's LED display, themed to the "
+        f"{decade_label} ({era_years}). Pick ONE real, era-appropriate "
+        "everyday consumer product, skewing toward female-oriented / "
+        f"common household lifestyle items (examples: {_PRICE_GAME_ITEM_EXAMPLES}), "
+        "and ask what it cost in that decade. Reply with ONLY a "
+        "single-line JSON object (no markdown fences, no commentary) with "
+        "these keys: \"headline\" (a punchy teaser naming the product, "
+        "max 40 characters, for a scrolling LED sign), \"full\" (a fuller "
+        "sentence naming the specific product and decade, max 200 "
+        "characters), \"question\" (e.g. \"How much was a 16oz can of "
+        f"Rave hairspray in 1984?\" -- must name a specific product and a "
+        f"specific year within {era_years}, max 100 characters), "
+        "\"correct\" (the real historical price formatted like \"$1.49\", "
+        "max 24 characters), and \"wrong1\", \"wrong2\", \"wrong3\" "
+        "(three other realistic era-appropriate prices in the same "
+        "\"$X.XX\" format -- plausible but not equal to the correct price "
+        "or to each other, max 24 characters each)."
+    )
+
+
+def fetch_price_question(decade_label):
+    """Fetches a single 70s/80s Price Game pricing-trivia question from
+    Haiku, in the same result shape _call_ai produces for a normal
+    multiple_choice question (so it can be applied via apply_price_question
+    -> _apply_active_question like any other quiz question). Returns
+    (result_dict, None) on success or (None, reason_str) on failure."""
+    if not config.ANTHROPIC_API_KEY:
+        return None, "AI DISABLED (NO API KEY)"
+
+    era_years = "1970-1979" if decade_label == "70s" else "1980-1989"
+    prompt = _build_price_prompt(decade_label, era_years)
+
+    text, reason = _post_haiku(prompt, max_tokens=400)
+    if text is None:
+        return None, reason
+
+    result, reason = _parse_question_json(text, is_true_false=False)
+    if result is None:
+        return None, reason
+    result["release_year"] = None  # metadata field is about "this song", not relevant here
+    return result, None
+
+
+def apply_price_question(data):
+    """Public hook for drivers/price_game_engine.py -- loads a fetched
+    price-question dict as the active round question exactly like a normal
+    Btn6 pull."""
+    _apply_active_question(data, "PRICE_GAME")
 
 
 def _load_fallback_question():

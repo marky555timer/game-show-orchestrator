@@ -1,18 +1,23 @@
 import time
+import random
 import pygame
 from config import (
     MATRIX_WIDTH, MATRIX_HEIGHT, PIXEL_SCALE, GAP, WINDOW_W, WINDOW_H,
-    RED_FULL, RED_DIM, RED_OFF, BLACK, PANELS, TOP_COMBINED, BOTTOM_COMBINED,
+    RED_FULL, RED_DIM, RED_OFF, BLACK, PANELS, TOP_COMBINED,
     TOP_CYCLE_TRACK_SECONDS, TOP_CYCLE_FACTOID_SECONDS,
     STATUS_PANEL_HOLD_SECONDS, TOP_SHOW_FACTOID_PAGE,
     TEMPO_FLASH_DECAY_SECONDS, QUIZ_CELEBRATION_HOLD_SECONDS, QUIZ_STATS_HOLD_SECONDS,
     BRANDING_OVERLAY_INTERVAL_SECONDS, BRANDING_OVERLAY_DURATION_SECONDS,
+    BRANDING_ASSEMBLY_DURATION_SECONDS,
 )
 from state import state
 from drivers.rekordbox_driver import get_rekordbox_track
 from drivers.factoid_engine import build_mock_question, advance_to_next_queued_question
 from drivers.branding_engine import get_current_text
-from graphics.text_render import draw_marquee, wrap_two_lines
+from graphics.text_render import (
+    draw_marquee, wrap_two_lines, draw_bitmap_text, text_width, char_width,
+    GLYPH_GAP, GLYPH_HEIGHT,
+)
 from graphics.animations import (
     render_panel_animation, deal_panel_animations,
     anim_dancing_cat, anim_star_burst, anim_coin_pop,
@@ -79,25 +84,29 @@ def _render_dj_mode(t):
 
     # Panels 1+2 are driven as one logical 64x16 surface, two 8px lines tall,
     # so artist and title each get the full double-panel width instead of
-    # being crammed into 32px.
-    tx, ty, tw, th = TOP_COMBINED
-    line1_rect = (tx, ty, tw, LINE_H)
-    line2_rect = (tx, ty + LINE_H, tw, LINE_H)
-
-    page = _get_top_page(has_factoid)
-    if page == 1:
-        fact1, fact2 = wrap_two_lines(state.factoid_headline, tw)
-        draw_marquee(matrix_surface, "dj_top_fact1", fact1, line1_rect)
-        draw_marquee(matrix_surface, "dj_top_fact2", fact2, line2_rect)
-    elif artist_name:
-        draw_marquee(matrix_surface, "dj_top_artist", artist_name, line1_rect)
-        draw_marquee(matrix_surface, "dj_top_title", song_title, line2_rect)
+    # being crammed into 32px -- except during the periodic branding
+    # takeover below, which uses the combined surface as a single line.
+    if _branding_overlay_active(t) and get_current_text():
+        _render_dj_branding_assembly(t)
     else:
-        # No artist parsed yet -- let the title use both lines rather than
-        # leaving half the surface dark.
-        title1, title2 = wrap_two_lines(song_title, tw)
-        draw_marquee(matrix_surface, "dj_top_title_only1", title1, line1_rect)
-        draw_marquee(matrix_surface, "dj_top_title_only2", title2, line2_rect)
+        tx, ty, tw, th = TOP_COMBINED
+        line1_rect = (tx, ty, tw, LINE_H)
+        line2_rect = (tx, ty + LINE_H, tw, LINE_H)
+
+        page = _get_top_page(has_factoid)
+        if page == 1:
+            fact1, fact2 = wrap_two_lines(state.factoid_headline, tw)
+            draw_marquee(matrix_surface, "dj_top_fact1", fact1, line1_rect)
+            draw_marquee(matrix_surface, "dj_top_fact2", fact2, line2_rect)
+        elif artist_name:
+            draw_marquee(matrix_surface, "dj_top_artist", artist_name, line1_rect)
+            draw_marquee(matrix_surface, "dj_top_title", song_title, line2_rect)
+        else:
+            # No artist parsed yet -- let the title use both lines rather than
+            # leaving half the surface dark.
+            title1, title2 = wrap_two_lines(song_title, tw)
+            draw_marquee(matrix_surface, "dj_top_title_only1", title1, line1_rect)
+            draw_marquee(matrix_surface, "dj_top_title_only2", title2, line2_rect)
 
     # Refresh panel 3's status hold window whenever the AI pipeline's verdict
     # for the current track changes.
@@ -107,17 +116,14 @@ def _render_dj_mode(t):
         _status_signature = signature
         _status_until = (t + STATUS_PANEL_HOLD_SECONDS) if kind else 0.0
 
-    if _branding_overlay_active(t) and get_current_text():
-        draw_marquee(matrix_surface, "dj_branding_ticker", get_current_text(), BOTTOM_COMBINED)
-    else:
-        for pid in (3, 4, 5, 6):
-            rect = PANELS[pid]
-            if pid == 6 and t < state.vol_overlay_until:
-                _draw_volume_overlay(rect)
-            elif pid == 3 and kind and t < _status_until:
-                _render_status_panel(rect, t, kind)
-            else:
-                render_panel_animation(matrix_surface, pid, rect, t)
+    for pid in (3, 4, 5, 6):
+        rect = PANELS[pid]
+        if pid == 6 and t < state.vol_overlay_until:
+            _draw_volume_overlay(rect)
+        elif pid == 3 and kind and t < _status_until:
+            _render_status_panel(rect, t, kind)
+        else:
+            render_panel_animation(matrix_surface, pid, rect, t)
 
     _draw_tempo_flash(t)
 
@@ -165,12 +171,100 @@ def _render_status_panel(rect, t, kind):
 
 def _branding_overlay_active(t):
     """Every BRANDING_OVERLAY_INTERVAL_SECONDS, for the first
-    BRANDING_OVERLAY_DURATION_SECONDS of that window, the branding ticker
-    takes over panels 3-6 in place of the idle-animation rotation."""
+    BRANDING_OVERLAY_DURATION_SECONDS of that window, the DJ branding string
+    takes over the top strip (panels 1+2) in place of the artist/title
+    display -- see _render_dj_branding_assembly."""
     if BRANDING_OVERLAY_INTERVAL_SECONDS <= 0:
         return False
     phase = t % BRANDING_OVERLAY_INTERVAL_SECONDS
     return phase < BRANDING_OVERLAY_DURATION_SECONDS
+
+
+# ==========================================
+# DJ BRANDING ASSEMBLY ANIMATION (top strip, panels 1+2)
+# ==========================================
+# Lightweight, hardware-friendly alternative to a physics/particle engine:
+# each character gets a fixed target slot (its normal centered position in
+# the combined 64x16 surface) and a random starting point just outside one
+# of the surface's four edges, then linearly eases from start -> target over
+# BRANDING_ASSEMBLY_DURATION_SECONDS. Once assembled it just holds in place
+# (cheap: draw the same static positions every frame) for the rest of the
+# BRANDING_OVERLAY_DURATION_SECONDS window, then _render_dj_mode cuts back to
+# the normal artist/title display -- no fade-out pass needed.
+_FLY_IN_MARGIN = 14
+
+_branding_assembly_chars = []   # [{"char", "sx", "sy", "tx", "ty"}, ...]
+_branding_assembly_text = None
+_branding_assembly_cycle_id = None
+_branding_assembly_cycle_start = 0.0
+
+
+def _random_edge_start(x0, y0, w, h):
+    """A random point just beyond one of the four edges of (x0, y0, w, h),
+    so characters visibly fly in from top/bottom/left/right."""
+    edge = random.choice(("top", "bottom", "left", "right"))
+    if edge == "top":
+        return random.uniform(x0, x0 + w), y0 - _FLY_IN_MARGIN
+    if edge == "bottom":
+        return random.uniform(x0, x0 + w), y0 + h + _FLY_IN_MARGIN
+    if edge == "left":
+        return x0 - _FLY_IN_MARGIN, random.uniform(y0, y0 + h)
+    return x0 + w + _FLY_IN_MARGIN, random.uniform(y0, y0 + h)
+
+
+def _deal_branding_assembly(text, rect):
+    global _branding_assembly_chars
+    x0, y0, w, h = rect
+    total_w = text_width(text)
+    target_x = x0 + max(0, (w - total_w) // 2)
+    target_y = y0 + max(0, (h - GLYPH_HEIGHT) // 2)
+
+    chars = []
+    cx = target_x
+    for ch in text:
+        sx, sy = _random_edge_start(x0, y0, w, h)
+        chars.append({"char": ch, "sx": sx, "sy": sy, "tx": cx, "ty": target_y})
+        cx += char_width(ch) + GLYPH_GAP
+    _branding_assembly_chars = chars
+
+
+def _render_dj_branding_assembly(t):
+    global _branding_assembly_text, _branding_assembly_cycle_id, _branding_assembly_cycle_start
+
+    rect = TOP_COMBINED
+    text = get_current_text()
+    cycle_id = int(t // BRANDING_OVERLAY_INTERVAL_SECONDS)
+
+    if cycle_id != _branding_assembly_cycle_id or text != _branding_assembly_text:
+        _deal_branding_assembly(text, rect)
+        _branding_assembly_cycle_id = cycle_id
+        _branding_assembly_text = text
+        _branding_assembly_cycle_start = cycle_id * BRANDING_OVERLAY_INTERVAL_SECONDS
+
+    elapsed = t - _branding_assembly_cycle_start
+    progress = 1.0
+    if BRANDING_ASSEMBLY_DURATION_SECONDS > 0:
+        progress = min(1.0, elapsed / BRANDING_ASSEMBLY_DURATION_SECONDS)
+    eased = 1.0 - (1.0 - progress) ** 3  # ease-out cubic: fast approach, snappy settle
+
+    old_clip = matrix_surface.get_clip()
+    matrix_surface.set_clip(pygame.Rect(rect))
+    try:
+        for c in _branding_assembly_chars:
+            x = c["sx"] + (c["tx"] - c["sx"]) * eased
+            y = c["sy"] + (c["ty"] - c["sy"]) * eased
+            draw_bitmap_text(matrix_surface, c["char"], int(round(x)), int(round(y)), color=RED_FULL)
+    finally:
+        matrix_surface.set_clip(old_clip)
+
+
+def _render_price_banner(t):
+    """70s/80s Price Game intro, phase 2: a temporary banner on the top
+    strip (panels 1+2) while the bottom panels keep idle-animating."""
+    label = f"{state.price_game_decade.upper()} PRICE GAME!"
+    draw_marquee(matrix_surface, "price_game_banner", label, TOP_COMBINED, align="center")
+    for pid in (3, 4, 5, 6):
+        render_panel_animation(matrix_surface, pid, PANELS[pid], t)
 
 
 def _draw_tempo_flash(t):
@@ -350,7 +444,9 @@ def update_matrix_canvas():
     matrix_surface.fill(BLACK)
     t = time.time()
 
-    if state.mode == state.MODE_DJ:
+    if state.price_game_active and state.price_game_phase == "banner":
+        _render_price_banner(t)
+    elif state.mode == state.MODE_DJ:
         _render_dj_mode(t)
     else:
         _render_quiz_mode(t)

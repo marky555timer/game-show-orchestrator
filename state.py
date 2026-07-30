@@ -92,6 +92,13 @@ class State:
         # --- Deck-switch / branding fetch cadence ---
         self.deck_change_count = 0
 
+        # --- 70s/80s "Price Game" bonus round ---
+        self.price_game_pending = False   # armed for the current track, waiting on Btn6
+        self.price_game_decade = ""       # "70s" | "80s"
+        self.price_game_active = False    # True during the strobe/banner/question-wait intro
+        self.price_game_phase = ""        # "strobe" | "banner" | "question_wait" | ""
+        self.price_game_phase_started_at = 0.0
+
     def set_status(self, msg, duration=2.0):
         self.status_msg = msg
         self.msg_timer = time.time() + duration

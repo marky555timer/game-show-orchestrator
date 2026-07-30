@@ -203,5 +203,843 @@
       "correct_index": 1,
       "ts": 1785365124.3977315
     }
+  ],
+  "conki - oh my love": [
+    {
+      "headline": "offline trivia",
+      "full": "",
+      "question": "How many albums did AC/DC make?",
+      "choices": [
+        "17",
+        "12",
+        "22",
+        "9"
+      ],
+      "correct_index": 0,
+      "ts": 1785369146.8862507
+    },
+    {
+      "headline": "offline trivia",
+      "full": "",
+      "question": "How many members are in BTS?",
+      "choices": [
+        "7",
+        "5",
+        "9",
+        "6"
+      ],
+      "correct_index": 0,
+      "ts": 1785369244.1908095
+    }
+  ],
+  "the doors - people are strange": [
+    {
+      "headline": "Strange debut from LA psych legends",
+      "full": "Released in 1967 as The Doors' debut single, 'People Are Strange' showcased their dark, theatrical approach to rock music and became one of their signature songs.",
+      "question": "Who was The Doors' lead singer?",
+      "choices": [
+        "Iggy Pop",
+        "Lou Reed",
+        "Jim Morrison",
+        "David Bowie"
+      ],
+      "correct_index": 2,
+      "ts": 1785378527.7623847
+    },
+    {
+      "headline": "Strange Days Album Track (1967)",
+      "full": "Released on The Doors' second album 'Strange Days,' this haunting track features Jim Morrison's distinctive vocals over hypnotic organ work by Ray Manzarek.",
+      "question": "T/F: Jim Morrison was arrested during a 1969 Miami concert for indecent exposure",
+      "choices": [
+        "True",
+        "False"
+      ],
+      "correct_index": 0,
+      "ts": 1785378529.6162205
+    },
+    {
+      "headline": "The Doors' 1967 psych-rock classic",
+      "full": "Released in 1967, this trippy track explores alienation and society's strangeness. It became a defining song of the psychedelic era and remains a Doors staple.",
+      "question": "What is 'People Are Strange' about?",
+      "choices": [
+        "political revolution",
+        "drug addiction",
+        "alienation and society",
+        "lost love"
+      ],
+      "correct_index": 2,
+      "ts": 1785378531.0816514
+    }
+  ],
+  "oingo boingo - weird science": [
+    {
+      "headline": "1985 MTV hit from Oingo Boingo",
+      "full": "Oingo Boingo's 'Weird Science' was featured in the 1985 film of the same name. The synth-pop track became one of the band's biggest hits and MTV staples.",
+      "question": "What is 'Weird Science' about?",
+      "choices": [
+        "a mad scientist's reveng",
+        "teenage computer hackers",
+        "a love spell gone wrong",
+        "creating life through sc"
+      ],
+      "correct_index": 3,
+      "ts": 1785378751.0637667
+    },
+    {
+      "headline": "MTV hit from 1985 film",
+      "full": "Featured in 'Weird Science' film (1985). Oingo Boingo's synth-pop masterpiece became a defining '80s track with quirky charm and electronic energy.",
+      "question": "Who founded Oingo Boingo?",
+      "choices": [
+        "Richard Elfman",
+        "John Pareles",
+        "Terry Nunn",
+        "Danny Elfman"
+      ],
+      "correct_index": 3,
+      "ts": 1785378752.6051881
+    },
+    {
+      "headline": "Weird Science hit #2 on Billboard Hot 10",
+      "full": "Oingo Boingo's 1985 synth-pop hit 'Weird Science' peaked at #2 on the Billboard Hot 100 and became their biggest chart success, featured in the film of the same name.",
+      "question": "How many studio albums did Oingo Boingo release?",
+      "choices": [
+        "11",
+        "7",
+        "9",
+        "6"
+      ],
+      "correct_index": 2,
+      "ts": 1785378754.3491285
+    }
+  ],
+  "talking heads - psycho killer - 2005 remaster": [
+    {
+      "headline": "Talking Heads' paranoid new wave classic",
+      "full": "Released in 1977, 'Psycho Killer' became Talking Heads' signature song with its iconic bassline and anxious lyrics about murderous thoughts.",
+      "question": "How many studio albums did Talking Heads release?",
+      "choices": [
+        "6",
+        "10",
+        "5",
+        "8"
+      ],
+      "correct_index": 3,
+      "ts": 1785379042.0163164
+    },
+    {
+      "headline": "Talking Heads' paranoid anthem",
+      "full": "Released in 1977, 'Psycho Killer' became Talking Heads' signature song with its iconic 'Qu'est-ce que c'est?' hook and nervously angular new wave sound.",
+      "question": "What is 'Psycho Killer' about?",
+      "choices": [
+        "social conformity",
+        "urban violence",
+        "romantic obsession",
+        "anxiety and alienation"
+      ],
+      "correct_index": 3,
+      "ts": 1785379043.6033196
+    },
+    {
+      "headline": "Talking Heads' debut hit from 1977",
+      "full": "Psycho Killer was Talking Heads' breakthrough single from their 1977 debut album. David Byrne's anxious vocals and the song's minimalist post-punk sound became iconic.",
+      "question": "Who is Talking Heads' lead singer?",
+      "choices": [
+        "Chris Frantz",
+        "David Byrne",
+        "Tina Weymouth",
+        "Jerry Harrison"
+      ],
+      "correct_index": 1,
+      "ts": 1785379045.7111425
+    }
+  ],
+  "paris hilton, alexa vega, ter... - zydrate anatomy": [
+    {
+      "headline": "Repo! The Genetic Opera Track",
+      "full": "From the 2008 cult horror musical film Repo! The Genetic Opera, featuring Paris Hilton, Alexa Vega, and Terrance Zdunich in this darkly comedic anatomical number.",
+      "question": "What year was 'Zydrate Anatomy' released?",
+      "choices": [
+        "2010",
+        "2007",
+        "2006",
+        "2008"
+      ],
+      "correct_index": 3,
+      "ts": 1785379227.2217855
+    },
+    {
+      "headline": "From Repo! The Genetic Opera",
+      "full": "Paris Hilton, Alexa Vega, and Terrence Zdunich performed this darkly comedic song from the 2008 musical film about organ harvesting in a dystopian future.",
+      "question": "What is 'Zydrate Anatomy' about?",
+      "choices": [
+        "genetic mutation",
+        "organ harvesting",
+        "zombie apocalypse",
+        "surgical experimentation"
+      ],
+      "correct_index": 1,
+      "ts": 1785379228.9464436
+    },
+    {
+      "headline": "Repo! The Genetic Opera soundtrack",
+      "full": "Paris Hilton, Alexa Vega, and Terrance Zdunich performed 'Zydrate Anatomy' from the 2008 cult horror musical film Repo! The Genetic Opera.",
+      "question": "Who directed Repo! The Genetic Opera?",
+      "choices": [
+        "David Lynch",
+        "John Carpenter",
+        "Darren Lynn Bousman",
+        "Tim Burton"
+      ],
+      "correct_index": 2,
+      "ts": 1785379230.6238954
+    }
+  ],
+  "susan sarandon, little nell,... - rose tint my world": [
+    {
+      "headline": "Rocky Horror Picture Show classic",
+      "full": "From the 1975 cult film musical Rocky Horror Picture Show, this song features Susan Sarandon and Little Nell. It's a playful, seductive number performed during the film's iconic pool scene.",
+      "question": "T/F: Rocky Horror Picture Show premiered at midnight screenings that became a cultural phenomenon.",
+      "choices": [
+        "True",
+        "False"
+      ],
+      "correct_index": 0,
+      "ts": 1785379575.02235
+    },
+    {
+      "headline": "Rocky Horror's Showstopper",
+      "full": "From The Rocky Horror Picture Show (1975), this musical number features Susan Sarandon and Little Nell in an iconic floor show performance celebrating sensuality and freedom.",
+      "question": "Who wrote Rocky Horror Picture Show?",
+      "choices": [
+        "Richard O'Brien",
+        "Jim Sharman",
+        "Meat Loaf",
+        "Lou Adler"
+      ],
+      "correct_index": 0,
+      "ts": 1785379576.7182333
+    },
+    {
+      "headline": "Rocky Horror Picture Show classic",
+      "full": "Susan Sarandon's iconic song from the 1975 cult film Rocky Horror Picture Show, performed during the famous pool party scene.",
+      "question": "What is this song about?",
+      "choices": [
+        "alien invasion",
+        "forbidden love",
+        "time travel",
+        "sexual awakening"
+      ],
+      "correct_index": 3,
+      "ts": 1785379578.6115777
+    }
+  ],
+  "levi stubbs, little shop of h... - mean green mother from outers...": [
+    {
+      "headline": "Levi Stubbs' iconic Little Shop voice",
+      "full": "Levi Stubbs of The Four Tops sang the terrifying Audrey II plant in the 1986 film Little Shop of Horrors, delivering the iconic 'Mean Green Mother' number.",
+      "question": "What year was Little Shop of Horrors released?",
+      "choices": [
+        "1989",
+        "1982",
+        "1986",
+        "1984"
+      ],
+      "correct_index": 2,
+      "ts": 1785379607.7138815
+    },
+    {
+      "headline": "Mean Green Mother from Outer Space",
+      "full": "Levi Stubbs voiced the carnivorous plant Audrey II in the 1986 film adaptation of Little Shop of Horrors, delivering this iconic villainous musical number.",
+      "question": "What group was Levi Stubbs the lead singer of?",
+      "choices": [
+        "The Supremes",
+        "The Temptations",
+        "Boyz II Men",
+        "The Four Tops"
+      ],
+      "correct_index": 3,
+      "ts": 1785379609.6950057
+    },
+    {
+      "headline": "Levi Stubbs' iconic Little Shop duet",
+      "full": "Levi Stubbs of The Four Tops sang 'Mean Green Mother From Outer Space' in the 1986 Little Shop of Horrors film, a darkly comedic highlight.",
+      "question": "How many US top 10 hits did The Four Tops have?",
+      "choices": [
+        "12",
+        "9",
+        "15",
+        "18"
+      ],
+      "correct_index": 2,
+      "ts": 1785379612.0560257
+    }
+  ],
+  "ed ivory, ken page - oogie boogie's song": [
+    {
+      "headline": "Villain's villain song from Disney's Nig",
+      "full": "Ken Page voiced Oogie Boogie and performed this menacing jazz number in Tim Burton's 1993 classic. Ed Ivory composed the darkly comedic tune for the gambling boogeyman.",
+      "question": "What film features this Oogie Boogie song?",
+      "choices": [
+        "Beetlejuice",
+        "Frankenweenie",
+        "The Nightmare Before Chr",
+        "Corpse Bride"
+      ],
+      "correct_index": 2,
+      "ts": 1785379640.147455
+    },
+    {
+      "headline": "Disney's Spooky Villain Anthem",
+      "full": "Ken Page voiced Oogie Boogie in 'The Nightmare Before Christmas' (1993) and performed this jazzy villain song written by Danny Elfman.",
+      "question": "T/F: Ken Page also voiced characters in Disney's 'Aladdin'",
+      "choices": [
+        "True",
+        "False"
+      ],
+      "correct_index": 0,
+      "ts": 1785379642.0794723
+    },
+    {
+      "headline": "From Disney's The Nightmare Before Chris",
+      "full": "Ken Page voiced Oogie Boogie and performed this iconic villain song from Tim Burton's 1993 stop-motion classic The Nightmare Before Christmas.",
+      "question": "What year was The Nightmare Before Christmas released?",
+      "choices": [
+        "1995",
+        "1991",
+        "1990",
+        "1993"
+      ],
+      "correct_index": 3,
+      "ts": 1785379643.4999104
+    }
+  ],
+  "ray parker jr. - ghostbusters": [
+    {
+      "headline": "Ray Parker Jr.'s 1984 mega-hit",
+      "full": "Ray Parker Jr.'s 1984 theme song for Ghostbusters became a #1 hit. The iconic synth riff and humorous lyrics made it one of the most recognizable movie themes ever recorded.",
+      "question": "What is this song about?",
+      "choices": [
+        "fighting ghosts",
+        "catching criminals",
+        "falling in love",
+        "space exploration"
+      ],
+      "correct_index": 0,
+      "ts": 1785379664.1136787
+    },
+    {
+      "headline": "Ghostbusters theme hit #1 in 1984",
+      "full": "Ray Parker Jr.'s iconic theme song for the Ghostbusters film became a massive hit, reaching #1 on the Billboard Hot 100 and winning a Grammy Award.",
+      "question": "What year was 'Ghostbusters' released?",
+      "choices": [
+        "1983",
+        "1985",
+        "1984",
+        "1982"
+      ],
+      "correct_index": 2,
+      "ts": 1785379665.5089004
+    },
+    {
+      "headline": "Theme song that crossed over to #1",
+      "full": "Ray Parker Jr.'s 'Ghostbusters' was written for the 1984 film and became a massive hit, reaching #1 on the Billboard Hot 100 and winning a Grammy Award.",
+      "question": "What is Ray Parker Jr.'s real first name?",
+      "choices": [
+        "Rayland",
+        "Ronald",
+        "Raymond",
+        "Randall"
+      ],
+      "correct_index": 0,
+      "ts": 1785379666.991275
+    }
+  ],
+  "jace everett - bad things - soundtrack version": [
+    {
+      "headline": "True Blood theme song writer",
+      "full": "Jace Everett's 'Bad Things' became famous as the opening theme for HBO's True Blood series, launching his career into the spotlight.",
+      "question": "T/F: 'Bad Things' was Jace Everett's debut single",
+      "choices": [
+        "True",
+        "False"
+      ],
+      "correct_index": 0,
+      "ts": 1785379952.6264067
+    },
+    {
+      "headline": "True Blood Theme Song Creator",
+      "full": "Jace Everett's 'Bad Things' became famous as the opening theme for HBO's vampire series True Blood, perfectly capturing the show's dark Southern Gothic atmosphere.",
+      "question": "What is 'Bad Things' about?",
+      "choices": [
+        "revenge and betrayal",
+        "vampire love",
+        "temptation and sin",
+        "small town secrets"
+      ],
+      "correct_index": 2,
+      "ts": 1785379954.4609978
+    },
+    {
+      "headline": "True Blood theme song",
+      "full": "Jace Everett's 'Bad Things' became famous as the opening theme for HBO's True Blood vampire series, perfectly capturing the show's dark Southern Gothic atmosphere.",
+      "question": "What year was 'Bad Things' released?",
+      "choices": [
+        "2005",
+        "2006",
+        "2007",
+        "2008"
+      ],
+      "correct_index": 1,
+      "ts": 1785379960.1418977
+    }
+  ],
+  "john carpenter - halloween theme - main title": [
+    {
+      "headline": "Carpenter's Iconic Synth Horror Masterpi",
+      "full": "John Carpenter composed this minimalist synth theme for the 1978 horror film. Its simple piano melody became one of cinema's most recognizable scores and defined the slasher genre.",
+      "question": "What year was the Halloween Theme released?",
+      "choices": [
+        "1975",
+        "1978",
+        "1980",
+        "1982"
+      ],
+      "correct_index": 1,
+      "ts": 1785380062.1846132
+    },
+    {
+      "headline": "Carpenter's iconic synth theme from 1978",
+      "full": "John Carpenter composed and performed the minimalist synthesizer theme for his directorial debut 'Halloween' in 1978. The haunting 5-note piano motif became one of cinema's most recognizable and imita",
+      "question": "How many studio albums did John Carpenter release?",
+      "choices": [
+        "12",
+        "15",
+        "10",
+        "18"
+      ],
+      "correct_index": 1,
+      "ts": 1785380063.9030173
+    },
+    {
+      "headline": "Carpenter's 1978 horror masterpiece",
+      "full": "John Carpenter composed and conducted this iconic synthesizer theme for his directorial debut 'Halloween,' creating one of cinema's most recognizable and influential horror scores.",
+      "question": "What is John Carpenter's real first name?",
+      "choices": [
+        "James",
+        "Jonathan",
+        "Jerome",
+        "John"
+      ],
+      "correct_index": 3,
+      "ts": 1785380065.4635031
+    }
+  ],
+  "sam the sham & the pharaohs - lil' red riding hood": [
+    {
+      "headline": "Classic 1960s novelty hit",
+      "full": "Sam the Sham & the Pharaohs' 1966 novelty classic featured a playful take on the fairy tale with a groovy, tongue-in-cheek arrangement that became a top 10 hit.",
+      "question": "What year was 'Lil' Red Riding Hood' released?",
+      "choices": [
+        "1966",
+        "1968",
+        "1965",
+        "1964"
+      ],
+      "correct_index": 0,
+      "ts": 1785380166.380383
+    },
+    {
+      "headline": "Sam The Sham's 1966 novelty hit",
+      "full": "'Lil' Red Riding Hood' was Sam The Sham & The Pharaohs' biggest chart success, reaching #2 on the Billboard Hot 100 in 1966 and becoming a rock & roll novelty classic.",
+      "question": "What year did 'Lil' Red Riding Hood' chart?",
+      "choices": [
+        "1968",
+        "1966",
+        "1965",
+        "1964"
+      ],
+      "correct_index": 1,
+      "ts": 1785380169.337028
+    },
+    {
+      "headline": "1960s novelty hit with sax solo",
+      "full": "Sam the Sham & the Pharaohs' 1966 novelty classic features a memorable saxophone solo and became a staple of 60s garage rock radio.",
+      "question": "What is Sam the Sham's real first name?",
+      "choices": [
+        "Sherman",
+        "Samuel",
+        "Stanley",
+        "Orville"
+      ],
+      "correct_index": 3,
+      "ts": 1785380170.8825722
+    }
+  ],
+  "richard o'brien - science fiction/double feature": [
+    {
+      "headline": "Rocky Horror's iconic opening number",
+      "full": "'Science Fiction/Double Feature' opens The Rocky Horror Picture Show (1975), performed by Richard O'Brien who also wrote and starred in the cult classic film.",
+      "question": "How many studio albums did Richard O'Brien release as a solo artist?",
+      "choices": [
+        "3",
+        "2",
+        "5",
+        "7"
+      ],
+      "correct_index": 0,
+      "ts": 1785380355.9608412
+    },
+    {
+      "headline": "Rocky Horror's iconic opening number",
+      "full": "The opening song from the 1975 cult classic 'The Rocky Horror Picture Show,' written by Richard O'Brien who also starred as Riff Raff in the film.",
+      "question": "What is Richard O'Brien's real first name?",
+      "choices": [
+        "N/A",
+        "Richard",
+        "Raymond",
+        "Robert"
+      ],
+      "correct_index": 1,
+      "ts": 1785380357.4205804
+    },
+    {
+      "headline": "Rocky Horror's iconic opener",
+      "full": "Opening number from The Rocky Horror Picture Show, introducing the film's narrative through a song-and-dance number performed by the criminologists.",
+      "question": "What year was 'Science Fiction/Double Feature' released?",
+      "choices": [
+        "1973",
+        "1978",
+        "1975",
+        "1976"
+      ],
+      "correct_index": 2,
+      "ts": 1785380360.0121408
+    }
+  ],
+  "rockwell - somebody's watching me - sing...": [
+    {
+      "headline": "Rockwell's 1984 One-Hit Wonder",
+      "full": "Rockwell's 'Somebody's Watching Me' peaked at #2 on the Billboard Hot 100 in 1984. The song featured Michael Jackson on backing vocals, though Jackson wasn't credited.",
+      "question": "T/F: Rockwell is the stage name of Kennedy William Gordy, son of Motown founder Berry Gordy.",
+      "choices": [
+        "True",
+        "False"
+      ],
+      "correct_index": 0,
+      "ts": 1785380678.1479821
+    },
+    {
+      "headline": "80s hit with paranoid vibes",
+      "full": "1984 hit featuring Michael Jackson on vocals, written by Rockwell (Kennedy Gordy). The song samples Rockwell's fears of being watched and became an 80s classic.",
+      "question": "What's Rockwell's real last name?",
+      "choices": [
+        "Gordy",
+        "Kennedy",
+        "Jackson",
+        "Robinson"
+      ],
+      "correct_index": 0,
+      "ts": 1785380680.3178742
+    },
+    {
+      "headline": "Rockwell's only hit was produced by The ",
+      "full": "Rockwell's 1984 smash 'Somebody's Watching Me' featured Michael Jackson on backing vocals and was produced by brothers Jackie and Randy Jackson of The Jackson 5.",
+      "question": "What year did 'Somebody's Watching Me' peak at #2 on the Billboard Hot 100?",
+      "choices": [
+        "1983",
+        "1985",
+        "1982",
+        "1984"
+      ],
+      "correct_index": 3,
+      "ts": 1785380681.998799
+    }
+  ],
+  "the price is right theme": [
+    {
+      "headline": "Game show's iconic fanfare since 1956",
+      "full": "Composed by Bert Parks' musical director, this triumphant theme has introduced millions to the longest-running game show in TV history.",
+      "question": "What year was The Price Is Right Theme first broadcast?",
+      "choices": [
+        "1963",
+        "1956",
+        "1950",
+        "1962"
+      ],
+      "correct_index": 1,
+      "ts": 1785380973.2869203
+    }
+  ],
+  "2 unlimited - get ready": [
+    {
+      "headline": "2 Unlimited's 90s Eurodance Hit",
+      "full": "Released in 1992, 'Get Ready' became a major European dance hit, showcasing 2 Unlimited's signature fast-rapping style over energetic eurodance beats.",
+      "question": "How many top 10 hits did 2 Unlimited have?",
+      "choices": [
+        "8",
+        "20",
+        "16",
+        "12"
+      ],
+      "correct_index": 2,
+      "release_year": 1992,
+      "ts": 1785410124.3544328
+    },
+    {
+      "headline": "Dutch eurodance duo's 1992 hit",
+      "full": "2 Unlimited's 'Get Ready' was a massive eurodance/techno track released in 1992, featuring their signature energetic production and upbeat vocals from Anita Doth.",
+      "question": "What year was '2 Unlimited - Get Ready' released?",
+      "choices": [
+        "1992",
+        "1995",
+        "1998",
+        "1989"
+      ],
+      "correct_index": 0,
+      "release_year": 1992,
+      "ts": 1785410127.174624
+    },
+    {
+      "headline": "Dutch Eurodance Duo's 1992 Hit",
+      "full": "2 Unlimited's 'Get Ready' was a major eurodance track that showcased the duo's signature fast-paced rap vocals and electronic production style.",
+      "question": "What country is 2 Unlimited from?",
+      "choices": [
+        "Sweden",
+        "Netherlands",
+        "Belgium",
+        "Germany"
+      ],
+      "correct_index": 1,
+      "release_year": 1992,
+      "ts": 1785410129.2911546
+    }
+  ],
+  "aronchupa, little sis nora - i'm an albatraoz": [
+    {
+      "headline": "Viral novelty hit with nonsense lyrics",
+      "full": "2014 viral sensation featuring repetitive 'I'm an Albatraoz' hook and absurdist humor that became a massive streaming hit across multiple platforms.",
+      "question": "What is Aron Chupa's real first name?",
+      "choices": [
+        "Aron",
+        "Adrian",
+        "Arno",
+        "Aaron"
+      ],
+      "correct_index": 0,
+      "release_year": 2014,
+      "ts": 1785410262.489126
+    },
+    {
+      "headline": "Viral novelty hit with a bird twist",
+      "full": "AronChupa's quirky 2014 earworm about being an albatross became a massive internet sensation, featuring his sister Nora on vocals and spawning countless memes.",
+      "question": "What year was 'I'm an Albatraoz' released?",
+      "choices": [
+        "2012",
+        "2016",
+        "2014",
+        "2018"
+      ],
+      "correct_index": 2,
+      "release_year": 2014,
+      "ts": 1785410264.193202
+    },
+    {
+      "headline": "Swedish viral hit with a nonsense hook",
+      "full": "AronChupa's 2014 novelty track featuring his sister Nora became a massive internet meme with its absurdist 'albatraoz' refrain and goofy charm.",
+      "question": "T/F: 'I'm an Albatraoz' reached top 10 in multiple European charts",
+      "choices": [
+        "True",
+        "False"
+      ],
+      "correct_index": 0,
+      "release_year": 2014,
+      "ts": 1785410266.035901
+    }
+  ],
+  "zombie nation - kernkraft 400 - original mix": [
+    {
+      "headline": "Soccer stadium anthem goes global",
+      "full": "This 2000 track became a worldwide phenomenon, adopted as a chant by football fans everywhere and sampled countless times in pop culture.",
+      "question": "Which German city are Zombie Nation from?",
+      "choices": [
+        "Hamburg",
+        "Cologne",
+        "Munich",
+        "Berlin"
+      ],
+      "correct_index": 1,
+      "release_year": 2000,
+      "ts": 1785410344.767942
+    },
+    {
+      "headline": "Zombie Nation's biggest hit",
+      "full": "Kernkraft 400 became a global phenomenon, used in sports stadiums worldwide. The German duo's 2000 track defined electronic sports anthems for a generation.",
+      "question": "T/F: Kernkraft 400 was featured in the 2006 World Cup broadcasts.",
+      "choices": [
+        "True",
+        "False"
+      ],
+      "correct_index": 0,
+      "release_year": 2000,
+      "ts": 1785410346.8532207
+    },
+    {
+      "headline": "Zombie Nation's viral sports anthem",
+      "full": "German electronic act's 2000 hit became ubiquitous at sporting events worldwide, spawning countless remixes and covers.",
+      "question": "What country is Zombie Nation from?",
+      "choices": [
+        "Germany",
+        "Netherlands",
+        "Austria",
+        "Sweden"
+      ],
+      "correct_index": 0,
+      "release_year": 2000,
+      "ts": 1785410349.1851888
+    }
+  ],
+  "aronchupa, little sis nora - little swing": [
+    {
+      "headline": "Viral swing dance anthem hit",
+      "full": "AronChupa's 2014 breakout featuring Little Sis Nora became a global phenomenon, inspiring countless swing dance videos and topping charts worldwide.",
+      "question": "What dance style inspired this song's title and viral craze?",
+      "choices": [
+        "salsa",
+        "hip hop",
+        "breakdancing",
+        "swing dancing"
+      ],
+      "correct_index": 3,
+      "release_year": 2014,
+      "ts": 1785410445.0075562
+    },
+    {
+      "headline": "Swedish viral hit with 12B+ views",
+      "full": "AronChupa's 2013 breakout collab with sister Nora became a massive YouTube phenomenon, blending swing samples with electronic production.",
+      "question": "What country is AronChupa from?",
+      "choices": [
+        "Sweden",
+        "Denmark",
+        "Finland",
+        "Norway"
+      ],
+      "correct_index": 0,
+      "release_year": 2013,
+      "ts": 1785410447.2711651
+    },
+    {
+      "headline": "Viral swing house hit from 2013",
+      "full": "AronChupa's 'Little Swing' ft. Little Sis Nora became a massive viral sensation, blending swing samples with modern house production for an unexpected dance floor crossover.",
+      "question": "What year was 'Little Swing' released?",
+      "choices": [
+        "2013",
+        "2015",
+        "2017",
+        "2011"
+      ],
+      "correct_index": 0,
+      "release_year": 2013,
+      "ts": 1785410449.0689902
+    }
+  ],
+  "m/a/r/r/s - pump up the volume - usa 12\" mix": [
+    {
+      "headline": "First UK #1 by a supergroup!",
+      "full": "M/A/R/R/S was a one-off supergroup featuring members of Coldcut and DJ Supreme. Their debut 'Pump Up The Volume' became a massive UK hit and pioneering acid house track.",
+      "question": "T/F: 'Pump Up The Volume' was M/A/R/R/S's only chart hit.",
+      "choices": [
+        "True",
+        "False"
+      ],
+      "correct_index": 0,
+      "release_year": 1987,
+      "ts": 1785411191.9268227
+    },
+    {
+      "headline": "Acid house classic sampled Kraftwerk",
+      "full": "M/A/R/R/S' 1987 hit sampled Kraftwerk's 'Robots' and became a UK #1. The USA 12\" Mix extended the acid house anthem's euphoric synths.",
+      "question": "Which electronic band did M/A/R/R/S sample?",
+      "choices": [
+        "Depeche Mode",
+        "Einst\u00fcrzende Neubauten",
+        "Tangerine Dream",
+        "Kraftwerk"
+      ],
+      "correct_index": 3,
+      "release_year": 1987,
+      "ts": 1785411194.1028314
+    },
+    {
+      "headline": "UK electronic pioneers M/A/R/S",
+      "full": "'Pump Up The Volume' became a UK #1 hit and electronic music classic, sampling James Brown and creating an iconic acid house anthem.",
+      "question": "What chart position did 'Pump Up The Volume' reach in the UK?",
+      "choices": [
+        "#3",
+        "#1",
+        "#2",
+        "#5"
+      ],
+      "correct_index": 1,
+      "release_year": 1987,
+      "ts": 1785411195.7489262
+    }
+  ],
+  "technotronic - move this (shake that body)": [
+    {
+      "headline": "Belgian house pioneers hit #1 globally",
+      "full": "Technotronic's 1989 debut smash featured rapper Ya Kid K and became a worldwide #1 hit, defining late-80s Eurodance with its infectious beat and iconic music video.",
+      "question": "What country is Technotronic from?",
+      "choices": [
+        "Netherlands",
+        "Germany",
+        "Belgium",
+        "France"
+      ],
+      "correct_index": 2,
+      "release_year": 1989,
+      "ts": 1785411295.8882477
+    }
+  ],
+  "nightcrawlers, mk - push the feeling on - mk dub...": [
+    {
+      "headline": "90s House Classic with MK's Production",
+      "full": "Nightcrawlers' 'Push The Feeling On' became an iconic 90s house track, with MK's dub remix version gaining significant club and radio play throughout the decade.",
+      "question": "T/F: 'Push The Feeling On' was originally released in 1992",
+      "choices": [
+        "True",
+        "False"
+      ],
+      "correct_index": 0,
+      "release_year": 1992,
+      "ts": 1785412272.7681968
+    },
+    {
+      "headline": "1992 UK house classic",
+      "full": "Nightcrawlers' 'Push the Feeling On' remixed by MK became a defining UK house track, reaching #2 on UK charts and dominating dancefloors.",
+      "question": "What does this song celebrate?",
+      "choices": [
+        "dancing and euphoria",
+        "spiritual awakening",
+        "romantic love",
+        "summer vacation"
+      ],
+      "correct_index": 0,
+      "release_year": 1992,
+      "ts": 1785412275.0177312
+    },
+    {
+      "headline": "90s club classic with staying power",
+      "full": "Nightcrawlers' 'Push the Feeling On' (MK Dub) became a defining track of 90s house music, remixed by producer MK into an iconic dub version that dominated dancefloors.",
+      "question": "What year was 'Push the Feeling On' originally released?",
+      "choices": [
+        "2001",
+        "1995",
+        "1989",
+        "1992"
+      ],
+      "correct_index": 3,
+      "release_year": 1992,
+      "ts": 1785412278.0514016
+    }
   ]
 }

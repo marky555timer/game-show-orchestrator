@@ -271,6 +271,28 @@ BOTTOM_COMBINED = (0, BOTTOM_ROW_Y, BOTTOM_ROW_WIDTH, PANEL_H)
 FALLBACK_QUESTIONS_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "fallback_questions.json")
 
 # ==========================================
+# 70s/80s "PRICE GAME" BONUS ROUND
+# ==========================================
+# Trigger: the AI-tagged "release_year" on a track's trivia questions (see
+# drivers/factoid_engine.py's release_year JSON field) falling in this range
+# arms a Btn6 override -- instead of a normal trivia question, Btn6 fires a
+# DMX strobe + on-screen banner, then a decade-specific pricing trivia
+# question (drivers/price_game_engine.py).
+PRICE_GAME_MIN_YEAR = 1970
+PRICE_GAME_MAX_YEAR = 1989
+PRICE_GAME_STROBE_SECONDS = 1.5
+PRICE_GAME_BANNER_SECONDS = 2.0
+PRICE_GAME_QUESTION_TIMEOUT_SECONDS = 8.0
+
+# ==========================================
+# DJ BRANDING ASSEMBLY ANIMATION (top strip, panels 1+2)
+# ==========================================
+# Shares BRANDING_OVERLAY_INTERVAL_SECONDS/BRANDING_OVERLAY_DURATION_SECONDS
+# above for when it fires -- this just controls how long the fly-in/settle
+# takes before the assembled string holds steady for the rest of that window.
+BRANDING_ASSEMBLY_DURATION_SECONDS = 0.8
+
+# ==========================================
 # BITMAP PIXEL FONT ENGINE (5x7 Grid)
 # ==========================================
 FONT_5X7 = {
