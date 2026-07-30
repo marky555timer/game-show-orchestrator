@@ -1,5 +1,6 @@
 # state.py
 import time
+import config
 
 class State:
     MODE_DJ = 0
@@ -98,6 +99,45 @@ class State:
         self.price_game_active = False    # True during the strobe/banner/question-wait intro
         self.price_game_phase = ""        # "strobe" | "banner" | "question_wait" | ""
         self.price_game_phase_started_at = 0.0
+
+        # --- Price Game Mode: background music + MIDI fader duck (Section 1) ---
+        # Spans the whole round (intro + question + grading), independent of
+        # price_game_active (which only covers the strobe/banner/question_wait
+        # intro above) -- see drivers/price_game_engine.py.
+        self.price_game_audio_active = False
+        self.price_game_audio_entered_game = False  # True once MODE_GAME was seen this round
+        self.price_game_audio_started_at = 0.0
+
+        # Session-wide occurrence count (Section 1 music rule): the first
+        # Price Game this session plays its background bed in full;
+        # subsequent ones cap at PRICE_GAME_MUSIC_REPEAT_CAP_SECONDS. Also
+        # doubles as the round-robin index into PRICE_GAME_CATEGORIES.
+        self.price_game_occurrences = 0
+        self.price_game_audio_is_first = True
+        self.price_game_audio_capped = False  # True once the repeat-cap early fade has fired
+
+        # --- DJ mode "Mystery Band" teaser (Section 2) ---
+        # Artist keys (lowercased) already asked about via a real question
+        # this session -- drivers/factoid_engine.py._apply_active_question()
+        # populates this every time a question actually gets served.
+        self.asked_artists = set()
+
+        self.mystery_active = False        # teaser or reveal-blink in progress
+        self.mystery_resolved = False       # True once the 10s window has expired unanswered
+        self.mystery_started_at = 0.0
+        self.mystery_track_key = ""         # factoid_track_key this mystery was armed for
+        self.mystery_artist_key = ""        # normalized artist key for the current mystery
+        self.mystery_artist_display = ""    # original-case artist name, for the identify question
+        self.mystery_identify_question = None  # prebuilt "who is this" question dict, or None
+        self.mystery_reveal_until = 0.0     # reveal-blink window end (set once resolved)
+
+        # --- Auto-DJ (Section 4): track-length auto-advance ---
+        self.auto_dj_enabled = config.AUTODJ_ENABLED_BY_DEFAULT
+        self.auto_dj_track_key = ""             # mirrors factoid_track_key once confidently identified
+        self.auto_dj_track_started_at = 0.0
+        self.auto_dj_track_duration = config.AUTODJ_DEFAULT_TRACK_SECONDS
+        self.auto_dj_overlay_text = ""          # "AUTO ON" / "AUTO OFF", panel 3
+        self.auto_dj_overlay_until = 0.0
 
     def set_status(self, msg, duration=2.0):
         self.status_msg = msg

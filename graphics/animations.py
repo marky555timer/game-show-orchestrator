@@ -383,6 +383,141 @@ def anim_skull_chatter(surface, rect, t, seed=0.0):
 
 
 # ==========================================
+# NEW CRITTER / NOVELTY SET
+# ==========================================
+# Same constraints as every set above: pygame.draw.* only (the panel clip
+# rect keeps them inside their own 32x16 tile), RED_FULL/RED_DIM/BLACK only
+# (red-only matrix hardware).
+
+
+def anim_squirrel(surface, rect, t, seed=0.0):
+    """A squirrel scurries back and forth across the panel floor, its
+    bushy tail curling up behind it and its legs alternating mid-scamper."""
+    x0, y0, w, h = rect
+    span = w + 10
+    period = 3.2
+    phase = ((t + seed) % period) / period
+    tri = phase * 2 if phase < 0.5 else 2 - phase * 2  # there and back
+    facing_right = phase < 0.5
+
+    fx = x0 + int(tri * (span - 10)) - 5
+    fy = y0 + h - 5
+    bob = int(abs(math.sin(t * 10.0)) * 1)
+
+    # Body + head, drawn nose-first in whichever direction it's scurrying.
+    nose_dx = 4 if facing_right else -4
+    pygame.draw.ellipse(surface, RED_FULL, (fx - 3, fy - 4 - bob, 8, 5))
+    pygame.draw.rect(surface, RED_FULL, (fx + nose_dx - 1, fy - 3 - bob, 2, 2))
+
+    # Curled bushy tail, arcing up behind the body (opposite the nose).
+    tail_dx = -1 if facing_right else 1
+    pygame.draw.arc(surface, RED_FULL,
+                     (fx - 5 + tail_dx * 4, fy - 11 - bob, 7, 9), 0.2, 3.4, 2)
+
+    # Alternating scamper legs.
+    leg_phase = int(t * 9.0) % 2
+    for i, lx in enumerate((-2, 1)):
+        ly_off = 1 if (i == leg_phase) else 0
+        pygame.draw.line(surface, RED_DIM, (fx + lx, fy), (fx + lx, fy + 2 - ly_off))
+
+
+def anim_duck(surface, rect, t, seed=0.0):
+    """A duck waddles side to side, bobbing its tail and flapping a wing,
+    with a bright bill out front."""
+    x0, y0, w, h = rect
+    cx = x0 + w // 2 + int(math.sin(t * 0.8 + seed) * 8)
+    waddle = int(math.sin(t * 7.0 + seed) * 1)
+    cy = y0 + h - 5 + waddle
+    facing_right = math.cos(t * 0.8 + seed) >= 0
+
+    pygame.draw.ellipse(surface, RED_FULL, (cx - 5, cy - 3, 10, 6))          # body
+    pygame.draw.circle(surface, RED_FULL, (cx + (4 if facing_right else -4), cy - 5), 3)  # head
+    bill_dx = 3 if facing_right else -3
+    pygame.draw.rect(surface, RED_DIM,
+                      (cx + (4 if facing_right else -4) + bill_dx - (1 if facing_right else 2),
+                       cy - 5, 3, 2))
+
+    # Flapping wing.
+    flap = int((math.sin(t * 6.0 + seed) + 1.0) * 1.5)
+    pygame.draw.line(surface, RED_DIM, (cx, cy - 2), (cx - 2, cy - 2 - flap))
+
+    # Tail bob.
+    tail_dx = -6 if facing_right else 6
+    pygame.draw.line(surface, RED_DIM, (cx + tail_dx // 2, cy - 3), (cx + tail_dx, cy - 4 - waddle))
+
+    # Webbed feet, alternating.
+    step = int(t * 7.0) % 2
+    for i, lx in enumerate((-2, 2)):
+        if i == step:
+            pygame.draw.line(surface, RED_DIM, (cx + lx, cy + 3), (cx + lx, cy + 4))
+
+
+def anim_celtic_cross(surface, rect, t, seed=0.0):
+    """A Celtic cross (ringed cross) glows and shimmers gently -- the ring
+    pulses in brightness while sparkle points travel slowly around it,
+    reading as a subtle rotation without needing true bitmap rotation."""
+    x0, y0, w, h = rect
+    cx, cy = x0 + w // 2, y0 + h // 2
+
+    glow = (math.sin(t * 1.4 + seed) + 1.0) * 0.5
+    ring_color = RED_FULL if glow > 0.4 else RED_DIM
+
+    pygame.draw.circle(surface, ring_color, (cx, cy), 6, 1)
+    pygame.draw.line(surface, RED_FULL, (cx, cy - 8), (cx, cy + 8), 2)   # vertical beam
+    pygame.draw.line(surface, RED_FULL, (cx - 5, cy - 2), (cx + 5, cy - 2), 2)  # crossbar
+
+    # Sparkle points that slowly travel around the ring, selling a subtle
+    # "rotation" without needing true bitmap rotation.
+    for i in range(3):
+        ang = (t * 0.6 + seed) + i * (2 * math.pi / 3)
+        px = cx + int(math.cos(ang) * 6)
+        py = cy + int(math.sin(ang) * 6)
+        surface.set_at((px, py), RED_FULL)
+
+
+def anim_dancing_pixelman(surface, rect, t, seed=0.0):
+    """A blocky pixel-art figure dances in place: arms alternate up/down,
+    legs kick out, and the whole body bounces on the beat."""
+    x0, y0, w, h = rect
+    cx = x0 + w // 2
+    bounce = int(abs(math.sin(t * 4.0 + seed)) * 2)
+    cy = y0 + h - 3 - bounce
+
+    pygame.draw.rect(surface, RED_FULL, (cx - 1, cy - 10, 3, 3))   # head
+    pygame.draw.rect(surface, RED_FULL, (cx - 2, cy - 7, 5, 5))    # torso
+
+    arm_phase = math.sin(t * 5.0 + seed)
+    left_up = arm_phase > 0
+    pygame.draw.line(surface, RED_FULL, (cx - 2, cy - 6),
+                      (cx - 5, cy - 8 if left_up else cy - 3))
+    pygame.draw.line(surface, RED_FULL, (cx + 3, cy - 6),
+                      (cx + 6, cy - 3 if left_up else cy - 8))
+
+    leg_phase = int(t * 5.0 + seed) % 2
+    pygame.draw.line(surface, RED_DIM, (cx - 1, cy - 2),
+                      (cx - 3 if leg_phase == 0 else cx - 1, cy + 2))
+    pygame.draw.line(surface, RED_DIM, (cx + 1, cy - 2),
+                      (cx + 1 if leg_phase == 0 else cx + 3, cy + 2))
+
+
+# ==========================================
+# MYSTERY BAND TEASER (panels 3-6, DJ mode)
+# ==========================================
+def anim_question_mark(surface, rect, t, seed=0.0):
+    """Big pulsing question mark -- shown on panels 3-6 during the DJ-mode
+    "Mystery Band" teaser window (drivers/mystery_band_engine.py) while the
+    artist/track title is hidden on panels 1+2."""
+    x0, y0, w, h = rect
+    cx, cy = x0 + w // 2, y0 + h // 2
+    pulse = (math.sin(t * 3.0 + seed) + 1.0) / 2.0
+    color = RED_FULL if pulse > 0.35 else RED_DIM
+
+    pygame.draw.arc(surface, color, (cx - 5, cy - 8, 10, 8), math.pi * 0.15, math.pi * 1.55, 2)
+    pygame.draw.line(surface, color, (cx, cy - 1), (cx, cy + 2), 2)
+    pygame.draw.circle(surface, color, (cx, cy + 5), 1)
+
+
+# ==========================================
 # IDLE ANIMATION DEAL (panels 3-6)
 # ==========================================
 IDLE_ANIMATIONS = [
@@ -398,6 +533,10 @@ IDLE_ANIMATIONS = [
     anim_grave_hand,
     anim_witch_flyby,
     anim_skull_chatter,
+    anim_squirrel,
+    anim_duck,
+    anim_celtic_cross,
+    anim_dancing_pixelman,
 ]
 
 IDLE_PANEL_IDS = (3, 4, 5, 6)

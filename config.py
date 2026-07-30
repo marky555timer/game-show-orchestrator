@@ -39,7 +39,10 @@ BOTTOM_PANELS = [PANELS[3], PANELS[4], PANELS[5], PANELS[6]]
 
 MATRIX_WIDTH = BOTTOM_ROW_WIDTH
 MATRIX_HEIGHT = BOTTOM_ROW_Y + PANEL_H
-PIXEL_SCALE = 10
+# Dev-machine simulator window scale. Knocked down to ~1/3 of the original
+# 10px-per-LED size (still an integer so the LED grid stays crisp) so the
+# virtual matrix window doesn't dominate the dev display.
+PIXEL_SCALE = 3
 GAP = 1
 
 WINDOW_W = MATRIX_WIDTH * PIXEL_SCALE
@@ -217,9 +220,9 @@ TEMPO_PERIOD_DEFAULT_SECONDS = 0.6
 # over this long from the moment Btn5 is held.
 TEMPO_FLASH_DECAY_SECONDS = 0.1
 
-# DJ-mode uplighting: 4 themes + an "ALL LIGHTS OFF" stop in the cycle.
-DJ_THEME_COUNT = 4
-DJ_THEME_ALL_OFF_INDEX = DJ_THEME_COUNT  # index 4 == all lights off
+# DJ-mode uplighting: 8 themes + an "ALL LIGHTS OFF" stop in the cycle.
+DJ_THEME_COUNT = 8
+DJ_THEME_ALL_OFF_INDEX = DJ_THEME_COUNT  # index 8 == all lights off
 
 # DJ-mode main theme color palette, cycled by Btn7.
 DJ_COLOR_PALETTE = [
@@ -283,6 +286,107 @@ PRICE_GAME_MAX_YEAR = 1989
 PRICE_GAME_STROBE_SECONDS = 1.5
 PRICE_GAME_BANNER_SECONDS = 2.0
 PRICE_GAME_QUESTION_TIMEOUT_SECONDS = 8.0
+
+# ==========================================
+# DJ MODE "MYSTERY BAND" TEASER
+# ==========================================
+# On a new track by an artist not yet asked about this session, panels 1+2
+# hide the title behind a "Who is this?" teaser and panels 3-6 loop a
+# question-mark/original-animation cycle for MYSTERY_REVEAL_TIMEOUT_SECONDS.
+# If Game Mode isn't entered in that window, the title reveals with a slow
+# invert-color blink for MYSTERY_REVEAL_BLINK_SECONDS before standard DJ
+# mode resumes. See drivers/mystery_band_engine.py.
+MYSTERY_REVEAL_TIMEOUT_SECONDS = 15.0
+MYSTERY_QMARK_PHASE_SECONDS = 1.5
+MYSTERY_REVEAL_BLINK_SECONDS = 3.0
+MYSTERY_REVEAL_BLINK_PERIOD_SECONDS = 0.8
+
+# Question-priority hierarchy for the questions queued after the forced
+# "identify this band" question, once Game Mode is entered from a live
+# Mystery Band window. Categories not listed here (e.g. career-stat,
+# song-meaning) sort after all of these, in their original queue order.
+MYSTERY_CATEGORY_PRIORITY = {"geography": 0, "date": 1, "true_false": 2, "real_name": 3}
+
+# ==========================================
+# PRICE GAME MODE: BACKGROUND MUSIC + MIDI FADER DUCK
+# ==========================================
+# On entering the 70s/80s Price Game (drivers/price_game_engine.py), a
+# random background bed plays and the DJ controller's channel1/channel2
+# faders (MIDI CC#11/CC#12 -- the same CCs handle_dj_volume() already
+# drives) smoothly tween to 0%. This is an independent safety cap on top
+# of the round's own state machine: whichever comes first -- the round
+# naturally returning to DJ mode, an early Btn7 exit, or this timeout --
+# fades the music back out and restores the faders to state.music_volume
+# (the DJ's last stored volume, 100% by default at launch).
+PRICE_GAME_AUDIO_MAX_SECONDS = 45.0
+PRICE_GAME_AUDIO_TWEEN_SECONDS = 1.5
+GAME_MUSIC_PATHS = ["audio/gameMusic1.wav", "audio/gameMusic2.wav", "audio/gameMusic3.wav"]
+
+# ==========================================
+# PRICE GAME MODE: MUSIC PLAYBACK LENGTH RULES
+# ==========================================
+# The first Price Game of the session plays the full background bed (see
+# audio/gameMusic*.wav via play_random_game_music()). Every subsequent
+# occurrence this session caps the bed at this many seconds -- it simply
+# fades out early; the channel-fader duck/restore lifecycle around it is
+# unaffected. See drivers/price_game_engine.py.
+PRICE_GAME_MUSIC_REPEAT_CAP_SECONDS = 5.0
+
+# The instant a Price Game question is graded (drivers/price_game_engine.py
+# ::end_price_game_audio_on_answer, called from inputs/gamepad.py::
+# grade_quiz_selection), the bed fades out fast and the channel faders tween
+# back up quickly -- brisker than the normal PRICE_GAME_AUDIO_TWEEN_SECONDS
+# duck/restore used on the intro/timeout/abort paths.
+PRICE_GAME_BRISK_FADE_MS = 400
+PRICE_GAME_BRISK_FADER_TWEEN_SECONDS = 0.6
+
+# ==========================================
+# PRICE GAME MODE: PRODUCT CATEGORY ROTATION (Haiku prompt)
+# ==========================================
+# Rotated round-robin (by session-wide Price Game occurrence count, see
+# drivers/price_game_engine.py::start_price_game) so consecutive rounds
+# don't keep landing on the same item type (e.g. cosmetics every time).
+PRICE_GAME_CATEGORIES = [
+    {
+        "label": "Household Goods",
+        "examples": "laundry detergent, paper towels, dish soap, trash bags, a light bulb",
+    },
+    {
+        "label": "Pantry / Groceries",
+        "examples": "a box of cereal, a can of coffee, a gallon of milk, a loaf of bread, a dozen eggs",
+    },
+    {
+        "label": "Entertainment / Electronics",
+        "examples": "an LP vinyl record, a blank cassette tape, a blank VHS tape, a Walkman, a pack of batteries",
+    },
+    {
+        "label": "Apparel / Footwear",
+        "examples": "a pair of name-brand sneakers, a pair of denim jeans, a t-shirt, a winter coat",
+    },
+]
+
+# ==========================================
+# AUTO-DJ: TRACK-LENGTH AUTO-ADVANCE (Section 4)
+# ==========================================
+# Auto-DJ is on by default at launch; Gamepad Btn4 (inputs/gamepad.py,
+# JOYBUTTONDOWN index 3, DJ mode only) toggles it. See drivers/auto_dj_engine.py.
+AUTODJ_ENABLED_BY_DEFAULT = True
+
+# Used when a track has no usable duration metadata (rekordbox.xml's
+# TotalTime attribute, looked up via drivers/rekordbox_driver.py).
+AUTODJ_DEFAULT_TRACK_SECONDS = 210.0  # 3.5 minutes
+
+# A TotalTime value below this is treated as bogus/not-a-real-track
+# metadata (e.g. a short SFX/jingle asset in the library) rather than
+# trusted, and falls back to AUTODJ_DEFAULT_TRACK_SECONDS instead.
+AUTODJ_MIN_PLAUSIBLE_DURATION_SECONDS = 30.0
+
+# Auto-advance fires this many seconds before the calculated/fallback end
+# of the track.
+AUTODJ_PRE_SWITCH_SECONDS = 3.0
+
+# How long the "AUTO ON" / "AUTO OFF" toggle confirmation overlays panel 3.
+AUTODJ_TOGGLE_OVERLAY_SECONDS = 1.5
 
 # ==========================================
 # DJ BRANDING ASSEMBLY ANIMATION (top strip, panels 1+2)

@@ -4,6 +4,8 @@ import threading
 import config
 from state import state
 from drivers import factoid_engine
+from drivers import midi_driver
+from audio.audio_engine import play_random_game_music, fade_out_game_music
 
 # key -> fetched result dict, or the string "FAILED" -- populated by
 # _fetch_worker, consumed (popped) by update() once the intro sequence
@@ -36,14 +38,38 @@ def start_price_game(key, decade_label):
     state.chase_pace_mode = "mid"
     state.chase_pace_until = 0.0
 
+    # Section 1 (music rules): only the first Price Game this session plays
+    # the full background bed -- every later one caps at
+    # PRICE_GAME_MUSIC_REPEAT_CAP_SECONDS (see _update_price_game_audio).
+    # The same occurrence count doubles as the round-robin index into
+    # config.PRICE_GAME_CATEGORIES so consecutive rounds don't keep landing
+    # on the same product type.
+    category_index = state.price_game_occurrences
+    state.price_game_audio_is_first = state.price_game_occurrences == 0
+    state.price_game_occurrences += 1
+
+    # Section 1: Price Game Mode background music + MIDI fader duck. Spans
+    # the whole round (intro + question + grading), capped at
+    # PRICE_GAME_AUDIO_MAX_SECONDS regardless of how the round itself plays
+    # out -- see _update_price_game_audio().
+    state.price_game_audio_active = True
+    state.price_game_audio_entered_game = False
+    state.price_game_audio_started_at = time.time()
+    state.price_game_audio_capped = False
+    play_random_game_music()
+    midi_driver.tween_channel_faders_to(0, config.PRICE_GAME_AUDIO_TWEEN_SECONDS)
+    if not state.price_game_audio_is_first:
+        print(f"[PRICE GAME] Repeat occurrence #{state.price_game_occurrences} this session -- "
+              f"game music capped at {config.PRICE_GAME_MUSIC_REPEAT_CAP_SECONDS}s.")
+
     if key not in _inflight:
         _inflight.add(key)
-        threading.Thread(target=_fetch_worker, args=(key, decade_label), daemon=True).start()
+        threading.Thread(target=_fetch_worker, args=(key, decade_label, category_index), daemon=True).start()
 
 
-def _fetch_worker(key, decade_label):
+def _fetch_worker(key, decade_label, category_index):
     try:
-        result, reason = factoid_engine.fetch_price_question(decade_label)
+        result, reason = factoid_engine.fetch_price_question(decade_label, category_index)
         with _fetch_lock:
             _fetch_results[key] = result if result else "FAILED"
         if not result:
@@ -52,11 +78,75 @@ def _fetch_worker(key, decade_label):
         _inflight.discard(key)
 
 
+def _end_price_game_audio(brisk=False):
+    """Fades the background bed out and tweens the channel faders back to
+    state.music_volume (the DJ's last stored level, 100% by default at
+    launch). Idempotent -- safe to call even if already ended. `brisk=True`
+    (used the instant a Price Game question is graded, see
+    end_price_game_audio_on_answer) fades/tweens faster than the normal
+    intro/timeout/abort paths."""
+    if not state.price_game_audio_active:
+        return
+    state.price_game_audio_active = False
+    if brisk:
+        fade_out_game_music(config.PRICE_GAME_BRISK_FADE_MS)
+        midi_driver.tween_channel_faders_to(state.music_volume, config.PRICE_GAME_BRISK_FADER_TWEEN_SECONDS)
+    else:
+        fade_out_game_music()
+        midi_driver.tween_channel_faders_to(state.music_volume, config.PRICE_GAME_AUDIO_TWEEN_SECONDS)
+
+
+def force_end_price_game_audio():
+    """Public hook for an early exit (Btn7 abort during a Price Game round,
+    inputs/gamepad.py::abort_game_mode_early()): ends the music/fader duck
+    immediately instead of waiting out the PRICE_GAME_AUDIO_MAX_SECONDS cap."""
+    _end_price_game_audio()
+
+
+def end_price_game_audio_on_answer():
+    """Public hook for inputs/gamepad.py::grade_quiz_selection(): the moment
+    a Price Game question is graded, fade the bed out briskly and tween the
+    channel faders back up quickly, rather than waiting for the scorecard
+    hold + return-to-DJ-mode path in _update_price_game_audio() below."""
+    _end_price_game_audio(brisk=True)
+
+
+def _update_price_game_audio(now):
+    if not state.price_game_audio_active:
+        return
+
+    # Section 1 (music rules): repeat occurrences cap the bed early. This
+    # only silences the music -- the fader duck/restore lifecycle is
+    # untouched, since the round (strobe/banner/question) may still be
+    # in progress.
+    if (not state.price_game_audio_is_first and not state.price_game_audio_capped
+            and now - state.price_game_audio_started_at >= config.PRICE_GAME_MUSIC_REPEAT_CAP_SECONDS):
+        print(f"[PRICE GAME] Repeat-occurrence {config.PRICE_GAME_MUSIC_REPEAT_CAP_SECONDS}s cap "
+              f"reached -- fading bed early.")
+        fade_out_game_music()
+        state.price_game_audio_capped = True
+
+    if state.mode == state.MODE_GAME:
+        state.price_game_audio_entered_game = True
+    elif state.price_game_audio_entered_game and state.mode == state.MODE_DJ:
+        # The round played out and returned to DJ mode on its own.
+        _end_price_game_audio()
+        return
+
+    if now - state.price_game_audio_started_at >= config.PRICE_GAME_AUDIO_MAX_SECONDS:
+        print(f"[PRICE GAME] Audio/fader cap ({config.PRICE_GAME_AUDIO_MAX_SECONDS}s) reached -- "
+              f"restoring music/faders regardless of round state.")
+        _end_price_game_audio()
+
+
 def update(now):
     """Per-frame poll, called from inputs/gamepad.py::process_events()
     alongside deck_orchestrator.update(). Advances the intro sequence:
     strobe (PRICE_GAME_STROBE_SECONDS) -> banner (PRICE_GAME_BANNER_SECONDS)
     -> question_wait (until the background fetch lands or times out)."""
+    midi_driver.update_fader_tween(now)
+    _update_price_game_audio(now)
+
     if not state.price_game_active:
         return
 

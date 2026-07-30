@@ -1,7 +1,10 @@
 import os
 import math
 import array
+import random
 import pygame
+
+import config
 
 # Initialize Pygame audio mixer
 pygame.mixer.init(frequency=44100, size=-16, channels=2)
@@ -119,6 +122,39 @@ raw_bigwin = load_sound("audio/bigWin.wav", fallback_freq=523)
 raw_coin = load_sound("audio/mario_coin.wav", fallback_sound_fn=generate_coin_sound)
 raw_clear = generate_low_clear_sound()
 raw_buzz_short = load_sound("audio/buzzShort.wav", fallback_sound_fn=generate_low_beep_sound)
+
+# ------------------------------------------------------------
+# PRICE GAME MODE: background music bed
+# ------------------------------------------------------------
+# Played via pygame.mixer.music (a single dedicated background stream)
+# rather than a Sound/Channel like every other asset above -- that keeps it
+# immune to stop_previous_audio()'s channel fadeout(250) and to any
+# buzzer/ding/coin SFX stealing a channel, so a quiz-answer sound during the
+# round can never cut the bed off early.
+def play_random_game_music():
+    """Price Game Mode entry (drivers/price_game_engine.py): randomly picks
+    one of the 3 background tracks and loops it until fade_out_game_music()
+    is called. A missing file is logged and skipped rather than crashing
+    the round."""
+    path = random.choice(config.GAME_MUSIC_PATHS)
+    try:
+        if not os.path.exists(path):
+            print(f"[AUDIO ERROR] {path} not found on disk -- Price Game music skipped")
+            return
+        pygame.mixer.music.load(path)
+        pygame.mixer.music.play(loops=-1)
+        print(f"[AUDIO] Price Game background music -> {path}")
+    except Exception as e:
+        print(f"[AUDIO ERROR] Failed to play Price Game music {path}: {e}")
+
+
+def fade_out_game_music(fade_ms=1000):
+    """Smoothly fades out and stops the Price Game background bed."""
+    try:
+        pygame.mixer.music.fadeout(fade_ms)
+    except Exception as e:
+        print(f"[AUDIO ERROR] Failed to fade out Price Game music: {e}")
+
 
 def play_processed_sound(sound_asset, volume=1.0):
     """Plays audio asset through the active reverb DSP filter if enabled,

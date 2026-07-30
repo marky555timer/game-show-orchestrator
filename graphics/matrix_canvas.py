@@ -8,7 +8,9 @@ from config import (
     STATUS_PANEL_HOLD_SECONDS, TOP_SHOW_FACTOID_PAGE,
     TEMPO_FLASH_DECAY_SECONDS, QUIZ_CELEBRATION_HOLD_SECONDS, QUIZ_STATS_HOLD_SECONDS,
     BRANDING_OVERLAY_INTERVAL_SECONDS, BRANDING_OVERLAY_DURATION_SECONDS,
-    BRANDING_ASSEMBLY_DURATION_SECONDS,
+    BRANDING_ASSEMBLY_DURATION_SECONDS, DJ_COLOR_PALETTE,
+    MYSTERY_QMARK_PHASE_SECONDS, MYSTERY_REVEAL_BLINK_PERIOD_SECONDS,
+    TEMPO_PERIOD_DEFAULT_SECONDS,
 )
 from state import state
 from drivers.rekordbox_driver import get_rekordbox_track
@@ -20,7 +22,7 @@ from graphics.text_render import (
 )
 from graphics.animations import (
     render_panel_animation, deal_panel_animations,
-    anim_dancing_cat, anim_star_burst, anim_coin_pop,
+    anim_dancing_cat, anim_star_burst, anim_coin_pop, anim_question_mark,
 )
 
 # Initialize Pygame Display Engine
@@ -42,6 +44,32 @@ _top_cycle_track_key = None
 # surface -- see _render_dj_mode.
 _status_signature = None
 _status_until = 0.0
+
+# ==========================================
+# DJ-MODE / DMX TEMPO BEAT-SYNC (Section 3)
+# ==========================================
+# The idle panel animations (graphics/animations.py) and the Mystery Band
+# question-mark cycle were all originally tuned against the wall clock.
+# Rather than rewrite every animation's internal period constants, this
+# accumulator advances at a speed relative to the DJ-mode tap-tempo period
+# (drivers/lighting_engine.py already drives the DMX uplighting themes off
+# state.dj_tempo_period directly) -- at the default tempo it advances 1:1
+# with real time (so nothing changes for a DJ who never taps tempo), and
+# speeds up/slows down proportionally as the tap tempo gets faster/slower,
+# putting the matrix's frame steps in lockstep with the DMX beat clock.
+_beat_clock_accum = 0.0
+_beat_clock_last_t = None
+
+
+def _advance_beat_clock(real_t):
+    global _beat_clock_accum, _beat_clock_last_t
+    if _beat_clock_last_t is None:
+        _beat_clock_last_t = real_t
+    dt = max(0.0, real_t - _beat_clock_last_t)
+    _beat_clock_last_t = real_t
+    speed = TEMPO_PERIOD_DEFAULT_SECONDS / max(0.05, state.dj_tempo_period)
+    _beat_clock_accum += dt * speed
+    return _beat_clock_accum
 
 
 def _get_top_page(has_factoid):
@@ -81,12 +109,33 @@ def _render_dj_mode(t):
         _top_cycle_start = t
         # New track -> deal a fresh hand of animations across panels 3-6.
         deal_panel_animations()
+        # New track -> force a DJ-mode uplighting color rotation, same
+        # palette Btn7 cycles through manually (drivers/lighting_engine.py).
+        state.dj_color_index = (state.dj_color_index + 1) % len(DJ_COLOR_PALETTE)
+
+    # Mystery Band teaser (Section 2, drivers/mystery_band_engine.py): while
+    # the 10s window is still live, panels 1+2 hide the title behind "Who is
+    # this?" and panels 3-6 loop the question-mark/original cycle instead of
+    # the normal display below. Once it times out unanswered, the reveal
+    # phase blinks the real title (inverted colors) on panels 1+2 while the
+    # bottom panels immediately resume their normal animations.
+    mystery_live = state.mystery_active and not state.mystery_resolved
+    mystery_reveal = state.mystery_active and state.mystery_resolved
 
     # Panels 1+2 are driven as one logical 64x16 surface, two 8px lines tall,
     # so artist and title each get the full double-panel width instead of
     # being crammed into 32px -- except during the periodic branding
     # takeover below, which uses the combined surface as a single line.
-    if _branding_overlay_active(t) and get_current_text():
+    if mystery_live:
+        draw_marquee(matrix_surface, "mystery_teaser", "Who is this?", TOP_COMBINED, align="center")
+    elif mystery_reveal:
+        tx, ty, tw, th = TOP_COMBINED
+        line1_rect = (tx, ty, tw, LINE_H)
+        line2_rect = (tx, ty + LINE_H, tw, LINE_H)
+        blink_on = int(t / MYSTERY_REVEAL_BLINK_PERIOD_SECONDS) % 2 == 0
+        draw_marquee(matrix_surface, "dj_top_artist", artist_name, line1_rect, invert=blink_on)
+        draw_marquee(matrix_surface, "dj_top_title", song_title, line2_rect, invert=blink_on)
+    elif _branding_overlay_active(t) and get_current_text():
         _render_dj_branding_assembly(t)
     else:
         tx, ty, tw, th = TOP_COMBINED
@@ -116,16 +165,49 @@ def _render_dj_mode(t):
         _status_signature = signature
         _status_until = (t + STATUS_PANEL_HOLD_SECONDS) if kind else 0.0
 
-    for pid in (3, 4, 5, 6):
-        rect = PANELS[pid]
-        if pid == 6 and t < state.vol_overlay_until:
-            _draw_volume_overlay(rect)
-        elif pid == 3 and kind and t < _status_until:
-            _render_status_panel(rect, t, kind)
-        else:
-            render_panel_animation(matrix_surface, pid, rect, t)
+    # DMX tempo beat-sync (Section 3): the idle animations and the Mystery
+    # Band question-mark cycle both run off this beat-locked clock instead
+    # of the raw wall clock `t`, so their frame steps stay in lockstep with
+    # the DJ-mode tap-tempo period driving the DMX uplighting.
+    anim_t = _advance_beat_clock(t)
+
+    if mystery_live:
+        _render_mystery_qmark_cycle(anim_t)
+    else:
+        for pid in (3, 4, 5, 6):
+            rect = PANELS[pid]
+            if pid == 6 and t < state.vol_overlay_until:
+                _draw_volume_overlay(rect)
+            elif pid == 3 and t < state.auto_dj_overlay_until:
+                # Section 4: Gamepad Btn4 Auto-DJ toggle confirmation.
+                draw_marquee(matrix_surface, "auto_dj_overlay", state.auto_dj_overlay_text,
+                             rect, align="center")
+            elif pid == 3 and kind and t < _status_until:
+                _render_status_panel(rect, t, kind)
+            else:
+                render_panel_animation(matrix_surface, pid, rect, anim_t)
 
     _draw_tempo_flash(t)
+
+
+def _render_mystery_qmark_cycle(t):
+    """Section 2: loops, in MYSTERY_QMARK_PHASE_SECONDS-long steps, through
+    [question-mark on half the panels] -> [original animations] ->
+    [question-mark on ALL 4 panels] -> [original animations] -- for as long
+    as the Mystery Band teaser stays unresolved."""
+    phase_idx = int(t / MYSTERY_QMARK_PHASE_SECONDS) % 4
+    for i, pid in enumerate((3, 4, 5, 6)):
+        rect = PANELS[pid]
+        show_qmark = (phase_idx == 2) or (phase_idx == 0 and i % 2 == 0)
+        if show_qmark:
+            old_clip = matrix_surface.get_clip()
+            matrix_surface.set_clip(pygame.Rect(rect))
+            try:
+                anim_question_mark(matrix_surface, rect, t)
+            finally:
+                matrix_surface.set_clip(old_clip)
+        else:
+            render_panel_animation(matrix_surface, pid, rect, t)
 
 
 # Statuses that just mean "nothing to report yet" -- not an AI failure, so

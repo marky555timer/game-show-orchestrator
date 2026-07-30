@@ -40,6 +40,12 @@ for path in POSSIBLE_TESSERACT_PATHS:
 class RekordboxDbLookup:
     def __init__(self):
         self.tracks_db = []
+        # clean_key (same normalization as tracks_db's match key) -> track
+        # length in seconds, from rekordbox.xml's TRACK "TotalTime" attribute.
+        # Section 4 (Auto-DJ): drivers/auto_dj_engine.py looks this up to
+        # know when a track is about to end, instead of needing raw file
+        # access or an internet metadata lookup.
+        self.duration_by_key = {}
         self.load_database()
 
     def load_database(self, custom_xml_path=None):
@@ -71,8 +77,18 @@ class RekordboxDbLookup:
                     if title:
                         clean_key = re.sub(r'[^A-Z0-9]', '', title.upper())
                         self.tracks_db.append((clean_key, title, artist))
+                        total_time = track.get("TotalTime", "")
+                        if total_time.isdigit():
+                            self.duration_by_key[clean_key] = int(total_time)
         except Exception:
             pass
+
+    def get_duration(self, title):
+        """Section 4 (Auto-DJ): track length in seconds from rekordbox.xml's
+        TotalTime attribute, or None if this title isn't in the library /
+        has no TotalTime recorded."""
+        clean_key = re.sub(r'[^A-Z0-9]', '', str(title).upper())
+        return self.duration_by_key.get(clean_key)
 
     def query(self, raw_ocr):
         if not raw_ocr or not self.tracks_db:

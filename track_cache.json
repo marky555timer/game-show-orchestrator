@@ -1041,5 +1041,1432 @@
       "release_year": 1992,
       "ts": 1785412278.0514016
     }
+  ],
+  "pink floyd - learning to fly": [
+    {
+      "headline": "Pink Floyd's only Top 40 hit",
+      "full": "Released in 1987, 'Learning to Fly' became Pink Floyd's sole Top 40 chart hit on the Billboard Hot 100, reaching #34. It appears on the album 'A Momentary Lapse of Reason.'",
+      "question": "What country is Pink Floyd from?",
+      "choices": [
+        "Australia",
+        "Sweden",
+        "England",
+        "Canada"
+      ],
+      "correct_index": 2,
+      "release_year": 1987,
+      "category": "geography",
+      "ts": 1785424993.9861183
+    },
+    {
+      "headline": "Pink Floyd's soaring debut single",
+      "full": "Released as Pink Floyd's first single, this uplifting track became an unexpected hit and remains a fan favorite, showcasing the band's early pop sensibilities.",
+      "question": "What year was 'Learning to Fly' released?",
+      "choices": [
+        "2001",
+        "1979",
+        "1987",
+        "1993"
+      ],
+      "correct_index": 2,
+      "release_year": 1987,
+      "category": "date",
+      "ts": 1785424996.060161
+    },
+    {
+      "headline": "Pink Floyd's soaring 1987 comeback hit",
+      "full": "Released on the 'A Momentary Lapse of Reason' album, 'Learning to Fly' became Pink Floyd's most successful single of the late 1980s, featuring David Gilmour on lead vocals.",
+      "question": "Who founded Pink Floyd?",
+      "choices": [
+        "Nick Mason",
+        "Roger Waters",
+        "Syd Barrett",
+        "David Gilmour"
+      ],
+      "correct_index": 2,
+      "release_year": 1987,
+      "category": "real_name",
+      "ts": 1785424997.9237032
+    }
+  ],
+  "ac/dc - back in black": [
+    {
+      "headline": "AC/DC's biggest hit from 1980",
+      "full": "Back in Black became AC/DC's signature song and one of rock's greatest anthems, dominating charts worldwide after lead singer Bon Scott's death.",
+      "question": "Who was AC/DC's original lead singer?",
+      "choices": [
+        "Brian Johnson",
+        "Mick Jagger",
+        "Axl Rose",
+        "Bon Scott"
+      ],
+      "correct_index": 3,
+      "release_year": 1980,
+      "category": "real_name",
+      "ts": 1785425004.052053
+    },
+    {
+      "headline": "AC/DC's biggest hit from 1980",
+      "full": "'Back In Black' became AC/DC's signature song after Bon Scott's death. The album of the same name sold over 50 million copies worldwide.",
+      "question": "What is 'Back In Black' about?",
+      "choices": [
+        "returning after loss",
+        "partying all night",
+        "lost love",
+        "highway rebellion"
+      ],
+      "correct_index": 0,
+      "release_year": 1980,
+      "category": "song_meaning",
+      "ts": 1785425005.6195688
+    },
+    {
+      "headline": "AC/DC's biggest hit from 1980",
+      "full": "Back in Black was AC/DC's first album with Brian Johnson as vocalist after Bon Scott's death. It became one of the best-selling albums of all time.",
+      "question": "What year was 'Back in Black' released?",
+      "choices": [
+        "1988",
+        "1980",
+        "1995",
+        "1976"
+      ],
+      "correct_index": 1,
+      "release_year": 1980,
+      "category": "date",
+      "ts": 1785425007.287334
+    }
+  ],
+  "the pointer sisters - i'm so excited": [
+    {
+      "headline": "1982 disco-funk smash hit",
+      "full": "The Pointer Sisters' energetic disco-funk anthem reached #3 on the Billboard Hot 100 and became their signature song, featured in the film 'Fast Times at Ridgemont High'.",
+      "question": "What year was 'I'm So Excited' released?",
+      "choices": [
+        "1988",
+        "1979",
+        "1985",
+        "1982"
+      ],
+      "correct_index": 3,
+      "release_year": 1982,
+      "category": "date",
+      "ts": 1785425108.2851648
+    },
+    {
+      "headline": "1984 hit that sampled Grandmaster Flash",
+      "full": "This 1984 dance-pop smash sampled Grandmaster Flash's 'It's Nasty,' became a huge club hit, and remains a party staple decades later.",
+      "question": "How many Pointer Sisters are there?",
+      "choices": [
+        "Four",
+        "Two",
+        "Five",
+        "Three"
+      ],
+      "correct_index": 0,
+      "release_year": 1984,
+      "category": "real_name",
+      "ts": 1785425111.3606431
+    },
+    {
+      "headline": "1982 chart hit that won't quit",
+      "full": "The Pointer Sisters' 1982 smash 'I'm So Excited' became a cultural phenomenon, reaching #3 on Billboard Hot 100 and spawning a legendary music video.",
+      "question": "What chart position did 'I'm So Excited' reach?",
+      "choices": [
+        "#5",
+        "#3",
+        "#7",
+        "#1"
+      ],
+      "correct_index": 1,
+      "release_year": 1982,
+      "category": "career_stat",
+      "ts": 1785425113.5642407
+    }
+  ],
+  "toto - africa": [
+    {
+      "headline": "I Bless the Rains Down in Africa",
+      "full": "Released in 1982, 'Africa' became Toto's signature hit and won a Grammy. The iconic drums were created using a unique percussion technique.",
+      "question": "How many Grammy Awards did Toto win total?",
+      "choices": [
+        "8",
+        "3",
+        "6",
+        "4"
+      ],
+      "correct_index": 2,
+      "release_year": 1982,
+      "category": "career_stat",
+      "ts": 1785425180.2593956
+    },
+    {
+      "headline": "1982 hit with iconic drums",
+      "full": "Released in 1982, 'Africa' became Toto's signature song with its distinctive drum break and African-inspired production. It reached #1 on the Billboard Hot 100 and remains a global anthem.",
+      "question": "What year was Toto's 'Africa' released?",
+      "choices": [
+        "1974",
+        "1979",
+        "1982",
+        "1991"
+      ],
+      "correct_index": 2,
+      "release_year": 1982,
+      "category": "date",
+      "ts": 1785425183.0815651
+    },
+    {
+      "headline": "One of the 80s' most streamed songs ever",
+      "full": "'Africa' by Toto became a cultural phenomenon decades after its 1982 release, dominating streaming platforms and becoming a viral meme celebrating the song's infectious hook and geography references.",
+      "question": "What continent does this song famously reference?",
+      "choices": [
+        "Australia",
+        "South America",
+        "Africa",
+        "Antarctica"
+      ],
+      "correct_index": 2,
+      "release_year": 1982,
+      "category": "song_meaning",
+      "ts": 1785425186.8249838
+    }
+  ],
+  "joan jett & the blackhearts - i love rock 'n roll": [
+    {
+      "headline": "Cover hit that topped charts in '82",
+      "full": "Joan Jett's cover of this 1975 Arrows song became her biggest hit, reaching #1 on the Billboard Hot 100 in 1982 and cementing her rock icon status.",
+      "question": "What U.S. city is Joan Jett from?",
+      "choices": [
+        "New York",
+        "Detroit",
+        "Philadelphia",
+        "Los Angeles"
+      ],
+      "correct_index": 2,
+      "release_year": 1982,
+      "category": "geography",
+      "ts": 1785425204.3956993
+    },
+    {
+      "headline": "1982 glam-rock anthem that defined a gen",
+      "full": "Joan Jett's defiant 'I Love Rock 'N Roll' hit #1 in 1982, becoming one of the most iconic rock songs ever. Originally written by Alan Merrill, it became Jett's signature track and cultural phenomenon.",
+      "question": "T/F: Joan Jett wrote 'I Love Rock 'N Roll' entirely by herself.",
+      "choices": [
+        "True",
+        "False"
+      ],
+      "correct_index": 1,
+      "release_year": 1982,
+      "category": "true_false",
+      "ts": 1785425207.7617643
+    },
+    {
+      "headline": "Cover that became bigger than the origin",
+      "full": "Joan Jett's 1982 cover of the Arrows' 1975 hit became a massive rock anthem and is now more famous than the original version.",
+      "question": "What is this song celebrating?",
+      "choices": [
+        "rock and roll",
+        "teenage rebellion",
+        "a love story",
+        "partying all night"
+      ],
+      "correct_index": 0,
+      "release_year": 1982,
+      "category": "song_meaning",
+      "ts": 1785425209.6022081
+    }
+  ],
+  "marvin gaye - sexual healing": [
+    {
+      "headline": "Marvin Gaye's sensual 1982 masterpiece",
+      "full": "Released in 1982, 'Sexual Healing' became Marvin Gaye's biggest hit of the 1980s, reaching #3 on the Billboard Hot 100 and winning a Grammy Award for Best R&B Performance.",
+      "question": "What record label famously released Marvin Gaye's early hits?",
+      "choices": [
+        "RCA",
+        "Columbia",
+        "Motown",
+        "Atlantic"
+      ],
+      "correct_index": 2,
+      "release_year": 1982,
+      "category": "real_name",
+      "ts": 1785425240.9189847
+    },
+    {
+      "headline": "Marvin's 1982 sensual soul masterpiece",
+      "full": "Released in 1982, 'Sexual Healing' became Marvin Gaye's biggest chart hit and won a Grammy. The song's smooth production and vulnerable vocals helped revive his career after years away from recording.",
+      "question": "T/F: Sexual Healing was written entirely by Marvin Gaye.",
+      "choices": [
+        "True",
+        "False"
+      ],
+      "correct_index": 1,
+      "release_year": 1982,
+      "category": "true_false",
+      "ts": 1785425243.4840574
+    },
+    {
+      "headline": "Marvin Gaye's 1982 soul classic",
+      "full": "Released in 1982, 'Sexual Healing' became Marvin Gaye's biggest hit of the '80s, reaching #1 on the Billboard Hot 100 and earning a Grammy Award.",
+      "question": "What is 'Sexual Healing' about?",
+      "choices": [
+        "love and intimacy",
+        "dancing all night",
+        "spiritual redemption",
+        "heartbreak and loss"
+      ],
+      "correct_index": 0,
+      "release_year": 1982,
+      "category": "song_meaning",
+      "ts": 1785425245.985791
+    }
+  ],
+  "berlin - take my breath away - love th...": [
+    {
+      "headline": "Top Gun's iconic love theme",
+      "full": "Berlin's 1986 power ballad from Top Gun became a massive hit, reaching #1 on Billboard Hot 100 and winning a Golden Globe for Best Original Song.",
+      "question": "Who was Berlin's lead singer?",
+      "choices": [
+        "Pat Benatar",
+        "Annie Lennox",
+        "Terri Nunn",
+        "Chrissie Hynde"
+      ],
+      "correct_index": 2,
+      "release_year": 1986,
+      "category": "real_name",
+      "ts": 1785425370.5348482
+    },
+    {
+      "headline": "Top Gun theme that swept the '80s",
+      "full": "Berlin's 'Take My Breath Away' was the love theme for Top Gun (1986), winning a Golden Globe and Grammy, becoming one of the decade's most iconic power ballads.",
+      "question": "What year was 'Take My Breath Away' released?",
+      "choices": [
+        "1982",
+        "1984",
+        "1986",
+        "1988"
+      ],
+      "correct_index": 2,
+      "release_year": 1986,
+      "category": "date",
+      "ts": 1785425372.900461
+    },
+    {
+      "headline": "Top Gun's iconic love theme",
+      "full": "'Take My Breath Away' from Top Gun (1986) became Berlin's biggest hit, winning a Golden Globe and Grammy nomination for Best Original Song.",
+      "question": "What is this song about?",
+      "choices": [
+        "a fighter pilot",
+        "romantic love",
+        "wartime separation",
+        "loss and grief"
+      ],
+      "correct_index": 1,
+      "release_year": 1986,
+      "category": "song_meaning",
+      "ts": 1785425374.8279562
+    }
+  ],
+  "george michael - faith - remastered": [
+    {
+      "headline": "George Michael's iconic 1987 debut solo ",
+      "full": "Faith became George Michael's first solo #1 hit after Wham! split, winning a Grammy and becoming one of the best-selling singles of all time.",
+      "question": "What was George Michael's former band called?",
+      "choices": [
+        "Wham!",
+        "Depeche Mode",
+        "Duran Duran",
+        "The Police"
+      ],
+      "correct_index": 0,
+      "release_year": 1987,
+      "category": "real_name",
+      "ts": 1785425434.1939871
+    },
+    {
+      "headline": "George Michael's biggest solo hit",
+      "full": "Released in 1987, 'Faith' became George Michael's signature solo single after leaving Wham!, topping charts worldwide and winning a Grammy Award.",
+      "question": "What year was 'Faith' by George Michael released?",
+      "choices": [
+        "1987",
+        "1991",
+        "1979",
+        "1985"
+      ],
+      "correct_index": 0,
+      "release_year": 1987,
+      "category": "date",
+      "ts": 1785425435.677785
+    },
+    {
+      "headline": "George Michael's faith-questioning #1 hi",
+      "full": "1987 debut solo single that topped charts worldwide. Michael strips away Wham! pop polish for a darker, more introspective sound about doubt and spiritual struggle.",
+      "question": "What is 'Faith' primarily about?",
+      "choices": [
+        "romantic love",
+        "dancing in clubs",
+        "overcoming addiction",
+        "doubt and spirituality"
+      ],
+      "correct_index": 3,
+      "release_year": 1987,
+      "category": "song_meaning",
+      "ts": 1785425438.6123111
+    }
+  ],
+  "cheap trick - the flame": [
+    {
+      "headline": "Power ballad that saved a band's career",
+      "full": "'The Flame' became Cheap Trick's only #1 hit on the Billboard Hot 100 in 1988, a massive comeback after years of declining chart success.",
+      "question": "What is 'The Flame' about?",
+      "choices": [
+        "letting someone go",
+        "keeping love alive",
+        "overcoming betrayal",
+        "starting fresh"
+      ],
+      "correct_index": 1,
+      "release_year": 1988,
+      "category": "song_meaning",
+      "ts": 1785425550.1278932
+    },
+    {
+      "headline": "Power ballad that hit #1 in 1988",
+      "full": "Cheap Trick's biggest solo hit, 'The Flame' reached #1 on the Billboard Hot 100 in 1988, becoming their only chart-topper and earning a Grammy nomination.",
+      "question": "What U.S. city was Cheap Trick formed in?",
+      "choices": [
+        "Rockford, Illinois",
+        "Chicago, Illinois",
+        "Milwaukee, Wisconsin",
+        "Detroit, Michigan"
+      ],
+      "correct_index": 0,
+      "release_year": 1988,
+      "category": "geography",
+      "ts": 1785425552.0921075
+    },
+    {
+      "headline": "Power ballad that hit #1 in 1988",
+      "full": "Cheap Trick's 'The Flame' became their only #1 hit on the Billboard Hot 100, reaching the top in 1988 and winning a Grammy nomination.",
+      "question": "What year did 'The Flame' top the Billboard Hot 100?",
+      "choices": [
+        "1988",
+        "1987",
+        "1986",
+        "1990"
+      ],
+      "correct_index": 0,
+      "release_year": 1988,
+      "category": "career_stat",
+      "ts": 1785425553.7761369
+    }
+  ],
+  "spandau ballet - true": [
+    {
+      "headline": "New Romantic new wave masterpiece",
+      "full": "Spandau Ballet's 1983 synth-pop anthem 'True' became their biggest hit, reaching #1 in the UK and defining the New Romantic era with its lush production and romantic lyrics.",
+      "question": "What year was 'True' by Spandau Ballet released?",
+      "choices": [
+        "1981",
+        "1979",
+        "1985",
+        "1983"
+      ],
+      "correct_index": 3,
+      "release_year": 1983,
+      "category": "date",
+      "ts": 1785425604.586561
+    },
+    {
+      "headline": "80s New Wave Masterpiece",
+      "full": "Spandau Ballet's 1983 hit 'True' became their biggest US success, reaching #4 on Billboard Hot 100. The synth-pop anthem defined the decade's sound.",
+      "question": "Who founded Spandau Ballet?",
+      "choices": [
+        "Martin Kemp",
+        "Tony Thompson",
+        "Steve Norman",
+        "Gary Kemp"
+      ],
+      "correct_index": 3,
+      "release_year": 1983,
+      "category": "real_name",
+      "ts": 1785425606.7007554
+    },
+    {
+      "headline": "Spandau Ballet's biggest hit",
+      "full": "Released in 1983, 'True' became Spandau Ballet's signature song and biggest commercial success, reaching #4 on the UK charts and establishing them as New Romantic icons.",
+      "question": "What British city was Spandau Ballet formed in?",
+      "choices": [
+        "Liverpool",
+        "Manchester",
+        "Birmingham",
+        "London"
+      ],
+      "correct_index": 3,
+      "release_year": 1983,
+      "category": "geography",
+      "ts": 1785425608.1891298
+    }
+  ],
+  "milli vanilli - blame it on the rain": [
+    {
+      "headline": "Milli Vanilli's lip-sync scandal hit",
+      "full": "1990 dance-pop track became infamous after the duo admitted to not singing on their album\u2014one of music's biggest controversies.",
+      "question": "What year was 'Blame It on the Rain' released?",
+      "choices": [
+        "1989",
+        "1992",
+        "1990",
+        "1988"
+      ],
+      "correct_index": 2,
+      "release_year": 1990,
+      "category": "date",
+      "ts": 1785425763.410355
+    },
+    {
+      "headline": "Milli Vanilli's lip-sync scandal hit",
+      "full": "1990 chart-topper later engulfed in lip-sync controversy when the group's vocals were revealed to be by session singers, leading to Grammy withdrawal.",
+      "question": "How many Grammys did Milli Vanilli win in 1990?",
+      "choices": [
+        "4",
+        "3",
+        "2",
+        "5"
+      ],
+      "correct_index": 1,
+      "release_year": 1990,
+      "category": "career_stat",
+      "ts": 1785425765.2624729
+    },
+    {
+      "headline": "Milli Vanilli's lip-sync scandal",
+      "full": "This 1989 hit became infamous when Milli Vanilli was revealed to be lip-syncing. The actual singers were Rob Pilatus and Fab Morvan, but they didn't perform vocals on the record.",
+      "question": "What does this song blame for a breakup?",
+      "choices": [
+        "the rain",
+        "bad luck",
+        "a broken heart",
+        "bad timing"
+      ],
+      "correct_index": 0,
+      "release_year": 1989,
+      "category": "song_meaning",
+      "ts": 1785425767.523139
+    }
+  ],
+  "milli vanilli - girl you know it's true": [
+    {
+      "headline": "Milli Vanilli's biggest hit",
+      "full": "Released in 1988, this debut single became a massive global hit and helped launch Milli Vanilli to stardom, topping charts worldwide.",
+      "question": "What year was 'Girl You Know It's True' released?",
+      "choices": [
+        "1988",
+        "1986",
+        "1990",
+        "1992"
+      ],
+      "correct_index": 0,
+      "release_year": 1988,
+      "category": "date",
+      "ts": 1785425938.0641034
+    },
+    {
+      "headline": "Lip-sync scandal's biggest hit",
+      "full": "Milli Vanilli's debut smash was revealed to be lip-synced by session singers, sparking one of pop music's most infamous controversies in 1990.",
+      "question": "T/F: Milli Vanilli won a Grammy Award for this song.",
+      "choices": [
+        "True",
+        "False"
+      ],
+      "correct_index": 0,
+      "release_year": 1988,
+      "category": "true_false",
+      "ts": 1785425939.933106
+    },
+    {
+      "headline": "Milli Vanilli's Lip-Sync Scandal",
+      "full": "1990 hit that became infamous after the duo admitted they didn't actually sing on the track, leading to a Grammy recall and career collapse.",
+      "question": "What is this song's main theme?",
+      "choices": [
+        "dancing all night",
+        "heartbreak",
+        "romantic attraction",
+        "overcoming doubt"
+      ],
+      "correct_index": 2,
+      "release_year": 1990,
+      "category": "song_meaning",
+      "ts": 1785425941.6726966
+    }
+  ],
+  "survivor - burning heart - from \"rocky i...": [
+    {
+      "headline": "Rocky IV theme hit #19 on Billboard",
+      "full": "Survivor's power ballad 'Burning Heart' was featured in Rocky IV (1985). The song reached #19 on the Billboard Hot 100 and became iconic for its inspirational message about perseverance.",
+      "question": "What does 'Burning Heart' encourage you to do?",
+      "choices": [
+        "Fall in love",
+        "Win money",
+        "Never give up",
+        "Start a fight"
+      ],
+      "correct_index": 2,
+      "release_year": 1985,
+      "category": "song_meaning",
+      "ts": 1785425980.4180675
+    },
+    {
+      "headline": "Rocky IV theme by Survivor",
+      "full": "Survivor's 'Burning Heart' was the theme for Rocky IV (1985), reaching #34 on the Billboard Hot 100 and becoming iconic 80s rock.",
+      "question": "How many #1 hits did Survivor have?",
+      "choices": [
+        "3",
+        "1",
+        "4",
+        "2"
+      ],
+      "correct_index": 1,
+      "release_year": 1985,
+      "category": "career_stat",
+      "ts": 1785425982.0568893
+    },
+    {
+      "headline": "Rocky IV theme hit #1 on Billboard Hot 1",
+      "full": "Survivor's 'Burning Heart' was the theme for Rocky IV (1985). It peaked at #1 on the Billboard Hot 100 and became one of the most iconic 80s power ballads.",
+      "question": "What year was 'Burning Heart' released?",
+      "choices": [
+        "1982",
+        "1985",
+        "1979",
+        "1988"
+      ],
+      "correct_index": 1,
+      "release_year": 1985,
+      "category": "date",
+      "ts": 1785425983.9394636
+    }
+  ],
+  "indigo girls - closer to fine": [
+    {
+      "headline": "Indigo Girls' introspective 90s anthem",
+      "full": "1989 debut single exploring life's big questions through folk-pop harmony. Became their signature song and earned Grammy recognition.",
+      "question": "What year was 'Closer to Fine' released?",
+      "choices": [
+        "1989",
+        "1987",
+        "1995",
+        "2001"
+      ],
+      "correct_index": 0,
+      "release_year": 1989,
+      "category": "date",
+      "ts": 1785426231.0909467
+    },
+    {
+      "headline": "Indigo Girls' biggest hit from 1989",
+      "full": "'Closer to Fine' became the Indigo Girls' signature song and biggest commercial success, reaching #4 on the Modern Rock chart and earning widespread radio play.",
+      "question": "Who are the two vocalists of Indigo Girls?",
+      "choices": [
+        "Meg Myers & Angel Olsen",
+        "Sarah McLachlan & Sheryl",
+        "Natalie Maines & Lisa St",
+        "Amy Ray & Emily Saliers"
+      ],
+      "correct_index": 3,
+      "release_year": 1989,
+      "category": "real_name",
+      "ts": 1785426234.1481836
+    },
+    {
+      "headline": "Indigo Girls' biggest hit from debut alb",
+      "full": "Released in 1989, 'Closer to Fine' became the Indigo Girls' signature song and biggest commercial success, reaching #1 on MTV's Buzz Bin and establishing the duo as major forces in alternative music.",
+      "question": "T/F: 'Closer to Fine' was written about a specific therapist.",
+      "choices": [
+        "True",
+        "False"
+      ],
+      "correct_index": 1,
+      "release_year": 1989,
+      "category": "true_false",
+      "ts": 1785426236.044275
+    }
+  ],
+  "sade - paradise": [
+    {
+      "headline": "Sade's smooth 1988 masterpiece",
+      "full": "From the album 'Stronger Than Pride', this sultry track showcases Sade's signature sophisticated sound and became a defining moment in her career.",
+      "question": "What country is Sade originally from?",
+      "choices": [
+        "Nigeria",
+        "Jamaica",
+        "Brazil",
+        "Ghana"
+      ],
+      "correct_index": 0,
+      "release_year": 1988,
+      "category": "geography",
+      "ts": 1785426251.1523485
+    },
+    {
+      "headline": "Sade's smooth escape to Paradise",
+      "full": "From her 2000 album 'Lovers Rock', this sensual track showcases Sade's signature sultry vocals over laid-back production, becoming a fan favorite.",
+      "question": "What does 'Paradise' celebrate?",
+      "choices": [
+        "city nightlife",
+        "personal ambition",
+        "heartbreak and loss",
+        "romantic escapism"
+      ],
+      "correct_index": 3,
+      "release_year": 2000,
+      "category": "song_meaning",
+      "ts": 1785426253.27299
+    },
+    {
+      "headline": "Sade's smooth '80s masterpiece",
+      "full": "Released in 1986, 'Paradise' showcases Sade Adu's sultry vocals over sophisticated jazz-influenced production, becoming a signature track for the British-Nigerian soul artist.",
+      "question": "What year was Sade's 'Paradise' released?",
+      "choices": [
+        "1992",
+        "1984",
+        "1979",
+        "1986"
+      ],
+      "correct_index": 3,
+      "release_year": 1986,
+      "category": "date",
+      "ts": 1785426255.0726128
+    }
+  ],
+  "guns n' roses - paradise city": [
+    {
+      "headline": "GNR's biggest hit from Appetite for Dest",
+      "full": "Released in 1988, 'Paradise City' became Guns N' Roses' signature song and biggest chart success, reaching #5 on the Billboard Hot 100 and earning multi-platinum status worldwide.",
+      "question": "What city was Guns N' Roses formed in?",
+      "choices": [
+        "Los Angeles",
+        "New York",
+        "London",
+        "Seattle"
+      ],
+      "correct_index": 0,
+      "release_year": 1988,
+      "category": "geography",
+      "ts": 1785426413.9390597
+    },
+    {
+      "headline": "GNR's 1988 arena rock anthem",
+      "full": "Epic power ballad from 'GN'R Lies' debut album. Features one of rock's most memorable guitar solos and became a stadium staple worldwide.",
+      "question": "What is 'Paradise City' about?",
+      "choices": [
+        "childhood memories",
+        "city nightlife",
+        "escaping to a better pla",
+        "lost love"
+      ],
+      "correct_index": 2,
+      "release_year": 1988,
+      "category": "song_meaning",
+      "ts": 1785426415.791289
+    },
+    {
+      "headline": "Hair metal anthem from 1988",
+      "full": "Released on GN'R's debut album 'Appetite for Destruction', Paradise City became one of the band's signature songs, reaching #5 on the Billboard Hot 100.",
+      "question": "What year was Paradise City released?",
+      "choices": [
+        "1991",
+        "1988",
+        "1983",
+        "1986"
+      ],
+      "correct_index": 1,
+      "release_year": 1988,
+      "category": "date",
+      "ts": 1785426417.452063
+    }
+  ],
+  "steve perry - oh sherrie": [
+    {
+      "headline": "Steve Perry's 1984 power ballad",
+      "full": "Released in 1984, 'Oh Sherrie' was Steve Perry's debut solo single while still Journey's frontman. The song reached #3 on the Billboard Hot 100 and became a signature power ballad of the '80s.",
+      "question": "T/F: 'Oh Sherrie' was written about Perry's wife at the time.",
+      "choices": [
+        "True",
+        "False"
+      ],
+      "correct_index": 0,
+      "release_year": 1984,
+      "category": "true_false",
+      "ts": 1785426486.6564484
+    },
+    {
+      "headline": "Steve Perry's 1984 power ballad",
+      "full": "Released in 1984, 'Oh Sherrie' was Steve Perry's debut solo single while still Journey's frontman, reaching #5 on the Billboard Hot 100.",
+      "question": "What's Steve Perry's highest US chart position?",
+      "choices": [
+        "#2",
+        "#8",
+        "#12",
+        "#5"
+      ],
+      "correct_index": 3,
+      "release_year": 1984,
+      "category": "career_stat",
+      "ts": 1785426488.2242956
+    },
+    {
+      "headline": "Steve Perry's solo debut hit from '84",
+      "full": "Released in 1984, 'Oh Sherrie' was Steve Perry's first solo single while still the Journey frontman, reaching #3 on the Billboard Hot 100.",
+      "question": "What band was Steve Perry the lead singer of?",
+      "choices": [
+        "Toto",
+        "Foreigner",
+        "Boston",
+        "Journey"
+      ],
+      "correct_index": 3,
+      "release_year": 1984,
+      "category": "real_name",
+      "ts": 1785426489.7873356
+    }
+  ],
+  "george michael - father figure - remastered": [
+    {
+      "headline": "George Michael's biggest solo hit",
+      "full": "Released in 1986, 'Father Figure' became George Michael's signature solo track after Wham! disbanded, reaching #1 in multiple countries and showcasing his mature R&B-influenced sound.",
+      "question": "T/F: 'Father Figure' was George Michael's debut single after Wham! broke up.",
+      "choices": [
+        "True",
+        "False"
+      ],
+      "correct_index": 1,
+      "release_year": 1986,
+      "category": "true_false",
+      "ts": 1785426621.1600146
+    },
+    {
+      "headline": "George Michael's sultry ballad",
+      "full": "Released in 1987, 'Father Figure' became one of George Michael's signature solo hits, showcasing his smooth vocals on this sensual slow-burn track.",
+      "question": "What year was 'Father Figure' released?",
+      "choices": [
+        "1985",
+        "1987",
+        "1991",
+        "1989"
+      ],
+      "correct_index": 1,
+      "release_year": 1987,
+      "category": "date",
+      "ts": 1785426622.6073549
+    },
+    {
+      "headline": "George Michael's #1 hit about mentorship",
+      "full": "Released in 1990, 'Father Figure' became George Michael's biggest solo hit, reaching #1 in the US. The song explores themes of guidance and protection in a relationship.",
+      "question": "What is 'Father Figure' about?",
+      "choices": [
+        "lost friendship",
+        "unrequited love",
+        "mentorship and guidance",
+        "family conflict"
+      ],
+      "correct_index": 2,
+      "release_year": 1990,
+      "category": "song_meaning",
+      "ts": 1785426624.3826725
+    }
+  ],
+  "bob marley & the wailers - could you be loved": [
+    {
+      "headline": "Bob Marley's Reggae Love Anthem",
+      "full": "Released on 'Uprising' in 1980, this uplifting reggae classic became one of Marley's most enduring messages about love and acceptance, with its iconic 'every little thing gonna be alright' philosophy.",
+      "question": "T/F: Bob Marley wrote 'Could You Be Loved' as a duet.",
+      "choices": [
+        "True",
+        "False"
+      ],
+      "correct_index": 1,
+      "release_year": 1980,
+      "category": "true_false",
+      "ts": 1785427015.9270208
+    },
+    {
+      "headline": "Bob Marley's final studio album track",
+      "full": "'Could You Be Loved' from Uprising (1980) became one of Bob Marley's most iconic songs, reaching #23 on Billboard Hot 100 and gaining renewed fame through films and commercials.",
+      "question": "How many studio albums did Bob Marley release?",
+      "choices": [
+        "8",
+        "13",
+        "9",
+        "11"
+      ],
+      "correct_index": 3,
+      "release_year": 1980,
+      "category": "career_stat",
+      "ts": 1785427017.7273266
+    },
+    {
+      "headline": "Bob Marley's 1980 love anthem",
+      "full": "Released in 1980, 'Could You Be Loved' became one of Bob Marley's most iconic tracks, featured on his final album 'Uprising' and reaching #1 in Jamaica.",
+      "question": "Who founded Bob Marley & The Wailers?",
+      "choices": [
+        "Neville Garrick",
+        "Bob Marley",
+        "Peter Tosh",
+        "Bunny Wailer"
+      ],
+      "correct_index": 1,
+      "release_year": 1980,
+      "category": "real_name",
+      "ts": 1785427019.6184983
+    }
+  ],
+  "'til tuesday - voices carry": [
+    {
+      "headline": "MTV hit with a twist ending",
+      "full": "'Voices Carry' became 'Til Tuesday's biggest hit, reaching #8 on Billboard Hot 100. The music video featured a provocative twist where the lead singer's boyfriend suddenly turns violent, sparking cont",
+      "question": "What New England city was 'Til Tuesday formed in?",
+      "choices": [
+        "Hartford",
+        "Portland",
+        "Boston",
+        "Providence"
+      ],
+      "correct_index": 2,
+      "release_year": 1985,
+      "category": "geography",
+      "ts": 1785427103.931313
+    },
+    {
+      "headline": "80s hit with a music video twist",
+      "full": "'Voices Carry' featured a groundbreaking music video where the band performed in silence while mouthing lyrics, reflecting the song's theme of suppressed voices.",
+      "question": "What year did 'Til Tuesday's 'Voices Carry' peak on US charts?",
+      "choices": [
+        "1987",
+        "1986",
+        "1985",
+        "1984"
+      ],
+      "correct_index": 2,
+      "release_year": 1985,
+      "category": "career_stat",
+      "ts": 1785427105.8216927
+    },
+    {
+      "headline": "'Til Tuesday's biggest hit",
+      "full": "1985 breakthrough single about relationship conflict and communication issues, featuring whispered vocals that became the band's signature sound.",
+      "question": "What is 'Voices Carry' about?",
+      "choices": [
+        "a haunted house",
+        "losing your job",
+        "relationship conflict",
+        "moving to a new city"
+      ],
+      "correct_index": 2,
+      "release_year": 1985,
+      "category": "song_meaning",
+      "ts": 1785427107.9486325
+    }
+  ],
+  "silverchair - tomorrow": [
+    {
+      "headline": "Silverchair's grunge-pop anthem from '94",
+      "full": "Tomorrow is a breakthrough single from Silverchair's debut album Frogsoup, showcasing Daniel Johns' distinctive vocals and the band's raw, youthful energy that defined 90s alternative rock.",
+      "question": "T/F: Daniel Johns wrote Tomorrow when he was just 15 years old.",
+      "choices": [
+        "True",
+        "False"
+      ],
+      "correct_index": 0,
+      "release_year": 1994,
+      "category": "true_false",
+      "ts": 1785428464.7521033
+    }
+  ],
+  "take that - back for good - radio mix": [
+    {
+      "headline": "Take That's biggest ballad",
+      "full": "Released as a radio mix, 'Back for Good' became Take That's signature power ballad and one of their greatest hits on the UK charts.",
+      "question": "How many members did Take That have?",
+      "choices": [
+        "6",
+        "5",
+        "4",
+        "3"
+      ],
+      "correct_index": 1,
+      "release_year": 1995,
+      "category": "career_stat",
+      "ts": 1785428507.7812736
+    },
+    {
+      "headline": "Take That's ultimate comeback anthem",
+      "full": "Released in 1995, 'Back for Good' became Take That's signature ballad and one of the biggest UK hits of the 90s, reaching #1 and becoming their most enduring track.",
+      "question": "What year was 'Back for Good' released?",
+      "choices": [
+        "1998",
+        "1993",
+        "1995",
+        "2001"
+      ],
+      "correct_index": 2,
+      "release_year": 1995,
+      "category": "date",
+      "ts": 1785428509.4844377
+    },
+    {
+      "headline": "Take That's ultimate comeback anthem",
+      "full": "Released in 1995, 'Back for Good' became Take That's signature ballad and one of the biggest UK hits of the '90s, topping charts across Europe.",
+      "question": "T/F: Take That split up permanently in 1996, never to reunite.",
+      "choices": [
+        "True",
+        "False"
+      ],
+      "correct_index": 1,
+      "release_year": 1995,
+      "category": "true_false",
+      "ts": 1785428511.2867334
+    }
+  ],
+  "mariah carey - always be my baby": [
+    {
+      "headline": "Mariah's immortal '90s love anthem",
+      "full": "Released in 1995, 'Always Be My Baby' became Mariah Carey's signature ballad with its iconic whistle note and unforgettable hook about unconditional love.",
+      "question": "What year was 'Always Be My Baby' released?",
+      "choices": [
+        "1999",
+        "1993",
+        "1997",
+        "1995"
+      ],
+      "correct_index": 3,
+      "release_year": 1995,
+      "category": "date",
+      "ts": 1785428543.3959668
+    },
+    {
+      "headline": "Mariah's 90s Anthem Defied Gravity",
+      "full": "Released in 1995, 'Always Be My Baby' became Mariah Carey's signature ballad, reaching #1 on the Billboard Hot 100 and establishing her as the voice of 90s romance.",
+      "question": "In what year was Mariah Carey born?",
+      "choices": [
+        "1969",
+        "1970",
+        "1968",
+        "1971"
+      ],
+      "correct_index": 0,
+      "release_year": 1995,
+      "category": "real_name",
+      "ts": 1785428546.0659263
+    },
+    {
+      "headline": "90s icon anthem that defined a generatio",
+      "full": "Released in 1995, this power ballad became Mariah Carey's signature song, reaching #1 on the Billboard Hot 100 and cementing her status as a superstar with its iconic whistle notes and timeless melody",
+      "question": "T/F: Mariah Carey wrote 'Always Be My Baby' entirely by herself.",
+      "choices": [
+        "True",
+        "False"
+      ],
+      "correct_index": 1,
+      "release_year": 1995,
+      "category": "true_false",
+      "ts": 1785428548.729401
+    }
+  ],
+  "guns n' roses - november rain": [
+    {
+      "headline": "Epic 9-minute ballad from Use Your Illus",
+      "full": "Released in 1992, this orchestral power ballad became one of GNR's most iconic songs, featuring Axl Rose's soaring vocals over a lush string arrangement.",
+      "question": "T/F: Axl Rose wrote November Rain as a tribute to his ex-wife Erin Everly.",
+      "choices": [
+        "True",
+        "False"
+      ],
+      "correct_index": 1,
+      "release_year": 1992,
+      "category": "true_false",
+      "ts": 1785428639.5058982
+    },
+    {
+      "headline": "9-min power ballad from Use Your Illusio",
+      "full": "Epic 9-minute power ballad from 1991's Use Your Illusion II album, featuring Slash's signature soaring guitar work and Axl Rose's emotional vocal performance.",
+      "question": "What US city was Guns N' Roses formed in?",
+      "choices": [
+        "Los Angeles",
+        "Seattle",
+        "New York",
+        "San Francisco"
+      ],
+      "correct_index": 0,
+      "release_year": 1991,
+      "category": "geography",
+      "ts": 1785428641.2278707
+    },
+    {
+      "headline": "Epic 9-minute ballad from 1992",
+      "full": "November Rain is a sweeping power ballad featuring a full orchestra arrangement and one of rock's most iconic music videos with a wedding theme.",
+      "question": "How many studio albums did Guns N' Roses release in the 1990s?",
+      "choices": [
+        "4",
+        "3",
+        "1",
+        "2"
+      ],
+      "correct_index": 3,
+      "release_year": 1992,
+      "category": "career_stat",
+      "ts": 1785428643.3462896
+    }
+  ],
+  "jeff buckley - lover, you should've come over": [
+    {
+      "headline": "Jeff Buckley's 1994 masterpiece",
+      "full": "'Lover, You Should've Come Over' is the haunting lead single from Jeff Buckley's only studio album 'Grace'. Its ethereal guitar work and emotional vocals became iconic.",
+      "question": "What city was Jeff Buckley born in?",
+      "choices": [
+        "New York",
+        "Anaheim",
+        "San Francisco",
+        "Los Angeles"
+      ],
+      "correct_index": 1,
+      "release_year": 1994,
+      "category": "geography",
+      "ts": 1785429175.865206
+    },
+    {
+      "headline": "Jeff Buckley's haunting masterpiece",
+      "full": "This 1994 ballad became Jeff Buckley's signature song, featured on his acclaimed debut album 'Grace'. Its emotional intensity and guitar work made it a modern classic.",
+      "question": "What year did Jeff Buckley's 'Grace' album debut?",
+      "choices": [
+        "1992",
+        "1996",
+        "1994",
+        "1998"
+      ],
+      "correct_index": 2,
+      "release_year": 1994,
+      "category": "career_stat",
+      "ts": 1785429177.6706512
+    },
+    {
+      "headline": "Jeff Buckley's 9-minute heartbreak epic",
+      "full": "Released on his 1994 debut 'Grace', this haunting ballad became Buckley's signature song, featuring soaring vocals and a sparse, intimate arrangement that captivated audiences worldwide.",
+      "question": "T/F: Jeff Buckley recorded 'Lover' as a cover of an original Leonard Cohen song.",
+      "choices": [
+        "True",
+        "False"
+      ],
+      "correct_index": 1,
+      "release_year": 1994,
+      "category": "true_false",
+      "ts": 1785429179.4966793
+    }
+  ],
+  "coolio, l.v. - gangsta's paradise": [
+    {
+      "headline": "Coolio's signature hit samples Stevie Wo",
+      "full": "Released in 1995 for the Dangerous Minds soundtrack, 'Gangsta's Paradise' samples Stevie Wonder's 'Pastime Paradise' and became Coolio's biggest chart success worldwide.",
+      "question": "What is Coolio's real first name?",
+      "choices": [
+        "Adrian",
+        "Artis",
+        "Andre",
+        "Antoine"
+      ],
+      "correct_index": 1,
+      "release_year": 1995,
+      "category": "real_name",
+      "ts": 1785429581.1788933
+    },
+    {
+      "headline": "From Dangerous Minds soundtrack",
+      "full": "Coolio featuring L.V.'s 1995 hit from the Dangerous Minds film. Sampled Stevie Wonder's 'Pastime Paradise' and became a massive crossover success.",
+      "question": "What year was 'Gangsta's Paradise' released?",
+      "choices": [
+        "1995",
+        "1998",
+        "2001",
+        "1993"
+      ],
+      "correct_index": 0,
+      "release_year": 1995,
+      "category": "date",
+      "ts": 1785429583.2405472
+    },
+    {
+      "headline": "Sample from Stevie Wonder's classic",
+      "full": "1995 hit sampled Stevie Wonder's 'Pastime Paradise' from 1976, flipping it into a hip-hop anthem about overcoming adversity.",
+      "question": "What city is Coolio from?",
+      "choices": [
+        "Compton",
+        "Oakland",
+        "Long Beach",
+        "Los Angeles"
+      ],
+      "correct_index": 3,
+      "release_year": 1995,
+      "category": "geography",
+      "ts": 1785429585.285116
+    }
+  ],
+  "dido - thank you": [
+    {
+      "headline": "Eminem sample in Dido's hit",
+      "full": "Dido's 'Thank You' was famously sampled by Eminem in 'Stan' (2000), becoming one of the most iconic hip-hop tracks ever.",
+      "question": "What year was Dido's 'Thank You' released?",
+      "choices": [
+        "1996",
+        "2000",
+        "2002",
+        "1998"
+      ],
+      "correct_index": 3,
+      "release_year": 1998,
+      "category": "date",
+      "ts": 1785429836.8057027
+    },
+    {
+      "headline": "Dido's debut hit sampled Eminem",
+      "full": "This 1998 breakthrough single samples the same soul track that Eminem used for 'Lose Yourself'. It became Dido's biggest chart success and introduced her ethereal vocals to millions worldwide.",
+      "question": "What is Dido's real first name?",
+      "choices": [
+        "Samantha",
+        "Victoria",
+        "Florian",
+        "Isabelle"
+      ],
+      "correct_index": 2,
+      "release_year": 1998,
+      "category": "real_name",
+      "ts": 1785429838.6333053
+    },
+    {
+      "headline": "Eminem sampled this Dido track",
+      "full": "Eminem's 'Stan' famously sampled Dido's 'Thank You', becoming one of hip-hop's most iconic songs and introducing many to the British singer-songwriter.",
+      "question": "T/F: 'Thank You' was Dido's debut single.",
+      "choices": [
+        "True",
+        "False"
+      ],
+      "correct_index": 1,
+      "release_year": 1998,
+      "category": "true_false",
+      "ts": 1785429840.3488677
+    }
+  ],
+  "ms. lauryn hill - ex-factor": [
+    {
+      "headline": "Lauryn Hill's heartbreak masterpiece",
+      "full": "Released on her solo debut 'The Miseducation of Lauryn Hill', this emotional ballad explores the complexity of toxic relationships and self-worth.",
+      "question": "What is 'Ex-Factor' about?",
+      "choices": [
+        "self-discovery",
+        "toxic relationships",
+        "family conflict",
+        "new love"
+      ],
+      "correct_index": 1,
+      "release_year": 1998,
+      "category": "song_meaning",
+      "ts": 1785429858.5438464
+    },
+    {
+      "headline": "Lauryn Hill's emotional breakup anthem",
+      "full": "Released on her landmark debut album 'The Miseducation of Lauryn Hill,' this introspective track became one of her signature songs, exploring themes of love and heartbreak with her distinctive vocal d",
+      "question": "What group was Lauryn Hill famous for before her solo career?",
+      "choices": [
+        "De La Soul",
+        "The Fugees",
+        "A Tribe Called Quest",
+        "Digable Planets"
+      ],
+      "correct_index": 1,
+      "release_year": 1998,
+      "category": "real_name",
+      "ts": 1785429860.45972
+    },
+    {
+      "headline": "Ms. Lauryn Hill's emotional breakup clas",
+      "full": "Released in 1998, 'Ex-Factor' became Ms. Lauryn Hill's signature solo hit from her album 'The Miseducation of Lauryn Hill', showcasing her soulful vocals over a minimalist production.",
+      "question": "What US city is Ms. Lauryn Hill from?",
+      "choices": [
+        "Newark, New Jersey",
+        "Miami, Florida",
+        "Los Angeles, California",
+        "Atlanta, Georgia"
+      ],
+      "correct_index": 0,
+      "release_year": 1998,
+      "category": "geography",
+      "ts": 1785429862.2633271
+    }
+  ],
+  "roxette - it must have been love - from...": [
+    {
+      "headline": "Chess movie power ballad hit",
+      "full": "Roxette's iconic 1989 ballad from the film 'Kung Fu Fighting' soundtrack, becoming a massive global chart success and 80s power ballad staple.",
+      "question": "What year was 'It Must Have Been Love' released?",
+      "choices": [
+        "1992",
+        "1989",
+        "1995",
+        "1987"
+      ],
+      "correct_index": 1,
+      "release_year": 1989,
+      "category": "date",
+      "ts": 1785429882.3077161
+    },
+    {
+      "headline": "A Pretty Woman staple from Sweden",
+      "full": "Roxette's power ballad 'It Must Have Been Love' became iconic as the theme for Julia Roberts' 1990 film Pretty Woman, launching the Swedish duo to global superstardom.",
+      "question": "T/F: Roxette's Marie Fredriksson was born in Stockholm.",
+      "choices": [
+        "True",
+        "False"
+      ],
+      "correct_index": 1,
+      "release_year": 1987,
+      "category": "true_false",
+      "ts": 1785429883.8435054
+    },
+    {
+      "headline": "Pretty Woman soundtrack smash hit",
+      "full": "Featured on the Pretty Woman soundtrack, this 1989 ballad became Roxette's biggest US hit, reaching #2 on the Billboard Hot 100 and winning a Golden Globe nomination.",
+      "question": "Who co-founded Roxette with Marie Fredriksson?",
+      "choices": [
+        "Per Gessle",
+        "Anders Oscarsson",
+        "Stefan Glap\u00e9r",
+        "Christofer Lundquist"
+      ],
+      "correct_index": 0,
+      "release_year": 1989,
+      "category": "real_name",
+      "ts": 1785429885.8099597
+    }
+  ],
+  "cue": [
+    {
+      "headline": "offline trivia",
+      "full": "",
+      "question": "How many number-one hits does Rihanna have?",
+      "choices": [
+        "14",
+        "8",
+        "20",
+        "5"
+      ],
+      "correct_index": 0,
+      "ts": 1785439432.5137682
+    },
+    {
+      "headline": "offline trivia",
+      "full": "",
+      "question": "What year did Michael Jackson release Thriller?",
+      "choices": [
+        "1982",
+        "1979",
+        "1985",
+        "1988"
+      ],
+      "correct_index": 0,
+      "ts": 1785439433.656675
+    }
+  ],
+  "sarah mclachlan - building a mystery": [
+    {
+      "headline": "Mystery topped charts in '97",
+      "full": "Sarah McLachlan's breakthrough hit 'Building a Mystery' reached #3 on Billboard Hot 100 and became her signature song, winning multiple Grammy nominations.",
+      "question": "How many Grammy Awards has Sarah McLachlan won?",
+      "choices": [
+        "9",
+        "24",
+        "18",
+        "12"
+      ],
+      "correct_index": 2,
+      "release_year": 1996,
+      "category": "career_stat",
+      "ts": 1785439483.799435
+    },
+    {
+      "headline": "Mystery hit from Sarah McLachlan",
+      "full": "'Building a Mystery' was a massive 90s alternative rock hit that became Sarah McLachlan's signature song, reaching #3 on the Billboard Modern Rock chart.",
+      "question": "What year was 'Building a Mystery' released?",
+      "choices": [
+        "1992",
+        "2001",
+        "1996",
+        "1988"
+      ],
+      "correct_index": 2,
+      "release_year": 1996,
+      "category": "date",
+      "ts": 1785439488.2608988
+    },
+    {
+      "headline": "Sarah McLachlan's '90s alt-rock anthem",
+      "full": "Released in 1994, 'Building a Mystery' became Sarah McLachlan's breakthrough hit and signature song, reaching #3 on the Billboard Hot 100 and earning a Grammy nomination.",
+      "question": "What Canadian province is Sarah McLachlan from?",
+      "choices": [
+        "Alberta",
+        "Ontario",
+        "Quebec",
+        "British Columbia"
+      ],
+      "correct_index": 3,
+      "release_year": 1994,
+      "category": "geography",
+      "ts": 1785439489.9213643
+    }
+  ],
+  "acker bilk - acker bilk - stranger on the...": [
+    {
+      "headline": "UK #1 hit from 1962",
+      "full": "Acker Bilk's 'Stranger on the Shore' became the first British instrumental to top the US Billboard Hot 100, reaching #1 in 1962.",
+      "question": "What year did 'Stranger on the Shore' hit #1?",
+      "choices": [
+        "1960",
+        "1963",
+        "1962",
+        "1961"
+      ],
+      "correct_index": 2,
+      "release_year": 1962,
+      "category": "career_stat",
+      "ts": 1785439625.3961098
+    },
+    {
+      "headline": "British clarinet icon's smoothest hit",
+      "full": "Acker Bilk's 1961 'Stranger on the Shore' became the first British instrumental to top the US Billboard Hot 100, reaching #1 worldwide.",
+      "question": "What year was 'Stranger on the Shore' released?",
+      "choices": [
+        "1967",
+        "1954",
+        "1958",
+        "1961"
+      ],
+      "correct_index": 3,
+      "release_year": 1961,
+      "category": "date",
+      "ts": 1785439626.9316177
+    },
+    {
+      "headline": "Acker Bilk's Jazz Clarinet Classic",
+      "full": "Acker Bilk's 1961 instrumental 'Stranger on the Shore' became a UK #1 hit and won a Grammy. Its beautiful clarinet melody defined easy listening.",
+      "question": "What is this song about?",
+      "choices": [
+        "A seaside town",
+        "A lonely stranger",
+        "Lost love",
+        "A mysterious visitor"
+      ],
+      "correct_index": 1,
+      "release_year": 1961,
+      "category": "song_meaning",
+      "ts": 1785439628.7701645
+    }
   ]
 }

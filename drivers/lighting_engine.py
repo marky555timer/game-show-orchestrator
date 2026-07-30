@@ -42,13 +42,63 @@ def _dj_theme_frame(t, color, period):
             on = (i % 2) == phase
             values.append((220 if on else 40, r, g, b))
 
-    else:
+    elif theme == 3:
         # Sparkle -- each fixture twinkles on its own phase offset.
         for i in range(_UPLIGHT_COUNT):
             phase = ((t + i * (period / _UPLIGHT_COUNT)) % period) / period
             level = (math.sin(phase * 2 * math.pi) + 1.0) / 2.0
             dimmer = int(20 + level * 235)
             values.append((dimmer, r, g, b))
+
+    elif theme == 4:
+        # Bidirectional converging chase -- two pulses start at the outer
+        # fixtures and sweep toward the center, colliding, then restart.
+        half = (_UPLIGHT_COUNT - 1) / 2.0
+        phase = (t % period) / period
+        pos = phase * half
+        for i in range(_UPLIGHT_COUNT):
+            dist_from_edge = min(i, _UPLIGHT_COUNT - 1 - i)
+            dist = abs(dist_from_edge - pos)
+            level = max(0.0, 1.0 - dist / 1.8)
+            dimmer = int(25 + level * 230)
+            values.append((dimmer, r, g, b))
+
+    elif theme == 5:
+        # Random twinkle strobe -- deterministic pseudo-random per-fixture
+        # flicker (hashed from fixture index + a coarse time bucket) rather
+        # than true randomness, so the pattern is reproducible frame to
+        # frame instead of jittering.
+        bucket = int(t / max(0.05, period / 6.0))
+        for i in range(_UPLIGHT_COUNT):
+            on = ((i * 2654435761 + bucket * 40503) >> 5) % 3 == 0
+            dimmer = 235 if on else 15
+            values.append((dimmer, r, g, b))
+
+    elif theme == 6:
+        # Wave gradient -- a smooth traveling sine brightness wave across
+        # the fixtures (continuous, unlike the discrete chase in theme 1).
+        for i in range(_UPLIGHT_COUNT):
+            phase = ((t / period) + (i / _UPLIGHT_COUNT)) % 1.0
+            level = (math.sin(phase * 2 * math.pi) + 1.0) / 2.0
+            dimmer = int(30 + level * 225)
+            values.append((dimmer, r, g, b))
+
+    else:
+        # Heartbeat pulse burst -- all fixtures snap into a quick double
+        # pulse ("lub-dub"), then fade together before the next beat.
+        phase = (t % period) / period
+        if phase < 0.12:
+            level = phase / 0.12
+        elif phase < 0.24:
+            level = 1.0 - (phase - 0.12) / 0.12
+        elif phase < 0.34:
+            level = (phase - 0.24) / 0.10
+        elif phase < 0.5:
+            level = 1.0 - (phase - 0.34) / 0.16
+        else:
+            level = 0.0
+        dimmer = int(15 + level * 240)
+        values = [(dimmer, r, g, b)] * _UPLIGHT_COUNT
 
     return values
 

@@ -171,6 +171,16 @@ def _apply_active_question(data, source):
     state.quiz_graded_at = 0.0
     state.fixture1_mode = "off"  # Reset rule: new question -> Fixture 1 black
 
+    # Section 2 (Mystery Band): a question is genuinely "asked" the instant
+    # it becomes the active round question, regardless of source (queue
+    # pull, auto-advance, price game, or offline fallback) -- track_key is
+    # "artist - title" (see _sanitize_track_key), so peel the artist back off.
+    track_key = state.factoid_track_key
+    if " - " in track_key:
+        artist_key = track_key.split(" - ", 1)[0].strip()
+        if artist_key:
+            state.asked_artists.add(artist_key)
+
 
 def load_forced_fallback_question(source_label="FORCED_FALLBACK"):
     """Bypasses the AI fetch and pre-fetch queue entirely: grabs a random
@@ -356,8 +366,13 @@ class TrackQuestionEngine:
     # 6 categories total (one is True/False) -- 3 of them get rolled per
     # track (see _style_hints_for_track), so geography/real-name/etc show up
     # periodically rather than every single track.
+    # "category" tags each style so the Mystery Band question-priority
+    # hierarchy (config.MYSTERY_CATEGORY_PRIORITY, Section 2) can re-sort a
+    # track's cached queue once Game Mode is entered from a live Mystery
+    # Band window. Categories not present in that priority map (career_stat,
+    # song_meaning) simply sort last, in original order.
     _QUESTION_STYLE_HINTS = [
-        {"type": "multiple_choice", "hint":
+        {"type": "multiple_choice", "category": "date", "hint":
             "Ask what year this track was released. Guardrail: work out how "
             "long ago that real year was relative to today. If the track is "
             "MORE than 20 years old, the three wrong-answer years MUST span "
@@ -366,11 +381,11 @@ class TrackQuestionEngine:
             "1959, 1965, 1988) rather than clustering close together. If the "
             "track is LESS than 20 years old, a tighter spread is fine (e.g. "
             "correct=2014 -> wrong answers 2011, 2017, 2019)."},
-        {"type": "multiple_choice", "hint":
+        {"type": "multiple_choice", "category": "career_stat", "hint":
             "Ask a numeric fact about the artist's career -- album count, chart "
             "position, band member count, etc -- phrased like a punchy short "
             "news headline (e.g. \"How many albums did AC/DC make?\")."},
-        {"type": "multiple_choice", "hint":
+        {"type": "multiple_choice", "category": "real_name", "hint":
             "Ask a one-word-answer question about the artist -- a real name, "
             "who started the band, etc -- phrased like a punchy short news "
             "headline (e.g. \"What is Eminem's real last name?\", \"Who "
@@ -382,24 +397,30 @@ class TrackQuestionEngine:
             "Sheeran, Bruno Mars, Dolly Parton), do NOT ask a real-name "
             "question -- ask who started the band, a band member's name, or "
             "a similar one-word artist fact instead."},
-        {"type": "multiple_choice", "hint":
+        {"type": "multiple_choice", "category": "song_meaning", "hint":
             "Ask what THIS SONG is about / its meaning or subject matter, in "
             "simple terms. The correct answer must be a short, simple phrase "
             "summarizing the song's theme (e.g. \"heartbreak\", \"a breakup\", "
             "\"partying all night\", \"losing a friend\")."},
-        {"type": "multiple_choice", "hint":
+        {"type": "multiple_choice", "category": "geography", "hint":
             "Ask a music-geography question about the artist or song -- e.g. "
             "what city or country the artist/band is from, what city they "
             "were formed in, where they first performed live, or where a "
             "famous recording/performance took place -- phrased like a "
             "punchy short news headline (e.g. \"What city did the Beatles "
             "first play in?\", \"Where was this band formed?\")."},
-        {"type": "true_false", "hint":
+        {"type": "true_false", "category": "true_false", "hint":
             "Ask a True/False question about fan gossip, rumors, or "
             "pop-culture trivia tied to this artist or song (e.g. \"T/F: "
             "Morrissey loves meat.\"). Keep it fun and juicy, but only state "
             "claims whose truth value you actually know -- never invent a "
-            "specific rumor you're not confident is true or false."},
+            "specific rumor you're not confident is true or false. Roughly "
+            "half the time, deliberately make the statement a plausible-"
+            "sounding claim that is actually FALSE (a believable rumor, a "
+            "common misconception, or a specific-sounding date/fact that "
+            "didn't actually happen) rather than defaulting to a true "
+            "statement -- the goal is a genuine 50/50 mix of True and False "
+            "answers over many questions, not a bias toward True."},
     ]
 
     def _style_hints_for_track(self, key):
@@ -490,7 +511,7 @@ class TrackQuestionEngine:
         if text.strip().upper().startswith("UNKNOWN"):
             return None, "AI_NOT_CONFIDENT"
 
-        return _parse_question_json(text, is_true_false)
+        return _parse_question_json(text, is_true_false, category=style_hint.get("category", ""))
 
 
 def _post_haiku(prompt, max_tokens=500, timeout=None):
@@ -553,6 +574,11 @@ def _build_true_false_prompt(title, artist, hint):
     # populated, which matrix_canvas.py already renders blank and
     # inputs/gamepad.py::select_quiz_answer already refuses to select
     # (index >= len(choices)), so no extra button-disable logic is needed.
+    #
+    # Guardrail against a "True" bias: real trivia sets skew heavily toward
+    # writing statements that happen to be true, since false statements take
+    # more deliberate effort to construct. The prompt below explicitly asks
+    # for a genuine mix, and `hint` (see _QUESTION_STYLE_HINTS) reinforces it.
     return (
         "You are a music trivia assistant for a live DJ show's LED "
         f"display. Song title: {title!r}. Artist: {artist!r}. "
@@ -568,8 +594,15 @@ def _build_true_false_prompt(title, artist, hint):
         "released, as a plain numeral string e.g. \"1984\" -- empty "
         "string \"\" only if you genuinely don't know), \"question\" "
         f"(a True/False statement, max 100 characters, starting with "
-        f"\"T/F: \". {hint}), and \"correct\" -- the single word \"True\" "
-        "or \"False\" (exactly, capitalized, nothing else)."
+        f"\"T/F: \". {hint} IMPORTANT: do not default to writing a true "
+        "statement -- across many questions the correct answer should be "
+        "False about as often as it's True, so actively consider writing a "
+        "plausible-sounding but FALSE claim (a believable rumor, a common "
+        "misconception, or a specific-sounding but incorrect date/fact) "
+        "rather than always reaching for something you know to be true), "
+        "and \"correct\" -- the single word \"True\" or \"False\" (exactly, "
+        "capitalized, nothing else, and must truthfully match the "
+        "statement in \"question\")."
     )
 
 
@@ -600,10 +633,11 @@ def _build_mc_prompt(title, artist, hint):
     )
 
 
-def _parse_question_json(text, is_true_false):
+def _parse_question_json(text, is_true_false, category=""):
     """Shared response parser for both the true_false and multiple_choice
     track-trivia shapes. Returns (result_dict, None) on success or
-    (None, reason_str) on failure."""
+    (None, reason_str) on failure. `category` tags the result for the
+    Mystery Band question-priority hierarchy (Section 2, config.py)."""
     cleaned = text.strip()
     if cleaned.startswith("```"):
         cleaned = re.sub(r'^```(?:json)?\s*|\s*```$', '', cleaned).strip()
@@ -655,6 +689,7 @@ def _parse_question_json(text, is_true_false):
         "choices": [c[:24] for c in choices],
         "correct_index": correct_index,
         "release_year": release_year,
+        "category": category,
         "ts": time.time(),
     }
     return result, None
@@ -664,27 +699,20 @@ def _parse_question_json(text, is_true_false):
 # 70s/80s "Price Game" pricing trivia (see drivers/price_game_engine.py for
 # the strobe/banner/question-wait state machine that calls this).
 # ------------------------------------------------------------
-_PRICE_GAME_ITEM_EXAMPLES = (
-    "a 16oz can of hairspray, a gallon of whole milk, a dozen eggs, a "
-    "movie ticket, an LP vinyl record, a pair of name-brand sneakers, a "
-    "tube of lipstick, a loaf of bread, a candy bar, a pack of pantyhose"
-)
-
-
-def _build_price_prompt(decade_label, era_years):
+def _build_price_prompt(decade_label, era_years, category):
     return (
         "You are running a 'Price Is Right'-style pricing trivia bonus "
         f"round for a live DJ show's LED display, themed to the "
         f"{decade_label} ({era_years}). Pick ONE real, era-appropriate "
-        "everyday consumer product, skewing toward female-oriented / "
-        f"common household lifestyle items (examples: {_PRICE_GAME_ITEM_EXAMPLES}), "
-        "and ask what it cost in that decade. Reply with ONLY a "
+        f"everyday consumer product from the '{category['label']}' category "
+        f"(examples: {category['examples']}), and ask what it cost in that "
+        "decade. Reply with ONLY a "
         "single-line JSON object (no markdown fences, no commentary) with "
         "these keys: \"headline\" (a punchy teaser naming the product, "
         "max 40 characters, for a scrolling LED sign), \"full\" (a fuller "
         "sentence naming the specific product and decade, max 200 "
-        "characters), \"question\" (e.g. \"How much was a 16oz can of "
-        f"Rave hairspray in 1984?\" -- must name a specific product and a "
+        "characters), \"question\" (e.g. \"How much was a box of Kellogg's "
+        f"Corn Flakes in 1984?\" -- must name a specific product and a "
         f"specific year within {era_years}, max 100 characters), "
         "\"correct\" (the real historical price formatted like \"$1.49\", "
         "max 24 characters), and \"wrong1\", \"wrong2\", \"wrong3\" "
@@ -694,17 +722,21 @@ def _build_price_prompt(decade_label, era_years):
     )
 
 
-def fetch_price_question(decade_label):
+def fetch_price_question(decade_label, category_index=0):
     """Fetches a single 70s/80s Price Game pricing-trivia question from
     Haiku, in the same result shape _call_ai produces for a normal
     multiple_choice question (so it can be applied via apply_price_question
-    -> _apply_active_question like any other quiz question). Returns
+    -> _apply_active_question like any other quiz question). `category_index`
+    rotates round-robin through config.PRICE_GAME_CATEGORIES (driven by
+    drivers/price_game_engine.py's session-wide occurrence counter) so
+    consecutive rounds don't keep landing on the same product type. Returns
     (result_dict, None) on success or (None, reason_str) on failure."""
     if not config.ANTHROPIC_API_KEY:
         return None, "AI DISABLED (NO API KEY)"
 
     era_years = "1970-1979" if decade_label == "70s" else "1980-1989"
-    prompt = _build_price_prompt(decade_label, era_years)
+    category = config.PRICE_GAME_CATEGORIES[category_index % len(config.PRICE_GAME_CATEGORIES)]
+    prompt = _build_price_prompt(decade_label, era_years, category)
 
     text, reason = _post_haiku(prompt, max_tokens=400)
     if text is None:
@@ -722,6 +754,14 @@ def apply_price_question(data):
     price-question dict as the active round question exactly like a normal
     Btn6 pull."""
     _apply_active_question(data, "PRICE_GAME")
+
+
+def apply_mystery_identify_question(data):
+    """Public hook for drivers/mystery_band_engine.py -- loads the forced
+    "identify this band" question as the active round question exactly like
+    a normal Btn6 pull (this also marks the artist as asked, same as any
+    other question source, via _apply_active_question)."""
+    _apply_active_question(data, "MYSTERY_IDENTIFY")
 
 
 def _load_fallback_question():

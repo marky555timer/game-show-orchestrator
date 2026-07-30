@@ -17,6 +17,8 @@ from drivers.factoid_engine import (
 )
 from drivers import deck_orchestrator
 from drivers import price_game_engine
+from drivers import mystery_band_engine
+from drivers import auto_dj_engine
 from audio.audio_engine import (
     play_processed_sound, raw_buzzer, raw_bigwin, raw_clear, raw_ding,
     raw_coin, raw_buzz_short, stop_previous_audio, reverb_enabled
@@ -139,6 +141,12 @@ def grade_quiz_selection():
     is_correct = (state.quiz_selected_index == state.factoid_correct_index)
     print(f"[ACTION] Btn6 GRADE -> Answer {letter} is {'CORRECT' if is_correct else 'WRONG'}")
 
+    # Price Game Mode (Section 1): the instant the question is answered,
+    # briskly fade the bed out and tween the channel faders back up rather
+    # than waiting for the full scorecard hold + return-to-DJ-mode path.
+    if state.price_game_audio_active:
+        price_game_engine.end_price_game_audio_on_answer()
+
     state.quiz_score_total += 1
     if is_correct:
         state.quiz_score_correct += 1
@@ -163,6 +171,7 @@ def abort_game_mode_early():
     state.quiz_graded_at = 0.0
     state.fixture1_mode = "off"  # Reset rule: leaving GAME_MODE -> Fixture 1 black
     state.quiz_gate_status = "idle"
+    price_game_engine.force_end_price_game_audio()
     state.set_message("MODE: DJ (GAME ABORTED)", 1.5)
     print("GAME MODE EXIT: Aborted early via Gamepad Button 7")
 
@@ -224,6 +233,14 @@ def handle_quiz_gate_button():
 
     key = state.factoid_track_key
 
+    if mystery_band_engine.is_teaser_live():
+        if mystery_band_engine.enter_game_from_mystery():
+            state.quiz_gate_status = "idle"
+            state.mode = state.MODE_GAME
+            state.set_message("MYSTERY BAND! IDENTIFY THE ARTIST", 1.5)
+            print("[BUTTON] Btn6 -> Mystery Band identify-question forced -> GAME_MODE")
+            return
+
     if state.price_game_pending and state.price_game_decade:
         decade = state.price_game_decade
         print(f"[BUTTON] Btn6 -> {decade.upper()} PRICE GAME triggered for '{key}'")
@@ -246,10 +263,12 @@ def handle_quiz_gate_button():
 def _process_quiz_gate():
     """Per-frame poll: only relevant right after a cold-start Btn6 press
     (queue was empty). Reacts the instant the background pre-fetch lands a
-    question for this track, or force-falls-back once
-    QUIZ_GATE_EMPTY_CACHE_TIMEOUT_SECONDS elapses since the press -- the DJ
-    is never left hanging on a stuck/slow API call; a local fallback
-    question is forced in and GAME_MODE is entered either way."""
+    question for this track, entering GAME_MODE. If
+    QUIZ_GATE_EMPTY_CACHE_TIMEOUT_SECONDS elapses with still nothing cached,
+    buzzShort.wav plays as a pure audio/visual error notification (panel 3
+    coin-pop) -- it does NOT alter application state. The DJ stays in
+    DJ_MODE and can retry Btn6 once the cache fills, or use the Btn1
+    Emergency Override to force a fallback question in manually."""
     if state.quiz_gate_status != "fetching":
         return
 
@@ -266,16 +285,15 @@ def _process_quiz_gate():
 
     state.quiz_gate_status = "idle"
     print(f"[BUTTON ERROR] Btn6 pre-fetch queue still empty after "
-          f"{QUIZ_GATE_EMPTY_CACHE_TIMEOUT_SECONDS}s TIMEOUT TRIPWIRE. Loading Fallback.")
+          f"{QUIZ_GATE_EMPTY_CACHE_TIMEOUT_SECONDS}s TIMEOUT TRIPWIRE. "
+          f"Notifying only -- staying in DJ_MODE (use Btn1 to force a fallback question).")
     state.coin_pop_flash_until = time.time() + 2.0
     try:
         play_processed_sound(raw_buzz_short, volume=1.0)
     except Exception as e:
         print(f"[AUDIO ERROR] Btn6 fallback buzz failed to play: {e}")
 
-    load_forced_fallback_question("BTN6_TIMEOUT_FALLBACK")
-    state.mode = state.MODE_GAME
-    state.set_message("QUIZ MODE (OFFLINE FALLBACK)", 1.2)
+    state.set_message("NO QUESTION READY -- TRY AGAIN", 1.5)
 
 # ------------------------------------------
 # SECTION 1B: EMERGENCY OVERRIDE (Btn1 / pygame index 0, DJ mode only)
@@ -329,6 +347,14 @@ def handle_theme_cycle():
     state.dj_theme_index = (state.dj_theme_index + 1) % (DJ_THEME_COUNT + 1)
     label = "ALL LIGHTS OFF" if state.dj_theme_index == DJ_THEME_COUNT else f"theme {state.dj_theme_index}"
     print(f"[ACTION] Btn8 THEME -> {label}")
+
+# ------------------------------------------------------------
+# SECTION 4: AUTO-DJ TOGGLE (Btn4, DJ mode only)
+# ------------------------------------------------------------
+def handle_auto_dj_toggle():
+    """Btn4 in DJ mode: toggles Auto-DJ on/off (drivers/auto_dj_engine.py),
+    with a 1.5s "AUTO ON"/"AUTO OFF" confirmation overlay on panel 3."""
+    auto_dj_engine.toggle_auto_dj()
 
 # ------------------------------------------
 # BUTTON DEBOUNCE (Btns 5-8, Section 5.3)
@@ -423,10 +449,13 @@ def process_events():
     title, artist = _current_dj_track()
     confident = state.deck1_confident if state.active_deck == 1 else state.deck2_confident
     ensure_prefetch(title, artist, confident)
+    mystery_band_engine.check_new_track(title, artist, confident)
 
     _process_quiz_gate()
     deck_orchestrator.update(time.time())
     price_game_engine.update(time.time())
+    mystery_band_engine.update(time.time())
+    auto_dj_engine.update(time.time())
 
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
@@ -442,6 +471,10 @@ def process_events():
                         handle_force_override()
                 elif btn in (1, 2):
                     deck_orchestrator.trigger_track_move("back")
+                    auto_dj_engine.notify_manual_track_move()
+                elif btn == 3:  # Physical Btn4: Auto-DJ on/off toggle
+                    if _debounced(btn):
+                        handle_auto_dj_toggle()
                 elif btn == 4:  # Physical Btn5: tempo tap
                     if _debounced(btn):
                         handle_tempo_tap()
@@ -499,6 +532,7 @@ def process_events():
                         select_quiz_answer(2)
                     elif val == -1 and state.mode == state.MODE_DJ:
                         deck_orchestrator.trigger_track_move("next")
+                        auto_dj_engine.notify_manual_track_move()
 
         elif event.type == pygame.KEYDOWN:
             if event.key == pygame.K_TAB:
@@ -514,9 +548,11 @@ def process_events():
                 elif event.key == pygame.K_RIGHT:
                     # Keyboard test shim for the X- "Next" axis mapping.
                     deck_orchestrator.trigger_track_move("next")
+                    auto_dj_engine.notify_manual_track_move()
                 elif event.key == pygame.K_LEFT:
                     # Keyboard test shim for the Btn1/2 "Back" mapping.
                     deck_orchestrator.trigger_track_move("back")
+                    auto_dj_engine.notify_manual_track_move()
 
             elif state.mode == state.MODE_GAME:
                 if event.key == pygame.K_1:

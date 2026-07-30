@@ -12,6 +12,18 @@ midi_status_str = "MIDI: DISCONNECTED"
 
 CROSSFADER_CC = 8  # Standard Rekordbox Crossfader CC#
 
+# Channel 1/2 faders -- the same CC#11/CC#12 handle_dj_volume() already
+# drives as the "master volume" pair.
+CHANNEL1_FADER_CC = 11
+CHANNEL2_FADER_CC = 12
+
+# Last commanded fader level (0-100%), tracked independently of
+# state.music_volume so a Price Game duck/restore tween can run without
+# clobbering the DJ's actual volume setting -- outside of an active tween
+# this always mirrors state.music_volume.
+_current_fader_pct = 100.0
+_fader_tween = None  # {"start_pct", "target_pct", "start_time", "duration"}
+
 def connect_midi():
     """Scans Pygame MIDI outputs and inputs to connect loopMIDI / Python_PMC_Port."""
     global midi_out, midi_in, midi_status_str
@@ -87,12 +99,61 @@ def send_cc_pulse(control, delay_ms=30):
 
 def handle_dj_volume(change):
     """Updates master volume state and streams MIDI CC#11 to Rekordbox."""
+    global _current_fader_pct, _fader_tween
     state.music_volume = max(0, min(100, state.music_volume + change))
     state.vol_overlay_until = time.time() + VOLUME_OVERLAY_HOLD_SECONDS
     midi_val = int((state.music_volume / 100.0) * 127)
     send_midi_cc(11, midi_val)
     send_midi_cc(12, midi_val)
+    # A manual volume nudge always wins over an in-progress Price Game
+    # duck/restore tween.
+    _fader_tween = None
+    _current_fader_pct = float(state.music_volume)
     print(f"[REKORDBOX MIDI] Volume -> {state.music_volume}% (CC#11 Val:{midi_val})")
+
+
+def _set_channel_faders_raw(pct):
+    """Immediately sets both channel faders (CC#11/CC#12) to `pct` (0-100),
+    with no tween."""
+    midi_val = int(max(0, min(100, pct)) / 100.0 * 127)
+    send_midi_cc(CHANNEL1_FADER_CC, midi_val)
+    send_midi_cc(CHANNEL2_FADER_CC, midi_val)
+
+
+def tween_channel_faders_to(target_pct, duration_seconds):
+    """Smoothly tweens both channel faders from their current commanded
+    level to target_pct (0-100%) over duration_seconds -- non-blocking,
+    advanced a step per frame by update_fader_tween(). Used by
+    drivers/price_game_engine.py to duck to 0% on Price Game entry and
+    restore back to state.music_volume when it ends."""
+    global _fader_tween
+    _fader_tween = {
+        "start_pct": _current_fader_pct,
+        "target_pct": float(target_pct),
+        "start_time": time.time(),
+        "duration": duration_seconds,
+    }
+
+
+def update_fader_tween(now):
+    """Per-frame pump for tween_channel_faders_to() -- called from
+    drivers/price_game_engine.py::update()."""
+    global _fader_tween, _current_fader_pct
+    if _fader_tween is None:
+        return
+
+    duration = _fader_tween["duration"]
+    elapsed = now - _fader_tween["start_time"]
+    phase = min(1.0, elapsed / duration) if duration > 0 else 1.0
+    start_pct = _fader_tween["start_pct"]
+    target_pct = _fader_tween["target_pct"]
+    pct = start_pct + (target_pct - start_pct) * phase
+
+    _current_fader_pct = pct
+    _set_channel_faders_raw(pct)
+
+    if phase >= 1.0:
+        _fader_tween = None
 
 
 def _midi_input_listener_loop():
