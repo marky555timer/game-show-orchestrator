@@ -43,6 +43,12 @@ class State:
         self.factoid_choices = []          # list of 4 answer strings
         self.factoid_correct_index = -1    # index into factoid_choices
 
+        # True/False-only: the actual correct fact, populated whenever the
+        # statement's correct answer is "False" so the reveal phase can show
+        # the room what's actually true instead of just "FALSE". Empty for
+        # every other question shape (multiple_choice, price game, etc.).
+        self.factoid_correction = ""
+
         # Background pre-fetch queue (Section 1): up to TRACK_QUESTIONS_PER_TRACK
         # question dicts, pre-fetched for factoid_track_key and not yet asked
         # this session. Btn6 and the multi-question auto-advance loop both pop

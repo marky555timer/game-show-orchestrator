@@ -3,7 +3,9 @@ import threading
 import pygame.midi
 from config import (
     MIDI_PORT_NAME, VOLUME_OVERLAY_HOLD_SECONDS,
-    MIDI_DECK_CUE_NOTE, MIDI_DECK_PLAY_NOTE, DECK_START_SEQUENCE_TICK_MS,
+    # MIDI_DECK_CUE_NOTE, MIDI_DECK_PLAY_NOTE, DECK_START_SEQUENCE_TICK_MS,
+    # unused now that send_deck_start_sequence()/send_deck_stop_sequence()
+    # are disabled below -- left commented for easy re-enable.
 )
 from state import state
 
@@ -125,18 +127,39 @@ def send_note_pulse(status, note, delay_ms=30):
 
 
 def send_deck_start_sequence(deck):
-    """Deck pause/search glitch fix: TrackSearch (Next/Prev) can silently
-    fail when the deck it's sent to is paused or unstarted. Called by
-    drivers/deck_orchestrator.py right before it sends TrackSearch to
-    `deck` (1 or 2) -- the deck about to be transitioned to -- this primes
-    it with a strict Cue -> tick -> Play/Pause sequence on its PMC ports
-    (900C/900B for Deck 1, 910C/910B for Deck 2) so it's always
-    responsive."""
-    cue_status, cue_note = MIDI_DECK_CUE_NOTE[deck]
-    play_status, play_note = MIDI_DECK_PLAY_NOTE[deck]
-    send_note_pulse(cue_status, cue_note)
-    pygame.time.delay(DECK_START_SEQUENCE_TICK_MS)
-    send_note_pulse(play_status, play_note)
+    """DISABLED: Deck pause/search glitch "fix" that primed the target deck
+    with a Cue -> tick -> Play/Pause Note sequence on its PMC ports
+    (900C/900B for Deck 1, 910C/910B for Deck 2) before TrackSearch. This
+    was found to interfere with the playback engine and cause glitches
+    during Next/Previous track navigation, so it's been turned into a
+    no-op. Deck transitions now rely strictly on internal audio file
+    loading / state tracking (see drivers/deck_orchestrator.py) rather
+    than dispatching these MIDI Cue/Play-Pause messages. Left in place
+    (rather than deleted) so it's easy to re-enable if the underlying
+    Rekordbox/PMC-port issue is ever fixed.
+    """
+    # cue_status, cue_note = MIDI_DECK_CUE_NOTE[deck]
+    # play_status, play_note = MIDI_DECK_PLAY_NOTE[deck]
+    # send_note_pulse(cue_status, cue_note)
+    # pygame.time.delay(DECK_START_SEQUENCE_TICK_MS)
+    # send_note_pulse(play_status, play_note)
+    return
+
+
+def send_deck_stop_sequence(deck):
+    """DISABLED: Post-crossfade deck cleanup that sent the same Cue ->
+    tick -> Play/Pause Note pair as send_deck_start_sequence() to force the
+    outgoing deck stopped/cued/inert after a crossfade. Disabled for the
+    same reason -- these Cue/Play-Pause MIDI sends were interfering with
+    the playback engine during deck transitions. No-op now; see
+    send_deck_start_sequence() above.
+    """
+    # cue_status, cue_note = MIDI_DECK_CUE_NOTE[deck]
+    # play_status, play_note = MIDI_DECK_PLAY_NOTE[deck]
+    # send_note_pulse(cue_status, cue_note)
+    # pygame.time.delay(DECK_START_SEQUENCE_TICK_MS)
+    # send_note_pulse(play_status, play_note)
+    return
 
 
 def handle_dj_volume(change):

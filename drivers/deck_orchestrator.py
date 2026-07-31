@@ -4,7 +4,9 @@ from config import (
     MIDI_CC_CROSSFADER, TRACK_LOAD_WAIT_SECONDS, CROSSFADER_TWEEN_DURATION_SECONDS,
 )
 from state import state
-from drivers.midi_driver import send_cc_pulse, send_midi_cc, send_deck_start_sequence
+from drivers.midi_driver import (
+    send_cc_pulse, send_midi_cc, send_deck_start_sequence, send_deck_stop_sequence,
+)
 from drivers.branding_engine import notify_deck_change
 
 _NEXT_CC = {1: MIDI_CC_DECK1_NEXT, 2: MIDI_CC_DECK2_NEXT}
@@ -89,8 +91,18 @@ def update(now):
             print(f"[DECK ORCHESTRATOR] Crossfader tween CC send failed: {e}")
 
         if phase >= 1.0:
+            outgoing_deck = state.active_deck
             state.active_deck = _pending["target_deck"]
             print(f"[DECK ORCHESTRATOR] Crossfade complete -> Active Deck: {state.active_deck}")
+
+            # Post-crossfade deck cleanup: explicitly Cue -> Pause the deck
+            # that was just faded out, guaranteeing it's stopped/cued/inert
+            # rather than left lingering into the next track switch.
+            try:
+                send_deck_stop_sequence(outgoing_deck)
+            except Exception as e:
+                print(f"[DECK ORCHESTRATOR] Failed to send post-crossfade deck cleanup: {e}")
+
             _pending = None
 
 

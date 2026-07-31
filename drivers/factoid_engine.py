@@ -70,6 +70,7 @@ def log_incoming_question(source, data):
         "question": data.get("question", ""),
         "choices": data.get("choices", []),
         "correct_index": data.get("correct_index", -1),
+        "correction": data.get("correction", ""),
     }, indent=2))
 
 
@@ -165,6 +166,7 @@ def _apply_active_question(data, source):
     state.factoid_question = data.get("question", "")
     state.factoid_choices = list(data.get("choices", []))
     state.factoid_correct_index = data.get("correct_index", -1)
+    state.factoid_correction = data.get("correction", "")
     state.quiz_is_test = False
     state.quiz_selected_index = -1
     state.quiz_locked = False
@@ -600,9 +602,14 @@ def _build_true_false_prompt(title, artist, hint):
         "plausible-sounding but FALSE claim (a believable rumor, a common "
         "misconception, or a specific-sounding but incorrect date/fact) "
         "rather than always reaching for something you know to be true), "
-        "and \"correct\" -- the single word \"True\" or \"False\" (exactly, "
+        "\"correct\" -- the single word \"True\" or \"False\" (exactly, "
         "capitalized, nothing else, and must truthfully match the "
-        "statement in \"question\")."
+        "statement in \"question\"), and \"correction\" -- ONLY when "
+        "\"correct\" is \"False\": a short statement of the actual true "
+        "fact (max 100 characters, e.g. \"Morrissey is actually a strict "
+        "vegan\"), so the reveal can show the room what's really true "
+        "instead of just the word FALSE. If \"correct\" is \"True\", set "
+        "\"correction\" to an empty string."
     )
 
 
@@ -663,6 +670,7 @@ def _parse_question_json(text, is_true_false, category=""):
     if not headline or not question or not correct:
         return None, "INCOMPLETE AI RESPONSE"
 
+    correction = ""
     if is_true_false:
         correct_lower = correct.lower()
         if correct_lower not in ("true", "false"):
@@ -670,6 +678,8 @@ def _parse_question_json(text, is_true_false, category=""):
         # Options 1/2 = True/False; Options 3/4 intentionally absent.
         choices = ["True", "False"]
         correct_index = 0 if correct_lower == "true" else 1
+        if correct_index == 1:
+            correction = str(obj.get("correction", "")).strip()
     else:
         wrong = [str(obj.get(k, "")).strip() for k in ("wrong1", "wrong2", "wrong3")]
         if not all(wrong):
@@ -688,6 +698,7 @@ def _parse_question_json(text, is_true_false, category=""):
         "question": question[:100],
         "choices": [c[:24] for c in choices],
         "correct_index": correct_index,
+        "correction": correction[:100],
         "release_year": release_year,
         "category": category,
         "ts": time.time(),

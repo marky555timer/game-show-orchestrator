@@ -9,36 +9,36 @@ MIDI_PORT_NAME = "Python_PMC_Port"
 # ==========================================
 # PHYSICAL PANEL LAYOUT
 # ==========================================
-# 6 independent 32x16 LED panels: 2 on top (combined into one 64x16
-# logical surface), 4 spaced evenly underneath (128x16), centered under
-# the top pair. Panel IDs match the physical button numbering used by
-# the game-show console (Btn1..Btn6).
+# 6 independent 32x16 LED panels arranged as a 3-row x 2-column grid:
+#   Row 1: Panel 1, Panel 2
+#   Row 2: Panel 3, Panel 4
+#   Row 3: Panel 5, Panel 6
+# Panels 1+2 are still combined into one logical 64x16 surface for headline
+# text (see TOP_COMBINED). Panel IDs match the physical button numbering
+# used by the game-show console (Btn1..Btn6).
 PANEL_W = 32
 PANEL_H = 16
-ROW_GAP = 4  # simulator-only visual seam between the two rows
+ROW_GAP = 4  # simulator-only visual seam between rows
 
-BOTTOM_ROW_WIDTH = PANEL_W * 4
-TOP_ROW_WIDTH = PANEL_W * 2
-TOP_ROW_X_OFFSET = (BOTTOM_ROW_WIDTH - TOP_ROW_WIDTH) // 2
-BOTTOM_ROW_Y = PANEL_H + ROW_GAP
+ROW_WIDTH = PANEL_W * 2
+ROW1_Y = 0
+ROW2_Y = PANEL_H + ROW_GAP
+ROW3_Y = 2 * (PANEL_H + ROW_GAP)
 
 PANELS = {
-    1: (TOP_ROW_X_OFFSET, 0, PANEL_W, PANEL_H),
-    2: (TOP_ROW_X_OFFSET + PANEL_W, 0, PANEL_W, PANEL_H),
-    3: (0, BOTTOM_ROW_Y, PANEL_W, PANEL_H),
-    4: (PANEL_W, BOTTOM_ROW_Y, PANEL_W, PANEL_H),
-    5: (PANEL_W * 2, BOTTOM_ROW_Y, PANEL_W, PANEL_H),
-    6: (PANEL_W * 3, BOTTOM_ROW_Y, PANEL_W, PANEL_H),
+    1: (0, ROW1_Y, PANEL_W, PANEL_H),
+    2: (PANEL_W, ROW1_Y, PANEL_W, PANEL_H),
+    3: (0, ROW2_Y, PANEL_W, PANEL_H),
+    4: (PANEL_W, ROW2_Y, PANEL_W, PANEL_H),
+    5: (0, ROW3_Y, PANEL_W, PANEL_H),
+    6: (PANEL_W, ROW3_Y, PANEL_W, PANEL_H),
 }
 
 # Panels 1+2 treated as a single logical 64x16 surface for headline text.
-TOP_COMBINED = (TOP_ROW_X_OFFSET, 0, TOP_ROW_WIDTH, PANEL_H)
+TOP_COMBINED = (0, ROW1_Y, ROW_WIDTH, PANEL_H)
 
-# Bottom answer/animation panels, left-to-right.
-BOTTOM_PANELS = [PANELS[3], PANELS[4], PANELS[5], PANELS[6]]
-
-MATRIX_WIDTH = BOTTOM_ROW_WIDTH
-MATRIX_HEIGHT = BOTTOM_ROW_Y + PANEL_H
+MATRIX_WIDTH = ROW_WIDTH
+MATRIX_HEIGHT = ROW3_Y + PANEL_H
 # Dev-machine simulator window scale. Knocked down to ~1/3 of the original
 # 10px-per-LED size (still an integer so the LED grid stays crisp) so the
 # virtual matrix window doesn't dominate the dev display.
@@ -231,17 +231,19 @@ TEMPO_FLASH_DECAY_SECONDS = 0.1
 # graphics/matrix_canvas.py::_render_space_invaders for rendering.
 #
 # The play field spans the FULL matrix canvas (MATRIX_WIDTH x
-# MATRIX_HEIGHT, 128x36) rather than being confined to a single 32x16
-# panel -- a proper full-width arcade screen reads far better on the rig
-# than a game crammed into one panel's worth of pixels.
+# MATRIX_HEIGHT, 64x56 under the 3-row x 2-panel grid) rather than being
+# confined to a single 32x16 panel -- a proper full-canvas arcade screen
+# reads far better on the rig than a game crammed into one panel's worth
+# of pixels. The invader grid below is sized for this narrower-but-taller
+# canvas (was 128x36 under the old 2-row/4-wide layout).
 SI_ENTRY_BUTTONS = (0, 2)   # pygame JOYBUTTONDOWN indices for physical Btn1 + Btn3
 SI_EXIT_BUTTONS = (6, 7)    # pygame indices for physical Btn7 / Btn8
 SI_ENTRY_SOUND_VOLUME = 1.0
 
-SI_INVADER_COLS = 6
-SI_INVADER_ROWS = 3
-SI_INVADER_SPACING_X = 16
-SI_INVADER_SPACING_Y = 8
+SI_INVADER_COLS = 4
+SI_INVADER_ROWS = 4
+SI_INVADER_SPACING_X = 12
+SI_INVADER_SPACING_Y = 10
 SI_INVADER_TOP_Y = 2
 SI_INVADER_SIZE = 5                    # px, square sprite footprint
 SI_INVADER_STEP_X = 2                  # px per formation step
@@ -329,10 +331,6 @@ BRANDING_FETCH_EVERY_N_DECK_CHANGES = 3
 BRANDING_FETCH_TIMEOUT_SECONDS = 4.0
 BRANDING_OVERLAY_INTERVAL_SECONDS = 20.0
 BRANDING_OVERLAY_DURATION_SECONDS = 5.0
-
-# Bottom row (panels 3-6) treated as one logical wide surface for the
-# branding ticker, mirroring TOP_COMBINED for the top pair.
-BOTTOM_COMBINED = (0, BOTTOM_ROW_Y, BOTTOM_ROW_WIDTH, PANEL_H)
 
 # ==========================================
 # OFFLINE QUIZ FALLBACK
@@ -467,21 +465,46 @@ AUTODJ_PRE_SWITCH_SECONDS = 15.0
 # the end of the outgoing track into the start of the next one.
 AUTODJ_ANNOUNCE_LEAD_SECONDS = 2.0
 
-# How long the "AUTO ON" / "AUTO OFF" toggle confirmation overlays panel 3.
+# How long the "a ON" / "a OFF" toggle confirmation overlays panel 3.
 AUTODJ_TOGGLE_OVERLAY_SECONDS = 1.5
 
 # ==========================================
-# AUTO-DJ: PIXEL-SCANNING "DEAD AIR" FAILSAFE
+# AUTO-DJ: FLX4 USB AUDIO "DEAD AIR" FAILSAFE
 # ==========================================
-# Visual safety net in case rekordbox.xml metadata / the track timer both
-# fail to catch an ending track: samples an on-screen strip to the right of
-# the deck centerlines (the upcoming-track waveform preview). If every pixel
-# in that strip is pure black (RGB sum == 0 -- no waveform rendering, i.e.
-# nothing queued/loaded), and Auto-DJ hasn't already armed a transition,
-# the track transition fires immediately rather than risk dead air. See
-# drivers/auto_dj_engine.py::_dead_air_failsafe.
-AUTODJ_DEAD_AIR_SCAN_RECT = {"left": 1000, "top": 175, "width": 1, "height": 75}
-AUTODJ_DEAD_AIR_SCAN_INTERVAL_SECONDS = 0.25
+# Hardware safety net in case rekordbox.xml metadata / the track timer both
+# fail to catch an ending track: a background thread (audio/dead_air_sniffer.py)
+# passively samples the Pioneer DDJ-FLX4's USB audio input via sounddevice
+# and computes the RMS level of each short buffer. If the signal reads below
+# AUTODJ_DEAD_AIR_RMS_THRESHOLD continuously for
+# AUTODJ_DEAD_AIR_REQUIRED_SILENT_SECONDS, and Auto-DJ hasn't already armed
+# a transition, the track transition fires immediately rather than risk dead
+# air. See drivers/auto_dj_engine.py::_dead_air_failsafe.
+
+# Substring matched (case-insensitively) against sounddevice.query_devices()
+# names to locate the FLX4's input device index.
+AUTODJ_DEAD_AIR_DEVICE_NAME_HINT = "DDJ-FLX4"
+
+AUTODJ_DEAD_AIR_SAMPLE_RATE = 44100
+# Each background sample is a short stereo buffer (200-500ms).
+AUTODJ_DEAD_AIR_SAMPLE_SECONDS = 0.3
+
+# RMS levels below this (float32 samples, range [-1.0, 1.0]) are treated as
+# silence.
+AUTODJ_DEAD_AIR_RMS_THRESHOLD = 0.005
+
+# The FLX4 input has to read continuously below the RMS threshold for this
+# long before the failsafe trusts it -- absorbs normal inter-track gaps
+# (beat drops, quiet intros) without misfiring.
+AUTODJ_DEAD_AIR_REQUIRED_SILENT_SECONDS = 2.0
+
+# Double-skip fix: once the failsafe fires, _start_timer() re-arms
+# state.auto_dj_transition_at back to 0 immediately, and the just-faded-in
+# track's input level can still read near-silent for a moment while the
+# crossfade completes -- without this lockout, that residual quiet reading
+# would trip the failsafe a second time and send a second "Next Track"
+# command. Blocks any further failsafe fire for this many seconds after one
+# fires.
+AUTODJ_DEAD_AIR_LOCKOUT_SECONDS = 5.0
 
 # ==========================================
 # AUTO-DJ: STATION ANNOUNCEMENT VOICE-OVERS

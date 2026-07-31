@@ -393,6 +393,7 @@ def _ensure_quiz_content():
     state.factoid_question = mock["question"]
     state.factoid_choices = mock["choices"]
     state.factoid_correct_index = mock["correct_index"]
+    state.factoid_correction = ""
     state.quiz_is_test = True
     state.quiz_selected_index = -1
     state.quiz_locked = False
@@ -478,18 +479,30 @@ def _render_quiz_mode(t):
     _ensure_quiz_content()
 
     tx, ty, tw, th = TOP_COMBINED
-    question_text = state.factoid_question
-    if state.quiz_is_test:
-        question_text = "[test] " + question_text
-    line1, line2 = wrap_two_lines(question_text, tw)
-    draw_marquee(matrix_surface, "quiz_q1", line1, (tx, ty, tw, LINE_H))
-    draw_marquee(matrix_surface, "quiz_q2", line2, (tx, ty + LINE_H, tw, LINE_H))
-
     choices = state.factoid_choices
     sel = state.quiz_selected_index
     correct = state.factoid_correct_index
     locked = state.quiz_locked
     is_correct_grade = locked and sel == correct
+
+    # True/False correction reveal: once graded, if the statement's correct
+    # answer was "False", swap the top display over to the actual true fact
+    # (state.factoid_correction) instead of leaving the room with just the
+    # word FALSE -- see drivers/factoid_engine.py's "correction" field.
+    is_true_false = choices == ["True", "False"]
+    show_correction = locked and is_true_false and correct == 1 and state.factoid_correction
+
+    if show_correction:
+        line1, line2 = wrap_two_lines(f"FALSE -- {state.factoid_correction}", tw)
+        draw_marquee(matrix_surface, "quiz_correction1", line1, (tx, ty, tw, LINE_H))
+        draw_marquee(matrix_surface, "quiz_correction2", line2, (tx, ty + LINE_H, tw, LINE_H))
+    else:
+        question_text = state.factoid_question
+        if state.quiz_is_test:
+            question_text = "[test] " + question_text
+        line1, line2 = wrap_two_lines(question_text, tw)
+        draw_marquee(matrix_surface, "quiz_q1", line1, (tx, ty, tw, LINE_H))
+        draw_marquee(matrix_surface, "quiz_q2", line2, (tx, ty + LINE_H, tw, LINE_H))
 
     for i, pid in enumerate((3, 4, 5, 6)):
         rect = PANELS[pid]

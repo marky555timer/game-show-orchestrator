@@ -106,6 +106,7 @@ def trigger_clear_latches():
         state.factoid_question = mock["question"]
         state.factoid_choices = mock["choices"]
         state.factoid_correct_index = mock["correct_index"]
+        state.factoid_correction = ""
 
     ae.reverb_enabled = not ae.reverb_enabled
     state_str = "ON" if ae.reverb_enabled else "OFF"

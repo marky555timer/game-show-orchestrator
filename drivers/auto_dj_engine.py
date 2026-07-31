@@ -1,12 +1,10 @@
 import time
 
-import mss
-from PIL import Image
-
 import config
 from state import state
 from drivers import deck_orchestrator
 from drivers.rekordbox_driver import get_rekordbox_track, rb_driver
+from audio import dead_air_sniffer
 from audio.audio_engine import (
     play_station_announcement, stop_station_announcement, reset_announcement_volume,
 )
@@ -40,51 +38,50 @@ from audio.audio_engine import (
 
 
 # ==========================================
-# PIXEL-SCANNING "DEAD AIR" FAILSAFE (Section 2)
+# FLX4 USB AUDIO "DEAD AIR" FAILSAFE (Section 2)
 # ==========================================
-# Visual safety net that's completely independent of rekordbox.xml metadata
-# and the track-duration timer above: samples the on-screen waveform strip
-# just to the right of the deck centerlines
-# (config.AUTODJ_DEAD_AIR_SCAN_RECT). If every pixel sampled is pure black
-# (RGB sum == 0), nothing is loaded/queued there -- a strong signal that the
-# normal metadata-driven auto-advance path has silently failed -- so, if
-# Auto-DJ is active and hasn't already armed a transition this cycle, fire
-# the track transition immediately rather than risk dead air.
-_last_pixel_scan_at = 0.0
+# Hardware safety net that's completely independent of rekordbox.xml
+# metadata and the track-duration timer above: audio/dead_air_sniffer.py
+# runs a background thread that passively samples the Pioneer DDJ-FLX4's
+# USB audio input and reports whether the RMS level has stayed below
+# config.AUTODJ_DEAD_AIR_RMS_THRESHOLD for
+# config.AUTODJ_DEAD_AIR_REQUIRED_SILENT_SECONDS straight -- a strong signal
+# that the normal metadata-driven auto-advance path has silently failed --
+# so, if Auto-DJ is active and hasn't already armed a transition this
+# cycle, fire the track transition immediately rather than risk dead air.
+dead_air_sniffer.start()
 
+_dead_air_lockout_until = 0.0
 
-def _scan_dead_air_pixels():
-    """Grabs config.AUTODJ_DEAD_AIR_SCAN_RECT and returns the sum of every
-    R+G+B value across the sampled pixels (0 means the whole strip is pure
-    black). Never raises -- a capture failure is treated as "not dead air"
-    (returns 1) so a transient screen-grab error can never force a spurious
-    transition."""
-    try:
-        with mss.mss() as sct:
-            sct_img = sct.grab(config.AUTODJ_DEAD_AIR_SCAN_RECT)
-            img = Image.frombytes("RGB", sct_img.size, sct_img.bgra, "raw", "BGRX")
-            return sum(r + g + b for r, g, b in img.getdata())
-    except Exception as e:
-        print(f"[AUTO-DJ] Dead-air pixel scan failed: {e}")
-        return 1
+# Single-trigger guard (race-condition fix): _start_timer() bumps
+# _transition_cycle every time it opens a fresh tracking window for the
+# current track. _fire_transition() only acts the first time it's called
+# within a given cycle -- whichever signal (timer or FLX4 dead-air) gets
+# there first wins, and any other signal that fires in the same window is
+# a no-op instead of sending a second "Next Track".
+_transition_cycle = 0
+_last_fired_cycle = -1
 
 
 def _dead_air_failsafe(track_key, now):
-    """Returns True if it fired an immediate transition. Throttled to
-    config.AUTODJ_DEAD_AIR_SCAN_INTERVAL_SECONDS -- a 1px-wide screen grab is
-    cheap, but there's no need to do it every single frame."""
-    global _last_pixel_scan_at
+    """Returns True if it fired an immediate transition. Reads the FLX4
+    sniffer thread's is_dead_air() flag (already debounced to
+    config.AUTODJ_DEAD_AIR_REQUIRED_SILENT_SECONDS of continuous silence by
+    the sniffer itself) and locks out for config.AUTODJ_DEAD_AIR_LOCKOUT_SECONDS
+    after firing so the residual quiet during the just-armed crossfade can't
+    trip a second "Next Track" (see config.py's AUTODJ_DEAD_AIR_LOCKOUT_SECONDS
+    comment for why)."""
+    global _dead_air_lockout_until
     if state.auto_dj_transition_at:
         return False  # a transition is already armed/triggered this cycle
-    if now - _last_pixel_scan_at < config.AUTODJ_DEAD_AIR_SCAN_INTERVAL_SECONDS:
-        return False
-    _last_pixel_scan_at = now
-
-    if _scan_dead_air_pixels() != 0:
+    if now < _dead_air_lockout_until:
+        return False  # debounce lock: a failsafe transition just fired
+    if not dead_air_sniffer.is_dead_air():
         return False
 
-    print("[AUTO-DJ] Dead-air failsafe: waveform pixel scan is pure black -- "
-          "forcing immediate track transition.")
+    print("DEAD AIR DETECTED ON FLX4 USB INPUT: Triggering Auto-DJ Failsafe Transition")
+    dead_air_sniffer.acknowledge_dead_air()
+    _dead_air_lockout_until = now + config.AUTODJ_DEAD_AIR_LOCKOUT_SECONDS
     _fire_transition(track_key)
     return True
 
@@ -97,6 +94,8 @@ def _lookup_duration(title):
 
 
 def _start_timer(track_key, title):
+    global _transition_cycle
+    _transition_cycle += 1  # single-trigger guard: opens a fresh transition window
     state.auto_dj_track_key = track_key
     state.auto_dj_track_started_at = time.time()
     state.auto_dj_track_duration = _lookup_duration(title)
@@ -108,10 +107,10 @@ def _start_timer(track_key, title):
 
 def toggle_auto_dj():
     """Gamepad Btn4, DJ mode only: flips Auto-DJ on/off and arms the panel-3
-    "AUTO ON"/"AUTO OFF" confirmation overlay (rendered in
+    "a ON"/"a OFF" confirmation overlay (rendered in
     graphics/matrix_canvas.py) for config.AUTODJ_TOGGLE_OVERLAY_SECONDS."""
     state.auto_dj_enabled = not state.auto_dj_enabled
-    label = "AUTO ON" if state.auto_dj_enabled else "AUTO OFF"
+    label = "a ON" if state.auto_dj_enabled else "a OFF"
     state.auto_dj_overlay_text = label
     state.auto_dj_overlay_until = time.time() + config.AUTODJ_TOGGLE_OVERLAY_SECONDS
     print(f"[AUTO-DJ] Btn4 toggle -> {label}")
@@ -171,7 +170,18 @@ def _fire_transition(track_key):
     deck_orchestrator.trigger_track_move, which itself now primes the
     target deck with Cue -> tick -> Play/Pause before searching) and
     re-arms the timer immediately so this doesn't fire again every frame
-    while the crossfade plays out and OCR catches up to the new track."""
+    while the crossfade plays out and OCR catches up to the new track.
+
+    Single-trigger guard: refuses to act twice within the same
+    _transition_cycle (see the module-level comment above), regardless of
+    which caller -- the timer path or the FLX4 dead-air failsafe -- reaches
+    it first."""
+    global _last_fired_cycle
+    if _last_fired_cycle == _transition_cycle:
+        print("[AUTO-DJ] Transition already fired for this track cycle -- ignoring duplicate trigger.")
+        return
+    _last_fired_cycle = _transition_cycle
+
     deck_orchestrator.trigger_track_move("next")
     title, _artist = get_rekordbox_track()
     _start_timer(track_key, title)
