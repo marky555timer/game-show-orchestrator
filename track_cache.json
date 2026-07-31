@@ -3527,5 +3527,1152 @@
       "category": "date",
       "ts": 1785448168.087472
     }
+  ],
+  "the alan parsons project - sirius": [
+    {
+      "headline": "NASA's official theme song",
+      "full": "Sirius served as the theme for NASA's Space Shuttle launches and was featured prominently in space program broadcasts during the 1970s-80s.",
+      "question": "T/F: Alan Parsons composed Sirius specifically for a major film soundtrack.",
+      "choices": [
+        "True",
+        "False"
+      ],
+      "correct_index": 1,
+      "release_year": 1978,
+      "category": "true_false",
+      "ts": 1785458951.5414178
+    },
+    {
+      "headline": "Iconic NASA space station theme",
+      "full": "Sirius is the iconic theme for the Space Shuttle and NASA's space program, instantly recognizable from countless documentaries and broadcasts since the 1970s.",
+      "question": "How many studio albums did Alan Parsons Project release?",
+      "choices": [
+        "7",
+        "3",
+        "6",
+        "5"
+      ],
+      "correct_index": 3,
+      "release_year": 1978,
+      "category": "career_stat",
+      "ts": 1785458953.1705306
+    },
+    {
+      "headline": "NASA's theme gets prog-rock treatment",
+      "full": "Iconic instrumental intro to The Alan Parsons Project's 1978 album 'Pyramid.' Originally composed as NASA's official theme music before being reimagined for rock.",
+      "question": "What year was 'Sirius' released?",
+      "choices": [
+        "1978",
+        "1982",
+        "1985",
+        "1976"
+      ],
+      "correct_index": 0,
+      "release_year": 1978,
+      "category": "date",
+      "ts": 1785458954.9996247
+    }
+  ],
+  "david bowie - let's dance - 2018 remaster": [
+    {
+      "headline": "Bowie's dance floor masterpiece",
+      "full": "Released in 1983, 'Let's Dance' became David Bowie's biggest commercial success, topping charts worldwide and selling millions of copies.",
+      "question": "What year did Bowie release 'Let's Dance'?",
+      "choices": [
+        "1980",
+        "1985",
+        "1981",
+        "1983"
+      ],
+      "correct_index": 3,
+      "release_year": 1983,
+      "category": "career_stat",
+      "ts": 1785458963.2247653
+    },
+    {
+      "headline": "Bowie's dance floor anthem",
+      "full": "Released in 1983, 'Let's Dance' became David Bowie's biggest commercial hit, reaching #1 globally and winning a Grammy. The iconic music video featured dancer Tracie Young.",
+      "question": "What does 'Let's Dance' encourage people to do?",
+      "choices": [
+        "escape reality",
+        "dance and party",
+        "find yourself",
+        "fall in love"
+      ],
+      "correct_index": 1,
+      "release_year": 1983,
+      "category": "song_meaning",
+      "ts": 1785458965.0633907
+    },
+    {
+      "headline": "Bowie's Dance Floor Classic",
+      "full": "Originally released in 1983, 'Let's Dance' became David Bowie's best-selling album & biggest hit single, dominating charts worldwide.",
+      "question": "What year was 'Let's Dance' originally released?",
+      "choices": [
+        "1976",
+        "1983",
+        "1991",
+        "2001"
+      ],
+      "correct_index": 1,
+      "release_year": 1983,
+      "category": "date",
+      "ts": 1785458966.5281713
+    }
+  ],
+  "queen - crazy little thing called lov...": [
+    {
+      "headline": "Queen's love anthem hits #4 in UK",
+      "full": "Released in 1979, this infectious pop-rock song became one of Queen's biggest hits, reaching #4 on the UK charts and #1 in several other countries.",
+      "question": "What country is Queen's Freddie Mercury from?",
+      "choices": [
+        "India",
+        "Japan",
+        "Zanzibar",
+        "England"
+      ],
+      "correct_index": 2,
+      "release_year": 1979,
+      "category": "geography",
+      "ts": 1785459051.0000477
+    },
+    {
+      "headline": "Queen's glam rock love song",
+      "full": "Released in 1979, 'Crazy Little Thing Called Love' became Queen's only #1 hit on the US Billboard Hot 100 chart, showcasing Freddie Mercury's playful vocal charm.",
+      "question": "T/F: Freddie Mercury wrote 'Crazy Little Thing Called Love' in the bathtub.",
+      "choices": [
+        "True",
+        "False"
+      ],
+      "correct_index": 0,
+      "release_year": 1979,
+      "category": "true_false",
+      "ts": 1785459052.4818296
+    },
+    {
+      "headline": "Queen's biggest hit needs a handclap!",
+      "full": "'Crazy Little Thing Called Love' was Queen's first #1 on the US Billboard Hot 100. Freddie Mercury wrote it in 15 minutes while in a bathtub.",
+      "question": "What year did Queen form?",
+      "choices": [
+        "1975",
+        "1968",
+        "1970",
+        "1973"
+      ],
+      "correct_index": 2,
+      "release_year": 1979,
+      "category": "career_stat",
+      "ts": 1785459054.0329795
+    }
+  ],
+  "billy joel - it's still rock and roll to me": [
+    {
+      "headline": "Billy Joel's chart-topping generational ",
+      "full": "Released in 1980, this Grammy-winning hit sarcastically critiques youth culture's dismissal of rock music, with Joel defending rock's timeless appeal against emerging disco and new wave trends.",
+      "question": "T/F: Billy Joel wrote this song in response to his teenage daughter criticizing his music taste.",
+      "choices": [
+        "True",
+        "False"
+      ],
+      "correct_index": 1,
+      "release_year": 1980,
+      "category": "true_false",
+      "ts": 1785459155.487878
+    },
+    {
+      "headline": "1980 hit mocking music trends",
+      "full": "Billy Joel's satirical take on changing radio formats, reaching #1 on Billboard Hot 100. Joel defended rock's relevance against disco and new wave.",
+      "question": "What New York city was Billy Joel born in?",
+      "choices": [
+        "Rochester",
+        "Buffalo",
+        "Syracuse",
+        "Levittown"
+      ],
+      "correct_index": 3,
+      "release_year": 1980,
+      "category": "geography",
+      "ts": 1785459157.302477
+    },
+    {
+      "headline": "1980 hit mocking music trends",
+      "full": "Billy Joel's 1980 chart-topper critiques changing music styles, ironically becoming one of his biggest hits while dismissing new wave and disco.",
+      "question": "What is Billy Joel's real first name?",
+      "choices": [
+        "Michael",
+        "Robert",
+        "David",
+        "William"
+      ],
+      "correct_index": 3,
+      "release_year": 1980,
+      "category": "real_name",
+      "ts": 1785459159.8022099
+    }
+  ],
+  "matthew wilder - break my stride": [
+    {
+      "headline": "80s hit that wouldn't stop",
+      "full": "Matthew Wilder's 1983 breakthrough smash 'Break My Stride' became an iconic 80s anthem, reaching #5 on the Billboard Hot 100 and becoming his signature song.",
+      "question": "What position did 'Break My Stride' reach on Billboard Hot 100?",
+      "choices": [
+        "#12",
+        "#3",
+        "#5",
+        "#8"
+      ],
+      "correct_index": 2,
+      "release_year": 1983,
+      "category": "career_stat",
+      "ts": 1785459166.413692
+    },
+    {
+      "headline": "80s One-Hit Wonder Anthem",
+      "full": "Matthew Wilder's 1983 chart-topper became a permanent fixture in fitness studios and motivational playlists worldwide, reaching #1 on the Billboard Hot 100.",
+      "question": "What year was 'Break My Stride' released?",
+      "choices": [
+        "1985",
+        "1979",
+        "1981",
+        "1983"
+      ],
+      "correct_index": 3,
+      "release_year": 1983,
+      "category": "date",
+      "ts": 1785459168.0432153
+    },
+    {
+      "headline": "1984 hit that wouldn't stop moving",
+      "full": "Matthew Wilder's only major chart success, this energetic new wave track reached #5 on the Billboard Hot 100 and became a staple of 1980s radio and aerobics classes.",
+      "question": "What U.S. state is Matthew Wilder from?",
+      "choices": [
+        "Nebraska",
+        "Kansas",
+        "Iowa",
+        "Missouri"
+      ],
+      "correct_index": 1,
+      "release_year": 1984,
+      "category": "geography",
+      "ts": 1785459170.35325
+    }
+  ],
+  "run\u2013d.m.c. - it's tricky": [
+    {
+      "headline": "Sample-heavy hip-hop classic",
+      "full": "Run\u2013D.M.C.'s 1986 hit samples Grandmaster Flash's 'Grandmaster Flash On The Wheels Of Steel' and became a defining track of the golden age of hip-hop.",
+      "question": "How many members were in Run\u2013D.M.C.?",
+      "choices": [
+        "3",
+        "2",
+        "5",
+        "4"
+      ],
+      "correct_index": 0,
+      "release_year": 1986,
+      "category": "career_stat",
+      "ts": 1785459205.6123548
+    },
+    {
+      "headline": "Sampled from Meters' 'Cissy Strut'",
+      "full": "This 1986 hip-hop classic samples 'Cissy Strut' by The Meters. The iconic track became synonymous with Run-D.M.C.'s innovative production style.",
+      "question": "Who was Run-D.M.C.'s legendary producer and Def Jam co-founder?",
+      "choices": [
+        "Timbaland",
+        "Dr. Dre",
+        "Rick Rubin",
+        "Quincy Jones"
+      ],
+      "correct_index": 2,
+      "release_year": 1986,
+      "category": "real_name",
+      "ts": 1785459207.6317246
+    },
+    {
+      "headline": "Sampled from Meters, produced by Rick Ru",
+      "full": "Run-D.M.C.'s biggest hit samples The Meters' 1969 '\u00ae Hard' and was produced by Rick Rubin, becoming a crossover smash that dominated MTV.",
+      "question": "What is 'It's Tricky' mainly about?",
+      "choices": [
+        "partying all night",
+        "the difficulty of rappin",
+        "overcoming poverty",
+        "falling in love"
+      ],
+      "correct_index": 1,
+      "release_year": 1986,
+      "category": "song_meaning",
+      "ts": 1785459209.4694915
+    }
+  ],
+  "the clash - should i stay or should i go...": [
+    {
+      "headline": "The Clash's defining dilemma",
+      "full": "Released in 1981, this iconic punk rock anthem became The Clash's biggest hit and signature song, reaching #1 in the UK and defining a generation's internal conflict.",
+      "question": "What year was 'Should I Stay or Should I Go' released?",
+      "choices": [
+        "1981",
+        "1979",
+        "1985",
+        "1977"
+      ],
+      "correct_index": 0,
+      "release_year": 1981,
+      "category": "date",
+      "ts": 1785459261.8503356
+    },
+    {
+      "headline": "The Clash's ultimate relationship dilemm",
+      "full": "Released in 1981, this iconic punk anthem became The Clash's biggest hit, reaching #1 in the UK. Its infectious call-and-response hook made it a stadium rock staple.",
+      "question": "What relationship decision is this song about?",
+      "choices": [
+        "getting married",
+        "breaking up",
+        "staying or leaving",
+        "falling in love"
+      ],
+      "correct_index": 2,
+      "release_year": 1981,
+      "category": "song_meaning",
+      "ts": 1785459263.6519296
+    },
+    {
+      "headline": "The Clash's ultimate breakup anthem",
+      "full": "Released in 1981, this iconic track became The Clash's biggest hit and signature song, reaching #1 in the UK and becoming a stadium rock staple for decades.",
+      "question": "How many members were in The Clash's classic lineup?",
+      "choices": [
+        "3",
+        "5",
+        "6",
+        "4"
+      ],
+      "correct_index": 3,
+      "release_year": 1981,
+      "category": "career_stat",
+      "ts": 1785459265.3697982
+    }
+  ],
+  "daryl hall & john oates - you make my dreams (come true)": [
+    {
+      "headline": "Hall & Oates' feel-good 1976 classic",
+      "full": "'You Make My Dreams' became a massive hit for Daryl Hall & John Oates, reaching #1 on the Billboard Hot 100 in 1981 when re-released, nearly 5 years after its original 1976 debut.",
+      "question": "What is Daryl Hall's real first name?",
+      "choices": [
+        "Derek",
+        "David",
+        "Daryl",
+        "Daniel"
+      ],
+      "correct_index": 2,
+      "release_year": 1976,
+      "category": "real_name",
+      "ts": 1785459286.442681
+    },
+    {
+      "headline": "Hall & Oates' feel-good classic",
+      "full": "'You Make My Dreams' was Hall & Oates' only #1 hit on the Billboard Hot 100. Released in 1980, this upbeat love song became their signature song and enduring radio staple.",
+      "question": "What is this song about?",
+      "choices": [
+        "a wedding proposal",
+        "dancing all night",
+        "being in love",
+        "missing someone"
+      ],
+      "correct_index": 2,
+      "release_year": 1980,
+      "category": "song_meaning",
+      "ts": 1785459288.3614302
+    },
+    {
+      "headline": "Hall & Oates' feel-good 1976 classic",
+      "full": "This upbeat soul-pop anthem became one of Hall & Oates' biggest hits, reaching #1 on the Billboard Hot 100 and cementing their status as one of the era's most successful duos.",
+      "question": "T/F: Hall & Oates wrote 'You Make My Dreams' as a love song for their respective wives.",
+      "choices": [
+        "True",
+        "False"
+      ],
+      "correct_index": 1,
+      "release_year": 1976,
+      "category": "true_false",
+      "ts": 1785459290.3619344
+    }
+  ],
+  "you make my dreams (come true)": [
+    {
+      "headline": "Hall & Oates' biggest hit",
+      "full": "This 1980 Hall & Oates classic became their signature song, reaching #1 on the Billboard Hot 100 and winning hearts for decades with its irresistible optimism.",
+      "question": "T/F: Daryl Hall wrote 'You Make My Dreams' entirely alone.",
+      "choices": [
+        "True",
+        "False"
+      ],
+      "correct_index": 1,
+      "release_year": 1980,
+      "category": "true_false",
+      "ts": 1785459390.662725
+    }
+  ],
+  "rick springfield - jessie's girl": [
+    {
+      "headline": "Rick Springfield's biggest hit from 1981",
+      "full": "This power pop classic became Rick Springfield's signature song and only #1 hit on the Billboard Hot 100, reaching the top in 1982 after its 1981 release.",
+      "question": "What Australian city was Rick Springfield born in?",
+      "choices": [
+        "Sydney",
+        "Melbourne",
+        "Brisbane",
+        "Adelaide"
+      ],
+      "correct_index": 1,
+      "release_year": 1981,
+      "category": "geography",
+      "ts": 1785459527.9441326
+    },
+    {
+      "headline": "Rick's chart-topper about unrequited lov",
+      "full": "Released in 1981, this power-pop classic became Rick Springfield's biggest hit, reaching #1 on the Billboard Hot 100 and earning a Grammy nomination for Best Male Pop Vocal Performance.",
+      "question": "T/F: Rick Springfield wrote 'Jessie's Girl' about his wife at the time.",
+      "choices": [
+        "True",
+        "False"
+      ],
+      "correct_index": 1,
+      "release_year": 1981,
+      "category": "true_false",
+      "ts": 1785459529.6452894
+    },
+    {
+      "headline": "Rick's biggest hit from 1981",
+      "full": "Rick Springfield's signature song and biggest chart success, reaching #1 on the Billboard Hot 100. Written about unrequited love, it became an 80s classic.",
+      "question": "What instrument does Rick Springfield primarily play?",
+      "choices": [
+        "Bass",
+        "Drums",
+        "Piano",
+        "Guitar"
+      ],
+      "correct_index": 3,
+      "release_year": 1981,
+      "category": "real_name",
+      "ts": 1785459531.1233423
+    }
+  ],
+  "dead or alive - you spin me round (like a rec...": [
+    {
+      "headline": "Dead Or Alive's biggest hit",
+      "full": "'You Spin Me Round' was Dead Or Alive's signature 1985 hit, reaching #1 in the UK and becoming an 80s dance-pop classic with its infectious hook.",
+      "question": "What year did Dead Or Alive form?",
+      "choices": [
+        "1983",
+        "1980",
+        "1982",
+        "1978"
+      ],
+      "correct_index": 1,
+      "release_year": 1985,
+      "category": "career_stat",
+      "ts": 1785459739.687632
+    },
+    {
+      "headline": "80s synth-pop earworm that won't quit",
+      "full": "Dead Or Alive's 1985 hit became iconic for its infectious synth hook and Pete Burns' distinctive vocals. The song's hypnotic production made it a staple of 80s dance floors worldwide.",
+      "question": "T/F: Pete Burns wore an eyepatch as part of his signature stage look.",
+      "choices": [
+        "True",
+        "False"
+      ],
+      "correct_index": 0,
+      "release_year": 1985,
+      "category": "true_false",
+      "ts": 1785459741.9137588
+    }
+  ],
+  "billy joel - uptown girl": [
+    {
+      "headline": "1983 smash hit about Manhattan dreams",
+      "full": "Billy Joel's 'Uptown Girl' became a massive hit in 1983, reaching #3 on the Billboard Hot 100. The song celebrates the aspirations of a downtown boy pursuing an uptown girl, becoming one of Joel's mos",
+      "question": "T/F: 'Uptown Girl' was Billy Joel's only #1 hit on the Billboard Hot 100.",
+      "choices": [
+        "True",
+        "False"
+      ],
+      "correct_index": 1,
+      "release_year": 1983,
+      "category": "true_false",
+      "ts": 1785459743.7843633
+    },
+    {
+      "headline": "Billy Joel's #1 hit about dating across ",
+      "full": "Released in 1983, 'Uptown Girl' became Billy Joel's only #1 hit on the Billboard Hot 100. The song is about a working-class boy pursuing an affluent uptown girl.",
+      "question": "What is 'Uptown Girl' about?",
+      "choices": [
+        "a breakup",
+        "class differences in lov",
+        "partying in the city",
+        "unrequited love"
+      ],
+      "correct_index": 1,
+      "release_year": 1983,
+      "category": "song_meaning",
+      "ts": 1785459745.4729366
+    },
+    {
+      "headline": "Madonna's 1985 'Material Girl' answer",
+      "full": "Billy Joel's 1983 hit 'Uptown Girl' inspired Madonna's 1985 response 'Material Girl,' creating a playful pop culture dialogue between two icons.",
+      "question": "What year did Billy Joel release 'Uptown Girl'?",
+      "choices": [
+        "1983",
+        "1975",
+        "1991",
+        "1979"
+      ],
+      "correct_index": 0,
+      "release_year": 1983,
+      "category": "date",
+      "ts": 1785459747.1444101
+    }
+  ],
+  "bruce springsteen - hungry heart": [
+    {
+      "headline": "1980 chart hit from The River album",
+      "full": "Released in 1980 as part of Springsteen's double album 'The River', 'Hungry Heart' became one of his most accessible and commercially successful songs, reaching #5 on the Billboard Hot 100.",
+      "question": "What's Springsteen's nickname?",
+      "choices": [
+        "The Hammer",
+        "The Chief",
+        "The King",
+        "The Boss"
+      ],
+      "correct_index": 3,
+      "release_year": 1980,
+      "category": "real_name",
+      "ts": 1785459775.1528633
+    },
+    {
+      "headline": "Springsteen's 1980 radio hit",
+      "full": "'Hungry Heart' was Bruce Springsteen's first top-10 hit on the Billboard Hot 100, reaching #5. It appeared on his 1980 album 'The River'.",
+      "question": "What position did 'Hungry Heart' reach on the Billboard Hot 100?",
+      "choices": [
+        "#5",
+        "#7",
+        "#1",
+        "#3"
+      ],
+      "correct_index": 0,
+      "release_year": 1980,
+      "category": "career_stat",
+      "ts": 1785459776.6607997
+    },
+    {
+      "headline": "Springsteen's 1980 hit about restlessnes",
+      "full": "Born to Run album track that became a top 5 hit. About a man leaving his family to pursue happiness elsewhere.",
+      "question": "What does 'Hungry Heart' explore?",
+      "choices": [
+        "restlessness and escape",
+        "dancing all night",
+        "working hard",
+        "true love"
+      ],
+      "correct_index": 0,
+      "release_year": 1980,
+      "category": "song_meaning",
+      "ts": 1785459778.4481182
+    }
+  ],
+  "journey - open arms (2024 remaster)": [
+    {
+      "headline": "Journey's classic power ballad",
+      "full": "'Open Arms' was Journey's iconic 1981 power ballad, reaching #2 on the Billboard Hot 100. The 2024 remaster refreshes this emotional rock staple.",
+      "question": "What year was 'Open Arms' originally released?",
+      "choices": [
+        "1987",
+        "1981",
+        "1978",
+        "1975"
+      ],
+      "correct_index": 1,
+      "release_year": 1981,
+      "category": "date",
+      "ts": 1785459783.012455
+    },
+    {
+      "headline": "Journey's Power Ballad Remastered",
+      "full": "Open Arms is Journey's iconic 1981 power ballad, later remastered in 2024. A timeless duet that became one of the band's most beloved tracks.",
+      "question": "Who was Journey's lead vocalist?",
+      "choices": [
+        "David Coverdale",
+        "Arnel Pineda",
+        "Robert Plant",
+        "Steve Perry"
+      ],
+      "correct_index": 3,
+      "release_year": 1981,
+      "category": "real_name",
+      "ts": 1785459786.6167395
+    },
+    {
+      "headline": "Journey's Timeless Power Ballad",
+      "full": "Open Arms is Journey's iconic 1981 power ballad, featuring Steve Perry's soaring vocals and becoming one of the band's most enduring hits.",
+      "question": "How many #1 albums did Journey have?",
+      "choices": [
+        "12",
+        "8",
+        "5",
+        "3"
+      ],
+      "correct_index": 1,
+      "release_year": 1981,
+      "category": "career_stat",
+      "ts": 1785459788.2288175
+    }
+  ],
+  "reo speedwagon - keep on loving you": [
+    {
+      "headline": "REO's 1980 power ballad masterpiece",
+      "full": "REO Speedwagon's signature 1980 ballad became their biggest hit, reaching #7 on Billboard Hot 100 and winning hearts worldwide with its emotional devotion theme.",
+      "question": "What year did REO Speedwagon release 'Keep on Loving You'?",
+      "choices": [
+        "1978",
+        "1980",
+        "1979",
+        "1982"
+      ],
+      "correct_index": 1,
+      "release_year": 1980,
+      "category": "career_stat",
+      "ts": 1785459790.7142437
+    },
+    {
+      "headline": "REO's power ballad defined the 80s",
+      "full": "'Keep on Loving You' became REO Speedwagon's signature ballad, reaching #7 on the Billboard Hot 100 and becoming a staple of 80s rock radio and wedding receptions.",
+      "question": "T/F: 'Keep on Loving You' was written as a wedding song.",
+      "choices": [
+        "True",
+        "False"
+      ],
+      "correct_index": 1,
+      "release_year": 1980,
+      "category": "true_false",
+      "ts": 1785459792.2158983
+    },
+    {
+      "headline": "REO's power ballad from '80",
+      "full": "REO Speedwagon's signature power ballad reached #7 on the Billboard Hot 100. The emotional anthem became their biggest hit and a staple of 80s rock radio.",
+      "question": "What is 'Keep on Loving You' about?",
+      "choices": [
+        "lost love",
+        "heartbreak and regret",
+        "unconditional love",
+        "a painful breakup"
+      ],
+      "correct_index": 2,
+      "release_year": 1980,
+      "category": "song_meaning",
+      "ts": 1785459793.9482882
+    }
+  ],
+  "men at work - who can it be now?": [
+    {
+      "headline": "80s hit from Australian new wave band",
+      "full": "Men At Work's 1981 debut single 'Who Can It Be Now?' became a massive worldwide hit, reaching #1 on the Billboard Hot 100 and establishing the Australian band as icons of 80s pop-rock.",
+      "question": "T/F: 'Who Can It Be Now?' features a didgeridoo solo.",
+      "choices": [
+        "True",
+        "False"
+      ],
+      "correct_index": 1,
+      "release_year": 1981,
+      "category": "true_false",
+      "ts": 1785459800.0987463
+    },
+    {
+      "headline": "Mystery caller paranoia hit",
+      "full": "Men At Work's debut single about anxiety over an unknown phone caller became a massive 1981 hit, reaching #1 in multiple countries and winning a Grammy.",
+      "question": "What is this song about?",
+      "choices": [
+        "mystery caller",
+        "lost love",
+        "wrong number prank",
+        "a secret admirer"
+      ],
+      "correct_index": 0,
+      "release_year": 1981,
+      "category": "song_meaning",
+      "ts": 1785459802.064565
+    },
+    {
+      "headline": "Men At Work's iconic 1981 hit",
+      "full": "'Who Can It Be Now?' was Men At Work's debut single, featuring the distinctive flute riff that became instantly recognizable. It topped charts worldwide and launched the Australian band to internation",
+      "question": "How many Grammy Awards did Men At Work win?",
+      "choices": [
+        "4",
+        "3",
+        "6",
+        "8"
+      ],
+      "correct_index": 2,
+      "release_year": 1981,
+      "category": "career_stat",
+      "ts": 1785459804.6653626
+    }
+  ],
+  "roy orbison - you got it": [
+    {
+      "headline": "Roy Orbison's 1989 duet masterpiece",
+      "full": "Co-written by Jeff Lynne, this romantic ballad features Roy Orbison and k.d. lang in a stunning duet that became one of Orbison's final major hits before his death.",
+      "question": "What is 'You Got It' about?",
+      "choices": [
+        "A breakup",
+        "Unrequited love",
+        "True love",
+        "Lost love"
+      ],
+      "correct_index": 2,
+      "release_year": 1989,
+      "category": "song_meaning",
+      "ts": 1785459824.129035
+    },
+    {
+      "headline": "Roy Orbison's only top 5 hit",
+      "full": "Released in 1989, 'You Got It' became Roy Orbison's comeback smash, reaching #9 on the Billboard Hot 100 and winning a Grammy. A duet with Tom Petty and Jeff Lynne.",
+      "question": "T/F: Roy Orbison wrote 'You Got It' entirely by himself.",
+      "choices": [
+        "True",
+        "False"
+      ],
+      "correct_index": 1,
+      "release_year": 1989,
+      "category": "true_false",
+      "ts": 1785459825.760613
+    },
+    {
+      "headline": "Roy Orbison's 1989 comeback hit",
+      "full": "Written by Jeff Lynne of Electric Light Orchestra, 'You Got It' became Roy Orbison's first top-10 hit in nearly 25 years, reaching #9 on the Billboard Hot 100.",
+      "question": "What was Roy Orbison's real first name?",
+      "choices": [
+        "Orbie",
+        "Robert",
+        "Roger",
+        "Raymond"
+      ],
+      "correct_index": 0,
+      "release_year": 1989,
+      "category": "real_name",
+      "ts": 1785459827.325984
+    }
+  ],
+  "ac/dc - you shook me all night long": [
+    {
+      "headline": "AC/DC's biggest hit from Back in Black",
+      "full": "Released in 1980 on the album 'Back in Black', this power ballad became one of AC/DC's most iconic songs and a staple of rock radio worldwide.",
+      "question": "Who was AC/DC's lead singer on this track?",
+      "choices": [
+        "Phil Rudd",
+        "Bon Scott",
+        "Brian Johnson",
+        "Dave Evans"
+      ],
+      "correct_index": 1,
+      "release_year": 1980,
+      "category": "real_name",
+      "ts": 1785459843.1309237
+    },
+    {
+      "headline": "AC/DC's 1980 hard rock anthem",
+      "full": "Released on AC/DC's 'Back in Black' album, this track became one of rock's most iconic songs and a staple of sports events worldwide.",
+      "question": "What year was 'You Shook Me All Night Long' released?",
+      "choices": [
+        "1978",
+        "1976",
+        "1980",
+        "1985"
+      ],
+      "correct_index": 2,
+      "release_year": 1980,
+      "category": "date",
+      "ts": 1785459844.7507763
+    },
+    {
+      "headline": "AC/DC's biggest hit from Back in Black",
+      "full": "Released on the 1980 album 'Back in Black,' this power ballad became one of AC/DC's most iconic tracks and a staple of rock radio worldwide.",
+      "question": "What Australian city was AC/DC formed in?",
+      "choices": [
+        "Sydney",
+        "Brisbane",
+        "Perth",
+        "Melbourne"
+      ],
+      "correct_index": 0,
+      "release_year": 1980,
+      "category": "geography",
+      "ts": 1785459846.1781354
+    }
+  ],
+  "the cure - just like heaven": [
+    {
+      "headline": "The Cure's biggest US chart hit",
+      "full": "Released in 1987, 'Just like Heaven' became The Cure's only top-10 hit on the US Billboard Hot 100, reaching #2. The iconic synth-pop track defined the band's commercial peak.",
+      "question": "What year was 'Just like Heaven' by The Cure released?",
+      "choices": [
+        "1989",
+        "1982",
+        "1985",
+        "1987"
+      ],
+      "correct_index": 3,
+      "release_year": 1987,
+      "category": "date",
+      "ts": 1785459851.8530204
+    },
+    {
+      "headline": "The Cure's biggest US hit single",
+      "full": "'Just Like Heaven' was The Cure's only top 10 hit in the US, reaching #2 on the Billboard Hot 100 in 1988 and becoming their signature song.",
+      "question": "What English city was The Cure formed in?",
+      "choices": [
+        "Liverpool",
+        "Manchester",
+        "London",
+        "Crawley"
+      ],
+      "correct_index": 3,
+      "release_year": 1987,
+      "category": "geography",
+      "ts": 1785459853.3567708
+    },
+    {
+      "headline": "The Cure's biggest US hit",
+      "full": "Released in 1987, 'Just like Heaven' became The Cure's most successful single in America, reaching #2 on Billboard Hot 100 and spawning the iconic music video.",
+      "question": "Who is The Cure's lead singer?",
+      "choices": [
+        "Simon Gallup",
+        "Perry Bamonte",
+        "Jason Cooper",
+        "Robert Smith"
+      ],
+      "correct_index": 3,
+      "release_year": 1987,
+      "category": "real_name",
+      "ts": 1785459855.1500993
+    }
+  ],
+  "eddie money - take me home tonight": [
+    {
+      "headline": "Eddie Money's 1986 duet hit",
+      "full": "This 1986 chart-topper featured Ronnie Spector on vocals and became Eddie Money's signature song, reaching #4 on the Billboard Hot 100.",
+      "question": "T/F: Eddie Money was a former New York City police officer.",
+      "choices": [
+        "True",
+        "False"
+      ],
+      "correct_index": 0,
+      "release_year": 1986,
+      "category": "true_false",
+      "ts": 1785459941.8542995
+    },
+    {
+      "headline": "Eddie Money's 1986 chart-topper",
+      "full": "Eddie Money's 'Take Me Home Tonight' hit #4 on the Billboard Hot 100 in 1986, featuring a duet with Ronnie Spector that became one of his biggest hits.",
+      "question": "What New York city was Eddie Money from?",
+      "choices": [
+        "Queens",
+        "Manhattan",
+        "The Bronx",
+        "Brooklyn"
+      ],
+      "correct_index": 3,
+      "release_year": 1986,
+      "category": "geography",
+      "ts": 1785459943.5835192
+    },
+    {
+      "headline": "Eddie Money's '80s duet hit",
+      "full": "1986 chart-topper featuring Ronnie Spector, reaching #4 on Billboard Hot 100. A signature Eddie Money success.",
+      "question": "What year did 'Take Me Home Tonight' chart?",
+      "choices": [
+        "1986",
+        "1985",
+        "1988",
+        "1984"
+      ],
+      "correct_index": 0,
+      "release_year": 1986,
+      "category": "career_stat",
+      "ts": 1785459945.9185116
+    }
+  ],
+  "rick astley - never gonna give you up": [
+    {
+      "headline": "The ultimate rickroll anthem",
+      "full": "Released in 1987, this became the internet's most famous bait-and-switch song decades later, spawning the 'rickroll' meme where unsuspecting users get tricked into watching the music video.",
+      "question": "T/F: Rick Astley retired from music in 1993 and didn't perform publicly again until 2007.",
+      "choices": [
+        "True",
+        "False"
+      ],
+      "correct_index": 0,
+      "release_year": 1987,
+      "category": "true_false",
+      "ts": 1785459954.5233989
+    },
+    {
+      "headline": "The rickroll anthem that broke the inter",
+      "full": "Released in 1987, this earworm became a viral meme decades later, spawning the 'rickroll' internet prank where unsuspecting users get linked to the music video.",
+      "question": "What decade was Rick Astley born?",
+      "choices": [
+        "1970s",
+        "1960s",
+        "1950s",
+        "1980s"
+      ],
+      "correct_index": 1,
+      "release_year": 1987,
+      "category": "real_name",
+      "ts": 1785459956.2394702
+    },
+    {
+      "headline": "The most rickrolled song ever",
+      "full": "Rick Astley's 1987 debut single became an internet phenomenon used to 'rickroll' unsuspecting users. It's the ultimate bait-and-click prank song.",
+      "question": "What does this song promise never to do?",
+      "choices": [
+        "give you up",
+        "hurt your feelings",
+        "let you down",
+        "say goodbye"
+      ],
+      "correct_index": 0,
+      "release_year": 1987,
+      "category": "song_meaning",
+      "ts": 1785459958.1255202
+    }
+  ],
+  "queen - another one bites the dust -...": [
+    {
+      "headline": "Bass line heard 'round the world",
+      "full": "Queen's 1980 mega-hit features one of rock's most iconic bass lines, played by John Deacon. It became a global phenomenon and remains endlessly sampled.",
+      "question": "How many studio albums did Queen release?",
+      "choices": [
+        "12",
+        "18",
+        "15",
+        "10"
+      ],
+      "correct_index": 2,
+      "release_year": 1980,
+      "category": "career_stat",
+      "ts": 1785460152.9343832
+    },
+    {
+      "headline": "Bass line that defined a generation",
+      "full": "Queen's iconic 1980 hit features one of rock's most recognizable bass lines, played by John Deacon. It became a staple at sporting events and celebrations worldwide.",
+      "question": "What year was 'Another One Bites The Dust' released?",
+      "choices": [
+        "1980",
+        "1985",
+        "1974",
+        "1978"
+      ],
+      "correct_index": 0,
+      "release_year": 1980,
+      "category": "date",
+      "ts": 1785460154.7509065
+    },
+    {
+      "headline": "Bass line wrote itself!",
+      "full": "John Deacon's iconic bass riff was created on a whim during studio downtime. The song became Queen's only #1 hit in the US and remains their most streamed track globally.",
+      "question": "T/F: Freddie Mercury wrote 'Another One Bites the Dust'",
+      "choices": [
+        "True",
+        "False"
+      ],
+      "correct_index": 1,
+      "release_year": 1980,
+      "category": "true_false",
+      "ts": 1785460156.6471927
+    }
+  ],
+  "kenny loggins - danger zone - from \"top gun\"...": [
+    {
+      "headline": "Top Gun's iconic synth-rock anthem",
+      "full": "Kenny Loggins' 'Danger Zone' became a defining 80s hit and Top Gun's signature song. Its pulsing synth and driving beat made it a chart success and cultural phenomenon.",
+      "question": "What year was 'Danger Zone' released?",
+      "choices": [
+        "1988",
+        "1986",
+        "1982",
+        "1984"
+      ],
+      "correct_index": 1,
+      "release_year": 1986,
+      "category": "date",
+      "ts": 1785460355.9732516
+    },
+    {
+      "headline": "Top Gun's iconic 80s anthem",
+      "full": "Kenny Loggins' 'Danger Zone' from Top Gun became a defining 80s hit, reaching #2 on the Billboard Hot 100 and becoming synonymous with the film's high-octane action sequences.",
+      "question": "What city is Kenny Loggins from?",
+      "choices": [
+        "Los Angeles, California",
+        "Everett, Washington",
+        "Nashville, Tennessee",
+        "Seattle, Washington"
+      ],
+      "correct_index": 1,
+      "release_year": 1986,
+      "category": "geography",
+      "ts": 1785460357.8623598
+    },
+    {
+      "headline": "Top Gun's Ultimate Adrenaline Anthem",
+      "full": "Kenny Loggins' 'Danger Zone' became iconic as Top Gun's theme, reaching #2 on Billboard Hot 100 and earning an Oscar nomination for Best Original Song.",
+      "question": "What chart position did 'Danger Zone' reach?",
+      "choices": [
+        "#8",
+        "#2",
+        "#5",
+        "#1"
+      ],
+      "correct_index": 1,
+      "release_year": 1986,
+      "category": "career_stat",
+      "ts": 1785460359.5026786
+    }
+  ],
+  "prince - raspberry beret": [
+    {
+      "headline": "Prince's hat-themed 1985 pop hit",
+      "full": "'Raspberry Beret' was Prince's biggest mainstream pop hit, reaching #2 on the Billboard Hot 100. The song features his signature falsetto and tells a story about a girl in a raspberry beret.",
+      "question": "What US city was Prince from?",
+      "choices": [
+        "Detroit",
+        "Chicago",
+        "Minneapolis",
+        "Atlanta"
+      ],
+      "correct_index": 2,
+      "release_year": 1985,
+      "category": "geography",
+      "ts": 1785460369.1979177
+    },
+    {
+      "headline": "Prince's 1985 synth-pop masterpiece",
+      "full": "Released in 1985 from the album 'Around the World in a Day,' this whimsical track became one of Prince's biggest hits, reaching #4 on the Billboard Hot 100 and showcasing his playful, romantic side.",
+      "question": "T/F: Prince wrote 'Raspberry Beret' about a real woman he dated.",
+      "choices": [
+        "True",
+        "False"
+      ],
+      "correct_index": 1,
+      "release_year": 1985,
+      "category": "true_false",
+      "ts": 1785460371.5537205
+    },
+    {
+      "headline": "Prince's raspberry beret romance",
+      "full": "Prince's 1985 hit about a young woman working at a five-and-dime store who wore a distinctive raspberry beret that caught his eye.",
+      "question": "What does Prince see the girl wearing in this song?",
+      "choices": [
+        "A raspberry beret",
+        "A blue scarf",
+        "A red dress",
+        "A purple hat"
+      ],
+      "correct_index": 0,
+      "release_year": 1985,
+      "category": "song_meaning",
+      "ts": 1785460373.3979957
+    }
+  ],
+  "adam & the ants - stand and deliver": [
+    {
+      "headline": "New Wave Highwayman Anthem from 1981",
+      "full": "Adam & The Ants' biggest hit features the iconic line 'Stand and deliver, your money or your life.' It became a #1 UK hit and defined the new wave/post-punk era.",
+      "question": "What is Adam Ant's real first name?",
+      "choices": [
+        "Andrew",
+        "Adrian",
+        "Stuart",
+        "Anthony"
+      ],
+      "correct_index": 2,
+      "release_year": 1981,
+      "category": "real_name",
+      "ts": 1785460583.861248
+    },
+    {
+      "headline": "New Wave Highwayman Classic",
+      "full": "Adam and the Ants' 1981 hit 'Stand and Deliver' features the iconic line 'Stand and deliver, your money or your life' and became a chart-topper across multiple countries.",
+      "question": "What year was 'Stand and Deliver' released?",
+      "choices": [
+        "1981",
+        "1979",
+        "1985",
+        "1988"
+      ],
+      "correct_index": 0,
+      "release_year": 1981,
+      "category": "date",
+      "ts": 1785460585.956664
+    },
+    {
+      "headline": "New Wave pirate anthem from 1981",
+      "full": "Adam & The Ants' biggest hit, 'Stand and Deliver' reached #1 in the UK charts. The song features their signature post-punk style with swashbuckling imagery and became a defining new wave classic.",
+      "question": "What UK chart position did 'Stand and Deliver' reach?",
+      "choices": [
+        "3",
+        "5",
+        "1",
+        "2"
+      ],
+      "correct_index": 2,
+      "release_year": 1981,
+      "category": "career_stat",
+      "ts": 1785460587.6717618
+    }
+  ],
+  "cowboy junkies - sweet jane": [
+    {
+      "headline": "Lou Reed's 'Sweet Jane' gets cover",
+      "full": "Cowboy Junkies' 1988 cover of Lou Reed's 'Sweet Jane' became iconic for its slow, ethereal arrangement featuring Margo Timmins' haunting vocals.",
+      "question": "Who is the lead vocalist?",
+      "choices": [
+        "Margo Timmins",
+        "Victoria Legrand",
+        "Kathleen Brennan",
+        "Hope Sandoval"
+      ],
+      "correct_index": 0,
+      "release_year": 1988,
+      "category": "real_name",
+      "ts": 1785460589.9854765
+    },
+    {
+      "headline": "Cowboy Junkies' Haunting Cover",
+      "full": "Cowboy Junkies' 1988 cover of Lou Reed's 'Sweet Jane' features Margo Timmins' whispered vocals and sparse instrumentation, becoming their signature song.",
+      "question": "What is 'Sweet Jane' about?",
+      "choices": [
+        "urban decay",
+        "drug addiction",
+        "love and loss",
+        "a one-night stand"
+      ],
+      "correct_index": 2,
+      "release_year": 1988,
+      "category": "song_meaning",
+      "ts": 1785460591.8206282
+    },
+    {
+      "headline": "Cowboy Junkies' Haunting Cover",
+      "full": "Cowboy Junkies' 1988 cover of Lou Reed's 'Sweet Jane' became their signature song, reaching #5 on the Billboard Modern Rock chart with its slowcore arrangement.",
+      "question": "What year did Cowboy Junkies release 'The Trinity Session'?",
+      "choices": [
+        "1986",
+        "1987",
+        "1988",
+        "1990"
+      ],
+      "correct_index": 2,
+      "release_year": 1988,
+      "category": "career_stat",
+      "ts": 1785460593.4867313
+    }
   ]
 }

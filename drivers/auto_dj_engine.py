@@ -1,10 +1,15 @@
 import time
 
+import mss
+from PIL import Image
+
 import config
 from state import state
 from drivers import deck_orchestrator
 from drivers.rekordbox_driver import get_rekordbox_track, rb_driver
-from audio.audio_engine import play_station_announcement
+from audio.audio_engine import (
+    play_station_announcement, stop_station_announcement, reset_announcement_volume,
+)
 
 # ==========================================
 # AUTO-DJ (Section 4): TRACK-LENGTH AUTO-ADVANCE + VOICE-OVER TRANSITION
@@ -32,6 +37,56 @@ from audio.audio_engine import play_station_announcement
 #
 # update() is polled every frame from inputs/gamepad.py::process_events(),
 # alongside the other per-frame engines (price_game_engine, mystery_band_engine).
+
+
+# ==========================================
+# PIXEL-SCANNING "DEAD AIR" FAILSAFE (Section 2)
+# ==========================================
+# Visual safety net that's completely independent of rekordbox.xml metadata
+# and the track-duration timer above: samples the on-screen waveform strip
+# just to the right of the deck centerlines
+# (config.AUTODJ_DEAD_AIR_SCAN_RECT). If every pixel sampled is pure black
+# (RGB sum == 0), nothing is loaded/queued there -- a strong signal that the
+# normal metadata-driven auto-advance path has silently failed -- so, if
+# Auto-DJ is active and hasn't already armed a transition this cycle, fire
+# the track transition immediately rather than risk dead air.
+_last_pixel_scan_at = 0.0
+
+
+def _scan_dead_air_pixels():
+    """Grabs config.AUTODJ_DEAD_AIR_SCAN_RECT and returns the sum of every
+    R+G+B value across the sampled pixels (0 means the whole strip is pure
+    black). Never raises -- a capture failure is treated as "not dead air"
+    (returns 1) so a transient screen-grab error can never force a spurious
+    transition."""
+    try:
+        with mss.mss() as sct:
+            sct_img = sct.grab(config.AUTODJ_DEAD_AIR_SCAN_RECT)
+            img = Image.frombytes("RGB", sct_img.size, sct_img.bgra, "raw", "BGRX")
+            return sum(r + g + b for r, g, b in img.getdata())
+    except Exception as e:
+        print(f"[AUTO-DJ] Dead-air pixel scan failed: {e}")
+        return 1
+
+
+def _dead_air_failsafe(track_key, now):
+    """Returns True if it fired an immediate transition. Throttled to
+    config.AUTODJ_DEAD_AIR_SCAN_INTERVAL_SECONDS -- a 1px-wide screen grab is
+    cheap, but there's no need to do it every single frame."""
+    global _last_pixel_scan_at
+    if state.auto_dj_transition_at:
+        return False  # a transition is already armed/triggered this cycle
+    if now - _last_pixel_scan_at < config.AUTODJ_DEAD_AIR_SCAN_INTERVAL_SECONDS:
+        return False
+    _last_pixel_scan_at = now
+
+    if _scan_dead_air_pixels() != 0:
+        return False
+
+    print("[AUTO-DJ] Dead-air failsafe: waveform pixel scan is pure black -- "
+          "forcing immediate track transition.")
+    _fire_transition(track_key)
+    return True
 
 
 def _lookup_duration(title):
@@ -68,11 +123,27 @@ def toggle_auto_announce():
     confirmation overlay for config.AUTO_ANNOUNCE_TOGGLE_OVERLAY_SECONDS.
     When off, Auto-DJ still auto-advances tracks at the same
     AUTODJ_PRE_SWITCH_SECONDS mark, it just skips the announcement overlay
-    and fires the transition immediately instead of waiting on a VO clip."""
+    and fires the transition immediately instead of waiting on a VO clip.
+
+    Instant Mute & Volume Reset (Section 4): switching OFF instantly kills
+    whatever announcement clip is currently playing rather than letting it
+    run out, and if a transition was scheduled off that clip's runtime
+    (auto_dj_transition_at), fires it right now instead of waiting on audio
+    that no longer exists. Switching back ON resets every cached
+    announcement Sound to full volume (1.0) so a prior kill can never leave
+    the next playback muted/ducked."""
     state.auto_announce_enabled = not state.auto_announce_enabled
     label = "v ON" if state.auto_announce_enabled else "v OFF"
     state.auto_announce_overlay_text = label
     state.auto_announce_overlay_until = time.time() + config.AUTO_ANNOUNCE_TOGGLE_OVERLAY_SECONDS
+
+    if not state.auto_announce_enabled:
+        stop_station_announcement()
+        if state.auto_dj_transition_at:
+            state.auto_dj_transition_at = time.time()
+    else:
+        reset_announcement_volume()
+
     print(f"[AUTO-DJ] Btn1 toggle -> Auto-Announcement {label}")
 
 
@@ -82,8 +153,16 @@ def notify_manual_track_move():
     auto-advance timer so Auto-DJ doesn't also fire a transition right on
     top of the manual one. The real per-track duration is re-armed on its
     own the moment the new track is confidently identified (see update()
-    below), this just buys that identification window some slack."""
+    below), this just buys that identification window some slack.
+
+    Testing Mode (Section 4): while Auto-Announcement is ON, also fire the
+    station announcement VO here -- not just on Auto-DJ's own overlapping
+    transition -- so voice viability can be verified on demand from every
+    normal track switch, manual or automatic."""
     state.auto_dj_track_started_at = time.time()
+    if state.auto_announce_enabled:
+        play_station_announcement()
+        print("[AUTO-DJ] Auto-Announcement testing mode -- VO fired on manual track switch.")
     print("[AUTO-DJ] Manual track move -- auto-advance timer reset.")
 
 
@@ -112,6 +191,11 @@ def update(now):
         return
     if deck_orchestrator.has_pending_move():
         return  # a crossfade (manual or auto) is already in flight
+
+    # Section 2: visual dead-air failsafe -- independent of the metadata/
+    # timer logic below, checked every cycle before it.
+    if _dead_air_failsafe(track_key, now):
+        return
 
     # Phase 2: the announcement (or the no-VO fallback) has already fired
     # this cycle -- just wait for its scheduled overlap moment.

@@ -220,6 +220,51 @@ TEMPO_PERIOD_DEFAULT_SECONDS = 0.6
 # over this long from the moment Btn5 is held.
 TEMPO_FLASH_DECAY_SECONDS = 0.1
 
+# ==========================================
+# SPACE INVADERS MINI-GAME (DJ-mode dual-button Easter egg)
+# ==========================================
+# Entered from DJ_MODE by holding/pressing Gamepad Button 1 AND Button 3
+# simultaneously (pygame JOYBUTTONDOWN indices 0 and 2); exited immediately
+# via Button 7 or Button 8 (indices 6/7). See inputs/gamepad.py for the
+# entry/exit + movement/fire input handling,
+# drivers/space_invaders_engine.py for the game loop, and
+# graphics/matrix_canvas.py::_render_space_invaders for rendering.
+#
+# The play field spans the FULL matrix canvas (MATRIX_WIDTH x
+# MATRIX_HEIGHT, 128x36) rather than being confined to a single 32x16
+# panel -- a proper full-width arcade screen reads far better on the rig
+# than a game crammed into one panel's worth of pixels.
+SI_ENTRY_BUTTONS = (0, 2)   # pygame JOYBUTTONDOWN indices for physical Btn1 + Btn3
+SI_EXIT_BUTTONS = (6, 7)    # pygame indices for physical Btn7 / Btn8
+SI_ENTRY_SOUND_VOLUME = 1.0
+
+SI_INVADER_COLS = 6
+SI_INVADER_ROWS = 3
+SI_INVADER_SPACING_X = 16
+SI_INVADER_SPACING_Y = 8
+SI_INVADER_TOP_Y = 2
+SI_INVADER_SIZE = 5                    # px, square sprite footprint
+SI_INVADER_STEP_X = 2                  # px per formation step
+SI_INVADER_DROP_Y = 3                  # px dropped when the formation hits an edge
+SI_INVADER_TICK_START_SECONDS = 0.6    # step interval, full formation alive
+SI_INVADER_TICK_MIN_SECONDS = 0.15     # step interval, last invader standing
+
+SI_PLAYER_WIDTH = 5
+SI_PLAYER_HEIGHT = 3
+SI_PLAYER_Y_FROM_BOTTOM = 3            # px up from the bottom edge
+SI_PLAYER_SPEED = 60.0                 # px/sec while held
+
+SI_BULLET_SPEED = 90.0                 # px/sec, travels upward
+SI_FIRE_COOLDOWN_SECONDS = 0.25
+SI_EXPLOSION_HOLD_SECONDS = 0.2
+
+# Amplified game feedback: the instant an answer is graded, ALL 10 uplight
+# fixtures (2-11) snap to a brief solid green/red pulse alongside Fixture 1's
+# own win/loss lamp, then fall back to the normal game chase -- see
+# inputs/gamepad.py::trigger_big_win/trigger_loss and
+# drivers/lighting_engine.py::_render_grade_flash.
+DMX_GRADE_FLASH_SECONDS = 0.25
+
 # DJ-mode uplighting: 8 themes + an "ALL LIGHTS OFF" stop in the cycle.
 DJ_THEME_COUNT = 8
 DJ_THEME_ALL_OFF_INDEX = DJ_THEME_COUNT  # index 8 == all lights off
@@ -386,6 +431,13 @@ PRICE_GAME_CATEGORIES = [
     },
 ]
 
+# Once a specific product (e.g. "Gallon of Milk") has been asked about in a
+# Price Game question, it's excluded from the prompt's candidate pool for
+# this many subsequent trivia rounds (state.quiz_score_total-counted, i.e.
+# any graded question -- not just Price Game rounds). See
+# drivers/price_game_engine.py's product-history cooldown.
+PRICE_GAME_PRODUCT_COOLDOWN_ROUNDS = 20
+
 # ==========================================
 # AUTO-DJ: TRACK-LENGTH AUTO-ADVANCE (Section 4)
 # ==========================================
@@ -417,6 +469,19 @@ AUTODJ_ANNOUNCE_LEAD_SECONDS = 2.0
 
 # How long the "AUTO ON" / "AUTO OFF" toggle confirmation overlays panel 3.
 AUTODJ_TOGGLE_OVERLAY_SECONDS = 1.5
+
+# ==========================================
+# AUTO-DJ: PIXEL-SCANNING "DEAD AIR" FAILSAFE
+# ==========================================
+# Visual safety net in case rekordbox.xml metadata / the track timer both
+# fail to catch an ending track: samples an on-screen strip to the right of
+# the deck centerlines (the upcoming-track waveform preview). If every pixel
+# in that strip is pure black (RGB sum == 0 -- no waveform rendering, i.e.
+# nothing queued/loaded), and Auto-DJ hasn't already armed a transition,
+# the track transition fires immediately rather than risk dead air. See
+# drivers/auto_dj_engine.py::_dead_air_failsafe.
+AUTODJ_DEAD_AIR_SCAN_RECT = {"left": 1000, "top": 175, "width": 1, "height": 75}
+AUTODJ_DEAD_AIR_SCAN_INTERVAL_SECONDS = 0.25
 
 # ==========================================
 # AUTO-DJ: STATION ANNOUNCEMENT VOICE-OVERS

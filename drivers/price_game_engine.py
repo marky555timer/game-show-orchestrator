@@ -16,6 +16,33 @@ _fetch_lock = threading.Lock()
 _inflight = set()
 
 
+# ------------------------------------------------------------
+# Product repetition cooldown (Section 3): a specific product (e.g. "Gallon
+# of Milk") asked about in a Price Game question is excluded from the AI
+# prompt's candidate pool for config.PRICE_GAME_PRODUCT_COOLDOWN_ROUNDS
+# subsequent trivia rounds, tracked via state.price_game_product_history.
+# ------------------------------------------------------------
+def _products_on_cooldown():
+    current_round = state.quiz_score_total
+    return [
+        entry["product"] for entry in state.price_game_product_history
+        if current_round - entry["round"] < config.PRICE_GAME_PRODUCT_COOLDOWN_ROUNDS
+    ]
+
+
+def _register_product_asked(product):
+    if not product:
+        return
+    current_round = state.quiz_score_total
+    state.price_game_product_history.append({"product": product, "round": current_round})
+    cutoff = current_round - config.PRICE_GAME_PRODUCT_COOLDOWN_ROUNDS
+    state.price_game_product_history = [
+        entry for entry in state.price_game_product_history if entry["round"] > cutoff
+    ]
+    print(f"[PRICE GAME] Product {product!r} on cooldown for "
+          f"{config.PRICE_GAME_PRODUCT_COOLDOWN_ROUNDS} trivia rounds.")
+
+
 def start_price_game(key, decade_label):
     """Btn6 hook (inputs/gamepad.py::handle_quiz_gate_button): arms the
     70s/80s Price Game intro -- strobe -> banner -> pricing question --
@@ -64,15 +91,20 @@ def start_price_game(key, decade_label):
 
     if key not in _inflight:
         _inflight.add(key)
-        threading.Thread(target=_fetch_worker, args=(key, decade_label, category_index), daemon=True).start()
+        avoid_products = _products_on_cooldown()
+        threading.Thread(
+            target=_fetch_worker, args=(key, decade_label, category_index, avoid_products), daemon=True
+        ).start()
 
 
-def _fetch_worker(key, decade_label, category_index):
+def _fetch_worker(key, decade_label, category_index, avoid_products=None):
     try:
-        result, reason = factoid_engine.fetch_price_question(decade_label, category_index)
+        result, reason = factoid_engine.fetch_price_question(decade_label, category_index, avoid_products)
         with _fetch_lock:
             _fetch_results[key] = result if result else "FAILED"
-        if not result:
+        if result:
+            _register_product_asked(result.get("product") or result.get("headline"))
+        else:
             print(f"[PRICE GAME] Question fetch failed for '{key}': {reason}")
     finally:
         _inflight.discard(key)
@@ -115,15 +147,18 @@ def _update_price_game_audio(now):
     if not state.price_game_audio_active:
         return
 
-    # Section 1 (music rules): repeat occurrences cap the bed early. This
-    # only silences the music -- the fader duck/restore lifecycle is
-    # untouched, since the round (strobe/banner/question) may still be
-    # in progress.
+    # Section 1 (music rules): repeat occurrences cap the bed early. The
+    # instant the shortened bed fades, immediately tween channel1/channel2
+    # faders back up to state.music_volume -- previously this only silenced
+    # the music and left the main track ducked to 0% (dead air) for the
+    # rest of the round, since the fader restore only fired later on the
+    # round's own end-of-round path.
     if (not state.price_game_audio_is_first and not state.price_game_audio_capped
             and now - state.price_game_audio_started_at >= config.PRICE_GAME_MUSIC_REPEAT_CAP_SECONDS):
         print(f"[PRICE GAME] Repeat-occurrence {config.PRICE_GAME_MUSIC_REPEAT_CAP_SECONDS}s cap "
-              f"reached -- fading bed early.")
+              f"reached -- fading bed early and restoring main track faders.")
         fade_out_game_music()
+        midi_driver.tween_channel_faders_to(state.music_volume, config.PRICE_GAME_AUDIO_TWEEN_SECONDS)
         state.price_game_audio_capped = True
 
     if state.mode == state.MODE_GAME:

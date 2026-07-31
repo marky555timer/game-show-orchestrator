@@ -149,7 +149,7 @@ def handle_dj_volume(change):
     send_midi_cc(12, midi_val)
     # A manual volume nudge always wins over an in-progress Price Game
     # duck/restore tween.
-    _fader_tween = None
+    cancel_fader_tween()
     _current_fader_pct = float(state.music_volume)
     print(f"[REKORDBOX MIDI] Volume -> {state.music_volume}% (CC#11 Val:{midi_val})")
 
@@ -162,13 +162,27 @@ def _set_channel_faders_raw(pct):
     send_midi_cc(CHANNEL2_FADER_CC, midi_val)
 
 
+def cancel_fader_tween():
+    """Kills whatever channel1/channel2 fader tween is currently in flight,
+    if any -- called at the top of tween_channel_faders_to() so a new duck/
+    restore command can never overlap a stale one (the stuttering/glitch
+    failure mode this guards against). _current_fader_pct is left exactly
+    where the killed tween left off, so the next tween starts smoothly from
+    there rather than snapping."""
+    global _fader_tween
+    _fader_tween = None
+
+
 def tween_channel_faders_to(target_pct, duration_seconds):
     """Smoothly tweens both channel faders from their current commanded
     level to target_pct (0-100%) over duration_seconds -- non-blocking,
     advanced a step per frame by update_fader_tween(). Used by
     drivers/price_game_engine.py to duck to 0% on Price Game entry and
-    restore back to state.music_volume when it ends."""
+    restore back to state.music_volume when it ends. Always cancels any
+    tween already in flight first, so overlapping duck/restore calls can
+    never fight each other."""
     global _fader_tween
+    cancel_fader_tween()
     _fader_tween = {
         "start_pct": _current_fader_pct,
         "target_pct": float(target_pct),

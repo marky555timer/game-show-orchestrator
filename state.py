@@ -5,6 +5,7 @@ import config
 class State:
     MODE_DJ = 0
     MODE_GAME = 1
+    MODE_SPACE_INVADERS = 2
 
     def __init__(self):
         self.mode = self.MODE_DJ
@@ -76,6 +77,12 @@ class State:
         self.fixture1_mode = "off"  # off | win | loss
         self.fixture1_mode_set_at = 0.0
 
+        # --- DMX amplified grade feedback: brief ALL-fixture strobe pulse
+        # (fixtures 2-11) the instant an answer is graded, alongside
+        # Fixture 1's own latched win/loss lamp above.
+        self.fixture_flash_mode = ""   # "" | "win" | "loss"
+        self.fixture_flash_until = 0.0
+
         # --- DJ-mode uplighting (fixtures 2-11) ---
         self.dj_theme_index = 0
         self.dj_color_index = 0
@@ -116,6 +123,15 @@ class State:
         self.price_game_audio_is_first = True
         self.price_game_audio_capped = False  # True once the repeat-cap early fade has fired
 
+        # --- Price Game Mode: product repetition cooldown ---
+        # List of {"product": str, "round": int} entries, oldest first --
+        # "round" is a snapshot of quiz_score_total (trivia rounds graded
+        # this session) at the moment the product was asked. A product is
+        # excluded from the AI prompt's candidate pool while
+        # quiz_score_total - entry["round"] < config.PRICE_GAME_PRODUCT_COOLDOWN_ROUNDS.
+        # See drivers/price_game_engine.py.
+        self.price_game_product_history = []
+
         # --- DJ mode "Mystery Band" teaser (Section 2) ---
         # Artist keys (lowercased) already asked about via a real question
         # this session -- drivers/factoid_engine.py._apply_active_question()
@@ -147,6 +163,20 @@ class State:
         self.auto_announce_enabled = config.AUTO_ANNOUNCE_ENABLED_BY_DEFAULT
         self.auto_announce_overlay_text = ""    # "v ON" / "v OFF", panel 3
         self.auto_announce_overlay_until = 0.0
+
+        # --- Space Invaders mini-game (DJ-mode Btn1+Btn3 combo Easter egg) ---
+        # Entered/exited/simulated by drivers/space_invaders_engine.py,
+        # rendered by graphics/matrix_canvas.py::_render_space_invaders.
+        self.si_player_x = 0.0
+        self.si_bullets = []          # [{"x","y"}, ...] player projectiles, traveling up
+        self.si_invaders = []         # [{"x","y","alive"}, ...] formation grid
+        self.si_explosions = []       # [{"x","y","started_at"}, ...] brief hit-flash markers
+        self.si_direction = 1         # formation sweep direction: 1 right, -1 left
+        self.si_last_tick_at = 0.0
+        self.si_tick_interval = config.SI_INVADER_TICK_START_SECONDS
+        self.si_last_fire_at = 0.0
+        self.si_score = 0
+        self.si_wave = 1
 
     def set_status(self, msg, duration=2.0):
         self.status_msg = msg

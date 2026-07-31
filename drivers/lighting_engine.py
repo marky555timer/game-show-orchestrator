@@ -137,6 +137,26 @@ def _render_price_strobe(t):
         dmx.set_all_uplights(0, 0, 0, 0)
 
 
+def _render_grade_flash(now):
+    """Amplified game feedback (Section 5): the instant an answer is graded,
+    ALL 10 uplight fixtures (2-11) snap to a brief solid green/red pulse
+    (state.fixture_flash_mode/until, set by inputs/gamepad.py::
+    trigger_big_win/trigger_loss), overriding the normal chase for that
+    short window. Returns True while the pulse is live so the caller skips
+    _render_game_chase for this frame; once fixture_flash_until passes, the
+    chase resumes on its own -- Fixture 1's own win/loss lamp
+    (_render_fixture1) is untouched either way."""
+    if now >= state.fixture_flash_until:
+        return False
+    if state.fixture_flash_mode == "win":
+        dmx.set_all_uplights(255, 0, 255, 0)
+        return True
+    if state.fixture_flash_mode == "loss":
+        dmx.set_all_uplights(255, 255, 0, 0)
+        return True
+    return False
+
+
 def _render_fixture1(t):
     mode = state.fixture1_mode
     if mode == "win":
@@ -163,6 +183,8 @@ def update(now):
         # Reset rule: Fixture 1 is strictly black during DJ mode.
         state.fixture1_mode = "off"
         _render_dj_uplights(now)
+    elif _render_grade_flash(now):
+        pass  # brief ALL-fixture win/loss pulse overrides the chase this frame
     else:
         # GAME_MODE chase, and also the Price Game intro's banner/
         # question-wait phases -- "return to the standard mid-pace chase"

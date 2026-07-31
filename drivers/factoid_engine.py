@@ -692,6 +692,12 @@ def _parse_question_json(text, is_true_false, category=""):
         "category": category,
         "ts": time.time(),
     }
+    # Price Game product-cooldown tracking (Section 3) -- only present when
+    # the prompt asked for it (see _build_price_prompt); harmless no-op key
+    # for every other question shape.
+    product = str(obj.get("product", "")).strip()
+    if product:
+        result["product"] = product[:40]
     return result, None
 
 
@@ -699,16 +705,25 @@ def _parse_question_json(text, is_true_false, category=""):
 # 70s/80s "Price Game" pricing trivia (see drivers/price_game_engine.py for
 # the strobe/banner/question-wait state machine that calls this).
 # ------------------------------------------------------------
-def _build_price_prompt(decade_label, era_years, category):
+def _build_price_prompt(decade_label, era_years, category, avoid_products=None):
+    avoid_clause = ""
+    if avoid_products:
+        avoid_list = ", ".join(avoid_products)
+        avoid_clause = (
+            f" Do NOT pick any of these products -- they were asked about "
+            f"recently and are on cooldown: {avoid_list}."
+        )
     return (
         "You are running a 'Price Is Right'-style pricing trivia bonus "
         f"round for a live DJ show's LED display, themed to the "
         f"{decade_label} ({era_years}). Pick ONE real, era-appropriate "
         f"everyday consumer product from the '{category['label']}' category "
         f"(examples: {category['examples']}), and ask what it cost in that "
-        "decade. Reply with ONLY a "
+        f"decade.{avoid_clause} Reply with ONLY a "
         "single-line JSON object (no markdown fences, no commentary) with "
-        "these keys: \"headline\" (a punchy teaser naming the product, "
+        "these keys: \"product\" (a short canonical name for the specific "
+        "product chosen, e.g. \"Gallon of Milk\", max 40 characters), "
+        "\"headline\" (a punchy teaser naming the product, "
         "max 40 characters, for a scrolling LED sign), \"full\" (a fuller "
         "sentence naming the specific product and decade, max 200 "
         "characters), \"question\" (e.g. \"How much was a box of Kellogg's "
@@ -722,21 +737,25 @@ def _build_price_prompt(decade_label, era_years, category):
     )
 
 
-def fetch_price_question(decade_label, category_index=0):
+def fetch_price_question(decade_label, category_index=0, avoid_products=None):
     """Fetches a single 70s/80s Price Game pricing-trivia question from
     Haiku, in the same result shape _call_ai produces for a normal
     multiple_choice question (so it can be applied via apply_price_question
     -> _apply_active_question like any other quiz question). `category_index`
     rotates round-robin through config.PRICE_GAME_CATEGORIES (driven by
     drivers/price_game_engine.py's session-wide occurrence counter) so
-    consecutive rounds don't keep landing on the same product type. Returns
-    (result_dict, None) on success or (None, reason_str) on failure."""
+    consecutive rounds don't keep landing on the same product type.
+    `avoid_products` (Section 3: product repetition cooldown) is a list of
+    product names still on cooldown -- drivers/price_game_engine.py builds
+    this from state.price_game_product_history and the prompt instructs the
+    model not to pick any of them. Returns (result_dict, None) on success or
+    (None, reason_str) on failure."""
     if not config.ANTHROPIC_API_KEY:
         return None, "AI DISABLED (NO API KEY)"
 
     era_years = "1970-1979" if decade_label == "70s" else "1980-1989"
     category = config.PRICE_GAME_CATEGORIES[category_index % len(config.PRICE_GAME_CATEGORIES)]
-    prompt = _build_price_prompt(decade_label, era_years, category)
+    prompt = _build_price_prompt(decade_label, era_years, category, avoid_products)
 
     text, reason = _post_haiku(prompt, max_tokens=400)
     if text is None:

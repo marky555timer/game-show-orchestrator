@@ -8,6 +8,8 @@ from config import (
     TEMPO_PERIOD_MIN_SECONDS, TEMPO_PERIOD_MAX_SECONDS,
     DJ_THEME_COUNT, DJ_COLOR_PALETTE,
     QUIZ_CELEBRATION_HOLD_SECONDS,
+    DMX_GRADE_FLASH_SECONDS,
+    SI_ENTRY_BUTTONS, SI_EXIT_BUTTONS,
 )
 from state import state
 from drivers.midi_driver import handle_dj_volume
@@ -19,6 +21,7 @@ from drivers import deck_orchestrator
 from drivers import price_game_engine
 from drivers import mystery_band_engine
 from drivers import auto_dj_engine
+from drivers import space_invaders_engine
 from audio.audio_engine import (
     play_processed_sound, raw_buzzer, raw_bigwin, raw_clear, raw_ding,
     raw_coin, raw_buzz_short, stop_previous_audio, reverb_enabled
@@ -63,6 +66,13 @@ def trigger_loss():
     # drivers/lighting_engine.py renders this every frame from state.
     state.fixture1_mode = "loss"
     state.fixture1_mode_set_at = time.time()
+
+    # Amplified feedback: brief solid-red strobe pulse across ALL 10
+    # uplight fixtures (2-11), rendered by
+    # drivers/lighting_engine.py::_render_grade_flash -- Fixture 1 keeps its
+    # own latched "loss" state above regardless of this pulse ending.
+    state.fixture_flash_mode = "loss"
+    state.fixture_flash_until = time.time() + DMX_GRADE_FLASH_SECONDS
 
 def clear_quiz_selection():
     """Physical Btn5 (GAME_MODE-only swap with Btn6, see process_events) /
@@ -186,6 +196,13 @@ def trigger_big_win():
     # return to DJ mode).
     state.fixture1_mode = "win"
     state.fixture1_mode_set_at = time.time()
+
+    # Amplified feedback: brief solid-green strobe pulse across ALL 10
+    # uplight fixtures (2-11), rendered by
+    # drivers/lighting_engine.py::_render_grade_flash -- Fixture 1 keeps its
+    # own latched "win" pulse above regardless of this pulse ending.
+    state.fixture_flash_mode = "win"
+    state.fixture_flash_until = time.time() + DMX_GRADE_FLASH_SECONDS
 
 # ------------------------------------------
 # SECTION 1: QUIZ API GATE (Btn6, DJ mode only)
@@ -429,6 +446,81 @@ def _process_volume_hold():
         _vol_next_repeat = now + VOLUME_HOLD_REPEAT_INTERVAL_SECONDS
 
 # ------------------------------------------
+# SPACE INVADERS: DUAL-BUTTON COMBO DETECTION + HELD-MOVEMENT POLLING
+# ------------------------------------------
+def _joystick_button_held(button_index):
+    """Real-time hardware read (not the event queue) of whether
+    `button_index` is currently pressed on any connected joystick -- used to
+    detect the Btn1+Btn3 combo regardless of which button's JOYBUTTONDOWN
+    event happens to arrive first."""
+    for js in joysticks:
+        try:
+            if js.get_numbuttons() > button_index and js.get_button(button_index):
+                return True
+        except Exception:
+            continue
+    return False
+
+_si_last_move_at = None
+
+def _held_space_invaders_direction():
+    """Polls current input state (not events), mirroring
+    _held_volume_direction()'s style: D-pad/hat, joystick X axis, and the
+    left/right arrow keys (test shim) all move the cannon while held."""
+    keys = pygame.key.get_pressed()
+    if keys[pygame.K_LEFT]:
+        return -1
+    if keys[pygame.K_RIGHT]:
+        return 1
+
+    for js in joysticks:
+        try:
+            hx, _hy = js.get_hat(0)
+        except Exception:
+            hx = 0
+        if hx == 1:
+            return 1
+        if hx == -1:
+            return -1
+
+        try:
+            naxes = js.get_numaxes()
+        except Exception:
+            naxes = 0
+        for axis in (0, 6):
+            if axis >= naxes:
+                continue
+            try:
+                val = js.get_axis(axis)
+            except Exception:
+                continue
+            if val > 0.6:
+                return 1
+            if val < -0.6:
+                return -1
+
+    return 0
+
+def _process_space_invaders_movement():
+    """Called once per frame: advances the cannon at config.SI_PLAYER_SPEED
+    px/sec for as long as a movement control is held. Tracks its own dt
+    (rather than reusing the caller's frame delta) so it stays correct
+    regardless of when in process_events() it's called."""
+    global _si_last_move_at
+    now = time.time()
+    if _si_last_move_at is None:
+        _si_last_move_at = now
+    dt = now - _si_last_move_at
+    _si_last_move_at = now
+
+    if state.mode != state.MODE_SPACE_INVADERS:
+        return
+
+    direction = _held_space_invaders_direction()
+    if direction != 0:
+        space_invaders_engine.move_player(direction, dt)
+
+# ------------------------------------------
 # EVENT DISPATCHER
 # ------------------------------------------
 def process_events():
@@ -448,6 +540,8 @@ def process_events():
     price_game_engine.update(time.time())
     mystery_band_engine.update(time.time())
     auto_dj_engine.update(time.time())
+    if state.mode == state.MODE_SPACE_INVADERS:
+        space_invaders_engine.update(time.time())
 
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
@@ -456,6 +550,21 @@ def process_events():
         elif event.type == pygame.JOYBUTTONDOWN:
             btn = event.button
             print(f"[BUTTON] Raw Button Pressed: {btn}")
+
+            # Space Invaders dual-button entry (Section 1): Btn1 AND Btn3
+            # held simultaneously, DJ mode only. Checked before the normal
+            # single-button DJ actions below -- if the combo actually
+            # fires, this event is fully consumed so Btn1's Auto-Announce
+            # toggle / Btn3's "back" track move never also happen on top
+            # of it. If the other combo button ISN'T currently held, this
+            # falls through to the ordinary single-button handling
+            # untouched.
+            if state.mode == state.MODE_DJ and btn in SI_ENTRY_BUTTONS:
+                other_btn = SI_ENTRY_BUTTONS[1] if btn == SI_ENTRY_BUTTONS[0] else SI_ENTRY_BUTTONS[0]
+                if _joystick_button_held(other_btn):
+                    if _debounced("si_entry"):
+                        space_invaders_engine.enter_space_invaders()
+                    continue
 
             if state.mode == state.MODE_DJ:
                 if btn == 0:  # Physical Btn1: Auto-Announcement ON/OFF toggle
@@ -498,6 +607,13 @@ def process_events():
                 elif btn == 6:      # Physical Btn7: EARLY EXIT -> abort back to DJ_MODE
                     if _debounced(btn):
                         abort_game_mode_early()
+
+            elif state.mode == state.MODE_SPACE_INVADERS:
+                if btn in SI_EXIT_BUTTONS:  # Physical Btn7 or Btn8: IMMEDIATE exit
+                    if _debounced("si_exit"):
+                        space_invaders_engine.exit_space_invaders()
+                else:                        # Any other button: fire
+                    space_invaders_engine.fire()
 
         elif event.type == pygame.JOYHATMOTION:
             hat_x, hat_y = event.value
@@ -564,9 +680,18 @@ def process_events():
                 elif event.key == pygame.K_c:
                     trigger_clear_latches()
 
+            elif state.mode == state.MODE_SPACE_INVADERS:
+                # Keyboard test shim -- left/right movement is polled every
+                # frame in _process_space_invaders_movement() below.
+                if event.key == pygame.K_SPACE:
+                    space_invaders_engine.fire()
+                elif event.key in (pygame.K_7, pygame.K_8):
+                    space_invaders_engine.exit_space_invaders()
+
         elif event.type in (pygame.JOYDEVICEADDED, pygame.JOYDEVICEREMOVED):
             init_joysticks()
 
     _process_volume_hold()
+    _process_space_invaders_movement()
 
     return True

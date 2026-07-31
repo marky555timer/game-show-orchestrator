@@ -161,6 +161,7 @@ def fade_out_game_music(fade_ms=1000):
 # ------------------------------------------------------------
 _announcement_cache = {}    # filename -> Sound
 _announcement_history = []  # recently-played filenames, oldest first
+_announcement_channel = None  # Channel currently playing an announcement, or None
 
 def play_station_announcement():
     """Auto-DJ voice-over transition (drivers/auto_dj_engine.py): randomly
@@ -170,7 +171,7 @@ def play_station_announcement():
     a quiz buzzer/ding elsewhere can never cut it off. Returns the clip's
     duration in seconds so the caller can schedule the overlapping track
     transition 2s before it ends -- 0.0 if no announcement could be played."""
-    global _announcement_history
+    global _announcement_history, _announcement_channel
     try:
         if not os.path.isdir(config.ANNOUNCEMENTS_DIR):
             print(f"[ANNOUNCEMENT ERROR] {config.ANNOUNCEMENTS_DIR} not found on disk")
@@ -193,13 +194,102 @@ def play_station_announcement():
         del _announcement_history[:-config.ANNOUNCEMENT_HISTORY_SIZE]
 
         sound.set_volume(1.0)
-        sound.play()
+        _announcement_channel = sound.play()
         duration = sound.get_length()
         print(f"[ANNOUNCEMENT] Playing {choice!r} ({duration:.1f}s)")
         return duration
     except Exception as e:
         print(f"[ANNOUNCEMENT ERROR] Failed to play station announcement: {e}")
         return 0.0
+
+
+def stop_station_announcement():
+    """Auto-Voice OFF instant mute (Gamepad Btn1,
+    drivers/auto_dj_engine.py::toggle_auto_announce): immediately kills
+    whatever announcement clip is currently playing, if any. Safe to call
+    even if nothing is playing."""
+    global _announcement_channel
+    if _announcement_channel is not None:
+        try:
+            _announcement_channel.stop()
+        except Exception as e:
+            print(f"[ANNOUNCEMENT ERROR] Failed to stop announcement: {e}")
+        _announcement_channel = None
+
+
+def reset_announcement_volume():
+    """Auto-Voice ON (Gamepad Btn1, drivers/auto_dj_engine.py::
+    toggle_auto_announce): resets every cached announcement Sound back to
+    full volume (1.0), guaranteeing a prior mute/duck can never leave the
+    next playback muted or at zero volume."""
+    for sound in _announcement_cache.values():
+        try:
+            sound.set_volume(1.0)
+        except Exception as e:
+            print(f"[ANNOUNCEMENT ERROR] Failed to reset announcement volume: {e}")
+
+
+# ------------------------------------------------------------
+# SPACE INVADERS MINI-GAME: SYNTHESIZED ARCADE SFX
+# ------------------------------------------------------------
+def generate_invader_tick_sound():
+    """Short low blip for each Space Invaders formation step."""
+    sample_rate = 44100
+    n_samples = int(sample_rate * 0.06)
+    buf = array.array('h', [0] * (n_samples * 2))
+    for i in range(n_samples):
+        t = float(i) / sample_rate
+        val = int(20000.0 * math.sin(2.0 * math.pi * 100 * t))
+        fade = max(0.0, 1.0 - (i / n_samples))
+        val = int(val * fade)
+        buf[i * 2] = val
+        buf[i * 2 + 1] = val
+    return pygame.mixer.Sound(buf)
+
+
+def generate_laser_sound():
+    """Quick descending-pitch 'pew' for the player cannon's fired shot."""
+    sample_rate = 44100
+    duration = 0.12
+    n_samples = int(sample_rate * duration)
+    buf = array.array('h', [0] * (n_samples * 2))
+    start_freq, end_freq = 1400.0, 300.0
+    for i in range(n_samples):
+        t = float(i) / sample_rate
+        frac = i / n_samples
+        freq = start_freq + (end_freq - start_freq) * frac
+        fade = max(0.0, 1.0 - frac)
+        val = int(22000.0 * math.sin(2.0 * math.pi * freq * t) * fade)
+        buf[i * 2] = val
+        buf[i * 2 + 1] = val
+    return pygame.mixer.Sound(buf)
+
+
+def generate_explosion_sound():
+    """Short filtered-noise burst for a destroyed invader."""
+    sample_rate = 44100
+    n_samples = int(sample_rate * 0.18)
+    buf = array.array('h', [0] * (n_samples * 2))
+    for i in range(n_samples):
+        fade = max(0.0, 1.0 - (i / n_samples))
+        val = int(random.uniform(-1, 1) * 26000 * fade)
+        buf[i * 2] = val
+        buf[i * 2 + 1] = val
+    return pygame.mixer.Sound(buf)
+
+
+si_tick_sound = generate_invader_tick_sound()
+si_laser_sound = generate_laser_sound()
+si_explosion_sound = generate_explosion_sound()
+
+
+def stop_all_arcade_audio():
+    """Space Invaders IMMEDIATE exit (Btn7/Btn8,
+    drivers/space_invaders_engine.py::exit_space_invaders): hard-stops every
+    active Sound channel with no fade -- unlike stop_previous_audio()'s
+    250ms fadeout, the exit spec calls for an instant cut. pygame.mixer.music
+    (the Price Game bed) is a separate stream and is untouched."""
+    pygame.mixer.stop()
 
 
 def play_processed_sound(sound_asset, volume=1.0):

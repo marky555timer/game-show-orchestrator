@@ -938,5 +938,33 @@
   "nization se": [
     "I cannot clean this text as i...",
     "Artist. The text \"nization se..."
+  ],
+  "z| gto 5": [
+    "I cannot reliably clean this...",
+    "gto 5\" doesn't contain enough..."
+  ],
+  "ou Make My Dreams (Come True then pause/play to the \u00a2\nOu Make I \u201c ee": [
+    "You Make My Dreams (Come True)",
+    ""
+  ],
+  "y be paused (not started). To ensure deck will start,\nKhan DMS Dartec:": [
+    "I cannot extract a clean titl...",
+    ""
+  ],
+  "ou Make M \u2014": [
+    "You Make Me",
+    ""
+  ],
+  "i *": [
+    "I'm unable to clean this OCR...",
+    "Artist\" format entry."
+  ],
+  "= \u201cJ": [
+    "I'm unable to process this re...",
+    ""
+  ],
+  "ee\nanization se": [
+    "I cannot provide a cleaned re...",
+    ""
   ]
 }

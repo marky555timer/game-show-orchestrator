@@ -11,6 +11,7 @@ from config import (
     BRANDING_ASSEMBLY_DURATION_SECONDS, DJ_COLOR_PALETTE,
     MYSTERY_QMARK_PHASE_SECONDS, MYSTERY_REVEAL_BLINK_PERIOD_SECONDS,
     TEMPO_PERIOD_DEFAULT_SECONDS,
+    SI_PLAYER_WIDTH, SI_PLAYER_HEIGHT, SI_PLAYER_Y_FROM_BOTTOM, SI_INVADER_SIZE,
 )
 from state import state
 from drivers.rekordbox_driver import get_rekordbox_track
@@ -526,11 +527,45 @@ def _render_quiz_mode(t):
             draw_marquee(matrix_surface, key, text, rect)
 
 
+def _render_space_invaders(t):
+    """Space Invaders mini-game (DJ-mode Btn1+Btn3 combo Easter egg): draws
+    the cannon, invader formation, in-flight bullets, and brief explosion
+    flashes straight from drivers/space_invaders_engine.py's state.si_*
+    fields -- the engine owns all simulation, this only paints the current
+    snapshot. Spans the full matrix canvas rather than a single panel (see
+    config.py's SPACE INVADERS section for why)."""
+    player_top_y = MATRIX_HEIGHT - SI_PLAYER_Y_FROM_BOTTOM - SI_PLAYER_HEIGHT
+    pygame.draw.rect(
+        matrix_surface, RED_FULL,
+        (int(round(state.si_player_x)), player_top_y, SI_PLAYER_WIDTH, SI_PLAYER_HEIGHT),
+    )
+
+    for inv in state.si_invaders:
+        if not inv["alive"]:
+            continue
+        pygame.draw.rect(
+            matrix_surface, RED_FULL,
+            (int(round(inv["x"])), int(round(inv["y"])), SI_INVADER_SIZE, SI_INVADER_SIZE),
+        )
+
+    for b in state.si_bullets:
+        pygame.draw.rect(matrix_surface, RED_FULL, (int(round(b["x"])), int(round(b["y"])), 1, 2))
+
+    for e in state.si_explosions:
+        pygame.draw.rect(
+            matrix_surface, RED_DIM,
+            (int(round(e["x"])) - 1, int(round(e["y"])) - 1, SI_INVADER_SIZE + 2, SI_INVADER_SIZE + 2),
+            1,
+        )
+
+
 def update_matrix_canvas():
     matrix_surface.fill(BLACK)
     t = time.time()
 
-    if state.price_game_active and state.price_game_phase == "banner":
+    if state.mode == state.MODE_SPACE_INVADERS:
+        _render_space_invaders(t)
+    elif state.price_game_active and state.price_game_phase == "banner":
         _render_price_banner(t)
     elif state.mode == state.MODE_DJ:
         _render_dj_mode(t)
