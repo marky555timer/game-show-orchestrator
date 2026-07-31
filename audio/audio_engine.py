@@ -2,6 +2,7 @@ import os
 import math
 import array
 import random
+import threading
 import pygame
 
 import config
@@ -131,29 +132,75 @@ raw_buzz_short = load_sound("audio/buzzShort.wav", fallback_sound_fn=generate_lo
 # immune to stop_previous_audio()'s channel fadeout(250) and to any
 # buzzer/ding/coin SFX stealing a channel, so a quiz-answer sound during the
 # round can never cut the bed off early.
+#
+# Tween-loop bug fix: this bed used to be able to fade out, get its channel
+# faders reset, then tween back down and repeat -- because nothing stopped
+# a stray second start/fade call from reviving a stream that had already
+# been faded. _game_music_active is now the single source of truth for
+# "is the bed currently playing": play_random_game_music() is a no-op while
+# it's already True, and fade_out_game_music() is a no-op once it's already
+# False, so the start/stop pair can only ever fire once per round.
+_game_music_active = False
+_game_music_kill_timer = None
+_game_music_lock = threading.Lock()
+
+
 def play_random_game_music():
     """Price Game Mode entry (drivers/price_game_engine.py): randomly picks
     one of the 3 background tracks and loops it until fade_out_game_music()
     is called. A missing file is logged and skipped rather than crashing
-    the round."""
-    path = random.choice(config.GAME_MUSIC_PATHS)
-    try:
-        if not os.path.exists(path):
-            print(f"[AUDIO ERROR] {path} not found on disk -- Price Game music skipped")
+    the round. Idempotent -- ignored if the bed is already playing, so a
+    duplicate entry call can never stack a second loop on top."""
+    global _game_music_active, _game_music_kill_timer
+    with _game_music_lock:
+        if _game_music_active:
+            print("[AUDIO] Price Game music already active -- ignoring duplicate start request.")
             return
-        pygame.mixer.music.load(path)
-        pygame.mixer.music.play(loops=-1)
-        print(f"[AUDIO] Price Game background music -> {path}")
-    except Exception as e:
-        print(f"[AUDIO ERROR] Failed to play Price Game music {path}: {e}")
+        if _game_music_kill_timer is not None:
+            _game_music_kill_timer.cancel()
+            _game_music_kill_timer = None
+
+        path = random.choice(config.GAME_MUSIC_PATHS)
+        try:
+            if not os.path.exists(path):
+                print(f"[AUDIO ERROR] {path} not found on disk -- Price Game music skipped")
+                return
+            pygame.mixer.music.load(path)
+            pygame.mixer.music.play(loops=-1)
+            _game_music_active = True
+            print(f"[AUDIO] Price Game background music -> {path}")
+        except Exception as e:
+            print(f"[AUDIO ERROR] Failed to play Price Game music {path}: {e}")
 
 
 def fade_out_game_music(fade_ms=1000):
-    """Smoothly fades out and stops the Price Game background bed."""
-    try:
-        pygame.mixer.music.fadeout(fade_ms)
-    except Exception as e:
-        print(f"[AUDIO ERROR] Failed to fade out Price Game music: {e}")
+    """Smoothly fades out and stops the Price Game background bed exactly
+    once. A background timer explicitly kills the mixer.music stream
+    fade_ms after this fires (rather than trusting pygame's own fadeout
+    bookkeeping alone), guaranteeing the playback thread/stream is fully
+    stopped and can't be left in a state where a stray re-trigger revives
+    it into another duck/tween cycle."""
+    global _game_music_active, _game_music_kill_timer
+    with _game_music_lock:
+        if not _game_music_active:
+            return  # already faded/stopped -- nothing to unhook
+        _game_music_active = False
+
+        try:
+            pygame.mixer.music.fadeout(fade_ms)
+        except Exception as e:
+            print(f"[AUDIO ERROR] Failed to fade out Price Game music: {e}")
+
+        def _kill():
+            try:
+                pygame.mixer.music.stop()
+            except Exception:
+                pass
+
+        timer = threading.Timer(max(0.0, fade_ms) / 1000.0 + 0.05, _kill)
+        timer.daemon = True
+        timer.start()
+        _game_music_kill_timer = timer
 
 
 # ------------------------------------------------------------

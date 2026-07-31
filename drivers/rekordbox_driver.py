@@ -364,6 +364,26 @@ class RekordboxSanitizedOcrDriver:
                 pass
         return None
 
+    def _rekordbox_behind_canvas(self, rect):
+        """Token-drain safeguard: the canvas simulator (graphics/matrix_canvas.py)
+        is pinned Always-On-Top at screen (0, 0), sized config.WINDOW_W x
+        config.WINDOW_H -- every OCR crop ratio is measured against
+        Rekordbox sitting in that footprint. If Rekordbox isn't found, is
+        minimized, or has been moved off from behind the canvas, its rect
+        won't overlap that footprint, which means the crop coordinates are
+        meaningless -- OCR would just be reading garbage off whatever's
+        actually on screen there and burning AI cleanup credits sanitizing
+        non-sequitur text. Returns False in all of those cases so the
+        caller can suppress the capture entirely instead."""
+        if rect is None:
+            return False
+        canvas_right, canvas_bottom = config.WINDOW_W, config.WINDOW_H
+        rb_right = rect["left"] + rect["width"]
+        rb_bottom = rect["top"] + rect["height"]
+        overlap_w = min(rb_right, canvas_right) - max(rect["left"], 0)
+        overlap_h = min(rb_bottom, canvas_bottom) - max(rect["top"], 0)
+        return overlap_w > 0 and overlap_h > 0
+
     def _detect_active_deck_visually(self, sct, rect):
         """HYPER-SENSITIVE PIXEL WATCH: ANY RGB shift forces immediate deck toggle."""
         try:
@@ -458,14 +478,19 @@ class RekordboxSanitizedOcrDriver:
     def _poll_loop(self):
         print("[OCR DRIVER] Hyper-Sensitive Pixel Engine & Heartbeat Active.")
         last_ocr_time = 0.0
+        last_suppress_log_at = 0.0
 
         with mss.mss() as sct:
             while self._running:
                 try:
                     rect = self._get_rekordbox_window_rect()
-                    if not rect:
-                        m = sct.monitors[1]
-                        rect = {"top": m["top"], "left": m["left"], "width": m["width"], "height": m["height"]}
+                    if not self._rekordbox_behind_canvas(rect):
+                        now = time.time()
+                        if now - last_suppress_log_at >= 2.0:
+                            last_suppress_log_at = now
+                            print("OCR SUPPRESSED: Target window behind canvas is not Rekordbox. Pausing AI lookups.")
+                        time.sleep(0.2)
+                        continue
 
                     # 1. Exact Pixel Crossfader Sampling (50Hz)
                     self._detect_active_deck_visually(sct, rect)

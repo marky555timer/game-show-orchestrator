@@ -149,17 +149,19 @@ def _update_price_game_audio(now):
 
     # Section 1 (music rules): repeat occurrences cap the bed early. The
     # instant the shortened bed fades, immediately tween channel1/channel2
-    # faders back up to state.music_volume -- previously this only silenced
-    # the music and left the main track ducked to 0% (dead air) for the
-    # rest of the round, since the fader restore only fired later on the
-    # round's own end-of-round path.
+    # faders back up to state.music_volume. Routed through the single
+    # _end_price_game_audio() path (rather than duplicating its fade/tween
+    # calls here) so this can only ever fire once per round -- the earlier
+    # version's duplicate call site is exactly what let a stray later call
+    # (e.g. the round's own end-of-round path, still seeing
+    # price_game_audio_active == True) re-fire the fade/tween pair and loop.
     if (not state.price_game_audio_is_first and not state.price_game_audio_capped
             and now - state.price_game_audio_started_at >= config.PRICE_GAME_MUSIC_REPEAT_CAP_SECONDS):
         print(f"[PRICE GAME] Repeat-occurrence {config.PRICE_GAME_MUSIC_REPEAT_CAP_SECONDS}s cap "
               f"reached -- fading bed early and restoring main track faders.")
-        fade_out_game_music()
-        midi_driver.tween_channel_faders_to(state.music_volume, config.PRICE_GAME_AUDIO_TWEEN_SECONDS)
         state.price_game_audio_capped = True
+        _end_price_game_audio()
+        return
 
     if state.mode == state.MODE_GAME:
         state.price_game_audio_entered_game = True

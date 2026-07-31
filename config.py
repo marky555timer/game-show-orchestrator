@@ -469,44 +469,6 @@ AUTODJ_ANNOUNCE_LEAD_SECONDS = 2.0
 AUTODJ_TOGGLE_OVERLAY_SECONDS = 1.5
 
 # ==========================================
-# AUTO-DJ: FLX4 USB AUDIO "DEAD AIR" FAILSAFE
-# ==========================================
-# Hardware safety net in case rekordbox.xml metadata / the track timer both
-# fail to catch an ending track: a background thread (audio/dead_air_sniffer.py)
-# passively samples the Pioneer DDJ-FLX4's USB audio input via sounddevice
-# and computes the RMS level of each short buffer. If the signal reads below
-# AUTODJ_DEAD_AIR_RMS_THRESHOLD continuously for
-# AUTODJ_DEAD_AIR_REQUIRED_SILENT_SECONDS, and Auto-DJ hasn't already armed
-# a transition, the track transition fires immediately rather than risk dead
-# air. See drivers/auto_dj_engine.py::_dead_air_failsafe.
-
-# Substring matched (case-insensitively) against sounddevice.query_devices()
-# names to locate the FLX4's input device index.
-AUTODJ_DEAD_AIR_DEVICE_NAME_HINT = "DDJ-FLX4"
-
-AUTODJ_DEAD_AIR_SAMPLE_RATE = 44100
-# Each background sample is a short stereo buffer (200-500ms).
-AUTODJ_DEAD_AIR_SAMPLE_SECONDS = 0.3
-
-# RMS levels below this (float32 samples, range [-1.0, 1.0]) are treated as
-# silence.
-AUTODJ_DEAD_AIR_RMS_THRESHOLD = 0.005
-
-# The FLX4 input has to read continuously below the RMS threshold for this
-# long before the failsafe trusts it -- absorbs normal inter-track gaps
-# (beat drops, quiet intros) without misfiring.
-AUTODJ_DEAD_AIR_REQUIRED_SILENT_SECONDS = 2.0
-
-# Double-skip fix: once the failsafe fires, _start_timer() re-arms
-# state.auto_dj_transition_at back to 0 immediately, and the just-faded-in
-# track's input level can still read near-silent for a moment while the
-# crossfade completes -- without this lockout, that residual quiet reading
-# would trip the failsafe a second time and send a second "Next Track"
-# command. Blocks any further failsafe fire for this many seconds after one
-# fires.
-AUTODJ_DEAD_AIR_LOCKOUT_SECONDS = 5.0
-
-# ==========================================
 # AUTO-DJ: STATION ANNOUNCEMENT VOICE-OVERS
 # ==========================================
 # Auto-DJ track transitions overlay a randomly-selected station-announcement

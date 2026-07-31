@@ -1,6 +1,16 @@
+import os
 import time
 import random
 import pygame
+
+# Dev canvas simulator: initialize the window pinned to the screen's
+# top-left corner (0, 0) BEFORE pygame.display.set_mode() creates it --
+# SDL reads this env var at window-creation time, so it has to be set
+# first. Fixed placement keeps the OCR pixel/coordinate math in
+# drivers/rekordbox_driver.py (crop ratios measured against Rekordbox's own
+# window position) from drifting if the simulator window ever gets dragged.
+os.environ["SDL_VIDEO_WINDOW_POS"] = "0,0"
+
 from config import (
     MATRIX_WIDTH, MATRIX_HEIGHT, PIXEL_SCALE, GAP, WINDOW_W, WINDOW_H,
     RED_FULL, RED_DIM, RED_OFF, BLACK, PANELS, TOP_COMBINED,
@@ -29,6 +39,29 @@ from graphics.animations import (
 # Initialize Pygame Display Engine
 screen = pygame.display.set_mode((WINDOW_W, WINDOW_H))
 pygame.display.set_caption("6-Panel Game Show Matrix Simulator")
+
+
+def _pin_window_always_on_top():
+    """Pygame has no native Always-On-Top flag, so pin the actual OS window
+    via the Win32 API once it exists -- keeps the simulator layered above
+    Rekordbox and every other desktop window so its fixed top-left position
+    (and therefore the OCR crop coordinates measured against it) can never
+    get buried/occluded by a window click. Best-effort: a non-Windows box
+    or a missing pywin32 install just leaves the window in normal Z-order."""
+    try:
+        import win32gui
+        import win32con
+        hwnd = pygame.display.get_wm_info()["window"]
+        win32gui.SetWindowPos(
+            hwnd, win32con.HWND_TOPMOST, 0, 0, 0, 0,
+            win32con.SWP_NOMOVE | win32con.SWP_NOSIZE,
+        )
+        print("[CANVAS] Simulator window pinned Always-On-Top at (0, 0).")
+    except Exception as e:
+        print(f"[CANVAS] Could not set Always-On-Top (non-Windows or pywin32 missing?): {e}")
+
+
+_pin_window_always_on_top()
 
 matrix_surface = pygame.Surface((MATRIX_WIDTH, MATRIX_HEIGHT))
 

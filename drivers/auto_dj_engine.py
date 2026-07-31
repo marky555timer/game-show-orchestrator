@@ -4,7 +4,6 @@ import config
 from state import state
 from drivers import deck_orchestrator
 from drivers.rekordbox_driver import get_rekordbox_track, rb_driver
-from audio import dead_air_sniffer
 from audio.audio_engine import (
     play_station_announcement, stop_station_announcement, reset_announcement_volume,
 )
@@ -38,20 +37,14 @@ from audio.audio_engine import (
 
 
 # ==========================================
-# FLX4 USB AUDIO "DEAD AIR" FAILSAFE (Section 2)
+# FLX4 USB AUDIO "DEAD AIR" FAILSAFE -- REMOVED
 # ==========================================
-# Hardware safety net that's completely independent of rekordbox.xml
-# metadata and the track-duration timer above: audio/dead_air_sniffer.py
-# runs a background thread that passively samples the Pioneer DDJ-FLX4's
-# USB audio input and reports whether the RMS level has stayed below
-# config.AUTODJ_DEAD_AIR_RMS_THRESHOLD for
-# config.AUTODJ_DEAD_AIR_REQUIRED_SILENT_SECONDS straight -- a strong signal
-# that the normal metadata-driven auto-advance path has silently failed --
-# so, if Auto-DJ is active and hasn't already armed a transition this
-# cycle, fire the track transition immediately rather than risk dead air.
-dead_air_sniffer.start()
-
-_dead_air_lockout_until = 0.0
+# Direct hardware sampling (audio/dead_air_sniffer.py, sounddevice + RMS)
+# was removed: Rekordbox takes exclusive ASIO control of the Pioneer
+# DDJ-FLX4, so any attempt to open the physical/virtual audio interface
+# alongside it fails with [PaErrorCode -9985] Device unavailable. Auto-DJ
+# now relies strictly on the software track-duration timer + deck
+# playback state/metadata below to drive transitions.
 
 # Single-trigger guard (race-condition fix): _start_timer() bumps
 # _transition_cycle every time it opens a fresh tracking window for the
@@ -61,29 +54,6 @@ _dead_air_lockout_until = 0.0
 # a no-op instead of sending a second "Next Track".
 _transition_cycle = 0
 _last_fired_cycle = -1
-
-
-def _dead_air_failsafe(track_key, now):
-    """Returns True if it fired an immediate transition. Reads the FLX4
-    sniffer thread's is_dead_air() flag (already debounced to
-    config.AUTODJ_DEAD_AIR_REQUIRED_SILENT_SECONDS of continuous silence by
-    the sniffer itself) and locks out for config.AUTODJ_DEAD_AIR_LOCKOUT_SECONDS
-    after firing so the residual quiet during the just-armed crossfade can't
-    trip a second "Next Track" (see config.py's AUTODJ_DEAD_AIR_LOCKOUT_SECONDS
-    comment for why)."""
-    global _dead_air_lockout_until
-    if state.auto_dj_transition_at:
-        return False  # a transition is already armed/triggered this cycle
-    if now < _dead_air_lockout_until:
-        return False  # debounce lock: a failsafe transition just fired
-    if not dead_air_sniffer.is_dead_air():
-        return False
-
-    print("DEAD AIR DETECTED ON FLX4 USB INPUT: Triggering Auto-DJ Failsafe Transition")
-    dead_air_sniffer.acknowledge_dead_air()
-    _dead_air_lockout_until = now + config.AUTODJ_DEAD_AIR_LOCKOUT_SECONDS
-    _fire_transition(track_key)
-    return True
 
 
 def _lookup_duration(title):
@@ -173,9 +143,7 @@ def _fire_transition(track_key):
     while the crossfade plays out and OCR catches up to the new track.
 
     Single-trigger guard: refuses to act twice within the same
-    _transition_cycle (see the module-level comment above), regardless of
-    which caller -- the timer path or the FLX4 dead-air failsafe -- reaches
-    it first."""
+    _transition_cycle (see the module-level comment above)."""
     global _last_fired_cycle
     if _last_fired_cycle == _transition_cycle:
         print("[AUTO-DJ] Transition already fired for this track cycle -- ignoring duplicate trigger.")
@@ -197,15 +165,13 @@ def update(now):
         _start_timer(track_key, title)
         return
 
-    if not state.auto_dj_enabled or state.mode != state.MODE_DJ:
+    # Auto-DJ keeps running (timers, announcements, transitions) regardless
+    # of state.mode -- Quiz Mode gameplay must never suspend it, so the only
+    # gate left here is the on/off toggle itself.
+    if not state.auto_dj_enabled:
         return
     if deck_orchestrator.has_pending_move():
         return  # a crossfade (manual or auto) is already in flight
-
-    # Section 2: visual dead-air failsafe -- independent of the metadata/
-    # timer logic below, checked every cycle before it.
-    if _dead_air_failsafe(track_key, now):
-        return
 
     # Phase 2: the announcement (or the no-VO fallback) has already fired
     # this cycle -- just wait for its scheduled overlap moment.
