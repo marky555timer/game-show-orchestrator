@@ -82,6 +82,7 @@ _serial_link = None  # serial.Serial once connected, else None
 _last_scan_time = 0.0
 _connect_time = 0.0
 _last_send_time = 0.0
+_udp_unreachable = False  # logs only on the down/up transition, not every throttled send
 
 
 def _find_esp32_port():
@@ -184,7 +185,25 @@ def send_frame(matrix_surface):
                 pass
             _serial_link = None
 
-    _sock.sendto(bytes(payload), (_BROADCAST_ADDR, _UDP_PORT))
+    global _udp_unreachable
+    try:
+        _sock.sendto(bytes(payload), (_BROADCAST_ADDR, _UDP_PORT))
+        if _udp_unreachable:
+            _udp_unreachable = False
+            print("[LED BRIDGE] WiFi UDP reachable again.")
+    except OSError as e:
+        # Confirmed 2026-08-14: this crashed the whole app on a real
+        # autostart boot -- WiFi hadn't finished associating yet (the
+        # interface has no route to the broadcast address until it has),
+        # and send_frame() runs on every render tick with nothing above it
+        # catching an unguarded socket error. Same "fire-and-forget, a
+        # dropped frame just gets superseded by the next one" philosophy
+        # as the serial write above -- log the transition once, not every
+        # throttled attempt, since this can repeat for several seconds
+        # while the network comes up.
+        if not _udp_unreachable:
+            _udp_unreachable = True
+            print(f"[LED BRIDGE] WiFi UDP unreachable ({e}) -- will keep retrying silently.")
 
 
 print("[LED BRIDGE] Ready (USB serial preferred, WiFi UDP fallback).")
