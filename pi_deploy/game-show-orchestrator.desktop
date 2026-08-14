@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=Game Show Orchestrator
+Comment=Trivia Night DJ/quiz/DMX/LED show controller
+Exec=/home/mark/game-show-orchestrator/start.sh
+Icon=/usr/share/icons/Adwaita/scalable/categories/applications-multimedia-symbolic.svg
+Terminal=false
+X-GNOME-Autostart-enabled=true

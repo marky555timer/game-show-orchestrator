@@ -1,0 +1,11 @@
+numpy
+pillow
+pygame-ce
+requests
+fastapi
+python-multipart
+uvicorn
+qrcode[pil]
+psutil
+mutagen
+pyserial
