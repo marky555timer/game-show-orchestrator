@@ -92,11 +92,19 @@ def get_scroll_offset(key, text, box_width, speed=None, pause=None):
         return scroll_distance
 
 
-def draw_marquee(surface, key, text, rect, color=RED_FULL, invert=False, align="left"):
+def draw_marquee(surface, key, text, rect, color=RED_FULL, invert=False, align="left",
+                 scroll=True):
     """Draws one line of text clipped/scrolled to fit `rect` = (x, y, w, h).
-    Static + optionally centered if it already fits; scrolls forever if not."""
+    Static + optionally centered if it already fits; scrolls forever if not.
+
+    `scroll=False` truncates overlong text instead of scrolling it. Use it
+    where the room only gets a moment to read the line and a moving target
+    is worse than a clipped one -- Price Game item names and prices, where
+    four values also have to be compared against each other at a glance."""
     x0, y0, w, h = rect
     text = str(text)
+    if not scroll:
+        text = fit_text(text, w)
 
     if invert:
         pygame.draw.rect(surface, color, (x0, y0, w, h))
@@ -111,6 +119,21 @@ def draw_marquee(surface, key, text, rect, color=RED_FULL, invert=False, align="
 
     offset = get_scroll_offset(key, text, w)
     draw_bitmap_text(surface, text, x0 - offset, draw_y, color=color, invert=invert, clip_rect=rect)
+
+
+def fit_text(text, box_width):
+    """Longest leading run of `text` that fits inside box_width pixels.
+    Glyphs are variable-width, so this measures rather than assuming a
+    character count."""
+    text = str(text)
+    if text_width(text) <= box_width:
+        return text
+    out = ""
+    for char in text:
+        if text_width(out + char) > box_width:
+            break
+        out += char
+    return out
 
 
 def wrap_two_lines(text, box_width):

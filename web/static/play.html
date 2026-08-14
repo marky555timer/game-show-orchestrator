@@ -1,0 +1,349 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Play Along</title>
+<style>
+  :root { color-scheme: dark; }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; padding: 16px 16px 48px;
+    background: #0b0b0d; color: #f2f2f2;
+    font-family: -apple-system, Segoe UI, Roboto, sans-serif;
+    text-align: center;
+  }
+  h1 { font-size: 1.1rem; text-transform: uppercase; letter-spacing: .08em; color: #ff3b30; margin: 0 0 16px; }
+  section { background: #17171a; border-radius: 10px; padding: 14px; margin: 0 auto 14px; max-width: 380px; }
+  #qr-block img { width: 160px; height: 160px; border-radius: 8px; background: #fff; padding: 6px; }
+  #qr-block p { font-size: .8rem; color: #999; margin: 8px 0 0; }
+  input[type=text] {
+    width: 100%; padding: 14px 12px; border-radius: 8px; border: 1px solid #333;
+    background: #202024; color: #f2f2f2; font-size: 1.4rem; text-align: center;
+    text-transform: uppercase; letter-spacing: .2em;
+  }
+  button { cursor: pointer; }
+  .btn { padding: 12px 14px; border-radius: 8px; border: 1px solid #333; background: #202024; color: #f2f2f2; font-size: .95rem; width: 100%; margin-top: 10px; }
+  .btn.primary { background: #ff3b30; border-color: #ff3b30; color: #fff; font-weight: 700; }
+  .choice { width: 100%; text-align: left; padding: 14px 14px; margin-bottom: 8px; border-radius: 8px;
+            border: 1px solid #333; background: #202024; color: #f2f2f2; font-size: 1.05rem; }
+  .choice.selected { border-color: #ff3b30; background: #331414; }
+  .choice.correct { border-color: #3ba55c; background: #1a4a2a; color: #cfffd8; }
+  .choice:disabled { opacity: .55; }
+  .choice.correct:disabled { opacity: 1; }
+  .correct-message { font-size: 1.05rem; font-weight: 700; color: #3ba55c; margin-bottom: 10px; }
+  .leaderboard { text-align: left; font-size: .95rem; margin-top: 10px; }
+  .leaderboard-title { font-weight: 700; text-transform: uppercase; letter-spacing: .05em; border-bottom: 1px solid #444; padding-bottom: 6px; margin-bottom: 4px; }
+  .leaderboard-row { display: flex; justify-content: space-between; padding: 4px 0; border-bottom: 1px solid #222; }
+  .leaderboard-row.me { font-weight: 700; color: #ff3b30; }
+  .leaderboard .rank { color: #999; width: 1.5em; }
+  .leaderboard-row.me .rank { color: #ff3b30; }
+  .question { font-size: 1.1rem; margin-bottom: 14px; }
+  .playing-as { font-size: .85rem; color: #999; margin-bottom: 4px; }
+  .score { font-size: 1.8rem; font-weight: 700; color: #fff; }
+  .status { font-size: .9rem; color: #999; margin: 10px 0; }
+  .waiting-title { font-size: 1.5rem; font-weight: 700; color: #f2f2f2; margin: 10px 0; }
+  .rename-link { font-size: .75rem; color: #777; text-decoration: underline; background: none; border: none; padding: 4px; margin-top: 4px; }
+  .hidden { display: none; }
+  .win-message { font-size: 1.15rem; font-weight: 700; color: #ff3b30; margin-bottom: 14px; }
+  .bonus-message { font-size: 1.05rem; font-weight: 700; color: #ffd23b; margin-bottom: 10px; }
+  .timer-track { width: 100%; height: 6px; border-radius: 3px; background: #202024; overflow: hidden; margin-bottom: 10px; }
+  .timer-fill { height: 100%; background: #ff3b30; transition: width .3s linear; }
+</style>
+</head>
+<body>
+  <h1>Play Along</h1>
+
+  <section id="qr-block">
+    <img id="qr-img" src="/api/quiz/qr" alt="QR code">
+    <p>Scan to invite others -- same page, same game.</p>
+  </section>
+
+  <section id="signup-section">
+    <div class="playing-as">Enter your initials to join</div>
+    <input type="text" id="initials-input" maxlength="3" placeholder="ABC" autocomplete="off">
+    <button class="btn primary" onclick="join()">Join Game</button>
+  </section>
+
+  <section id="play-section" class="hidden">
+    <div class="playing-as">
+      Playing as <b id="my-initials">---</b> (<span class="score" id="my-score">0</span> pts)
+    </div>
+    <div id="goal-inline" class="status" style="margin-top:0"></div>
+    <button class="rename-link" onclick="renamePrompt()">change initials</button>
+
+    <div id="win-message" class="win-message hidden"></div>
+    <div id="bonus-message" class="bonus-message hidden"></div>
+    <div id="goal-message" class="status hidden"></div>
+
+    <div id="intermission-block" class="hidden">
+      <div class="win-message">Intermission</div>
+      <div id="intermission-countdown" class="score" style="margin-bottom:10px">5:00</div>
+      <div class="status">Scores are reset -- next game starts soon.</div>
+    </div>
+
+    <div id="waiting-block" class="status">
+      <div class="waiting-title" id="waiting-title">Waiting for the next question&hellip;</div>
+      <div id="waiting-leaderboard" class="leaderboard"></div>
+    </div>
+
+    <div id="question-block" class="hidden">
+      <div class="timer-track"><div class="timer-fill" id="timer-fill" style="width:100%"></div></div>
+      <div class="question" id="question-text"></div>
+      <div id="correct-message" class="correct-message hidden"></div>
+      <div id="choices"></div>
+      <button class="btn primary hidden" id="lock-btn" onclick="lockAnswer()">Lock Answer</button>
+      <div class="status hidden" id="locked-status">Locked in! Waiting for the round to end&hellip;</div>
+    </div>
+  </section>
+
+<script>
+let playerId = localStorage.getItem('player_id');
+let lastRoundId = null;
+let mySelection = -1;
+let lastChoices = [];
+let lastCorrectIndex = -1;
+let lastLocked = false;
+
+async function api(path, opts) {
+  try {
+    const res = await fetch(path, opts);
+    return await res.json();
+  } catch (e) {
+    return null;
+  }
+}
+
+async function join() {
+  const initials = document.getElementById('initials-input').value.trim();
+  if (!initials) return;
+  const d = await api('/api/player/join', {
+    method: 'POST', headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({initials}),
+  });
+  if (!d || !d.ok) return;
+  playerId = d.player_id;
+  localStorage.setItem('player_id', playerId);
+  showPlayView(d.initials, 0);
+}
+
+async function renamePrompt() {
+  const initials = prompt('New initials (max 3 letters):');
+  if (!initials) return;
+  const d = await api('/api/player/rename', {
+    method: 'POST', headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({player_id: playerId, initials}),
+  });
+  if (d && d.ok) document.getElementById('my-initials').textContent = d.initials;
+}
+
+function showPlayView(initials, score) {
+  document.getElementById('signup-section').classList.add('hidden');
+  document.getElementById('play-section').classList.remove('hidden');
+  document.getElementById('my-initials').textContent = initials;
+  document.getElementById('my-score').textContent = score;
+}
+
+async function selectChoice(index) {
+  const d = await api('/api/player/select', {
+    method: 'POST', headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({player_id: playerId, index}),
+  });
+  if (d && d.ok) {
+    mySelection = index;
+    renderChoices(lastChoices, lastCorrectIndex, lastLocked);
+    document.getElementById('lock-btn').classList.remove('hidden');
+  }
+}
+
+async function lockAnswer() {
+  const d = await api('/api/player/lock', {
+    method: 'POST', headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({player_id: playerId}),
+  });
+  if (d && d.ok) {
+    document.getElementById('lock-btn').classList.add('hidden');
+    document.getElementById('locked-status').classList.remove('hidden');
+    document.querySelectorAll('.choice').forEach(b => b.disabled = true);
+  }
+}
+
+function renderChoices(choices, correctIndex, locked) {
+  lastChoices = choices;
+  const box = document.getElementById('choices');
+  box.innerHTML = '';
+  choices.forEach((text, i) => {
+    const b = document.createElement('button');
+    let cls = 'choice';
+    if (i === mySelection) cls += ' selected';
+    // Green correct-answer feedback once graded (item 17) -- only once
+    // locked, so the answer is never revealed while the round is live.
+    if (locked && i === correctIndex) cls += ' correct';
+    b.className = cls;
+    b.textContent = "ABCD"[i] + '. ' + text;
+    b.onclick = () => selectChoice(i);
+    box.appendChild(b);
+  });
+}
+
+function renderLeaderboard(leaderboard, winScore) {
+  const box = document.getElementById('waiting-leaderboard');
+  if (!leaderboard || !leaderboard.length) {
+    box.innerHTML = '';
+    return;
+  }
+  const rows = leaderboard.map((p, i) => {
+    const isMe = p.player_id === playerId;
+    return `<div class="leaderboard-row${isMe ? ' me' : ''}"><span><span class="rank">${i + 1}.</span> ${p.initials}</span><span>${p.score}</span></div>`;
+  }).join('');
+  const title = winScore ? `Leaderboard (first to ${winScore} wins)` : 'Leaderboard';
+  box.innerHTML = `<div class="leaderboard-title">${title}</div>${rows}`;
+}
+
+async function poll() {
+  if (!playerId) return;
+  const d = await api('/api/player/question?player_id=' + encodeURIComponent(playerId));
+  if (!d) return;
+  if (!d.ok) {
+    // Server restarted or otherwise forgot us -- fall back to sign-up.
+    localStorage.removeItem('player_id');
+    playerId = null;
+    document.getElementById('play-section').classList.add('hidden');
+    document.getElementById('signup-section').classList.remove('hidden');
+    return;
+  }
+
+  document.getElementById('my-score').textContent = d.score;
+  lastCorrectIndex = d.correct_index;
+  lastLocked = d.locked_globally;
+
+  // Persistent goal line, shown on every page/view (not just the win
+  // screen) so players always know how many points they need.
+  if (d.win_score) {
+    document.getElementById('goal-inline').textContent = `Goal: ${d.win_score} pts to win`;
+  }
+
+  const winBox = document.getElementById('win-message');
+  if (d.win_message) {
+    winBox.textContent = d.win_message;
+    winBox.classList.remove('hidden');
+  } else {
+    winBox.classList.add('hidden');
+  }
+
+  const bonusBox = document.getElementById('bonus-message');
+  if (d.bonus_message) {
+    bonusBox.textContent = d.bonus_message;
+    bonusBox.classList.remove('hidden');
+  } else {
+    bonusBox.classList.add('hidden');
+  }
+  // Goal-score line: only shown alongside the win message, not on every
+  // poll, so it doesn't clutter the normal play view.
+  const goalBox = document.getElementById('goal-message');
+  if (d.win_message && d.win_score) {
+    goalBox.textContent = `Goal: ${d.win_score} pts to win`;
+    goalBox.classList.remove('hidden');
+  } else {
+    goalBox.classList.add('hidden');
+  }
+
+  if (d.round_id !== lastRoundId) {
+    lastRoundId = d.round_id;
+    mySelection = d.selected_index;
+    document.getElementById('lock-btn').classList.add('hidden');
+    document.getElementById('locked-status').classList.add('hidden');
+  }
+
+  const waiting = document.getElementById('waiting-block');
+  const qBlock = document.getElementById('question-block');
+  const intermissionBlock = document.getElementById('intermission-block');
+
+  // Post-win intermission: takes over the whole view (no question, no
+  // leaderboard-while-waiting) until the countdown ends. Scores are
+  // already reset server-side by then (drivers/win_sequence_engine.py).
+  if (d.intermission_active) {
+    waiting.classList.add('hidden');
+    qBlock.classList.add('hidden');
+    intermissionBlock.classList.remove('hidden');
+    const remaining = Math.max(0, Math.round(d.intermission_remaining_seconds || 0));
+    const mm = Math.floor(remaining / 60);
+    const ss = String(remaining % 60).padStart(2, '0');
+    document.getElementById('intermission-countdown').textContent = `${mm}:${ss}`;
+    return;
+  }
+  intermissionBlock.classList.add('hidden');
+
+  // The win sequence (music duck + applause) forces every client straight
+  // to the leaderboard/congratulations view the instant it starts,
+  // regardless of whether a question reveal is still within its normal
+  // hold window -- the room should see the final standings together, not
+  // some phones still mid-reveal on the last question.
+  if (!d.active || d.win_message) {
+    waiting.classList.remove('hidden');
+    qBlock.classList.add('hidden');
+    // The round's fully over (back in DJ mode, no more queued questions
+    // for this song) vs. just between two queued questions on the same
+    // song -- the latter still has another question coming any moment.
+    document.getElementById('waiting-title').textContent =
+      (d.mode === 'DJ') ? 'Waiting for the next song…' : 'Waiting for the next question…';
+    // Item 18: show a live leaderboard while waiting for the next question.
+    renderLeaderboard(d.leaderboard, d.win_score);
+    return;
+  }
+  waiting.classList.add('hidden');
+  qBlock.classList.remove('hidden');
+  document.getElementById('question-text').textContent = d.question;
+  renderChoices(d.choices, d.correct_index, d.locked_globally);
+
+  // Per-answer feedback (correct/incorrect), shown once graded. T/F
+  // questions additionally reveal the explanation (server only sends
+  // d.correction for T/F rounds), phrased as an affirmation if this
+  // player's own pick was right, or a gentle correction if it was wrong.
+  const msgBox = document.getElementById('correct-message');
+  if (d.locked_globally) {
+    const gotItRight = mySelection === d.correct_index;
+    let msg = gotItRight ? 'Correct!' : 'Not quite.';
+    if (d.correction) {
+      msg = gotItRight ? `That's right! ${d.correction}` : `Actually, ${d.correction}`;
+    }
+    msgBox.textContent = msg;
+    msgBox.style.color = gotItRight ? '#3ba55c' : '#ff3b30';
+    msgBox.classList.remove('hidden');
+  } else {
+    msgBox.classList.add('hidden');
+  }
+
+  // Uses the real per-round total from the server (2026-08-10 fix) --
+  // a hardcoded 30 here made the bar read as stalled for the mystery
+  // question's first ~10s, since that question's timeout is longer (40s).
+  const total = d.timeout_seconds || 30;
+  const pct = Math.max(0, Math.min(100, (d.remaining_seconds / total) * 100));
+  document.getElementById('timer-fill').style.width = pct + '%';
+
+  if (d.locked || d.locked_globally) {
+    document.querySelectorAll('.choice').forEach(b => b.disabled = true);
+    document.getElementById('lock-btn').classList.add('hidden');
+    if (d.locked) document.getElementById('locked-status').classList.remove('hidden');
+  } else if (d.selected_index >= 0) {
+    document.getElementById('lock-btn').classList.remove('hidden');
+  }
+}
+
+async function init() {
+  if (playerId) {
+    const d = await api('/api/player/whoami?player_id=' + encodeURIComponent(playerId));
+    if (d && d.ok) {
+      showPlayView(d.initials, d.score);
+    } else {
+      localStorage.removeItem('player_id');
+      playerId = null;
+    }
+  }
+  setInterval(poll, 1200);
+  poll();
+}
+init();
+</script>
+</body>
+</html>

@@ -1,0 +1,136 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Game Show Remote &mdash; Countdown</title>
+<style>
+  :root { color-scheme: dark; }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; padding: 16px 16px 48px;
+    background: #0b0b0d; color: #f2f2f2;
+    font-family: -apple-system, Segoe UI, Roboto, sans-serif;
+  }
+  h1 { font-size: 1.1rem; text-transform: uppercase; letter-spacing: .08em; color: #ff3b30; margin: 0 0 16px; }
+  section { background: #17171a; border-radius: 10px; padding: 14px; margin-bottom: 14px; }
+  .row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+  button { cursor: pointer; }
+  .btn { padding: 10px 14px; border-radius: 8px; border: 1px solid #333; background: #202024; color: #f2f2f2; font-size: .9rem; }
+  .btn.primary { background: #ff3b30; border-color: #ff3b30; color: #fff; font-weight: 700; }
+  .btn.danger { background: #4a0f0f; border-color: #ff3b30; color: #ffb6b6; font-weight: 700; }
+  .btn.big { padding: 16px; font-size: 1.05rem; width: 100%; text-align: center; }
+  .nav-bar { display: flex; align-items: center; gap: 10px; margin-bottom: 4px; position: relative; }
+  .hamburger-btn {
+    background: none; border: 1px solid #333; border-radius: 8px; color: #f2f2f2;
+    font-size: 1.2rem; line-height: 1; padding: 6px 12px; cursor: pointer;
+  }
+  .nav-menu {
+    display: none; position: absolute; top: 42px; left: 0; background: #17171a;
+    border: 1px solid #333; border-radius: 8px; z-index: 300; overflow: hidden; min-width: 170px;
+  }
+  .nav-menu.open { display: block; }
+  .nav-menu a {
+    display: block; padding: 12px 16px; color: #f2f2f2; text-decoration: none;
+    font-size: .9rem; border-bottom: 1px solid #2a2a2e;
+  }
+  .nav-menu a:last-child { border-bottom: none; }
+  .nav-menu a:hover { background: #202024; }
+  .countdown-box { text-align: center; padding: 40px 14px; }
+  .countdown-label { color: #999; font-size: .9rem; text-transform: uppercase; letter-spacing: .06em; }
+  .countdown-clock { font-size: 3rem; font-weight: 700; color: #ff3b30; margin-top: 8px; font-variant-numeric: tabular-nums; }
+  .action-row { display: flex; gap: 10px; margin-top: 20px; }
+  .action-row .btn { flex: 1; }
+</style>
+</head>
+<body>
+  <div class="nav-bar">
+    <button class="hamburger-btn" onclick="toggleNavMenu()">&#9776;</button>
+    <div class="nav-menu" id="nav-menu">
+      <a href="/">Remote</a>
+      <a href="/library">File Manager</a>
+      <a href="/setup">Setup</a>
+    </div>
+  </div>
+  <h1>Game Starting Soon</h1>
+
+  <section>
+    <div class="countdown-box">
+      <div class="countdown-label">Game Start In</div>
+      <div class="countdown-clock" id="countdown-clock">--:--</div>
+    </div>
+    <div class="action-row">
+      <button class="btn danger" onclick="abortCountdown()">ABORT</button>
+      <button class="btn primary" onclick="startNow()">START NOW</button>
+    </div>
+  </section>
+
+<script>
+async function api(path, opts) {
+  try {
+    const res = await fetch(path, opts);
+    return await res.json();
+  } catch (e) {
+    console.error(path, e);
+    return null;
+  }
+}
+
+function toggleNavMenu() {
+  document.getElementById('nav-menu').classList.toggle('open');
+}
+document.addEventListener('click', (e) => {
+  const menu = document.getElementById('nav-menu');
+  if (!menu || !menu.classList.contains('open')) return;
+  if (!menu.contains(e.target) && !e.target.closest('.hamburger-btn')) {
+    menu.classList.remove('open');
+  }
+});
+
+// Client-side tick between polls (smooth per-second countdown) seeded from
+// the server's scheduled_start_at -- re-synced every 2s in case the target
+// changes or another device aborts/starts it first.
+let _scheduledStartAt = null;
+
+function formatCountdown(seconds) {
+  seconds = Math.max(0, Math.round(seconds));
+  const h = Math.floor(seconds / 3600);
+  const m = Math.floor((seconds % 3600) / 60);
+  const s = seconds % 60;
+  if (h > 0) {
+    return h + ':' + String(m).padStart(2, '0') + ':' + String(s).padStart(2, '0');
+  }
+  return m + ':' + String(s).padStart(2, '0');
+}
+
+function tickDisplay() {
+  if (_scheduledStartAt == null) return;
+  const remaining = _scheduledStartAt - (Date.now() / 1000);
+  document.getElementById('countdown-clock').textContent = formatCountdown(remaining);
+}
+setInterval(tickDisplay, 1000);
+
+async function pollStatus() {
+  const d = await api('/api/show/status');
+  if (!d) return;
+  if (d.show_phase !== 'countdown') {
+    // Already fired (naturally, or from another device) or aborted --
+    // follow it to wherever the operator should be next.
+    window.location = (d.show_phase === 'setup') ? '/setup' : '/';
+    return;
+  }
+  _scheduledStartAt = d.scheduled_start_at;
+  tickDisplay();
+}
+pollStatus();
+setInterval(pollStatus, 2000);
+
+function abortCountdown() {
+  api('/api/show/abort-countdown', { method: 'POST' }).then(() => { window.location = '/setup'; });
+}
+function startNow() {
+  api('/api/show/start-now', { method: 'POST' }).then(() => { window.location = '/'; });
+}
+</script>
+</body>
+</html>

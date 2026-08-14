@@ -3,10 +3,7 @@ import time
 import config
 from state import state
 from drivers import deck_orchestrator
-from drivers.rekordbox_driver import get_rekordbox_track, rb_driver
-from audio.audio_engine import (
-    play_station_announcement, stop_station_announcement, reset_announcement_volume,
-)
+from drivers.deck_orchestrator import get_now_playing as get_rekordbox_track
 
 # ==========================================
 # AUTO-DJ (Section 4): TRACK-LENGTH AUTO-ADVANCE + VOICE-OVER TRANSITION
@@ -15,22 +12,23 @@ from audio.audio_engine import (
 # config.AUTODJ_ENABLED_BY_DEFAULT). Gamepad Btn4 (inputs/gamepad.py,
 # JOYBUTTONDOWN index 3, DJ mode only) toggles it via toggle_auto_dj().
 #
-# Track length comes from rekordbox.xml's TotalTime attribute (already
-# parsed by drivers/rekordbox_driver.py -- this is the show's only real
-# source of track-duration metadata, since tracks are driven via MIDI/OCR
-# rather than played directly from a known file path). A missing/implausibly
-# short TotalTime falls back to config.AUTODJ_DEFAULT_TRACK_SECONDS.
+# Track length comes from state.now_playing_duration -- the exact length of
+# the file drivers/deck_orchestrator.py just loaded, since playback reads
+# audio/music/ directly now instead of guessing at what Rekordbox has
+# loaded. A missing/implausibly short duration falls back to
+# config.AUTODJ_DEFAULT_TRACK_SECONDS.
 #
-# Radio-DJ style overlapping transition: config.AUTODJ_PRE_SWITCH_SECONDS
-# (15s) before the track ends, a random station-announcement voice-over
-# (audio/announcements/, via audio.audio_engine.play_station_announcement)
-# starts playing. The actual track transition -- deck-start MIDI sequence +
-# TrackSearch, via deck_orchestrator.trigger_track_move() -- fires
-# config.AUTODJ_ANNOUNCE_LEAD_SECONDS (2s) before that announcement clip
-# finishes, so the VO bridges the end of the outgoing track into the start
-# of the next one. If Auto-Announcement is toggled off (state.auto_announce_enabled,
-# Gamepad Btn1), the VO step is skipped and the transition fires right at
-# the 15s mark instead.
+# Radio-DJ style overlapping transition (2026-08-07): config.AUTODJ_PRE_SWITCH_SECONDS
+# (15s) before the track ends, deck_orchestrator.trigger_announced_track_move()
+# fires -- ONE call that loads the next track and runs the full sweeper -> VO ->
+# deck-duck -> deck-swell choreography (audio/dj_engine.py::play_sweeper_and_announcement),
+# already timed internally to land the swell back to 100% exactly as the VO
+# ends. There's no more separate "fire VO now, fire deck move later" scheduling
+# dance -- the old two-phase auto_dj_transition_at handoff existed only because
+# the old VO system and the MIDI deck move were two uncoordinated pieces that
+# had to be manually synced from here; the new engine coordinates them itself.
+# If Auto-Announcement is toggled off (state.auto_announce_enabled, Gamepad
+# Btn1), trigger_track_move() (plain crossfade, no VO) fires instead.
 #
 # update() is polled every frame from inputs/gamepad.py::process_events(),
 # alongside the other per-frame engines (price_game_engine, mystery_band_engine).
@@ -57,7 +55,10 @@ _last_fired_cycle = -1
 
 
 def _lookup_duration(title):
-    duration = rb_driver.db.get_duration(title)
+    # state.now_playing_duration is the exact length of the track deck_orchestrator
+    # just loaded -- no fuzzy title lookup needed now that we read the file
+    # directly instead of guessing from a rekordbox.xml match (2026-08-07).
+    duration = state.now_playing_duration
     if duration and duration >= config.AUTODJ_MIN_PLAUSIBLE_DURATION_SECONDS:
         return float(duration)
     return config.AUTODJ_DEFAULT_TRACK_SECONDS
@@ -76,14 +77,16 @@ def _start_timer(track_key, title):
 
 
 def toggle_auto_dj():
-    """Gamepad Btn4, DJ mode only: flips Auto-DJ on/off and arms the panel-3
-    "a ON"/"a OFF" confirmation overlay (rendered in
+    """Web remote's Auto-DJ toggle (web/remote_server.py -- the only trigger
+    since 2026-08-12, when the physical Btn4 binding was removed for being
+    too easy to bump by accident): flips Auto-DJ on/off and arms the
+    panel-3 "a ON"/"a OFF" confirmation overlay (rendered in
     graphics/matrix_canvas.py) for config.AUTODJ_TOGGLE_OVERLAY_SECONDS."""
     state.auto_dj_enabled = not state.auto_dj_enabled
     label = "a ON" if state.auto_dj_enabled else "a OFF"
     state.auto_dj_overlay_text = label
     state.auto_dj_overlay_until = time.time() + config.AUTODJ_TOGGLE_OVERLAY_SECONDS
-    print(f"[AUTO-DJ] Btn4 toggle -> {label}")
+    print(f"[AUTO-DJ] Toggle -> {label}")
 
 
 def toggle_auto_announce():
@@ -91,27 +94,25 @@ def toggle_auto_announce():
     voice-over feature on/off and arms the panel-3 "v ON"/"v OFF"
     confirmation overlay for config.AUTO_ANNOUNCE_TOGGLE_OVERLAY_SECONDS.
     When off, Auto-DJ still auto-advances tracks at the same
-    AUTODJ_PRE_SWITCH_SECONDS mark, it just skips the announcement overlay
-    and fires the transition immediately instead of waiting on a VO clip.
+    AUTODJ_PRE_SWITCH_SECONDS mark, it just skips the announcement and fires
+    a plain crossfade instead.
 
-    Instant Mute & Volume Reset (Section 4): switching OFF instantly kills
-    whatever announcement clip is currently playing rather than letting it
-    run out, and if a transition was scheduled off that clip's runtime
-    (auto_dj_transition_at), fires it right now instead of waiting on audio
-    that no longer exists. Switching back ON resets every cached
-    announcement Sound to full volume (1.0) so a prior kill can never leave
-    the next playback muted/ducked."""
+    Instant Mute (Section 4): switching OFF instantly kills whatever
+    sweeper/announcement is currently playing rather than letting it run
+    out (dj_engine.stop_announcement()). No volume-reset step needed on the
+    way back ON any more -- play_sweeper_and_announcement() and
+    preview_announcement() both explicitly set their channels to full volume
+    every time they play, so there's no stale-ducked-volume state that could
+    carry over from a prior mute (the old cached-Sound-object volume model
+    this replaced didn't have that guarantee, which is why it needed an
+    explicit reset step)."""
     state.auto_announce_enabled = not state.auto_announce_enabled
     label = "v ON" if state.auto_announce_enabled else "v OFF"
     state.auto_announce_overlay_text = label
     state.auto_announce_overlay_until = time.time() + config.AUTO_ANNOUNCE_TOGGLE_OVERLAY_SECONDS
 
     if not state.auto_announce_enabled:
-        stop_station_announcement()
-        if state.auto_dj_transition_at:
-            state.auto_dj_transition_at = time.time()
-    else:
-        reset_announcement_volume()
+        deck_orchestrator.dj_engine.stop_announcement()
 
     print(f"[AUTO-DJ] Btn1 toggle -> Auto-Announcement {label}")
 
@@ -124,23 +125,20 @@ def notify_manual_track_move():
     own the moment the new track is confidently identified (see update()
     below), this just buys that identification window some slack.
 
-    Testing Mode (Section 4): while Auto-Announcement is ON, also fire the
-    station announcement VO here -- not just on Auto-DJ's own overlapping
-    transition -- so voice viability can be verified on demand from every
-    normal track switch, manual or automatic."""
+    No longer also fires a VO preview here (removed 2026-08-07) -- a manual
+    joystick move is now just a clean crossfade, nothing extra layered on
+    top. The preview is reachable on demand from the web remote instead
+    (web/remote_server.py's /api/announcement/preview,
+    drivers/deck_orchestrator.py::preview_announcement()), not tied to
+    every real track switch."""
     state.auto_dj_track_started_at = time.time()
-    if state.auto_announce_enabled:
-        play_station_announcement()
-        print("[AUTO-DJ] Auto-Announcement testing mode -- VO fired on manual track switch.")
     print("[AUTO-DJ] Manual track move -- auto-advance timer reset.")
 
 
 def _fire_transition(track_key):
-    """Sends the deck-start MIDI sequence + TrackSearch (via
-    deck_orchestrator.trigger_track_move, which itself now primes the
-    target deck with Cue -> tick -> Play/Pause before searching) and
-    re-arms the timer immediately so this doesn't fire again every frame
-    while the crossfade plays out and OCR catches up to the new track.
+    """Plain crossfade, no VO (Auto-Announcement OFF, or the manual/no-VO
+    path). Re-arms the timer immediately so this doesn't fire again every
+    frame while the crossfade plays out.
 
     Single-trigger guard: refuses to act twice within the same
     _transition_cycle (see the module-level comment above)."""
@@ -151,6 +149,21 @@ def _fire_transition(track_key):
     _last_fired_cycle = _transition_cycle
 
     deck_orchestrator.trigger_track_move("next")
+    title, _artist = get_rekordbox_track()
+    _start_timer(track_key, title)
+
+
+def _fire_announced_transition(track_key):
+    """Sweeper -> VO -> deck-duck -> deck-swell transition -- one call now
+    does what used to take two coordinated phases (see module docstring)."""
+    global _last_fired_cycle
+    if _last_fired_cycle == _transition_cycle:
+        print("[AUTO-DJ] Transition already fired for this track cycle -- ignoring duplicate trigger.")
+        return
+    _last_fired_cycle = _transition_cycle
+
+    state.auto_dj_announcement_played = True
+    deck_orchestrator.trigger_announced_track_move()
     title, _artist = get_rekordbox_track()
     _start_timer(track_key, title)
 
@@ -173,38 +186,17 @@ def update(now):
     if deck_orchestrator.has_pending_move():
         return  # a crossfade (manual or auto) is already in flight
 
-    # Phase 2: the announcement (or the no-VO fallback) has already fired
-    # this cycle -- just wait for its scheduled overlap moment.
-    if state.auto_dj_transition_at:
-        if now >= state.auto_dj_transition_at:
-            print("[AUTO-DJ] Overlap window elapsed -- firing track transition.")
-            _fire_transition(track_key)
-        return
-
     elapsed = now - state.auto_dj_track_started_at
     trigger_at = max(0.0, state.auto_dj_track_duration - config.AUTODJ_PRE_SWITCH_SECONDS)
     if elapsed < trigger_at:
         return
 
     if not state.auto_announce_enabled:
-        # Auto-Announcement is off -- behave like the plain auto-advance:
-        # fire the transition right at the trigger point, no VO.
         print(f"[AUTO-DJ] {state.auto_dj_track_duration:.0f}s track duration reached -- "
               f"auto-advancing (Auto-Announcement OFF).")
         _fire_transition(track_key)
         return
 
-    # Phase 1: kick off the station announcement and schedule the actual
-    # transition AUTODJ_ANNOUNCE_LEAD_SECONDS before it finishes.
-    state.auto_dj_announcement_played = True
-    duration = play_station_announcement()
-    if duration <= 0.0:
-        # No announcement clip available -- fall back to firing next frame
-        # rather than stalling the show waiting on nothing.
-        state.auto_dj_transition_at = now
-        print("[AUTO-DJ] No station announcement available -- transitioning immediately.")
-    else:
-        lead = config.AUTODJ_ANNOUNCE_LEAD_SECONDS
-        state.auto_dj_transition_at = now + max(0.0, duration - lead)
-        print(f"[AUTO-DJ] Station announcement playing ({duration:.1f}s) -- track transition "
-              f"scheduled in {state.auto_dj_transition_at - now:.1f}s (-{lead:.0f}s before VO ends).")
+    print(f"[AUTO-DJ] {state.auto_dj_track_duration:.0f}s track duration reached -- "
+          f"firing announced transition.")
+    _fire_announced_transition(track_key)

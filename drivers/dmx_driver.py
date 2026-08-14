@@ -21,30 +21,28 @@ class EnttecDMXPro:
             print(f"[DMX ERROR] Could not open {com_port}: {e}")
 
     # ------------------------------------------------------------
-    # Fixture table: Fixture 1 (ch 1-16) is a plain RGB par used
-    # strictly as a win/loss indicator lamp. Fixtures 2-11 (ch 17-176,
-    # 16 channels each) are Rockville MINIRF4 V2 uplighters. Every
-    # fixture sits on a strict 16-channel boundary: base(i) = 1 + (i-1)*16.
+    # Fixture table: all 11 fixtures (ch 1-176, 16 channels each) are now
+    # Rockville MINIRF4 V2 uplighters sharing one channel layout -- ch1
+    # dimmer, ch2 R, ch3 G, ch4 B, ch5 White, ch6 Amber, ch7 UV, ch8
+    # Strobe, ch9 AutoModes, ch10 SoundActive, ch11-16 unused.
+    #
+    # Fixture 1 used to be a plain RGB-only par (win/loss indicator lamp,
+    # no White/Amber/UV emitters), which is why it had its own narrower
+    # setter and why colors built on those emitters had to fall back to an
+    # RGB approximation on it. It was replaced with a matching MINIRF4 V2
+    # (2026-08-11), so that special case is gone: every fixture can render
+    # every look, UV included.
+    #
+    # Every fixture sits on a strict 16-channel boundary:
+    # base(i) = 1 + (i-1)*16.
     # ------------------------------------------------------------
     def _fixture_base(self, index):
         return 1 + (index - 1) * DMX_FIXTURE_CHANNELS
 
-    def set_fixture1(self, intensity, r, g, b):
-        """Fixture 1 (ch1-4: intensity,R,G,B; ch5-16 always 0)."""
-        base = self._fixture_base(1)
-        self.dmx_data[base] = max(0, min(255, int(intensity)))
-        self.dmx_data[base + 1] = max(0, min(255, int(r)))
-        self.dmx_data[base + 2] = max(0, min(255, int(g)))
-        self.dmx_data[base + 3] = max(0, min(255, int(b)))
-        for ch in range(base + 4, base + DMX_FIXTURE_CHANNELS):
-            self.dmx_data[ch] = 0
-
-    def set_uplight(self, index, dimmer, r, g, b, white=0, amber=0, uv=0,
-                     strobe=0, auto=0, sound_active=0):
-        """Fixtures 2-11 (Rockville MINIRF4 V2): ch1 dimmer, ch2 R, ch3 G,
-        ch4 B, ch5 White, ch6 Amber, ch7 UV, ch8 Strobe, ch9 AutoModes,
-        ch10 SoundActive, ch11-16 always 0."""
-        if not (2 <= index <= DMX_NUM_FIXTURES):
+    def set_fixture(self, index, dimmer, r, g, b, white=0, amber=0, uv=0,
+                    strobe=0, auto=0, sound_active=0):
+        """Writes one fixture's channel block. Valid for fixtures 1-11."""
+        if not (1 <= index <= DMX_NUM_FIXTURES):
             return
         base = self._fixture_base(index)
         values = (dimmer, r, g, b, white, amber, uv, strobe, auto, sound_active)
@@ -52,6 +50,23 @@ class EnttecDMXPro:
             self.dmx_data[base + offset] = max(0, min(255, int(val)))
         for ch in range(base + len(values), base + DMX_FIXTURE_CHANNELS):
             self.dmx_data[ch] = 0
+
+    def set_fixture1(self, intensity, r, g, b, white=0, amber=0, uv=0,
+                     strobe=0, auto=0, sound_active=0):
+        """Fixture 1 -- the win/loss indicator lamp. Same hardware and
+        channel layout as the uplights now; kept as a named method because
+        it's a distinct role in the show, not a distinct device."""
+        self.set_fixture(1, intensity, r, g, b, white, amber, uv,
+                         strobe, auto, sound_active)
+
+    def set_uplight(self, index, dimmer, r, g, b, white=0, amber=0, uv=0,
+                     strobe=0, auto=0, sound_active=0):
+        """Fixtures 2-11, the venue uplighters. Guarded to 2+ so uplight
+        loops can't accidentally stomp Fixture 1's win/loss state."""
+        if index < 2:
+            return
+        self.set_fixture(index, dimmer, r, g, b, white, amber, uv,
+                         strobe, auto, sound_active)
 
     def set_all_uplights(self, dimmer, r, g, b, white=0, amber=0, uv=0,
                           strobe=0, auto=0, sound_active=0):

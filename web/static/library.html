@@ -1,0 +1,549 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Game Show Remote &mdash; File Manager</title>
+<style>
+  :root { color-scheme: dark; }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; padding: 16px 16px 48px;
+    background: #0b0b0d; color: #f2f2f2;
+    font-family: -apple-system, Segoe UI, Roboto, sans-serif;
+  }
+  h1 { font-size: 1.1rem; text-transform: uppercase; letter-spacing: .08em; color: #ff3b30; margin: 0 0 16px; }
+  h2 { font-size: .85rem; text-transform: uppercase; letter-spacing: .06em; color: #999; margin: 24px 0 8px; }
+  section { background: #17171a; border-radius: 10px; padding: 14px; margin-bottom: 14px; }
+  .row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+  button { cursor: pointer; }
+  .btn { padding: 10px 14px; border-radius: 8px; border: 1px solid #333; background: #202024; color: #f2f2f2; font-size: .9rem; }
+  .btn.primary { background: #ff3b30; border-color: #ff3b30; color: #fff; font-weight: 700; }
+  .btn.small { padding: 6px 10px; font-size: .8rem; }
+  .btn.danger { background: #4a0f0f; border-color: #ff3b30; color: #ffb6b6; font-weight: 700; }
+  .btn.cue { background: #1a3a4a; border-color: #2a8aca; color: #cfeeff; font-weight: 700; }
+  .btn.cue.is-cued { background: #ff3b30; border-color: #ff3b30; color: #fff; }
+  .btn:disabled { opacity: .45; cursor: default; }
+  input[type=text] {
+    width: 100%; padding: 10px 12px; border-radius: 8px; border: 1px solid #333;
+    background: #202024; color: #f2f2f2; font-size: .9rem;
+  }
+  .nav-bar { display: flex; align-items: center; gap: 10px; margin-bottom: 4px; position: relative; }
+  .hamburger-btn {
+    background: none; border: 1px solid #333; border-radius: 8px; color: #f2f2f2;
+    font-size: 1.2rem; line-height: 1; padding: 6px 12px; cursor: pointer;
+  }
+  .nav-menu {
+    display: none; position: absolute; top: 42px; left: 0; background: #17171a;
+    border: 1px solid #333; border-radius: 8px; z-index: 300; overflow: hidden; min-width: 170px;
+  }
+  .nav-menu.open { display: block; }
+  .nav-menu a {
+    display: block; padding: 12px 16px; color: #f2f2f2; text-decoration: none;
+    font-size: .9rem; border-bottom: 1px solid #2a2a2e;
+  }
+  .nav-menu a:last-child { border-bottom: none; }
+  .nav-menu a:hover { background: #202024; }
+  .nav-menu a.active { color: #ff3b30; font-weight: 700; }
+  .cued-banner {
+    display: none; align-items: center; justify-content: space-between; gap: 10px;
+    background: #331414; border: 1px solid #ff3b30; border-radius: 8px; padding: 10px 12px; margin-top: 10px;
+  }
+  .cued-banner.show { display: flex; }
+  .cued-banner .label { font-size: .8rem; color: #ffb6b6; text-transform: uppercase; letter-spacing: .04em; }
+  .cued-banner .title { font-weight: 700; font-size: .95rem; }
+  .lib-drop-zone {
+    border: 2px dashed #333; border-radius: 8px; padding: 20px; text-align: center;
+    margin-top: 10px; color: #999; font-size: .9rem; transition: border-color .15s, background .15s;
+  }
+  .lib-drop-zone.dragover { border-color: #ff3b30; background: #201414; }
+  .lib-track-table { width: 100%; margin-top: 14px; border-collapse: collapse; }
+  .lib-track-table th {
+    text-align: left; font-size: .7rem; text-transform: uppercase; letter-spacing: .05em;
+    color: #777; padding: 6px 8px; border-bottom: 1px solid #2a2a2e;
+  }
+  .lib-track-table td { padding: 10px 8px; border-bottom: 1px solid #2a2a2e; vertical-align: middle; }
+  .lib-track-table tr.is-cued td { background: #201014; }
+  .lib-track-title { font-weight: 600; font-size: .95rem; }
+  .lib-track-artist { color: #999; font-size: .82rem; }
+  .lib-track-duration { color: #777; font-size: .8rem; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .lib-actions { display: flex; gap: 6px; white-space: nowrap; }
+  .lib-empty { color: #999; font-size: .9rem; padding: 20px 0; text-align: center; }
+  .lib-tags { font-size: .78rem; color: #bbb; }
+  .lib-tags .untagged { color: #666; font-style: italic; }
+  .lib-tags .flag-explicit { color: #ff8080; }
+  .lib-tags .flag-slowdance { color: #7ecbff; }
+  .tag-progress-wrap { margin-top: 10px; }
+  .tag-progress-bar { height: 6px; border-radius: 4px; background: #2a2a2e; overflow: hidden; margin-top: 6px; }
+  .tag-progress-fill { height: 100%; background: #ff3b30; width: 0%; transition: width .2s; }
+  .modal-backdrop {
+    display: none; position: fixed; inset: 0; background: rgba(0,0,0,.7);
+    align-items: center; justify-content: center; z-index: 100; padding: 16px;
+  }
+  .modal-backdrop.open { display: flex; }
+  .modal-box { background: #17171a; border: 1px solid #ff3b30; border-radius: 10px; padding: 20px; max-width: 320px; }
+  .modal-box.wide { max-width: 380px; }
+  .modal-box p { margin: 0 0 16px; font-size: .95rem; }
+  .modal-box .row { justify-content: flex-end; }
+  .field-col { display: flex; flex-direction: column; gap: 10px; align-items: stretch; margin-bottom: 14px; }
+  .field-col label.check { display: flex; align-items: center; gap: 8px; font-size: .9rem; flex-direction: row !important; }
+  .field-col label { font-size: .8rem; color: #999; display: flex; flex-direction: column; gap: 4px; }
+  select, input[type=number] {
+    width: 100%; padding: 8px 10px; border-radius: 8px; border: 1px solid #333;
+    background: #202024; color: #f2f2f2; font-size: .9rem;
+  }
+  .toast {
+    position: fixed; left: 50%; bottom: 16px; transform: translateX(-50%);
+    background: #202024; border: 1px solid #333; border-radius: 8px;
+    padding: 8px 14px; font-size: .85rem; opacity: 0; transition: opacity .2s;
+    pointer-events: none; z-index: 200; max-width: 90vw; text-align: center;
+  }
+  .toast.show { opacity: 1; }
+</style>
+</head>
+<body>
+  <div class="nav-bar">
+    <button class="hamburger-btn" onclick="toggleNavMenu()">&#9776;</button>
+    <div class="nav-menu" id="nav-menu">
+      <a href="/">Remote</a>
+      <a href="/library" class="active">File Manager</a>
+      <a href="/setup">Setup</a>
+    </div>
+  </div>
+  <h1>File Manager</h1>
+
+  <section>
+    <h2>Music Library <span id="lib-count" style="color:#999;font-weight:400;font-size:.75rem"></span></h2>
+
+    <div class="cued-banner" id="cued-banner">
+      <div>
+        <div class="label">Cued &mdash; plays on the next transition</div>
+        <div class="title" id="cued-title"></div>
+      </div>
+      <button class="btn small" onclick="libUncue()">Clear</button>
+    </div>
+
+    <div style="margin-top:12px">
+      <input type="text" id="lib-search" placeholder="Search title or artist..." oninput="libSearchDebounced()">
+    </div>
+
+    <div class="lib-drop-zone" id="lib-drop-zone">
+      <div>Drop audio files here, or</div>
+      <label class="btn primary" style="display:inline-block;margin-top:8px;cursor:pointer;">
+        Choose Files
+        <input type="file" id="lib-file-input" accept=".mp3,.wav,.flac,.m4a,.ogg" multiple
+               style="display:none" onchange="libUploadFiles(this.files)">
+      </label>
+      <div style="margin-top:6px;font-size:.75rem;color:#777;">A single upload is automatically cued to play next.</div>
+    </div>
+    <div id="lib-upload-status" style="font-size:.8rem;color:#999;margin-top:6px;"></div>
+
+    <div class="row" style="margin-top:16px;align-items:center;justify-content:space-between">
+      <div>
+        <button class="btn primary" id="tag-library-btn" onclick="startTagging()">Tag Library</button>
+        <span id="tag-untagged-count" style="color:#999;font-size:.8rem;margin-left:6px;"></span>
+      </div>
+    </div>
+    <div class="tag-progress-wrap" id="tag-progress-wrap" style="display:none">
+      <div id="tag-progress-text" style="font-size:.8rem;color:#999;"></div>
+      <div class="tag-progress-bar"><div class="tag-progress-fill" id="tag-progress-fill"></div></div>
+    </div>
+    <div id="tag-error-text" style="font-size:.8rem;color:#ffb6b6;margin-top:6px;"></div>
+
+    <table class="lib-track-table" id="lib-track-table" style="display:none">
+      <thead>
+        <tr><th>Title</th><th>Artist</th><th>Length</th><th>Tags</th><th></th></tr>
+      </thead>
+      <tbody id="lib-track-body"></tbody>
+    </table>
+    <div class="lib-empty" id="lib-empty" style="display:none">No tracks match.</div>
+  </section>
+
+  <div class="modal-backdrop" id="lib-delete-modal">
+    <div class="modal-box">
+      <p>Delete <strong id="lib-delete-filename"></strong> from the library? This removes the file from disk and can't be undone.</p>
+      <div class="row">
+        <button class="btn" onclick="libCancelDelete()">Cancel</button>
+        <button class="btn danger" style="width:auto" onclick="libConfirmDeleteGo()">Delete</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-backdrop" id="tag-edit-modal">
+    <div class="modal-box wide">
+      <p id="tag-edit-title"></p>
+      <div class="field-col">
+        <label class="check"><input type="checkbox" id="tag-edit-explicit"> Explicit lyrics</label>
+        <label class="check"><input type="checkbox" id="tag-edit-slowdance"> Slow dance / romantic ballad</label>
+        <label class="check"><input type="checkbox" id="tag-edit-nevercharted"> Never charted (deep cut)</label>
+        <label>Decade <select id="tag-edit-decade"></select></label>
+        <label>Genre <select id="tag-edit-genre"></select></label>
+        <label>Energy Rank (1 = mellow, 5 = floor-filler)
+          <input type="number" id="tag-edit-energy" min="1" max="5" step="1">
+        </label>
+      </div>
+      <div class="row">
+        <button class="btn" onclick="closeTagEdit()">Cancel</button>
+        <button class="btn primary" style="width:auto" onclick="saveTagEdit()">Save</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+<script>
+async function api(path, opts) {
+  try {
+    const res = await fetch(path, opts);
+    return await res.json();
+  } catch (e) {
+    console.error(path, e);
+    return null;
+  }
+}
+
+let _toastTimer = null;
+function showToast(msg) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  clearTimeout(_toastTimer);
+  _toastTimer = setTimeout(() => el.classList.remove('show'), 2500);
+}
+
+function toggleNavMenu() {
+  document.getElementById('nav-menu').classList.toggle('open');
+}
+document.addEventListener('click', (e) => {
+  const menu = document.getElementById('nav-menu');
+  if (!menu || !menu.classList.contains('open')) return;
+  if (!menu.contains(e.target) && !e.target.closest('.hamburger-btn')) {
+    menu.classList.remove('open');
+  }
+});
+
+// ------------------------------------------
+// MUSIC LIBRARY (browse/search/upload/delete/cue)
+// ------------------------------------------
+// Refreshed on load and after any upload/delete/cue/search -- not on a
+// polling timer. A 400+ track library re-rendered every couple seconds
+// would be wasted work and would blow away in-progress typing in the
+// search box or an in-flight upload.
+let _libTracks = [];
+let _libCuedFilename = null;
+let _libSearchTimer = null;
+let _libGenres = [];
+
+function libSearchDebounced() {
+  clearTimeout(_libSearchTimer);
+  _libSearchTimer = setTimeout(libRefresh, 250);
+}
+
+function _escapeHtml(s) {
+  return String(s == null ? '' : s).replace(/[&<>"']/g, c => (
+    { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]
+  ));
+}
+
+function _fmtDuration(sec) {
+  sec = Math.max(0, Math.round(sec || 0));
+  const m = Math.floor(sec / 60), s = sec % 60;
+  return m + ':' + String(s).padStart(2, '0');
+}
+
+async function libRefresh() {
+  const q = document.getElementById('lib-search').value.trim();
+  const d = await api('/api/library/tracks' + (q ? '?q=' + encodeURIComponent(q) : ''));
+  if (!d || !d.ok) return;
+  _libTracks = d.tracks;
+  _libCuedFilename = d.cued_filename || null;
+  if (d.genres && d.genres.length && !_libGenres.length) {
+    _libGenres = d.genres;
+    _populateTagEditSelects();
+  }
+  const count = document.getElementById('lib-count');
+  count.textContent = q
+    ? `(${d.tracks.length} of ${d.total})`
+    : `(${d.total} track${d.total === 1 ? '' : 's'})`;
+  // Only shown against the FULL (unfiltered) list -- a search-filtered
+  // count would misleadingly look like "that's all there is to tag" when
+  // Tag Library actually processes the whole library regardless of q.
+  if (!q) {
+    const untagged = _libTracks.filter(t => !t.metadata.complete).length;
+    document.getElementById('tag-untagged-count').textContent =
+      untagged ? `${untagged} track${untagged === 1 ? '' : 's'} ${untagged === 1 ? 'needs' : 'need'} tagging` : 'All tagged';
+  } else {
+    document.getElementById('tag-untagged-count').textContent = '';
+  }
+  _renderCuedBanner();
+  _renderLibTracks();
+}
+
+function _renderCuedBanner() {
+  const banner = document.getElementById('cued-banner');
+  if (!_libCuedFilename) {
+    banner.classList.remove('show');
+    return;
+  }
+  const cued = _libTracks.find(t => t.filename === _libCuedFilename);
+  document.getElementById('cued-title').textContent = cued ? cued.title : _libCuedFilename;
+  banner.classList.add('show');
+}
+
+function _tagSummaryHtml(m) {
+  if (!m || !m.complete) return '<span class="lib-tags untagged">Untagged</span>';
+  const bits = [];
+  if (m.genre) bits.push(_escapeHtml(m.genre));
+  if (m.decade) bits.push(_escapeHtml(m.decade));
+  if (m.energy_rank) bits.push('Energy ' + m.energy_rank);
+  if (m.explicit) bits.push('<span class="flag-explicit">Explicit</span>');
+  if (m.slow_dance) bits.push('<span class="flag-slowdance">Slow Dance</span>');
+  if (m.never_charted) bits.push('Deep cut');
+  return `<span class="lib-tags">${bits.join(' &middot; ')}</span>`;
+}
+
+function _renderLibTracks() {
+  const table = document.getElementById('lib-track-table');
+  const empty = document.getElementById('lib-empty');
+  const body = document.getElementById('lib-track-body');
+  if (!_libTracks.length) {
+    table.style.display = 'none';
+    empty.style.display = '';
+    return;
+  }
+  table.style.display = '';
+  empty.style.display = 'none';
+  body.innerHTML = _libTracks.map((t, i) => {
+    const isCued = t.filename === _libCuedFilename;
+    return `
+    <tr class="${isCued ? 'is-cued' : ''}">
+      <td><div class="lib-track-title">${_escapeHtml(t.title)}</div></td>
+      <td><div class="lib-track-artist">${_escapeHtml(t.artist || 'Unknown artist')}</div></td>
+      <td class="lib-track-duration">${_fmtDuration(t.duration)}</td>
+      <td>${_tagSummaryHtml(t.metadata)}</td>
+      <td>
+        <div class="lib-actions">
+          <button class="btn small cue ${isCued ? 'is-cued' : ''}" ${isCued ? 'disabled' : ''}
+                  onclick="libCue(${i})">${isCued ? 'Cued' : 'Cue'}</button>
+          <button class="btn small" onclick="openTagEdit(${i})">Edit</button>
+          <button class="btn small danger" onclick="libConfirmDelete(${i})">Delete</button>
+        </div>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+async function libCue(index) {
+  const track = _libTracks[index];
+  if (!track) return;
+  const d = await api('/api/library/cue', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ filename: track.filename }),
+  });
+  if (d && d.ok) {
+    showToast(`"${track.title}" will play next.`);
+    libRefresh();
+  } else {
+    showToast('Cue failed: ' + (d && d.reason ? d.reason : 'unknown error'));
+  }
+}
+
+async function libUncue() {
+  await api('/api/library/uncue', { method: 'POST' });
+  showToast('Cue cleared.');
+  libRefresh();
+}
+
+let _libPendingDelete = null;
+function libConfirmDelete(index) {
+  const track = _libTracks[index];
+  if (!track) return;
+  _libPendingDelete = track.filename;
+  document.getElementById('lib-delete-filename').textContent = track.title;
+  document.getElementById('lib-delete-modal').classList.add('open');
+}
+function libCancelDelete() {
+  _libPendingDelete = null;
+  document.getElementById('lib-delete-modal').classList.remove('open');
+}
+async function libConfirmDeleteGo() {
+  const filename = _libPendingDelete;
+  document.getElementById('lib-delete-modal').classList.remove('open');
+  if (!filename) return;
+  const d = await api('/api/library/delete', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ filename }),
+  });
+  if (d && d.ok) {
+    showToast('Track deleted.');
+    libRefresh();
+  } else {
+    showToast('Delete failed: ' + (d && d.reason ? d.reason : 'unknown error'));
+  }
+}
+
+async function libUploadFiles(fileList) {
+  if (!fileList || !fileList.length) return;
+  const formData = new FormData();
+  for (const f of fileList) formData.append('files', f);
+  const statusEl = document.getElementById('lib-upload-status');
+  statusEl.textContent = `Uploading ${fileList.length} file(s)...`;
+  try {
+    const res = await fetch('/api/library/upload', { method: 'POST', body: formData });
+    const d = await res.json();
+    if (!d || !d.ok) {
+      statusEl.textContent = 'Upload failed.';
+      return;
+    }
+    let msg = `Saved ${d.saved.length} file(s).`;
+    if (d.rejected.length) {
+      msg += ' Rejected: ' + d.rejected.map(r => `${r.filename} (${r.reason})`).join(', ');
+    }
+    if (d.cued_filename) msg += ` "${d.cued_filename}" is cued to play next.`;
+    statusEl.textContent = msg;
+    showToast(`Uploaded ${d.saved.length} track(s).`);
+    libRefresh();
+  } catch (e) {
+    statusEl.textContent = 'Upload failed: ' + e;
+  }
+  document.getElementById('lib-file-input').value = '';  // allow re-picking the same file later
+}
+
+(function setupLibDropZone() {
+  const zone = document.getElementById('lib-drop-zone');
+  if (!zone) return;
+  ['dragenter', 'dragover'].forEach(evt => zone.addEventListener(evt, (e) => {
+    e.preventDefault();
+    zone.classList.add('dragover');
+  }));
+  ['dragleave', 'drop'].forEach(evt => zone.addEventListener(evt, (e) => {
+    e.preventDefault();
+    zone.classList.remove('dragover');
+  }));
+  zone.addEventListener('drop', (e) => {
+    if (e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files.length) {
+      libUploadFiles(e.dataTransfer.files);
+    }
+  });
+})();
+
+// ------------------------------------------
+// TAG LIBRARY (batched AI pass) + per-track manual editor
+// ------------------------------------------
+let _tagPollTimer = null;
+
+async function startTagging() {
+  const d = await api('/api/library/tag', { method: 'POST' });
+  if (!d || !d.ok) {
+    showToast('Tag Library: ' + (d && d.reason ? d.reason : 'failed to start'));
+    return;
+  }
+  document.getElementById('tag-library-btn').disabled = true;
+  document.getElementById('tag-progress-wrap').style.display = '';
+  document.getElementById('tag-error-text').textContent = '';
+  _pollTagStatus();
+}
+
+async function _pollTagStatus() {
+  clearTimeout(_tagPollTimer);
+  const d = await api('/api/library/tag-status');
+  if (!d || !d.ok) return;
+
+  const total = d.total || 0;
+  const done = d.done || 0;
+  const pct = total ? Math.round((done / total) * 100) : 0;
+  document.getElementById('tag-progress-fill').style.width = pct + '%';
+  document.getElementById('tag-progress-text').textContent =
+    total ? `Tagging: ${done}/${total} (${pct}%)` : 'Checking for tracks that need tagging...';
+
+  if (d.running) {
+    _tagPollTimer = setTimeout(_pollTagStatus, 1000);
+    return;
+  }
+
+  document.getElementById('tag-library-btn').disabled = false;
+  document.getElementById('tag-progress-wrap').style.display = 'none';
+  if (d.last_error) {
+    document.getElementById('tag-error-text').textContent = d.last_error;
+  }
+  showToast(total ? `Tag Library finished (${done}/${total}).` : 'Nothing needed tagging.');
+  libRefresh();
+}
+
+function _populateTagEditSelects() {
+  const decadeSel = document.getElementById('tag-edit-decade');
+  const thisYearDecade = Math.floor(new Date().getFullYear() / 10) * 10;
+  let decadeOptions = '<option value="">&mdash;</option>';
+  for (let d = 1950; d <= thisYearDecade + 10; d += 10) {
+    decadeOptions += `<option value="${d}s">${d}s</option>`;
+  }
+  decadeSel.innerHTML = decadeOptions;
+
+  const genreSel = document.getElementById('tag-edit-genre');
+  genreSel.innerHTML = '<option value="">&mdash;</option>' +
+    _libGenres.map(g => `<option value="${_escapeHtml(g)}">${_escapeHtml(g)}</option>`).join('');
+}
+
+let _tagEditIndex = null;
+function openTagEdit(index) {
+  const track = _libTracks[index];
+  if (!track) return;
+  _tagEditIndex = index;
+  const m = track.metadata || {};
+  document.getElementById('tag-edit-title').textContent = track.title;
+  document.getElementById('tag-edit-explicit').checked = !!m.explicit;
+  document.getElementById('tag-edit-slowdance').checked = !!m.slow_dance;
+  document.getElementById('tag-edit-nevercharted').checked = !!m.never_charted;
+  document.getElementById('tag-edit-decade').value = m.decade || '';
+  document.getElementById('tag-edit-genre').value = m.genre || '';
+  document.getElementById('tag-edit-energy').value = m.energy_rank || '';
+  document.getElementById('tag-edit-modal').classList.add('open');
+}
+
+function closeTagEdit() {
+  _tagEditIndex = null;
+  document.getElementById('tag-edit-modal').classList.remove('open');
+}
+
+async function saveTagEdit() {
+  const track = _libTracks[_tagEditIndex];
+  if (!track) return;
+  const energyRaw = document.getElementById('tag-edit-energy').value;
+  const body = {
+    filename: track.filename,
+    explicit: document.getElementById('tag-edit-explicit').checked,
+    slow_dance: document.getElementById('tag-edit-slowdance').checked,
+    never_charted: document.getElementById('tag-edit-nevercharted').checked,
+  };
+  const decade = document.getElementById('tag-edit-decade').value;
+  const genre = document.getElementById('tag-edit-genre').value;
+  if (decade) body.decade = decade;
+  if (genre) body.genre = genre;
+  if (energyRaw) body.energy_rank = parseInt(energyRaw, 10);
+
+  const d = await api('/api/library/metadata', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body),
+  });
+  closeTagEdit();
+  if (d && d.ok) {
+    showToast('Tags saved.');
+    libRefresh();
+  } else {
+    showToast('Save failed: ' + (d && d.reason ? d.reason : 'unknown error'));
+  }
+}
+
+// Resume polling if a tagging pass was already running when this page
+// loaded (e.g. started, then the page got refreshed/reopened).
+(async function checkTaggingOnLoad() {
+  const d = await api('/api/library/tag-status');
+  if (d && d.ok && d.running) {
+    document.getElementById('tag-library-btn').disabled = true;
+    document.getElementById('tag-progress-wrap').style.display = '';
+    _pollTagStatus();
+  }
+})();
+
+libRefresh();
+</script>
+</body>
+</html>

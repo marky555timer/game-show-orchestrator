@@ -1,0 +1,15 @@
+numpy
+pillow
+pygame-ce
+requests
+# pywin32 is optional (graceful ImportError fallback) -- only used for the
+# always-on-top canvas pin and multi-monitor placement on Windows dev boxes,
+# both non-essential on the Pi. mss/PyGetWindow/pytesseract were dropped
+# 2026-08-07 along with drivers/rekordbox_driver.py's retired OCR stack.
+pywin32
+fastapi
+python-multipart
+uvicorn
+qrcode[pil]
+psutil
+mutagen

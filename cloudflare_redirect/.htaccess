@@ -1,0 +1,13 @@
+# Trivia Night redirector -- Apache hardening (harmless/no-op on a host
+# that doesn't use Apache; if you're on nginx or something else, see the
+# README for the equivalent rules).
+
+# No directory listing.
+Options -Indexes
+
+# Block direct access to the state file (not secret, but no reason to
+# expose it) and config.php (executes as empty PHP output if hit directly,
+# but there's no reason to allow that either).
+<FilesMatch "^(current_url\.json|config\.php)$">
+    Require all denied
+</FilesMatch>

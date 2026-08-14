@@ -1,0 +1,232 @@
+year,category,short_name,product,question,correct_price,wrong1,wrong2,wrong3
+1950,Household Goods,Stamp,Postage Stamp,How much was a US first-class postage stamp in 1950?,$0.03,$0.02,$0.04,$0.05
+1950,Big-Ticket / Cost of Living,Min Wage,Federal Minimum Wage,What was the US federal minimum wage per hour in 1950?,$0.75,$0.40,$1.06,$1.35
+1950,Big-Ticket / Cost of Living,Gal. Gas,Gallon of Gasoline,How much was a gallon of regular gasoline in 1950?,$0.27,$0.15,$0.41,$0.50
+1951,Big-Ticket / Cost of Living,Movie Tix,Movie Ticket,How much was a movie theater ticket in 1951?,$0.52,$0.28,$0.78,$0.94
+1951,Pantry / Groceries,Doz. Eggs,Dozen Eggs,How much was a dozen eggs in 1951?,$0.60,$0.33,$0.83,$1.19
+1951,Pantry / Groceries,Gal. Milk,Gallon of Milk,How much was a gallon of whole milk in 1951?,$0.84,$0.46,$1.15,$1.59
+1952,Pantry / Groceries,Bread,Loaf of Bread,How much was a loaf of white bread in 1952?,$0.15,$0.09,$0.22,$0.28
+1952,Pantry / Groceries,Lb. Beef,Pound of Ground Beef,How much was a pound of ground beef in 1952?,$0.55,$0.29,$0.79,$1.02
+1952,Pantry / Groceries,Lb Coffee,Pound of Coffee,How much was a pound of ground coffee in 1952?,$0.78,$0.44,$1.07,$1.57
+1953,Pantry / Groceries,Coffee Cup,Cup of Diner Coffee,How much was a cup of diner coffee in 1953?,$0.11,$0.06,$0.17,$0.21
+1953,Pantry / Groceries,Candy Bar,Candy Bar,How much was a candy bar in 1953?,$0.05,$0.03,$0.07,$0.09
+1953,Pantry / Groceries,Coke,Bottle of Coca-Cola,How much was a bottle of Coca-Cola in 1953?,$0.05,$0.03,$0.07,$0.09
+1954,Pantry / Groceries,Cereal,Box of Cereal,How much was a box of breakfast cereal in 1954?,$0.27,$0.16,$0.41,$0.53
+1954,Pantry / Groceries,Lb. Bacon,Pound of Bacon,How much was a pound of bacon in 1954?,$0.64,$0.36,$0.91,$1.28
+1954,Pantry / Groceries,Dz Donuts,Dozen Donuts,How much was a dozen donuts in 1954?,$0.63,$0.33,$0.94,$1.20
+1955,Pantry / Groceries,Lg Pizza,Large Pizza,How much was a large pizza in 1955?,$1.00,$0.56,$1.40,$1.86
+1955,Household Goods,Newspaper,Daily Newspaper,How much was a daily newspaper in 1955?,$0.06,$0.03,$0.09,$0.12
+1955,Entertainment / Electronics,Comic Bk,Comic Book,How much was a new comic book in 1955?,$0.10,$0.06,$0.15,$0.19
+1956,Household Goods,Cigarettes,Pack of Cigarettes,How much was a pack of cigarettes in 1956?,$0.23,$0.13,$0.33,$0.42
+1956,Big-Ticket / Cost of Living,Haircut,Men's Haircut,How much was a men's haircut in 1956?,$1.02,$0.56,$1.52,$1.83
+1956,Big-Ticket / Cost of Living,Mo. Rent,Monthly Apartment Rent,What was the average monthly apartment rent in 1956?,$58,$31,$80,$107
+1957,Big-Ticket / Cost of Living,New Car,New Car,"How much did a new car cost, on average, in 1957?",$2210,$1190,$3380,$4150
+1957,Big-Ticket / Cost of Living,Tuition,Yearly College Tuition,What was a year of public college tuition in 1957?,$157,$87,$240,$304
+1957,Big-Ticket / Cost of Living,Ballgame,Baseball Game Ticket,How much was a baseball game ticket in 1957?,$1.83,$1.03,$2.59,$3.41
+1958,Entertainment / Electronics,Color TV,Color Television,How much was a new color television set in 1958?,$687,$360,$969,$1330
+1958,Entertainment / Electronics,Album,Vinyl LP,How much was a vinyl LP record in 1958?,$3.95,$2.29,$5.54,$7.21
+1958,Apparel / Footwear,Jeans,Pair of Jeans,How much was a pair of name-brand jeans in 1958?,$4,$2,$6,$8
+1959,Apparel / Footwear,Sneakers,Pair of Sneakers,How much was a pair of name-brand sneakers in 1959?,$7,$4,$11,$14
+1959,Apparel / Footwear,Winter Ct,Winter Coat,How much was a winter coat in 1959?,$27,$16,$38,$52
+1959,Apparel / Footwear,T-Shirt,T-Shirt,How much was a plain t-shirt in 1959?,$0.97,$0.52,$1.36,$1.91
+1960,Household Goods,Fridge,Refrigerator,How much was a new refrigerator in 1960?,$300,$174,$423,$565
+1960,Household Goods,Washer,Washing Machine,How much was a washing machine in 1960?,$220,$124,$332,$434
+1960,Big-Ticket / Cost of Living,Bicycle,Bicycle,How much was a new bicycle in 1960?,$40,$22,$57,$76
+1961,Household Goods,Barbie,Barbie Doll,How much was a Barbie doll in 1961?,$3.16,$1.74,$4.78,$5.81
+1961,Household Goods,Stamp,Postage Stamp,How much was a US first-class postage stamp in 1961?,$0.05,$0.03,$0.07,$0.09
+1961,Big-Ticket / Cost of Living,Min Wage,Federal Minimum Wage,What was the US federal minimum wage per hour in 1961?,$1.15,$0.62,$1.64,$2.19
+1962,Big-Ticket / Cost of Living,Gal. Gas,Gallon of Gasoline,How much was a gallon of regular gasoline in 1962?,$0.31,$0.18,$0.43,$0.60
+1962,Big-Ticket / Cost of Living,Movie Tix,Movie Ticket,How much was a movie theater ticket in 1962?,$0.80,$0.46,$1.19,$1.60
+1962,Pantry / Groceries,Doz. Eggs,Dozen Eggs,How much was a dozen eggs in 1962?,$0.58,$0.32,$0.82,$1.15
+1963,Pantry / Groceries,Gal. Milk,Gallon of Milk,How much was a gallon of whole milk in 1963?,$1.04,$0.55,$1.58,$2.00
+1963,Pantry / Groceries,Bread,Loaf of Bread,How much was a loaf of white bread in 1963?,$0.21,$0.11,$0.31,$0.38
+1963,Pantry / Groceries,Lb. Beef,Pound of Ground Beef,How much was a pound of ground beef in 1963?,$0.58,$0.32,$0.86,$1.09
+1964,Pantry / Groceries,Lb Coffee,Pound of Coffee,How much was a pound of ground coffee in 1964?,$0.81,$0.44,$1.14,$1.55
+1964,Pantry / Groceries,Coffee Cup,Cup of Diner Coffee,How much was a cup of diner coffee in 1964?,$0.18,$0.10,$0.25,$0.35
+1964,Pantry / Groceries,Candy Bar,Candy Bar,How much was a candy bar in 1964?,$0.07,$0.04,$0.10,$0.14
+1965,Pantry / Groceries,Coke,Bottle of Coca-Cola,How much was a bottle of Coca-Cola in 1965?,$0.07,$0.04,$0.10,$0.13
+1965,Pantry / Groceries,Cereal,Box of Cereal,How much was a box of breakfast cereal in 1965?,$0.34,$0.20,$0.49,$0.63
+1965,Pantry / Groceries,Lb. Bacon,Pound of Bacon,How much was a pound of bacon in 1965?,$0.79,$0.44,$1.12,$1.52
+1966,Pantry / Groceries,Dz Donuts,Dozen Donuts,How much was a dozen donuts in 1966?,$0.86,$0.48,$1.29,$1.54
+1966,Pantry / Groceries,Lg Pizza,Large Pizza,How much was a large pizza in 1966?,$2,$1,$3,$4
+1966,Household Goods,Newspaper,Daily Newspaper,How much was a daily newspaper in 1966?,$0.09,$0.05,$0.14,$0.16
+1967,Entertainment / Electronics,Comic Bk,Comic Book,How much was a new comic book in 1967?,$0.14,$0.08,$0.20,$0.28
+1967,Household Goods,Cigarettes,Pack of Cigarettes,How much was a pack of cigarettes in 1967?,$0.34,$0.19,$0.48,$0.61
+1967,Big-Ticket / Cost of Living,Haircut,Men's Haircut,How much was a men's haircut in 1967?,$1.89,$1.05,$2.85,$3.41
+1968,Big-Ticket / Cost of Living,Mo. Rent,Monthly Apartment Rent,What was the average monthly apartment rent in 1968?,$99,$56,$149,$192
+1968,Big-Ticket / Cost of Living,New Car,New Car,"How much did a new car cost, on average, in 1968?",$3260,$1870,$4620,$5980
+1968,Big-Ticket / Cost of Living,Tuition,Yearly College Tuition,What was a year of public college tuition in 1968?,$348,$192,$489,$631
+1969,Entertainment / Electronics,Concert,Concert Ticket,How much was a concert ticket in 1969?,$7,$4,$11,$13
+1969,Big-Ticket / Cost of Living,Ballgame,Baseball Game Ticket,How much was a baseball game ticket in 1969?,$2.88,$1.67,$4.13,$5.56
+1969,Entertainment / Electronics,Color TV,Color Television,How much was a new color television set in 1969?,$359,$204,$528,$700
+1970,Big-Ticket / Cost of Living,Tuition,Yearly College Tuition,What was a year of public college tuition in 1970?,$400,$217,$552,$776
+1970,Entertainment / Electronics,Album,Vinyl LP,How much was a vinyl LP record in 1970?,$4.98,$2.69,$7.20,$9.06
+1970,Apparel / Footwear,Jeans,Pair of Jeans,How much was a pair of name-brand jeans in 1970?,$6,$3,$9,$11
+1971,Entertainment / Electronics,Color TV,Color Television,How much was a new color television set in 1971?,$350,$193,$491,$635
+1971,Apparel / Footwear,Sneakers,Pair of Sneakers,How much was a pair of name-brand sneakers in 1971?,$11,$6,$16,$20
+1971,Apparel / Footwear,Winter Ct,Winter Coat,How much was a winter coat in 1971?,$42,$23,$60,$82
+1972,Apparel / Footwear,T-Shirt,T-Shirt,How much was a plain t-shirt in 1972?,$2.06,$1.16,$2.88,$4.13
+1972,Household Goods,Fridge,Refrigerator,How much was a new refrigerator in 1972?,$383,$200,$527,$722
+1972,Household Goods,Washer,Washing Machine,How much was a washing machine in 1972?,$266,$142,$408,$497
+1973,Big-Ticket / Cost of Living,Bicycle,Bicycle,How much was a new bicycle in 1973?,$79,$43,$114,$156
+1973,Household Goods,Microwave,Microwave Oven,How much was a microwave oven in 1973?,$395,$215,$553,$764
+1973,Household Goods,Barbie,Barbie Doll,How much was a Barbie doll in 1973?,$4.92,$2.87,$7.56,$8.92
+1974,Household Goods,Stamp,Postage Stamp,How much was a US first-class postage stamp in 1974?,$0.10,$0.05,$0.14,$0.18
+1974,Big-Ticket / Cost of Living,Min Wage,Federal Minimum Wage,What was the US federal minimum wage per hour in 1974?,$2.00,$1.15,$2.93,$3.73
+1974,Big-Ticket / Cost of Living,Gal. Gas,Gallon of Gasoline,How much was a gallon of regular gasoline in 1974?,$0.53,$0.31,$0.78,$1.01
+1975,Big-Ticket / Cost of Living,Big Mac,Big Mac,How much was a McDonald's Big Mac in 1975?,$0.65,$0.34,$0.97,$1.25
+1975,Big-Ticket / Cost of Living,Movie Tix,Movie Ticket,How much was a movie theater ticket in 1975?,$2.05,$1.12,$3.06,$3.83
+1975,Pantry / Groceries,Doz. Eggs,Dozen Eggs,How much was a dozen eggs in 1975?,$0.77,$0.44,$1.14,$1.39
+1976,Pantry / Groceries,Gal. Milk,Gallon of Milk,How much was a gallon of whole milk in 1976?,$1.67,$0.97,$2.45,$3.19
+1976,Pantry / Groceries,Bread,Loaf of Bread,How much was a loaf of white bread in 1976?,$0.38,$0.21,$0.56,$0.69
+1976,Pantry / Groceries,Lb. Beef,Pound of Ground Beef,How much was a pound of ground beef in 1976?,$0.96,$0.55,$1.46,$1.73
+1977,Big-Ticket / Cost of Living,Min Wage,Federal Minimum Wage,What was the US federal minimum wage per hour in 1977?,$2.47,$1.33,$3.75,$4.93
+1977,Big-Ticket / Cost of Living,Gal. Gas,Gallon of Gasoline,How much was a gallon of regular gasoline in 1977?,$0.60,$0.33,$0.91,$1.13
+1977,Big-Ticket / Cost of Living,Big Mac,Big Mac,How much was a McDonald's Big Mac in 1977?,$0.77,$0.41,$1.13,$1.44
+1978,Big-Ticket / Cost of Living,Movie Tix,Movie Ticket,How much was a movie theater ticket in 1978?,$2.41,$1.39,$3.37,$4.50
+1978,Pantry / Groceries,Doz. Eggs,Dozen Eggs,How much was a dozen eggs in 1978?,$0.85,$0.47,$1.20,$1.58
+1978,Pantry / Groceries,Gal. Milk,Gallon of Milk,How much was a gallon of whole milk in 1978?,$1.90,$1.10,$2.70,$3.70
+1979,Pantry / Groceries,Bread,Loaf of Bread,How much was a loaf of white bread in 1979?,$0.47,$0.27,$0.70,$0.89
+1979,Pantry / Groceries,Lb. Beef,Pound of Ground Beef,How much was a pound of ground beef in 1979?,$1.25,$0.72,$1.80,$2.34
+1979,Pantry / Groceries,Lb Coffee,Pound of Coffee,How much was a pound of ground coffee in 1979?,$3.13,$1.65,$4.63,$6.25
+1980,Pantry / Groceries,Coffee Cup,Cup of Diner Coffee,How much was a cup of diner coffee in 1980?,$0.45,$0.25,$0.63,$0.88
+1980,Pantry / Groceries,Candy Bar,Candy Bar,How much was a candy bar in 1980?,$0.25,$0.14,$0.37,$0.49
+1980,Pantry / Groceries,Coke,Bottle of Coca-Cola,How much was a bottle of Coca-Cola in 1980?,$0.25,$0.13,$0.38,$0.46
+1981,Pantry / Groceries,Cereal,Box of Cereal,How much was a box of breakfast cereal in 1981?,$0.96,$0.53,$1.47,$1.88
+1981,Pantry / Groceries,Lb. Bacon,Pound of Bacon,How much was a pound of bacon in 1981?,$1.51,$0.82,$2.14,$2.78
+1981,Pantry / Groceries,Dz Donuts,Dozen Donuts,How much was a dozen donuts in 1981?,$2.01,$1.08,$2.84,$3.61
+1982,Pantry / Groceries,Lg Pizza,Large Pizza,How much was a large pizza in 1982?,$5,$3,$7,$10
+1982,Household Goods,Newspaper,Daily Newspaper,How much was a daily newspaper in 1982?,$0.27,$0.14,$0.40,$0.48
+1982,Entertainment / Electronics,Comic Bk,Comic Book,How much was a new comic book in 1982?,$0.59,$0.31,$0.80,$1.06
+1983,Household Goods,Cigarettes,Pack of Cigarettes,How much was a pack of cigarettes in 1983?,$0.83,$0.46,$1.21,$1.59
+1983,Big-Ticket / Cost of Living,Haircut,Men's Haircut,How much was a men's haircut in 1983?,$5.76,$3.35,$8.15,$11.18
+1983,Big-Ticket / Cost of Living,Mo. Rent,Monthly Apartment Rent,What was the average monthly apartment rent in 1983?,$302,$172,$435,$594
+1984,Entertainment / Electronics,Comic Bk,Comic Book,How much was a new comic book in 1984?,$0.69,$0.39,$0.98,$1.34
+1984,Big-Ticket / Cost of Living,New Car,New Car,"How much did a new car cost, on average, in 1984?",$10800,$6200,$15900,$21300
+1984,Big-Ticket / Cost of Living,Tuition,Yearly College Tuition,What was a year of public college tuition in 1984?,$1130,$620,$1710,$2240
+1985,Big-Ticket / Cost of Living,Mo. Rent,Monthly Apartment Rent,What was the average monthly apartment rent in 1985?,$350,$182,$499,$674
+1985,Entertainment / Electronics,Concert,Concert Ticket,How much was a concert ticket in 1985?,$18,$9,$25,$35
+1985,Big-Ticket / Cost of Living,Ballgame,Baseball Game Ticket,How much was a baseball game ticket in 1985?,$6.32,$3.31,$8.98,$12.31
+1986,Entertainment / Electronics,Color TV,Color Television,How much was a new color television set in 1986?,$389,$209,$541,$745
+1986,Entertainment / Electronics,Album,Music CD,How much was a music CD in 1986?,$9.35,$5.16,$14.21,$18.83
+1986,Apparel / Footwear,Jeans,Pair of Jeans,How much was a pair of name-brand jeans in 1986?,$21,$12,$30,$41
+1987,Apparel / Footwear,Sneakers,Pair of Sneakers,How much was a pair of name-brand sneakers in 1987?,$71,$39,$102,$138
+1987,Apparel / Footwear,Winter Ct,Winter Coat,How much was a winter coat in 1987?,$96,$53,$143,$182
+1987,Apparel / Footwear,T-Shirt,T-Shirt,How much was a plain t-shirt in 1987?,$5.92,$3.16,$8.67,$11.44
+1988,Household Goods,Fridge,Refrigerator,How much was a new refrigerator in 1988?,$667,$359,$1010,$1270
+1988,Household Goods,Washer,Washing Machine,How much was a washing machine in 1988?,$440,$237,$602,$861
+1988,Big-Ticket / Cost of Living,Bicycle,Bicycle,How much was a new bicycle in 1988?,$189,$106,$271,$345
+1989,Household Goods,Microwave,Microwave Oven,How much was a microwave oven in 1989?,$159,$88,$236,$295
+1989,Entertainment / Electronics,VCR,VCR,How much was a VCR in 1989?,$318,$168,$434,$587
+1989,Entertainment / Electronics,Walkman,Walkman,How much was a Sony Walkman in 1989?,$66,$36,$91,$118
+1990,Entertainment / Electronics,Home PC,Home Computer,How much was a home computer in 1990?,$2200,$1270,$3230,$3990
+1990,Entertainment / Electronics,Game Cnsl,Video Game Console,How much was a new video game console in 1990?,$199,$106,$272,$361
+1990,Entertainment / Electronics,Cellphone,Cell Phone,How much was a cell phone in 1990?,$800,$465,$1090,$1540
+1991,Household Goods,Barbie,Barbie Doll,How much was a Barbie doll in 1991?,$12.27,$6.79,$18.75,$24.61
+1991,Household Goods,Stamp,Postage Stamp,How much was a US first-class postage stamp in 1991?,$0.29,$0.15,$0.44,$0.56
+1991,Big-Ticket / Cost of Living,Min Wage,Federal Minimum Wage,What was the US federal minimum wage per hour in 1991?,$4.25,$2.22,$6.14,$7.63
+1992,Big-Ticket / Cost of Living,Gal. Gas,Gallon of Gasoline,How much was a gallon of regular gasoline in 1992?,$1.16,$0.67,$1.67,$2.29
+1992,Big-Ticket / Cost of Living,Big Mac,Big Mac,How much was a McDonald's Big Mac in 1992?,$2.25,$1.31,$3.44,$4.34
+1992,Big-Ticket / Cost of Living,Movie Tix,Movie Ticket,How much was a movie theater ticket in 1992?,$4.28,$2.31,$5.89,$7.92
+1993,Pantry / Groceries,Doz. Eggs,Dozen Eggs,How much was a dozen eggs in 1993?,$1.09,$0.63,$1.60,$2.03
+1993,Pantry / Groceries,Gal. Milk,Gallon of Milk,How much was a gallon of whole milk in 1993?,$2.60,$1.47,$3.87,$4.96
+1993,Pantry / Groceries,Bread,Loaf of Bread,How much was a loaf of white bread in 1993?,$0.78,$0.45,$1.10,$1.42
+1994,Pantry / Groceries,Lb. Beef,Pound of Ground Beef,How much was a pound of ground beef in 1994?,$1.44,$0.79,$2.07,$2.87
+1994,Pantry / Groceries,Lb Coffee,Pound of Coffee,How much was a pound of ground coffee in 1994?,$3.68,$2.08,$5.42,$7.38
+1994,Pantry / Groceries,Coffee Cup,Cup of Diner Coffee,How much was a cup of diner coffee in 1994?,$0.91,$0.50,$1.27,$1.64
+1995,Pantry / Groceries,Candy Bar,Candy Bar,How much was a candy bar in 1995?,$0.55,$0.32,$0.78,$1.07
+1995,Pantry / Groceries,Coke,Bottle of Coca-Cola,How much was a bottle of Coca-Cola in 1995?,$0.61,$0.33,$0.92,$1.18
+1995,Pantry / Groceries,Cereal,Box of Cereal,How much was a box of breakfast cereal in 1995?,$2.44,$1.31,$3.47,$4.65
+1996,Pantry / Groceries,Lb. Bacon,Pound of Bacon,How much was a pound of bacon in 1996?,$2.65,$1.54,$3.98,$4.90
+1996,Pantry / Groceries,Dz Donuts,Dozen Donuts,How much was a dozen donuts in 1996?,$4.33,$2.48,$6.47,$8.70
+1996,Pantry / Groceries,Lg Pizza,Large Pizza,How much was a large pizza in 1996?,$9,$5,$13,$17
+1997,Household Goods,Newspaper,Daily Newspaper,How much was a daily newspaper in 1997?,$0.45,$0.25,$0.64,$0.85
+1997,Entertainment / Electronics,Comic Bk,Comic Book,How much was a new comic book in 1997?,$2.06,$1.20,$3.14,$4.07
+1997,Household Goods,Cigarettes,Pack of Cigarettes,How much was a pack of cigarettes in 1997?,$2.48,$1.32,$3.69,$4.53
+1998,Big-Ticket / Cost of Living,Haircut,Men's Haircut,How much was a men's haircut in 1998?,$11.07,$5.85,$16.79,$21.57
+1998,Big-Ticket / Cost of Living,Mo. Rent,Monthly Apartment Rent,What was the average monthly apartment rent in 1998?,$581,$303,$882,$1070
+1998,Big-Ticket / Cost of Living,New Car,New Car,"How much did a new car cost, on average, in 1998?",$22300,$11800,$31900,$44200
+1999,Big-Ticket / Cost of Living,Tuition,Yearly College Tuition,What was a year of public college tuition in 1999?,$3290,$1700,$4620,$6490
+1999,Entertainment / Electronics,Concert,Concert Ticket,How much was a concert ticket in 1999?,$42,$23,$61,$82
+1999,Big-Ticket / Cost of Living,Ballgame,Baseball Game Ticket,How much was a baseball game ticket in 1999?,$14.93,$8.23,$21.42,$29.27
+2000,Entertainment / Electronics,Album,Music CD,How much was a music CD in 2000?,$15.99,$9.30,$22.88,$29.31
+2000,Apparel / Footwear,Jeans,Pair of Jeans,How much was a pair of name-brand jeans in 2000?,$38,$20,$57,$69
+2000,Apparel / Footwear,Sneakers,Pair of Sneakers,How much was a pair of name-brand sneakers in 2000?,$120,$70,$168,$232
+2001,Apparel / Footwear,Winter Ct,Winter Coat,How much was a winter coat in 2001?,$143,$74,$208,$256
+2001,Apparel / Footwear,T-Shirt,T-Shirt,How much was a plain t-shirt in 2001?,$10.18,$5.34,$15.51,$18.93
+2001,Household Goods,Fridge,Refrigerator,How much was a new refrigerator in 2001?,$809,$449,$1240,$1600
+2002,Household Goods,Washer,Washing Machine,How much was a washing machine in 2002?,$519,$271,$719,$936
+2002,Big-Ticket / Cost of Living,Bicycle,Bicycle,How much was a new bicycle in 2002?,$259,$143,$370,$480
+2002,Household Goods,Microwave,Microwave Oven,How much was a microwave oven in 2002?,$106,$56,$149,$203
+2003,Entertainment / Electronics,VCR,VCR,How much was a VCR in 2003?,$87,$48,$125,$167
+2003,Entertainment / Electronics,Home PC,Home Computer,How much was a home computer in 2003?,$1040,$600,$1550,$2080
+2003,Entertainment / Electronics,Game Cnsl,Video Game Console,How much was a new video game console in 2003?,$356,$201,$532,$652
+2004,Entertainment / Electronics,Cellphone,Cell Phone,How much was a cell phone in 2004?,$298,$163,$456,$592
+2004,Household Goods,Barbie,Barbie Doll,How much was a Barbie doll in 2004?,$16.83,$9.11,$24.91,$31.57
+2004,Household Goods,Stamp,Postage Stamp,How much was a US first-class postage stamp in 2004?,$0.38,$0.21,$0.56,$0.75
+2005,Big-Ticket / Cost of Living,Min Wage,Federal Minimum Wage,What was the US federal minimum wage per hour in 2005?,$5.70,$3.18,$8.71,$10.18
+2005,Big-Ticket / Cost of Living,Gal. Gas,Gallon of Gasoline,How much was a gallon of regular gasoline in 2005?,$2.30,$1.27,$3.52,$4.42
+2005,Big-Ticket / Cost of Living,Big Mac,Big Mac,How much was a McDonald's Big Mac in 2005?,$3.06,$1.69,$4.66,$5.76
+2006,Pantry / Groceries,Lb. Beef,Pound of Ground Beef,How much was a pound of ground beef in 2006?,$2.30,$1.27,$3.34,$4.50
+2006,Pantry / Groceries,Lb Coffee,Pound of Coffee,How much was a pound of ground coffee in 2006?,$3.38,$1.82,$4.72,$6.51
+2006,Pantry / Groceries,Coffee Cup,Cup of Diner Coffee,How much was a cup of diner coffee in 2006?,$1.50,$0.87,$2.20,$2.90
+2007,Pantry / Groceries,Candy Bar,Candy Bar,How much was a candy bar in 2007?,$0.82,$0.43,$1.21,$1.62
+2007,Pantry / Groceries,Coke,Bottle of Coca-Cola,How much was a bottle of Coca-Cola in 2007?,$1.07,$0.62,$1.49,$1.99
+2007,Pantry / Groceries,Cereal,Box of Cereal,How much was a box of breakfast cereal in 2007?,$3.33,$1.79,$4.61,$6.26
+2008,Pantry / Groceries,Lb. Bacon,Pound of Bacon,How much was a pound of bacon in 2008?,$3.81,$2.19,$5.70,$7.38
+2008,Pantry / Groceries,Dz Donuts,Dozen Donuts,How much was a dozen donuts in 2008?,$7.27,$4.01,$10.03,$14.14
+2008,Pantry / Groceries,Lg Pizza,Large Pizza,How much was a large pizza in 2008?,$12,$6,$17,$24
+2009,Household Goods,Newspaper,Daily Newspaper,How much was a daily newspaper in 2009?,$0.93,$0.51,$1.41,$1.85
+2009,Entertainment / Electronics,Comic Bk,Comic Book,How much was a new comic book in 2009?,$2.91,$1.51,$4.42,$5.63
+2009,Household Goods,Cigarettes,Pack of Cigarettes,How much was a pack of cigarettes in 2009?,$5.18,$2.98,$7.66,$9.63
+2010,Big-Ticket / Cost of Living,Haircut,Men's Haircut,How much was a men's haircut in 2010?,$18.00,$9.34,$24.64,$36.06
+2010,Big-Ticket / Cost of Living,Mo. Rent,Monthly Apartment Rent,What was the average monthly apartment rent in 2010?,$841,$468,$1220,$1590
+2010,Big-Ticket / Cost of Living,New Car,New Car,"How much did a new car cost, on average, in 2010?",$29000,$16600,$41800,$53200
+2011,Big-Ticket / Cost of Living,Tuition,Yearly College Tuition,What was a year of public college tuition in 2011?,$7850,$4350,$11600,$15200
+2011,Entertainment / Electronics,Concert,Concert Ticket,How much was a concert ticket in 2011?,$68,$37,$93,$131
+2011,Big-Ticket / Cost of Living,Ballgame,Baseball Game Ticket,How much was a baseball game ticket in 2011?,$27.71,$15.49,$39.33,$52.60
+2012,Entertainment / Electronics,Color TV,Color Television,How much was a new color television set in 2012?,$510,$270,$742,$989
+2012,Entertainment / Electronics,Album,Digital Album,How much was a digital album in 2012?,$11.14,$6.28,$17.10,$19.96
+2012,Apparel / Footwear,Jeans,Pair of Jeans,How much was a pair of name-brand jeans in 2012?,$52,$30,$78,$101
+2013,Apparel / Footwear,Sneakers,Pair of Sneakers,How much was a pair of name-brand sneakers in 2013?,$146,$77,$200,$293
+2013,Apparel / Footwear,Winter Ct,Winter Coat,How much was a winter coat in 2013?,$178,$98,$264,$350
+2013,Apparel / Footwear,T-Shirt,T-Shirt,How much was a plain t-shirt in 2013?,$12.83,$6.85,$19.32,$23.47
+2014,Household Goods,Fridge,Refrigerator,How much was a new refrigerator in 2014?,$1010,$586,$1540,$1900
+2014,Household Goods,Washer,Washing Machine,How much was a washing machine in 2014?,$673,$376,$928,$1320
+2014,Big-Ticket / Cost of Living,Bicycle,Bicycle,How much was a new bicycle in 2014?,$337,$186,$499,$621
+2015,Household Goods,Microwave,Microwave Oven,How much was a microwave oven in 2015?,$95,$49,$140,$174
+2015,Entertainment / Electronics,Home PC,Home Computer,How much was a home computer in 2015?,$600,$339,$847,$1130
+2015,Entertainment / Electronics,Game Cnsl,Video Game Console,How much was a new video game console in 2015?,$425,$240,$619,$794
+2016,Entertainment / Electronics,Cellphone,Cell Phone,How much was a cell phone in 2016?,$678,$393,$925,$1340
+2016,Household Goods,Barbie,Barbie Doll,How much was a Barbie doll in 2016?,$22.87,$12.17,$33.97,$41.44
+2016,Household Goods,Stamp,Postage Stamp,How much was a US first-class postage stamp in 2016?,$0.47,$0.25,$0.67,$0.91
+2017,Big-Ticket / Cost of Living,Min Wage,Federal Minimum Wage,What was the US federal minimum wage per hour in 2017?,$7.25,$4.05,$10.00,$14.01
+2017,Big-Ticket / Cost of Living,Gal. Gas,Gallon of Gasoline,How much was a gallon of regular gasoline in 2017?,$2.41,$1.32,$3.70,$4.54
+2017,Big-Ticket / Cost of Living,Big Mac,Big Mac,How much was a McDonald's Big Mac in 2017?,$5.12,$2.80,$7.81,$10.23
+2018,Big-Ticket / Cost of Living,Movie Tix,Movie Ticket,How much was a movie theater ticket in 2018?,$8.86,$5.01,$13.09,$16.64
+2018,Pantry / Groceries,Doz. Eggs,Dozen Eggs,How much was a dozen eggs in 2018?,$1.44,$0.75,$2.03,$2.77
+2018,Pantry / Groceries,Gal. Milk,Gallon of Milk,How much was a gallon of whole milk in 2018?,$3.30,$1.77,$4.74,$6.56
+2019,Pantry / Groceries,Bread,Loaf of Bread,How much was a loaf of white bread in 2019?,$1.52,$0.84,$2.13,$3.03
+2019,Pantry / Groceries,Lb. Beef,Pound of Ground Beef,How much was a pound of ground beef in 2019?,$3.92,$2.28,$5.92,$7.43
+2019,Pantry / Groceries,Lb Coffee,Pound of Coffee,How much was a pound of ground coffee in 2019?,$4.65,$2.61,$6.67,$9.24
+2020,Pantry / Groceries,Coffee Cup,Cup of Diner Coffee,How much was a cup of diner coffee in 2020?,$2.40,$1.32,$3.65,$4.69
+2020,Pantry / Groceries,Candy Bar,Candy Bar,How much was a candy bar in 2020?,$1.30,$0.68,$1.91,$2.43
+2020,Pantry / Groceries,Coke,Bottle of Coca-Cola,How much was a bottle of Coca-Cola in 2020?,$1.75,$0.94,$2.64,$3.48
+2021,Pantry / Groceries,Cereal,Box of Cereal,How much was a box of breakfast cereal in 2021?,$4.14,$2.18,$5.84,$8.23
+2021,Pantry / Groceries,Lb. Bacon,Pound of Bacon,How much was a pound of bacon in 2021?,$5.48,$3.05,$7.91,$10.96
+2021,Pantry / Groceries,Dz Donuts,Dozen Donuts,How much was a dozen donuts in 2021?,$10.44,$5.41,$16.00,$19.97
+2022,Pantry / Groceries,Lg Pizza,Large Pizza,How much was a large pizza in 2022?,$16,$9,$22,$29
+2022,Household Goods,Newspaper,Daily Newspaper,How much was a daily newspaper in 2022?,$2.29,$1.29,$3.23,$4.38
+2022,Entertainment / Electronics,Comic Bk,Comic Book,How much was a new comic book in 2022?,$4.30,$2.30,$5.90,$8.09
+2023,Household Goods,Cigarettes,Pack of Cigarettes,How much was a pack of cigarettes in 2023?,$7.98,$4.17,$11.10,$14.79
+2023,Big-Ticket / Cost of Living,Haircut,Men's Haircut,How much was a men's haircut in 2023?,$31.30,$16.24,$44.05,$57.62
+2023,Big-Ticket / Cost of Living,Mo. Rent,Monthly Apartment Rent,What was the average monthly apartment rent in 2023?,$1370,$719,$2020,$2580
+2024,Big-Ticket / Cost of Living,New Car,New Car,"How much did a new car cost, on average, in 2024?",$48500,$26100,$68100,$87500
+2024,Big-Ticket / Cost of Living,Tuition,Yearly College Tuition,What was a year of public college tuition in 2024?,$11200,$6100,$16200,$21100
+2024,Entertainment / Electronics,Concert,Concert Ticket,How much was a concert ticket in 2024?,$117,$61,$177,$213
+2025,Big-Ticket / Cost of Living,Ballgame,Baseball Game Ticket,How much was a baseball game ticket in 2025?,$40.74,$23.60,$56.77,$73.69
+2025,Entertainment / Electronics,Color TV,Color Television,How much was a new color television set in 2025?,$350,$200,$494,$671
+2025,Entertainment / Electronics,Album,Digital Album,How much was a digital album in 2025?,$12.99,$6.98,$17.77,$24.55
+2026,Apparel / Footwear,Jeans,Pair of Jeans,How much was a pair of name-brand jeans in 2026?,$82,$45,$125,$163
+2026,Apparel / Footwear,Sneakers,Pair of Sneakers,How much was a pair of name-brand sneakers in 2026?,$200,$105,$302,$361
+2026,Apparel / Footwear,Winter Ct,Winter Coat,How much was a winter coat in 2026?,$230,$122,$315,$436

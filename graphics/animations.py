@@ -1,7 +1,11 @@
 import math
 import random
 import pygame
-from config import RED_FULL, RED_DIM, BLACK
+from config import (
+    RED_FULL, RED_DIM, BLACK, BTN1_STATUS_PULSE_INTERVAL_SECONDS,
+    IDLE_ANIMATION_THEMES, IDLE_THEME_DEFAULT,
+)
+from state import state
 
 # NOTE ON CLIPPING: render_panel_animation() sets a clip rect around the
 # panel before calling an animation, and pygame's draw.* primitives honour
@@ -104,7 +108,7 @@ def anim_dancing_cat(surface, rect, t, seed=0.0):
 
 def anim_coin_pop(surface, rect, t, seed=0.0):
     """A coin popping and fading -- shown on the DJ-mode status panel
-    right after a Btn6 quiz-fetch attempt comes back with "no credits"
+    right after a Btn2 quiz-fetch attempt comes back with "no credits"
     (any API failure triggered by an explicit fetch request), distinct
     from the passive anim_dancing_cat failure indicator."""
     x0, y0, w, h = rect
@@ -518,26 +522,364 @@ def anim_question_mark(surface, rect, t, seed=0.0):
 
 
 # ==========================================
+# BTN1-HOLD STATUS OVERLAY (panel 3, DJ mode)
+# ==========================================
+# Shown while Btn1 is held (or during its 10s post-release persistence
+# window -- inputs/gamepad.py::_process_btn1_hold()/_handle_btn1_release()),
+# reflecting whether track questions / Price Game are available for the
+# current track, or the AI is exhausted for it. Same red-only-hardware
+# constraint as every other set above -- star/dollar/arrow are told apart by
+# SHAPE and a two-frame mid->large size pulse, not by color.
+def _mid_large_radius(t, mid, large):
+    frame = int(t / BTN1_STATUS_PULSE_INTERVAL_SECONDS) % 2
+    return large if frame == 1 else mid
+
+
+def anim_bold_star(surface, rect, t, seed=0.0):
+    """Filled five-point star, pulsing between a mid and large size --
+    "track questions available" indicator."""
+    x0, y0, w, h = rect
+    cx, cy = x0 + w // 2, y0 + h // 2
+    r_outer = _mid_large_radius(t, min(w, h) * 0.32, min(w, h) * 0.45)
+    r_inner = r_outer * 0.45
+
+    pts = []
+    for i in range(10):
+        ang = (math.pi * i / 5) - math.pi / 2
+        r = r_outer if i % 2 == 0 else r_inner
+        pts.append((int(cx + math.cos(ang) * r), int(cy + math.sin(ang) * r)))
+    pygame.draw.polygon(surface, RED_FULL, pts)
+
+
+def anim_bold_dollar(surface, rect, t, seed=0.0):
+    """Bold hand-drawn "$" -- vertical bar through two S-curve arcs --
+    pulsing between a mid and large size. "Price Game available" indicator."""
+    x0, y0, w, h = rect
+    cx, cy = x0 + w // 2, y0 + h // 2
+    half_h = int(_mid_large_radius(t, h * 0.28, h * 0.40))
+    radius = max(3, int(half_h * 0.9))
+
+    pygame.draw.line(surface, RED_FULL, (cx, cy - half_h - 2), (cx, cy + half_h + 2), 2)
+    pygame.draw.arc(surface, RED_FULL,
+                     (cx - radius, cy - half_h, radius * 2, half_h + 1),
+                     math.pi * 0.5, math.pi * 1.9, 2)
+    pygame.draw.arc(surface, RED_FULL,
+                     (cx - radius, cy - 1, radius * 2, half_h + 1),
+                     math.pi * 1.5, math.pi * 2.9, 2)
+
+
+def anim_arrow_down(surface, rect, t, seed=0.0):
+    """Thick downward chevron + shaft, pulsing between a mid and large size,
+    with a brightness flicker (RED_FULL/RED_DIM) to read as an alert --
+    "no questions / AI exhausted" indicator."""
+    x0, y0, w, h = rect
+    cx, cy = x0 + w // 2, y0 + h // 2
+    half = _mid_large_radius(t, h * 0.22, h * 0.34)
+    flicker = (int(t * 4.0 + seed) % 2) == 0
+    color = RED_FULL if flicker else RED_DIM
+
+    shaft_top = int(cy - half)
+    head_y = int(cy + half * 0.35)
+    tip_y = int(cy + half)
+
+    pygame.draw.line(surface, color, (cx, shaft_top), (cx, head_y), 2)
+    pygame.draw.polygon(surface, color, [
+        (int(cx - half * 0.6), head_y),
+        (int(cx + half * 0.6), head_y),
+        (cx, tip_y),
+    ])
+
+
+# ==========================================
+# BIRTHDAY SET (idle theme, panels 3-6)
+# ==========================================
+# Same constraints as every set above: pygame.draw.* only (the panel clip
+# rect keeps them inside their own 32x16 tile), RED_FULL/RED_DIM/BLACK only
+# (red-only matrix hardware), deterministic from t + seed.
+
+
+def anim_balloon_float(surface, rect, t, seed=0.0):
+    """A balloon drifts upward on a wiggling string, swaying side to side,
+    fading near the top of its climb and resetting from the bottom --
+    same float-and-reset shape as the Halloween set's anim_ghost_float,
+    but rising instead of hovering in place."""
+    x0, y0, w, h = rect
+    period = 4.5
+    phase = ((t + seed) % period) / period
+    cy = y0 + h + 3 - int(phase * (h + 10))
+    cx = x0 + w // 2 + int(math.sin(t * 1.6 + seed) * 5)
+    color = RED_DIM if phase > 0.85 else RED_FULL
+
+    pygame.draw.ellipse(surface, color, (cx - 4, cy - 5, 8, 9))
+    pygame.draw.polygon(surface, color, [(cx - 1, cy + 4), (cx + 1, cy + 4), (cx, cy + 6)])  # knot
+    pts = [(cx + int(math.sin(t * 4.0 + i * 0.8 + seed) * 1), cy + 6 + i * 2) for i in range(3)]
+    pygame.draw.lines(surface, RED_DIM, False, pts, 1)
+
+
+def anim_birthday_cake(surface, rect, t, seed=0.0):
+    """A two-tier cake sits still while its candle flame flickers -- same
+    candlelight technique as anim_jack_o_lantern (two summed sines at
+    incommensurate rates for an irregular, non-obviously-pulsing flicker)."""
+    x0, y0, w, h = rect
+    cx, cy = x0 + w // 2, y0 + h - 3
+
+    pygame.draw.rect(surface, RED_FULL, (cx - 8, cy - 5, 16, 5))
+    pygame.draw.rect(surface, RED_FULL, (cx - 5, cy - 8, 10, 3))
+    for dx in range(-8, 9, 3):
+        pygame.draw.line(surface, RED_DIM, (cx + dx, cy - 5), (cx + dx, cy - 4))
+
+    pygame.draw.line(surface, RED_DIM, (cx, cy - 8), (cx, cy - 11), 1)
+    flick = (math.sin(t * 7.5 + seed) + math.sin(t * 12.0 + seed * 2.0)) * 0.5
+    flame_color = RED_FULL if flick > -0.3 else RED_DIM
+    pygame.draw.circle(surface, flame_color, (cx, cy - 12), 1)
+
+
+def anim_confetti_burst(surface, rect, t, seed=0.0):
+    """Confetti launches from bottom-center in a fan, arcs under gravity,
+    and resets -- individual falling/flying points via set_at(), same
+    per-pixel technique (and the same manual bounds check) as anim_rain."""
+    x0, y0, w, h = rect
+    period = 2.2
+    phase = ((t + seed) % period) / period
+    origin_x, origin_y = x0 + w // 2, y0 + h - 1
+
+    for i in range(7):
+        ang = (i / 7.0) * math.pi - math.pi * 0.15  # fan upward
+        speed = 10.0 + (i % 3) * 3.0
+        px = origin_x + math.cos(ang) * speed * phase
+        py = origin_y - math.sin(ang) * speed * phase + 14.0 * phase * phase  # gravity arc
+        ix, iy = int(px), int(py)
+        if x0 <= ix < x0 + w and y0 <= iy < y0 + h:
+            surface.set_at((ix, iy), RED_FULL if i % 2 == 0 else RED_DIM)
+
+
+def anim_gift_box(surface, rect, t, seed=0.0):
+    """A wrapped present sits still, ribboned, while its lid pops open and
+    shut on a slow beat -- the bow rides up and down with the lid."""
+    x0, y0, w, h = rect
+    cx, cy = x0 + w // 2, y0 + h - 3
+    period = 2.0
+    phase = ((t + seed) % period) / period
+    pop = max(0.0, 1.0 - abs(phase - 0.15) / 0.15)  # quick pop, mostly closed
+    lid_lift = int(pop * 3)
+
+    pygame.draw.rect(surface, RED_FULL, (cx - 6, cy - 6, 12, 7))             # box
+    pygame.draw.rect(surface, RED_FULL, (cx - 7, cy - 8 - lid_lift, 14, 3))  # lid
+    pygame.draw.line(surface, RED_DIM, (cx, cy - 6), (cx, cy + 1), 2)        # vertical ribbon
+    pygame.draw.line(surface, RED_DIM, (cx - 6, cy - 3), (cx + 6, cy - 3), 2)  # horizontal ribbon
+
+    ly = cy - 8 - lid_lift
+    pygame.draw.polygon(surface, RED_FULL, [(cx - 3, ly), (cx - 1, ly - 3), (cx, ly)])
+    pygame.draw.polygon(surface, RED_FULL, [(cx + 3, ly), (cx + 1, ly - 3), (cx, ly)])
+
+
+def anim_party_hat(surface, rect, t, seed=0.0):
+    """A conical party hat wobbles side to side, striped, with a pompom
+    bouncing on top."""
+    x0, y0, w, h = rect
+    cx = x0 + w // 2 + int(math.sin(t * 1.8 + seed) * 3)
+    base_y = y0 + h - 4
+    tip_y = base_y - 10
+
+    pygame.draw.polygon(surface, RED_FULL, [(cx - 6, base_y), (cx + 6, base_y), (cx, tip_y)])
+    for frac in (0.35, 0.6):
+        yy = int(base_y - (base_y - tip_y) * frac)
+        span = int(6 * (1.0 - frac))
+        pygame.draw.line(surface, BLACK, (cx - span, yy), (cx + span, yy))
+
+    bob = int(abs(math.sin(t * 6.0 + seed)) * 2)
+    pygame.draw.circle(surface, RED_FULL, (cx, tip_y - 2 - bob), 2)
+
+
+def anim_streamer_wave(surface, rect, t, seed=0.0):
+    """Three party streamers ripple across the panel like slow wavy
+    banners, each on its own row, phase, and brightness."""
+    x0, y0, w, h = rect
+    rows = (2, 7, 12)
+    for i, row_y in enumerate(rows):
+        pts = []
+        for col in range(0, w, 2):
+            wave = math.sin(t * 2.5 + col * 0.5 + i * 1.7 + seed) * 2.0
+            pts.append((x0 + col, y0 + row_y + int(wave)))
+        if len(pts) >= 2:
+            pygame.draw.lines(surface, RED_DIM if i == 1 else RED_FULL, False, pts, 1)
+
+
+def anim_sparkler(surface, rect, t, seed=0.0):
+    """A hand-held sparkler stick stays put while its tip fizzes with
+    darting sparks -- same traveling-points technique as
+    anim_celtic_cross's ring sparkle, but faster and denser so it reads as
+    fizzing rather than slow orbiting."""
+    x0, y0, w, h = rect
+    base_x, base_y = x0 + 6, y0 + h - 2
+    tip_x, tip_y = x0 + w - 6, y0 + 4
+
+    pygame.draw.line(surface, RED_DIM, (base_x, base_y), (tip_x, tip_y), 1)
+
+    for i in range(5):
+        ang = t * 6.0 + i * (2 * math.pi / 5) + seed
+        dist = 2.0 + (math.sin(t * 9.0 + i * 3.1) + 1.0) * 1.5
+        px, py = tip_x + int(math.cos(ang) * dist), tip_y + int(math.sin(ang) * dist)
+        if x0 <= px < x0 + w and y0 <= py < y0 + h:
+            surface.set_at((px, py), RED_FULL if i % 2 == 0 else RED_DIM)
+    pygame.draw.circle(surface, RED_FULL, (tip_x, tip_y), 1)
+
+
+def anim_party_popper(surface, rect, t, seed=0.0):
+    """A party popper cone fires a burst of streamer lines outward on a
+    loop -- same beat shape as anim_confetti_burst but drawn as connected
+    lines from a fixed cone rather than individual falling points, so the
+    two read as distinct effects within the same theme."""
+    x0, y0, w, h = rect
+    cx, cy = x0 + w // 2, y0 + h - 2
+    period = 2.4
+    phase = ((t + seed) % period) / period
+
+    pygame.draw.polygon(surface, RED_FULL, [(cx - 3, cy), (cx + 3, cy), (cx, cy - 5)])
+
+    if phase < 0.5:
+        burst = phase / 0.5
+        for i in range(5):
+            ang = math.pi * 0.5 + (i - 2) * 0.35
+            length = burst * 10.0
+            ex = cx + int(math.cos(ang) * length)
+            ey = cy - 5 - int(math.sin(ang) * length)
+            pygame.draw.line(surface, RED_DIM if i % 2 == 0 else RED_FULL, (cx, cy - 5), (ex, ey), 1)
+
+
+# ==========================================
+# QUESTION MARKS SET (idle theme, panels 3-6)
+# ==========================================
+def _draw_qmark(surface, cx, cy, r, color, thickness=1):
+    """Shared glyph for every animation in this theme: a "?" built from an
+    arc hook, a short stem, and a dot, scaled proportionally to `r` (its
+    overall cap height) so the same drawing code covers everything from a
+    tiny scattered mark to a large floating one."""
+    r = max(3, min(8, int(r)))
+    hook_w = r
+    hook_h = max(2, int(r * 0.8))
+    top = cy - int(r * 1.3)
+
+    pygame.draw.arc(surface, color, (cx - hook_w, top, hook_w * 2, hook_h * 2),
+                     math.pi * 0.15, math.pi * 1.55, max(1, thickness))
+    stem_y0 = top + hook_h + 1
+    stem_y1 = stem_y0 + max(1, int(r * 0.35))
+    pygame.draw.line(surface, color, (cx, stem_y0), (cx, stem_y1), max(1, thickness))
+    pygame.draw.circle(surface, color, (cx, stem_y1 + 2), max(1, thickness))
+
+
+def anim_qmark_float_up(surface, rect, t, seed=0.0):
+    """One large question mark drifts slowly upward, swaying side to side
+    like a balloon, fading near the top and resetting from the bottom."""
+    x0, y0, w, h = rect
+    period = 5.0
+    phase = ((t + seed) % period) / period
+    cy = y0 + h + 4 - int(phase * (h + 12))
+    cx = x0 + w // 2 + int(math.sin(t * 1.3 + seed) * 4)
+    color = RED_DIM if phase > 0.85 else RED_FULL
+    _draw_qmark(surface, cx, cy, 6, color, thickness=2)
+
+
+def anim_qmark_scatter(surface, rect, t, seed=0.0):
+    """Three question marks of different sizes drift left-to-right at
+    their own height, speed, and phase, wrapping around when they exit --
+    reads as a loose scattered field rather than one focal object, the
+    clearest "varying sizes" statement in this set. Same multi-row-crossing
+    technique as the Halloween set's anim_bat_swarm."""
+    x0, y0, w, h = rect
+    span = w + 10
+    marks = ((3.0, 6.0, 2), (4.5, 4.0, 9), (2.5, 8.5, 13))  # (radius, speed, row_y)
+    for i, (r, speed, row_y) in enumerate(marks):
+        cx = x0 + span - int((t * speed + seed * 13.0 + i * 17.0) % span) - 5
+        cy = y0 + row_y
+        _draw_qmark(surface, cx, cy, r, RED_DIM if i == 1 else RED_FULL, thickness=1)
+
+
+def anim_qmark_pulse_grow(surface, rect, t, seed=0.0):
+    """A single question mark planted at center, breathing between small
+    and large -- pure size change with no travel, the deliberate opposite
+    of the other three animations in this set."""
+    x0, y0, w, h = rect
+    cx, cy = x0 + w // 2, y0 + h // 2
+    pulse = (math.sin(t * 2.0 + seed) + 1.0) / 2.0
+    r = 3.5 + pulse * 3.5
+    color = RED_FULL if pulse > 0.3 else RED_DIM
+    _draw_qmark(surface, cx, cy, r, color, thickness=2 if pulse > 0.5 else 1)
+
+
+def anim_qmark_bounce(surface, rect, t, seed=0.0):
+    """A mid-sized question mark bounces around the panel interior like a
+    screensaver logo, ricocheting off all four edges -- independent
+    triangle-wave motion on each axis."""
+    x0, y0, w, h = rect
+    r = 3
+    margin = r + 2
+    span_x = max(2, w - 2 * margin)
+    span_y = max(2, h - 2 * margin)
+
+    px = (t * 7.3 + seed * 5.0) % (2 * span_x)
+    px = px if px <= span_x else 2 * span_x - px
+    py = (t * 5.1 + seed * 8.0) % (2 * span_y)
+    py = py if py <= span_y else 2 * span_y - py
+
+    cx = x0 + margin + int(px)
+    cy = y0 + margin + int(py)
+    _draw_qmark(surface, cx, cy, r, RED_FULL, thickness=1)
+
+
+# ==========================================
 # IDLE ANIMATION DEAL (panels 3-6)
 # ==========================================
-IDLE_ANIMATIONS = [
+# GENERAL_IDLE_ANIMATIONS have no seasonal/occasion imagery (dots, lines,
+# critters), so they read fine under any theme and are always in the pool.
+# IDLE_THEMES layers a themed set on top, selected by state.idle_theme
+# (operator-controlled, see web/remote_server.py::/api/idle/theme) -- e.g.
+# "Halloween" pool = GENERAL_IDLE_ANIMATIONS + IDLE_THEMES["Halloween"].
+GENERAL_IDLE_ANIMATIONS = [
     anim_scanner,
     anim_equalizer,
     anim_rain,
     anim_pulse_rings,
-    anim_bat_swarm,
-    anim_ghost_float,
-    anim_jack_o_lantern,
-    anim_spider_drop,
-    anim_lightning_flash,
-    anim_grave_hand,
-    anim_witch_flyby,
-    anim_skull_chatter,
     anim_squirrel,
     anim_duck,
-    anim_celtic_cross,
     anim_dancing_pixelman,
 ]
+
+IDLE_THEMES = {
+    "Halloween": [
+        anim_bat_swarm,
+        anim_ghost_float,
+        anim_jack_o_lantern,
+        anim_spider_drop,
+        anim_lightning_flash,
+        anim_grave_hand,
+        anim_witch_flyby,
+        anim_skull_chatter,
+        anim_celtic_cross,
+    ],
+    "Birthday": [
+        anim_balloon_float,
+        anim_birthday_cake,
+        anim_confetti_burst,
+        anim_gift_box,
+        anim_party_hat,
+        anim_streamer_wave,
+        anim_sparkler,
+        anim_party_popper,
+    ],
+    "Question Marks": [
+        anim_qmark_float_up,
+        anim_qmark_scatter,
+        anim_qmark_pulse_grow,
+        anim_qmark_bounce,
+    ],
+}
+# Keeps config.IDLE_ANIMATION_THEMES (the admin panel's dropdown source of
+# truth) and this dict from silently drifting apart -- fails loudly at
+# import time instead of an admin selection quietly doing nothing.
+assert set(IDLE_THEMES) == set(IDLE_ANIMATION_THEMES), (
+    f"IDLE_THEMES keys {sorted(IDLE_THEMES)} != config.IDLE_ANIMATION_THEMES {sorted(IDLE_ANIMATION_THEMES)}"
+)
 
 IDLE_PANEL_IDS = (3, 4, 5, 6)
 
@@ -545,12 +887,22 @@ IDLE_PANEL_IDS = (3, 4, 5, 6)
 _panel_deal = {}
 
 
+def _current_theme_pool():
+    themed = IDLE_THEMES.get(state.idle_theme) or IDLE_THEMES[IDLE_THEME_DEFAULT]
+    return GENERAL_IDLE_ANIMATIONS + themed
+
+
 def deal_panel_animations():
-    """Shuffle the animation pool and deal one *distinct* animation to each of
-    panels 3-6, like dealing cards face-up across a table. Called whenever a
-    new track appears, so the idle DJ display remixes itself per track instead
-    of showing the same four animations in the same four slots forever."""
-    hand = random.sample(IDLE_ANIMATIONS, len(IDLE_PANEL_IDS))
+    """Shuffle GENERAL_IDLE_ANIMATIONS + the current theme's set (see
+    state.idle_theme) and deal one *distinct* animation to each of panels
+    3-6, like dealing cards face-up across a table. Called whenever a new
+    track appears, so the idle DJ display remixes itself per track instead
+    of showing the same four animations in the same four slots forever --
+    and also called directly the instant the operator changes the theme
+    (web/remote_server.py::/api/idle/theme), so a theme switch is visible
+    on the very next frame rather than waiting for the next song."""
+    pool = _current_theme_pool()
+    hand = random.sample(pool, min(len(IDLE_PANEL_IDS), len(pool)))
     _panel_deal.clear()
     for pid, fn in zip(IDLE_PANEL_IDS, hand):
         # Fresh phase seed as well, so an animation dealt to the same panel
@@ -564,7 +916,7 @@ deal_panel_animations()
 
 
 def render_panel_animation(surface, panel_id, rect, t):
-    fn, seed = _panel_deal.get(panel_id, (IDLE_ANIMATIONS[0], panel_id * 1.37))
+    fn, seed = _panel_deal.get(panel_id, (GENERAL_IDLE_ANIMATIONS[0], panel_id * 1.37))
 
     old_clip = surface.get_clip()
     surface.set_clip(pygame.Rect(rect))

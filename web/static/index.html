@@ -1,0 +1,553 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Game Show Remote</title>
+<style>
+  :root { color-scheme: dark; }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; padding: 16px 16px 48px;
+    background: #0b0b0d; color: #f2f2f2;
+    font-family: -apple-system, Segoe UI, Roboto, sans-serif;
+  }
+  h1 { font-size: 1.1rem; text-transform: uppercase; letter-spacing: .08em; color: #ff3b30; margin: 0 0 16px; }
+  h2 { font-size: .85rem; text-transform: uppercase; letter-spacing: .06em; color: #999; margin: 24px 0 8px; }
+  section { background: #17171a; border-radius: 10px; padding: 14px; margin-bottom: 14px; }
+  .row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+  .now-title { font-size: 1.2rem; font-weight: 600; }
+  .now-artist { color: #bbb; }
+  .now-tags { font-size: .8rem; color: #bbb; margin-top: 6px; }
+  .now-tags .untagged { color: #666; font-style: italic; }
+  .now-tags .flag-explicit { color: #ff8080; }
+  .now-tags .flag-slowdance { color: #7ecbff; }
+  .now-timer { font-size: 1.4rem; font-variant-numeric: tabular-nums; margin-top: 10px; }
+  .question { font-size: 1.05rem; margin-bottom: 10px; }
+  .choice { width: 100%; text-align: left; padding: 10px 12px; margin-bottom: 6px; border-radius: 8px;
+            border: 1px solid #333; background: #202024; color: #f2f2f2; font-size: .95rem; }
+  .choice.selected { border-color: #ff3b30; background: #331414; }
+  .choice.correct { border-color: #3ba55c; background: #103018; }
+  button { cursor: pointer; }
+  .btn { padding: 10px 14px; border-radius: 8px; border: 1px solid #333; background: #202024; color: #f2f2f2; font-size: .9rem; }
+  .btn.primary { background: #ff3b30; border-color: #ff3b30; color: #fff; font-weight: 700; }
+  .btn.big { width: 100%; padding: 18px 14px; font-size: 1.1rem; }
+  .timer { font-size: 1.6rem; font-variant-numeric: tabular-nums; }
+  input[type=range] { width: 100%; }
+  input[type=text] { width: 100%; padding: 10px 12px; border-radius: 8px; border: 1px solid #333;
+                      background: #202024; color: #f2f2f2; font-size: .9rem; }
+  select { width: 100%; padding: 10px 12px; border-radius: 8px; border: 1px solid #333;
+           background: #202024; color: #f2f2f2; font-size: .9rem; }
+  .upcoming { font-size: .85rem; color: #999; margin-top: 8px; }
+  .upcoming div { padding: 4px 0; border-top: 1px solid #2a2a2e; }
+  .preview-row { display: flex; padding: 4px 0; border-top: 1px solid #2a2a2e; font-size: .85rem; }
+  .preview-row .label { width: 110px; flex-shrink: 0; color: #999; }
+  .preview-row .value { color: #f2f2f2; }
+  .btn.danger { background: #4a0f0f; border-color: #ff3b30; color: #ffb6b6; font-weight: 700; width: 100%; margin-top: 4px; }
+  .modal-backdrop {
+    display: none; position: fixed; inset: 0; background: rgba(0,0,0,.7);
+    align-items: center; justify-content: center; z-index: 100; padding: 16px;
+  }
+  .modal-backdrop.open { display: flex; }
+  .modal-box { background: #17171a; border: 1px solid #ff3b30; border-radius: 10px; padding: 20px; max-width: 320px; }
+  .modal-box p { margin: 0 0 16px; font-size: .95rem; }
+  .modal-box .row { justify-content: flex-end; }
+  .toast {
+    position: fixed; left: 50%; bottom: 16px; transform: translateX(-50%);
+    background: #202024; border: 1px solid #333; border-radius: 8px;
+    padding: 8px 14px; font-size: .85rem; opacity: 0; transition: opacity .2s;
+    pointer-events: none; z-index: 200; max-width: 90vw; text-align: center;
+  }
+  .toast.show { opacity: 1; }
+  .subhead { font-size: .75rem; text-transform: uppercase; letter-spacing: .05em; color: #777; margin: 12px 0 6px; }
+  .subhead:first-child { margin-top: 0; }
+  .nav-bar { display: flex; align-items: center; gap: 10px; margin-bottom: 4px; position: relative; }
+  .hamburger-btn {
+    background: none; border: 1px solid #333; border-radius: 8px; color: #f2f2f2;
+    font-size: 1.2rem; line-height: 1; padding: 6px 12px; cursor: pointer;
+  }
+  .nav-menu {
+    display: none; position: absolute; top: 42px; left: 0; background: #17171a;
+    border: 1px solid #333; border-radius: 8px; z-index: 300; overflow: hidden; min-width: 170px;
+  }
+  .nav-menu.open { display: block; }
+  .nav-menu a {
+    display: block; padding: 12px 16px; color: #f2f2f2; text-decoration: none;
+    font-size: .9rem; border-bottom: 1px solid #2a2a2e;
+  }
+  .nav-menu a:last-child { border-bottom: none; }
+  .nav-menu a:hover { background: #202024; }
+  .nav-menu a.active { color: #ff3b30; font-weight: 700; }
+  .volume-value { text-align: center; font-size: .95rem; color: #ccc; margin-top: 6px; font-variant-numeric: tabular-nums; }
+</style>
+</head>
+<body>
+  <div class="nav-bar">
+    <button class="hamburger-btn" onclick="toggleNavMenu()">&#9776;</button>
+    <div class="nav-menu" id="nav-menu">
+      <a href="/" class="active">Remote</a>
+      <a href="/library">File Manager</a>
+      <a href="/setup">Setup</a>
+    </div>
+  </div>
+  <h1>Game Show Orchestrator &mdash; Remote</h1>
+
+  <section>
+    <h2>Now Playing</h2>
+    <div class="now-title" id="np-title">&mdash;</div>
+    <div class="now-artist" id="np-artist"></div>
+    <div class="now-tags" id="np-tags"></div>
+    <div class="now-timer" id="autodj-remaining">--:--</div>
+  </section>
+
+  <section id="show-controls-section" style="display:none">
+    <h2>Show</h2>
+    <div class="row">
+      <button class="btn danger" style="flex:1" onclick="stopShow()">STOP GAME</button>
+      <button class="btn" style="flex:1" onclick="startNewGame()">START NEW GAME</button>
+    </div>
+  </section>
+
+  <section>
+    <h2>Virtual Gamepad <span style="color:#999;font-weight:400;font-size:.75rem">(no hardware controller needed)</span></h2>
+
+    <div class="subhead">Transport</div>
+    <div class="row" style="align-items:center">
+      <button class="btn" onclick="transportPrev()">&laquo; Previous Track</button>
+      <button class="btn" onclick="transportNext()">Next Track &raquo;</button>
+      <label style="display:flex;align-items:center;gap:6px;font-weight:700;margin-left:8px">
+        <input type="checkbox" id="announcements-checkbox" onchange="announcementsToggle()">
+        ANNOUNCEMENTS
+      </label>
+      <label style="display:flex;align-items:center;gap:6px;font-weight:700;margin-left:8px">
+        <input type="checkbox" id="sfx-checkbox" onchange="sfxToggle()">
+        GAME SFX
+      </label>
+    </div>
+  </section>
+
+  <section>
+    <h2>Price Game</h2>
+    <button class="btn primary big" onclick="startPriceGame()">PLAY PRICE GAME</button>
+  </section>
+
+  <section>
+    <h2>Play Along (QR Quiz)</h2>
+    <div class="row" style="margin-bottom:10px">
+      <span id="quiz-player-count" style="color:#999; font-size:.85rem;">0 players signed up</span>
+    </div>
+    <div class="row" style="align-items:center;gap:8px">
+      <label style="font-weight:700;font-size:.85rem">Win Score:</label>
+      <input type="number" id="win-score-input" min="1" step="1" style="width:80px">
+      <button class="btn" onclick="winScoreSave()">Save</button>
+    </div>
+    <div class="row" style="align-items:center;gap:8px;margin-top:8px">
+      <label style="font-weight:700;font-size:.85rem">Intermission (min):</label>
+      <input type="number" id="intermission-minutes-input" min="1" step="1" style="width:80px">
+      <button class="btn" onclick="intermissionMinutesSave()">Save</button>
+    </div>
+    <div id="intermission-live-controls" style="display:none; margin-top:12px; padding:10px; border:1px solid #333; border-radius:8px; background:#18181b;">
+      <div class="row" style="align-items:center;gap:8px">
+        <span id="intermission-countdown" style="font-weight:700;font-size:1.1rem">--:--</span>
+        <span id="intermission-paused-badge" style="display:none;color:#ffb6b6;font-weight:700;font-size:.8rem">PAUSED</span>
+        <button class="btn" id="intermission-pause-btn" onclick="intermissionPauseResume()">Pause</button>
+      </div>
+      <div class="row" style="align-items:center;gap:8px;margin-top:8px">
+        <label style="font-weight:700;font-size:.85rem">Set remaining (min):</label>
+        <input type="number" id="intermission-set-remaining-input" min="0" step="0.5" style="width:80px">
+        <button class="btn" onclick="intermissionSetRemaining()">Set</button>
+      </div>
+    </div>
+    <div style="margin-top:12px; text-align:center;">
+      <img src="/api/quiz/qr" style="width:200px; height:200px; border-radius:8px; background:#fff; padding:6px;">
+      <p style="color:#999; font-size:.8rem;">Guests scan this to join and play from their phone.</p>
+    </div>
+  </section>
+
+  <section>
+    <h2>Upcoming Question (Host Preview)</h2>
+    <div id="host-preview-empty" style="color:#999; font-size:.9rem;">No question queued yet.</div>
+    <div id="host-preview-body" style="display:none">
+      <div class="preview-row"><div class="label">Type</div><div class="value" id="hp-type"></div></div>
+      <div class="preview-row"><div class="label">Category</div><div class="value" id="hp-category"></div></div>
+      <div class="preview-row"><div class="label">Prompt</div><div class="value" id="hp-prompt"></div></div>
+      <div class="preview-row"><div class="label">Correct Answer</div><div class="value" id="hp-answer"></div></div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Volume</h2>
+    <input type="range" id="volume-slider" min="0" max="100" value="100" oninput="volumeSlide(this.value)">
+    <div class="volume-value" id="volume-value">100%</div>
+  </section>
+
+  <section>
+    <h2>DMX Scene Override</h2>
+    <div class="row">
+      <!-- max must track config.DJ_THEME_COUNT (13 patterns, 0-12) plus
+           DJ_THEME_ALL_OFF_INDEX itself (13) -- this page is static HTML,
+           not templated, so it can't read the Python constant directly. -->
+      <label style="flex:1">Theme
+        <input type="range" id="theme-slider" min="0" max="13" value="0" onchange="dmxScene({theme_index: this.value})">
+      </label>
+    </div>
+    <div class="row" style="margin-top:6px">
+      <!-- max must track len(config.DJ_COLOR_PALETTE) - 1 (10 colors, 0-9),
+           same static-HTML caveat as above. -->
+      <label style="flex:1">Color
+        <input type="range" id="color-slider" min="0" max="9" value="0" onchange="dmxScene({color_index: this.value})">
+      </label>
+    </div>
+  </section>
+
+  <section>
+    <h2>Idle Animation Theme</h2>
+    <div class="row">
+      <!-- Options must track config.IDLE_ANIMATION_THEMES; "selected"
+           must track config.IDLE_THEME_DEFAULT ("Question Marks"). -->
+      <label style="flex:1">Theme
+        <select id="idle-theme-select" onchange="idleTheme(this.value)">
+          <option value="Halloween">Halloween</option>
+          <option value="Birthday">Birthday</option>
+          <option value="Question Marks" selected>Question Marks</option>
+        </select>
+      </label>
+    </div>
+  </section>
+
+  <section>
+    <h2>Branding</h2>
+    <input type="text" id="branding-text" placeholder="Show header / sub-banner / host branding text">
+    <div class="row" style="margin-top:8px">
+      <button class="btn primary" onclick="brandingSave()">Save</button>
+    </div>
+  </section>
+
+  <section>
+    <h2>Announcements</h2>
+    <label style="font-weight:700;font-size:.85rem">Last Announcement Text:</label>
+    <div id="announcement-text-filename" style="color:#999; font-size:.75rem; margin-bottom:4px;">(no announcement has played yet this session)</div>
+    <input type="text" id="announcement-text-input" placeholder="Tag phrase shown when this specific clip plays">
+    <div class="row" style="margin-top:8px">
+      <button class="btn primary" onclick="announcementTextSave()">Save</button>
+    </div>
+  </section>
+
+  <section>
+    <h2>Special Events</h2>
+    <button class="btn" onclick="westminsterTest()">Test Westminster Clock</button>
+  </section>
+
+  <section>
+    <h2>Application</h2>
+    <button class="btn danger" onclick="openShutdownModal()">SHUTDOWN APP</button>
+  </section>
+
+  <div class="modal-backdrop" id="shutdown-modal">
+    <div class="modal-box">
+      <p>Shut down the Game Show Orchestrator app on the host machine? This ends the show and can only be undone by relaunching it there.</p>
+      <div class="row">
+        <button class="btn" onclick="closeShutdownModal()">Cancel</button>
+        <button class="btn danger" style="width:auto" onclick="confirmShutdown()">Shutdown</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+<script>
+async function api(path, opts) {
+  try {
+    const res = await fetch(path, opts);
+    return await res.json();
+  } catch (e) {
+    console.error(path, e);
+    return null;
+  }
+}
+
+function _escapeHtml(s) {
+  return String(s == null ? '' : s).replace(/[&<>"']/g, c => (
+    { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]
+  ));
+}
+
+function _tagSummaryHtml(m) {
+  if (!m || !m.complete) return '<span class="now-tags untagged">Untagged</span>';
+  const bits = [];
+  if (m.genre) bits.push(_escapeHtml(m.genre));
+  if (m.decade) bits.push(_escapeHtml(m.decade));
+  if (m.energy_rank) bits.push('Energy ' + m.energy_rank);
+  if (m.explicit) bits.push('<span class="flag-explicit">Explicit</span>');
+  if (m.slow_dance) bits.push('<span class="flag-slowdance">Slow Dance</span>');
+  if (m.never_charted) bits.push('Deep cut');
+  return bits.join(' &middot; ');
+}
+
+async function refreshNowPlaying() {
+  const d = await api('/api/now-playing');
+  if (!d) return;
+  document.getElementById('np-title').textContent = d.title || '—';
+  document.getElementById('np-artist').textContent = d.artist || '';
+  document.getElementById('np-tags').innerHTML = d.title ? _tagSummaryHtml(d.metadata) : '';
+}
+
+async function refreshAutoDj() {
+  const d = await api('/api/autodj/status');
+  if (!d) return;
+  const s = Math.max(0, Math.round(d.remaining_seconds));
+  const mm = String(Math.floor(s / 60)).padStart(2, '0');
+  const ss = String(s % 60).padStart(2, '0');
+  document.getElementById('autodj-remaining').textContent =
+    (d.enabled ? '' : '(OFF) ') + mm + ':' + ss;
+}
+
+async function refreshHostPreview() {
+  const d = await api('/api/host/preview');
+  const emptyEl = document.getElementById('host-preview-empty');
+  const bodyEl = document.getElementById('host-preview-body');
+  if (!d || !d.available) {
+    emptyEl.style.display = '';
+    bodyEl.style.display = 'none';
+    return;
+  }
+  emptyEl.style.display = 'none';
+  bodyEl.style.display = '';
+  document.getElementById('hp-type').textContent = d.type || '—';
+  document.getElementById('hp-category').textContent = d.category || '—';
+  document.getElementById('hp-prompt').textContent = d.prompt || d.headline || '—';
+  document.getElementById('hp-answer').textContent = d.correct_answer || '—';
+}
+
+function dmxScene(body) {
+  api('/api/dmx/scene', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(body) });
+}
+function idleTheme(theme) {
+  // Takes effect on the very next rendered frame -- the server re-deals
+  // panels 3-6 synchronously inside this request, not on the next track.
+  api('/api/idle/theme', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({theme}) });
+}
+
+function toggleNavMenu() {
+  document.getElementById('nav-menu').classList.toggle('open');
+}
+document.addEventListener('click', (e) => {
+  const menu = document.getElementById('nav-menu');
+  if (!menu || !menu.classList.contains('open')) return;
+  if (!menu.contains(e.target) && !e.target.closest('.hamburger-btn')) {
+    menu.classList.remove('open');
+  }
+});
+
+let _brandingLoaded = false;
+async function refreshBranding() {
+  if (_brandingLoaded) return;  // don't clobber the host mid-edit on every poll
+  const d = await api('/api/branding/current');
+  if (!d) return;
+  document.getElementById('branding-text').value = d.text || '';
+  _brandingLoaded = true;
+}
+function brandingSave() {
+  const text = document.getElementById('branding-text').value;
+  api('/api/branding/set', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({text}) })
+    .then(() => showToast('Branding updated.'));
+}
+
+// Per-file caption table (2026-08-10 redesign): unlike the old single
+// global value, "current" now changes every time a DIFFERENT announcement
+// plays, so this can't just load once and stop -- but it also shouldn't
+// clobber an in-progress edit for the SAME file on every 1.5s poll. Tracks
+// which filename the input box currently reflects; only re-populates the
+// text when that filename actually changes (a new announcement played).
+let _announcementTextLoadedFor = null;
+async function refreshAnnouncementText() {
+  const d = await api('/api/announcement-text/current');
+  if (!d) return;
+  const label = document.getElementById('announcement-text-filename');
+  label.textContent = d.filename ? `Editing caption for: ${d.filename}` : '(no announcement has played yet this session)';
+  if (d.filename === _announcementTextLoadedFor) return;
+  document.getElementById('announcement-text-input').value = d.text || '';
+  _announcementTextLoadedFor = d.filename;
+}
+async function announcementTextSave() {
+  const text = document.getElementById('announcement-text-input').value;
+  const data = await api('/api/announcement-text/set', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({text}) });
+  if (!data || !data.ok) {
+    showToast('Save failed -- check the server console.');
+    return;
+  }
+  if (!data.filename) {
+    showToast('No announcement has played yet this session -- nothing to caption.');
+    return;
+  }
+  // Echo back exactly what the server now has saved (not just what the
+  // input box shows) so there's no ambiguity about whether it took --
+  // matches the same confirmation pattern previewAnnouncement() used to.
+  showToast(`"${data.filename}" caption saved: "${data.text}"`);
+}
+function westminsterTest() {
+  api('/api/westminster/test', { method: 'POST' }).then(() => showToast('Westminster clock triggered.'));
+}
+
+async function startPriceGame() {
+  const d = await api('/api/game/price-game', { method: 'POST' });
+  if (d && d.ok) {
+    showToast('Price Game!');
+  } else {
+    showToast(d && d.reason ? d.reason : 'Price Game request failed.');
+  }
+  refreshHostPreview();
+}
+
+let _toastTimer = null;
+function showToast(msg) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  clearTimeout(_toastTimer);
+  _toastTimer = setTimeout(() => el.classList.remove('show'), 2500);
+}
+
+function openShutdownModal() { document.getElementById('shutdown-modal').classList.add('open'); }
+function closeShutdownModal() { document.getElementById('shutdown-modal').classList.remove('open'); }
+function confirmShutdown() {
+  closeShutdownModal();
+  api('/api/system/shutdown', { method: 'POST' });
+  showToast('Shutting down the app...');
+}
+
+// ------------------------------------------
+// VIRTUAL GAMEPAD
+// ------------------------------------------
+function transportNext() { api('/api/transport/next', { method: 'POST' }); }
+function transportPrev() { api('/api/transport/prev', { method: 'POST' }); }
+
+function announcementsToggle() {
+  api('/api/announcement/toggle', { method: 'POST' }).then(refreshGamepadStatus);
+}
+function sfxToggle() {
+  api('/api/sfx/toggle', { method: 'POST' }).then(refreshGamepadStatus);
+}
+
+// ------------------------------------------
+// TRIVIA NIGHT SHOW FLOW (2026-08-13)
+// ------------------------------------------
+function stopShow() {
+  api('/api/show/stop', { method: 'POST' }).then(refreshGamepadStatus);
+}
+function startNewGame() {
+  window.location = '/setup';
+}
+
+let _winScoreLoaded = false;
+function winScoreSave() {
+  const score = parseInt(document.getElementById('win-score-input').value, 10);
+  if (!score || score < 1) return;
+  api('/api/game/win-score', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({score}) })
+    .then(() => showToast('Win score updated.'));
+}
+
+let _intermissionMinutesLoaded = false;
+function intermissionMinutesSave() {
+  const minutes = parseInt(document.getElementById('intermission-minutes-input').value, 10);
+  if (!minutes || minutes < 1) return;
+  api('/api/game/intermission-minutes', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({minutes}) })
+    .then(() => showToast('Intermission length updated.'));
+}
+
+// Live in-intermission controls: only shown while state.intermission_active
+// is true (toggled in refreshGamepadStatus below), for the "crowd's taking
+// too long to get back to their seats" case (2026-08-12).
+let _intermissionPaused = false;
+function intermissionPauseResume() {
+  const path = _intermissionPaused ? '/api/game/intermission-resume' : '/api/game/intermission-pause';
+  api(path, { method: 'POST' }).then(refreshGamepadStatus);
+}
+function intermissionSetRemaining() {
+  const raw = document.getElementById('intermission-set-remaining-input').value;
+  const minutes = parseFloat(raw);
+  if (raw === '' || isNaN(minutes) || minutes < 0) return;
+  api('/api/game/intermission-set-remaining', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({minutes}) })
+    .then(() => { showToast('Intermission time updated.'); refreshGamepadStatus(); });
+}
+
+// Volume slider: sends the live value as the operator drags (oninput, not
+// onchange) so the deck actually tracks the slider in real time instead of
+// only jumping once on release. Synced from the server ONCE on first load
+// (same convention as win-score/intermission-minutes below) -- continuously
+// overwriting it on every 1.5s poll would fight the operator's own drag.
+let _volumeLoaded = false;
+function volumeSlide(value) {
+  document.getElementById('volume-value').textContent = value + '%';
+  api('/api/mixer/set-volume', {
+    method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({volume: parseInt(value, 10)}),
+  });
+}
+
+async function refreshGamepadStatus() {
+  const d = await api('/api/gamepad/status');
+  if (!d) return;
+
+  // Trivia Night show flow (2026-08-13): the admin panel belongs on the
+  // Setup page whenever a show isn't actually running -- covers app
+  // launch, a scheduled countdown, AND right when a show ends (Stop Game
+  // or the final round), so the operator lands back on Setup without
+  // needing a manual refresh. "intro" stays here -- the choreography is a
+  // physical-rig thing, nothing useful to show differently on the phone
+  // for those ~20 seconds.
+  if (d.show_phase && d.show_phase !== 'live' && d.show_phase !== 'intro') {
+    window.location = (d.show_phase === 'countdown') ? '/countdown' : '/setup';
+    return;
+  }
+  document.getElementById('show-controls-section').style.display =
+    (d.show_phase === 'live') ? '' : 'none';
+
+  document.getElementById('announcements-checkbox').checked = !!d.auto_announce_enabled;
+  document.getElementById('sfx-checkbox').checked = !!d.sfx_enabled;
+
+  const count = d.quiz_player_count || 0;
+  document.getElementById('quiz-player-count').textContent =
+    count + (count === 1 ? ' player signed up' : ' players signed up');
+
+  if (!_winScoreLoaded && d.game_win_score) {
+    document.getElementById('win-score-input').value = d.game_win_score;
+    _winScoreLoaded = true;
+  }
+  if (!_intermissionMinutesLoaded && d.intermission_minutes) {
+    document.getElementById('intermission-minutes-input').value = d.intermission_minutes;
+    _intermissionMinutesLoaded = true;
+  }
+  if (!_volumeLoaded && d.music_volume != null) {
+    document.getElementById('volume-slider').value = d.music_volume;
+    document.getElementById('volume-value').textContent = d.music_volume + '%';
+    _volumeLoaded = true;
+  }
+
+  const introControls = document.getElementById('intermission-live-controls');
+  if (d.intermission_active) {
+    introControls.style.display = '';
+    _intermissionPaused = !!d.intermission_paused;
+    const s = Math.max(0, Math.round(d.intermission_remaining_seconds || 0));
+    const mm = String(Math.floor(s / 60)).padStart(2, '0');
+    const ss = String(s % 60).padStart(2, '0');
+    document.getElementById('intermission-countdown').textContent = mm + ':' + ss;
+    document.getElementById('intermission-paused-badge').style.display = _intermissionPaused ? '' : 'none';
+    document.getElementById('intermission-pause-btn').textContent = _intermissionPaused ? 'Resume' : 'Pause';
+  } else {
+    introControls.style.display = 'none';
+  }
+}
+
+function refreshAll() {
+  refreshNowPlaying();
+  refreshAutoDj();
+  refreshHostPreview();
+  refreshBranding();
+  refreshAnnouncementText();
+  refreshGamepadStatus();
+}
+refreshAll();
+setInterval(refreshAll, 1500);
+</script>
+</body>
+</html>

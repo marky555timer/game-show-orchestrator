@@ -1,0 +1,328 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Game Show Remote &mdash; Show Setup</title>
+<style>
+  :root { color-scheme: dark; }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; padding: 16px 16px 48px;
+    background: #0b0b0d; color: #f2f2f2;
+    font-family: -apple-system, Segoe UI, Roboto, sans-serif;
+  }
+  h1 { font-size: 1.1rem; text-transform: uppercase; letter-spacing: .08em; color: #ff3b30; margin: 0 0 16px; }
+  h2 { font-size: .85rem; text-transform: uppercase; letter-spacing: .06em; color: #999; margin: 24px 0 8px; }
+  section { background: #17171a; border-radius: 10px; padding: 14px; margin-bottom: 14px; }
+  .row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+  button { cursor: pointer; }
+  .btn { padding: 10px 14px; border-radius: 8px; border: 1px solid #333; background: #202024; color: #f2f2f2; font-size: .9rem; }
+  .btn.primary { background: #ff3b30; border-color: #ff3b30; color: #fff; font-weight: 700; }
+  .btn.big { padding: 16px; font-size: 1.05rem; width: 100%; text-align: center; }
+  .nav-bar { display: flex; align-items: center; gap: 10px; margin-bottom: 4px; position: relative; }
+  .hamburger-btn {
+    background: none; border: 1px solid #333; border-radius: 8px; color: #f2f2f2;
+    font-size: 1.2rem; line-height: 1; padding: 6px 12px; cursor: pointer;
+  }
+  .nav-menu {
+    display: none; position: absolute; top: 42px; left: 0; background: #17171a;
+    border: 1px solid #333; border-radius: 8px; z-index: 300; overflow: hidden; min-width: 170px;
+  }
+  .nav-menu.open { display: block; }
+  .nav-menu a {
+    display: block; padding: 12px 16px; color: #f2f2f2; text-decoration: none;
+    font-size: .9rem; border-bottom: 1px solid #2a2a2e;
+  }
+  .nav-menu a:last-child { border-bottom: none; }
+  .nav-menu a:hover { background: #202024; }
+  .nav-menu a.active { color: #ff3b30; font-weight: 700; }
+  input[type=number] {
+    width: 90px; padding: 8px 10px; border-radius: 8px; border: 1px solid #333;
+    background: #202024; color: #f2f2f2; font-size: .9rem;
+  }
+  label.check { display: flex; align-items: center; gap: 8px; font-size: .9rem; }
+  .tag-grid { display: flex; flex-direction: column; gap: 10px; }
+  .genre-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px 14px; margin-top: 4px; }
+  .field-row { display: flex; align-items: center; gap: 10px; margin-top: 10px; }
+  .field-row label { font-weight: 700; font-size: .85rem; min-width: 130px; }
+  .slider-block { margin-top: 14px; }
+  .slider-block label { font-weight: 700; font-size: .85rem; display: flex; justify-content: space-between; }
+  .slider-block .time-label { color: #ff3b30; }
+  input[type=range] { width: 100%; margin-top: 6px; }
+  .rounds-estimate {
+    margin-top: 14px; padding: 10px 12px; background: #201414; border: 1px solid #ff3b30;
+    border-radius: 8px; font-size: .9rem; text-align: center;
+  }
+  .rounds-estimate .count { font-size: 1.3rem; font-weight: 700; color: #ff3b30; }
+  .toast {
+    position: fixed; left: 50%; bottom: 16px; transform: translateX(-50%);
+    background: #202024; border: 1px solid #333; border-radius: 8px;
+    padding: 8px 14px; font-size: .85rem; opacity: 0; transition: opacity .2s;
+    pointer-events: none; z-index: 200; max-width: 90vw; text-align: center;
+  }
+  .toast.show { opacity: 1; }
+</style>
+</head>
+<body>
+  <div class="nav-bar">
+    <button class="hamburger-btn" onclick="toggleNavMenu()">&#9776;</button>
+    <div class="nav-menu" id="nav-menu">
+      <a href="/">Remote</a>
+      <a href="/library">File Manager</a>
+      <a href="/setup" class="active">Setup</a>
+    </div>
+  </div>
+  <h1>Show Setup</h1>
+
+  <section>
+    <h2>Crowd-Matching Tags</h2>
+    <div class="tag-grid">
+      <label class="check"><input type="checkbox" id="exclude-explicit"> Exclude explicit lyrics</label>
+      <label class="check"><input type="checkbox" id="exclude-slowdance"> Exclude slow dance / romantic ballads</label>
+      <label class="check"><input type="checkbox" id="exclude-nevercharted"> Exclude deep cuts (never charted)</label>
+    </div>
+    <h2 style="margin-top:16px">Allowed Genres <span style="color:#666;font-weight:400;text-transform:none;letter-spacing:0">(none checked = all genres)</span></h2>
+    <div class="genre-grid" id="genre-grid"></div>
+  </section>
+
+  <section>
+    <h2>Game Settings</h2>
+    <div class="field-row">
+      <label>Points per round</label>
+      <input type="number" id="win-score-input" min="1" step="1" value="15">
+    </div>
+    <div class="field-row">
+      <label>Intermission (min)</label>
+      <input type="number" id="intermission-minutes-input" min="1" step="1" value="5">
+    </div>
+  </section>
+
+  <section>
+    <h2>Contracted Time</h2>
+    <div class="slider-block">
+      <label>Start <span class="time-label" id="start-time-label">--:--</span></label>
+      <input type="range" id="start-slider" oninput="onStartSlide()">
+    </div>
+    <div class="slider-block">
+      <label>End <span class="time-label" id="end-time-label">--:--</span></label>
+      <input type="range" id="end-slider" oninput="onEndSlide()">
+    </div>
+    <div class="rounds-estimate">
+      <span class="count" id="rounds-count">0</span> rounds estimated
+      <div style="color:#999;font-size:.75rem;margin-top:2px">(~<span id="avg-round-minutes">10</span> min/round + intermission -- a planning estimate, not a hard limit)</div>
+    </div>
+    <label class="check" style="margin-top:12px">
+      <input type="checkbox" id="auto-final-round"> Auto Final Round -- automatically end the night after the estimated last round
+    </label>
+  </section>
+
+  <section>
+    <button class="btn primary big" onclick="startGameNow()">START GAME</button>
+    <button class="btn big" style="margin-top:10px" id="start-scheduled-btn" onclick="startGameScheduled()">START GAME AT --:--</button>
+  </section>
+
+  <div class="toast" id="toast"></div>
+
+<script>
+async function api(path, opts) {
+  try {
+    const res = await fetch(path, opts);
+    return await res.json();
+  } catch (e) {
+    console.error(path, e);
+    return null;
+  }
+}
+
+let _toastTimer = null;
+function showToast(msg) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  clearTimeout(_toastTimer);
+  _toastTimer = setTimeout(() => el.classList.remove('show'), 2500);
+}
+
+function toggleNavMenu() {
+  document.getElementById('nav-menu').classList.toggle('open');
+}
+document.addEventListener('click', (e) => {
+  const menu = document.getElementById('nav-menu');
+  if (!menu || !menu.classList.contains('open')) return;
+  if (!menu.contains(e.target) && !e.target.closest('.hamburger-btn')) {
+    menu.classList.remove('open');
+  }
+});
+
+// ------------------------------------------
+// CONTRACTED-TIME RANGE SLIDER
+// ------------------------------------------
+// Both handles are separate native <input type=range> elements (a true
+// dual-handle slider needs custom drag JS this app's plain-input style
+// doesn't otherwise use) whose value is MINUTES FROM _baseTime -- a "now",
+// captured once on page load and rounded UP to the next half-hour mark, so
+// displayed labels always land on clean clock times ("7:00 PM") per the
+// "snaps to times of day by 1/2 hour" spec.
+let _baseTime = null;
+let _stepMinutes = 30;
+let _maxMinutes = 5 * 60;
+let _avgRoundMinutes = 10;
+
+function _formatClock(date) {
+  let h = date.getHours();
+  const m = date.getMinutes();
+  const ampm = h >= 12 ? 'PM' : 'AM';
+  h = h % 12; if (h === 0) h = 12;
+  return h + ':' + String(m).padStart(2, '0') + ' ' + ampm;
+}
+
+function _timeAtOffset(offsetMinutes) {
+  return new Date(_baseTime.getTime() + offsetMinutes * 60000);
+}
+
+function initTimeSliders() {
+  const now = new Date();
+  const rounded = new Date(now);
+  rounded.setSeconds(0, 0);
+  const remainder = rounded.getMinutes() % _stepMinutes;
+  if (remainder !== 0) rounded.setMinutes(rounded.getMinutes() + (_stepMinutes - remainder));
+  _baseTime = rounded;
+
+  const startSlider = document.getElementById('start-slider');
+  const endSlider = document.getElementById('end-slider');
+  startSlider.min = 0;
+  startSlider.max = _maxMinutes;
+  startSlider.step = _stepMinutes;
+  startSlider.value = 0;
+  endSlider.min = _stepMinutes;
+  endSlider.max = _maxMinutes;
+  endSlider.step = _stepMinutes;
+  endSlider.value = Math.min(_maxMinutes, 3 * 60);
+  onStartSlide();
+  onEndSlide();
+}
+
+function onStartSlide() {
+  const startSlider = document.getElementById('start-slider');
+  const endSlider = document.getElementById('end-slider');
+  const startVal = parseInt(startSlider.value, 10);
+  // End can never be before Start -- push it forward if the operator just
+  // dragged Start past it.
+  endSlider.min = startVal + _stepMinutes;
+  if (parseInt(endSlider.value, 10) < endSlider.min) endSlider.value = endSlider.min;
+  document.getElementById('start-time-label').textContent = _formatClock(_timeAtOffset(startVal));
+  document.getElementById('start-scheduled-btn').textContent =
+    'START GAME AT ' + _formatClock(_timeAtOffset(startVal)).toUpperCase();
+  updateRoundsEstimate();
+}
+
+function onEndSlide() {
+  const endVal = parseInt(document.getElementById('end-slider').value, 10);
+  document.getElementById('end-time-label').textContent = _formatClock(_timeAtOffset(endVal));
+  updateRoundsEstimate();
+}
+
+function updateRoundsEstimate() {
+  const startVal = parseInt(document.getElementById('start-slider').value, 10);
+  const endVal = parseInt(document.getElementById('end-slider').value, 10);
+  const intermission = parseInt(document.getElementById('intermission-minutes-input').value, 10) || 0;
+  const duration = Math.max(0, endVal - startVal);
+  const perRound = _avgRoundMinutes + intermission;
+  const rounds = perRound > 0 ? Math.max(1, Math.floor(duration / perRound)) : 1;
+  document.getElementById('rounds-count').textContent = rounds;
+}
+document.getElementById('intermission-minutes-input').addEventListener('input', updateRoundsEstimate);
+
+// ------------------------------------------
+// GENRE CHECKBOXES
+// ------------------------------------------
+function buildGenreGrid(genres) {
+  const grid = document.getElementById('genre-grid');
+  grid.innerHTML = genres.map((g, i) =>
+    `<label class="check"><input type="checkbox" class="genre-cb" value="${g}"> ${g}</label>`
+  ).join('');
+}
+
+function selectedGenres() {
+  return Array.from(document.querySelectorAll('.genre-cb:checked')).map(cb => cb.value);
+}
+
+// ------------------------------------------
+// SETTINGS PAYLOAD + START ACTIONS
+// ------------------------------------------
+function buildSetupPayload() {
+  return {
+    win_score: parseInt(document.getElementById('win-score-input').value, 10) || 15,
+    intermission_minutes: parseInt(document.getElementById('intermission-minutes-input').value, 10) || 5,
+    exclude_explicit: document.getElementById('exclude-explicit').checked,
+    exclude_slow_dance: document.getElementById('exclude-slowdance').checked,
+    exclude_never_charted: document.getElementById('exclude-nevercharted').checked,
+    allowed_genres: selectedGenres(),
+    auto_final_round: document.getElementById('auto-final-round').checked,
+    rounds_estimate: parseInt(document.getElementById('rounds-count').textContent, 10) || 0,
+  };
+}
+
+function startGameNow() {
+  api('/api/show/save-and-start-now', {
+    method: 'POST', headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify(buildSetupPayload()),
+  }).then((r) => {
+    if (r && r.ok) window.location = '/';
+    else showToast('Could not start the show.');
+  });
+}
+
+function startGameScheduled() {
+  const startVal = parseInt(document.getElementById('start-slider').value, 10);
+  const targetEpoch = _baseTime.getTime() / 1000 + startVal * 60;
+  const payload = buildSetupPayload();
+  payload.target_epoch = targetEpoch;
+  api('/api/show/save-and-schedule', {
+    method: 'POST', headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify(payload),
+  }).then((r) => {
+    if (r && r.ok) window.location = '/countdown';
+    else showToast('Could not schedule the show.');
+  });
+}
+
+// ------------------------------------------
+// LOAD CURRENT SETTINGS
+// ------------------------------------------
+async function loadStatus() {
+  const d = await api('/api/show/status');
+  if (!d) return;
+  _stepMinutes = d.time_slider_step_minutes || 30;
+  _maxMinutes = (d.time_slider_max_hours_ahead || 5) * 60;
+  _avgRoundMinutes = d.avg_round_minutes || 10;
+  document.getElementById('avg-round-minutes').textContent = _avgRoundMinutes;
+
+  buildGenreGrid(d.music_genres || []);
+  document.getElementById('win-score-input').value = d.game_win_score || 15;
+  document.getElementById('intermission-minutes-input').value = d.intermission_minutes || 5;
+  document.getElementById('exclude-explicit').checked = !!d.exclude_explicit;
+  document.getElementById('exclude-slowdance').checked = !!d.exclude_slow_dance;
+  document.getElementById('exclude-nevercharted').checked = !!d.exclude_never_charted;
+  document.getElementById('auto-final-round').checked = !!d.auto_final_round;
+  (d.allowed_genres || []).forEach((g) => {
+    const cb = document.querySelector(`.genre-cb[value="${g}"]`);
+    if (cb) cb.checked = true;
+  });
+
+  initTimeSliders();
+
+  // If a game is already live (e.g. this page was reached mid-show via
+  // the hamburger menu rather than the intended flow), send the operator
+  // back to the remote page instead of letting them fire a second intro.
+  if (d.show_phase === 'live' || d.show_phase === 'intro') {
+    window.location = '/';
+  } else if (d.show_phase === 'countdown') {
+    window.location = '/countdown';
+  }
+}
+loadStatus();
+</script>
+</body>
+</html>

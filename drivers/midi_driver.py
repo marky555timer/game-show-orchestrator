@@ -15,12 +15,7 @@ midi_out = None
 midi_in = None
 midi_status_str = "MIDI: DISCONNECTED"
 
-CROSSFADER_CC = 8  # Standard Rekordbox Crossfader CC#
-
-# Channel 1/2 faders -- the same CC#11/CC#12 handle_dj_volume() already
-# drives as the "master volume" pair.
-CHANNEL1_FADER_CC = 11
-CHANNEL2_FADER_CC = 12
+CROSSFADER_CC = 8  # Standard Rekordbox Crossfader CC# (external MIDI controller input only)
 
 # Last commanded fader level (0-100%), tracked independently of
 # state.music_volume so a Price Game duck/restore tween can run without
@@ -163,26 +158,56 @@ def send_deck_stop_sequence(deck):
 
 
 def handle_dj_volume(change):
-    """Updates master volume state and streams MIDI CC#11 to Rekordbox."""
+    """Physical D-pad/joystick axis -- a relative nudge. Updates master
+    volume state and applies it to the native audio engine (audio/
+    dj_engine.py::DJEngine.set_master_volume) -- no MIDI involved since
+    2026-08-08, now that playback is native instead of Rekordbox."""
+    _apply_dj_volume(state.music_volume + change)
+
+
+def set_dj_volume(target):
+    """Web remote's volume slider (2026-08-12) -- an absolute value (0-100)
+    sent live as the operator drags, rather than a relative nudge. Same
+    duck-awareness as the physical control below: shares _apply_dj_volume()
+    rather than duplicating the Price Game guard."""
+    _apply_dj_volume(target)
+
+
+def _apply_dj_volume(target):
     global _current_fader_pct, _fader_tween
-    state.music_volume = max(0, min(100, state.music_volume + change))
+    state.music_volume = max(0, min(100, round(target)))
     state.vol_overlay_until = time.time() + VOLUME_OVERLAY_HOLD_SECONDS
-    midi_val = int((state.music_volume / 100.0) * 127)
-    send_midi_cc(11, midi_val)
-    send_midi_cc(12, midi_val)
+
+    if state.price_game_audio_active:
+        # 2026-08-12 fix: the deck is deliberately ducked to 0% right now so
+        # the Price Game bed (audio/audio_engine.py::play_random_game_music)
+        # can be heard on its own -- a manual volume nudge used to still
+        # slam the deck channels straight to the new state.music_volume
+        # immediately below, un-ducking the still-playing song underneath
+        # the bed and blending the two together mid-round. Only the SAVED
+        # target updates here; the deck channels themselves stay wherever
+        # the duck left them. drivers/price_game_engine.py::
+        # _end_price_game_audio() reads state.music_volume fresh when the
+        # round ends, so the restore lands at whatever level was actually
+        # dialed in, same as before -- it just doesn't leak through early.
+        print(f"[VOLUME] Master volume target -> {state.music_volume}% "
+              f"(deck stays ducked -- Price Game bed is playing)")
+        return
+
     # A manual volume nudge always wins over an in-progress Price Game
-    # duck/restore tween.
+    # duck/restore tween (outside of the price_game_audio_active guard
+    # above -- e.g. late in the restore tween's own ramp).
     cancel_fader_tween()
     _current_fader_pct = float(state.music_volume)
-    print(f"[REKORDBOX MIDI] Volume -> {state.music_volume}% (CC#11 Val:{midi_val})")
+    _set_channel_faders_raw(_current_fader_pct)
+    print(f"[VOLUME] Master volume -> {state.music_volume}%")
 
 
 def _set_channel_faders_raw(pct):
-    """Immediately sets both channel faders (CC#11/CC#12) to `pct` (0-100),
+    """Immediately sets both deck channels' master volume to `pct` (0-100),
     with no tween."""
-    midi_val = int(max(0, min(100, pct)) / 100.0 * 127)
-    send_midi_cc(CHANNEL1_FADER_CC, midi_val)
-    send_midi_cc(CHANNEL2_FADER_CC, midi_val)
+    from drivers import deck_orchestrator
+    deck_orchestrator.dj_engine.set_master_volume(max(0, min(100, pct)))
 
 
 def cancel_fader_tween():
