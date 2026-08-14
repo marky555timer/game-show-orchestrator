@@ -396,8 +396,9 @@ TEMPO_FLASH_DECAY_SECONDS = 0.1
 # ==========================================
 # Entered from DJ_MODE by holding/pressing Gamepad Button 1 AND Button 3
 # simultaneously (pygame JOYBUTTONDOWN indices 0 and 2); exited immediately
-# via either shoulder button, Button 6 or Button 7 (indices 5/6). See
-# inputs/gamepad.py for the entry/exit + movement/fire input handling,
+# via Select or Start (indices 9/10 on this controller -- see
+# SI_EXIT_BUTTONS below for the full index story). See inputs/gamepad.py
+# for the entry/exit + movement/fire input handling,
 # drivers/space_invaders_engine.py for the game loop, and
 # graphics/matrix_canvas.py::_render_space_invaders for rendering.
 #
@@ -408,13 +409,21 @@ TEMPO_FLASH_DECAY_SECONDS = 0.1
 # of pixels. The invader grid below is sized for this narrower-but-taller
 # canvas (was 128x36 under the old 2-row/4-wide layout).
 SI_ENTRY_BUTTONS = (0, 2)   # pygame JOYBUTTONDOWN indices for physical Btn1 + Btn3
-# Moved off (6, 7) 2026-08-14: those indices are physical Select/Start on
-# this controller and, under the Pi's Linux/SDL2 joystick driver, Select's
-# raw index collides with Start's -- an accidental Start press was also
-# exiting Space Invaders. The two shoulder buttons (confirmed live via the
-# console's "[BUTTON] Raw Button Pressed" log on the Pi) don't have that
-# collision and are also easier to reach mid-game than reaching for Select.
-SI_EXIT_BUTTONS = (5, 6)    # pygame indices for the two physical shoulder buttons
+# Index history (2026-08-14), all confirmed live via the console's
+# "[BUTTON] Raw Button Pressed" log on the Pi -- this controller's raw
+# JOYBUTTONDOWN indices don't match the Windows/XInput ones the rest of
+# this file's comments were originally written against:
+#   - Windows: Select=6, Start=7 (matches the old "Btn7"/"Btn8" numbering).
+#   - First Pi attempt used (6, 7) unchanged -- wrong on two counts: those
+#     raw indices actually land on the SHOULDER buttons here, not
+#     Select/Start, AND (separately) initial testing miscounted which
+#     shoulder was which.
+#   - Confirmed correct mapping: Select=9, Start=10. Both were previously
+#     unhandled entirely (nothing in inputs/gamepad.py checked btn==9 or
+#     btn==10), which is why they read as fully "dead" rather than merely
+#     wrong -- this controller has more physical buttons than the
+#     Windows pad did, pushing indices further out.
+SI_EXIT_BUTTONS = (9, 10)   # pygame indices for physical Select, Start
 SI_ENTRY_SOUND_VOLUME = 1.0
 
 SI_INVADER_COLS = 4
@@ -1067,18 +1076,25 @@ WEB_GAME_CATEGORIES = [
 # ==========================================
 # GAMEPAD SHUTDOWN COMBO (Feature Update)
 # ==========================================
-# Holding physical Btn5 AND Btn2 (pygame JOYBUTTONDOWN indices 4 and 1)
+# Holding physical Btn5 AND Btn2 (pygame JOYBUTTONDOWN indices 5 and 1)
 # together for this many continuous seconds triggers a graceful app
 # shutdown -- see inputs/gamepad.py::_process_shutdown_combo(). Moved from
 # Btn5+Btn1 to Btn5+Btn2 (joypad remap) once Btn1's own tap/hold overlay
 # handling made Btn1 too "busy" a button to also carry the shutdown combo.
-SHUTDOWN_COMBO_BUTTONS = (4, 1)  # physical Btn5, Btn2
+# Index for Btn5 corrected 2026-08-14 for the Pi's controller (confirmed
+# live via the console's "Raw Button Pressed" log): the physical L
+# shoulder -- what this whole app calls "Btn5" -- reports as raw index 5
+# under this controller's Linux/SDL2 driver, not 4 like it did on Windows.
+# See the same note by SI_EXIT_BUTTONS in the SPACE INVADERS section for
+# the full story (Select/Start shifted even further, to 9/10).
+SHUTDOWN_COMBO_BUTTONS = (5, 1)  # physical Btn5, Btn2
 SHUTDOWN_COMBO_HOLD_SECONDS = 5.0
 
 # ==========================================
 # FORCE PRICE GAME COMBO
 # ==========================================
-# Holding physical Btn5 AND Btn6 (pygame JOYBUTTONDOWN indices 4 and 5)
+# Holding physical Btn5 AND Btn6 (pygame JOYBUTTONDOWN indices 5 and 6 on
+# this controller -- see the SHUTDOWN_COMBO_BUTTONS note above)
 # together for this many continuous seconds force-starts a Price Game round
 # -- see inputs/gamepad.py::_process_force_price_game_combo()/
 # force_price_game(). A joystick X- axis long-press was tried first and
@@ -1090,7 +1106,7 @@ SHUTDOWN_COMBO_HOLD_SECONDS = 5.0
 # has no such side effect once each button's own individual tap action is
 # suppressed while the other combo button is held (see the combo-forming
 # check in inputs/gamepad.py's JOYBUTTONDOWN handling).
-FORCE_PRICE_GAME_COMBO_BUTTONS = (4, 5)  # physical Btn5, Btn6
+FORCE_PRICE_GAME_COMBO_BUTTONS = (5, 6)  # physical Btn5, Btn6
 FORCE_PRICE_GAME_COMBO_HOLD_SECONDS = 2.0
 
 # ==========================================

@@ -467,8 +467,16 @@ def handle_normal_trivia_button():
     so there's nothing left here to divert to it.
 
     Refuses to start a game during the post-win intermission -- scores were
-    just reset and the room is meant to get a real break."""
+    just reset and the room is meant to get a real break. Also refuses
+    outside state.show_phase == "live" (2026-08-14) -- setup/countdown/
+    intro/outro have no confidently-identified track playing (the deck is
+    silent until the intro hands off), so a question fired here would have
+    nothing real to be about."""
     if state.mode != state.MODE_DJ:
+        return
+    if state.show_phase != "live":
+        state.set_message("START THE SHOW FIRST", 1.2)
+        print(f"[BUTTON] Btn2 pressed outside a live show (show_phase={state.show_phase!r}) -- ignored.")
         return
     if state.intermission_active:
         state.set_message("INTERMISSION -- NEW GAME AFTER THE BREAK", 1.5)
@@ -545,8 +553,17 @@ def handle_quiz_gate_button():
 
     Refuses to start during the post-win intermission (scores were just
     reset, the room is meant to get a real break) -- Btn5+Btn6 hold
-    (force_price_game() below) is still the deliberate early-end override."""
+    (force_price_game() below) is still the deliberate early-end override.
+    Also refuses outside state.show_phase == "live" (2026-08-14) -- during
+    setup/countdown/intro/outro the deck is silent and LEDs show the
+    startup screen, so a Price Game firing here has no show context to sit
+    inside (confirmed live: music started while the panels still read
+    "START UP")."""
     if state.mode != state.MODE_DJ:
+        return
+    if state.show_phase != "live":
+        state.set_message("START THE SHOW FIRST", 1.2)
+        print(f"[BUTTON] Btn6 pressed outside a live show (show_phase={state.show_phase!r}) -- ignored.")
         return
     if state.intermission_active:
         state.set_message("INTERMISSION -- HOLD BTN5+BTN6 TO FORCE PRICE GAME", 1.5)
@@ -1207,16 +1224,16 @@ def process_events():
                     # button trigger. GAME_MODE still uses Btn4 to select
                     # Answer 1.
                     pass
-                elif btn == 4:  # Physical Btn5: tempo tap
+                elif btn == 5:  # Physical Btn5 (L shoulder): tempo tap
                     if _debounced(btn):
                         handle_tempo_tap()
-                elif btn == 5:  # Physical Btn6: force Price Game (local bank)
+                elif btn == 6:  # Physical Btn6 (R shoulder): force Price Game (local bank)
                     if _debounced(btn, QUIZ_GATE_DEBOUNCE_SECONDS):
                         handle_quiz_gate_button()
-                elif btn == 6:  # Physical Btn7: color cycle
+                elif btn == 9:  # Physical Btn7 (Select): color cycle
                     if _debounced(btn):
                         handle_color_cycle()
-                elif btn == 7:  # Physical Btn8: theme cycle
+                elif btn == 10:  # Physical Btn8 (Start): theme cycle
                     if _debounced(btn):
                         handle_theme_cycle()
 
@@ -1229,16 +1246,16 @@ def process_events():
                     select_quiz_answer(2)
                 elif btn == 3:      # Physical Btn4: select Answer 1 (index 0)
                     select_quiz_answer(0)
-                elif btn == 4:      # Physical Btn5: GAME_MODE-only swap -> clear the current selection
+                elif btn == 5:      # Physical Btn5 (L shoulder): GAME_MODE-only swap -> clear the current selection
                     if _debounced(btn):
                         clear_quiz_selection()
-                elif btn == 5:      # Physical Btn6: GAME_MODE-only swap -> grade the current selection
+                elif btn == 6:      # Physical Btn6 (R shoulder): GAME_MODE-only swap -> grade the current selection
                     if _debounced(btn):
                         grade_quiz_selection()
-                elif btn == 6:      # Physical Btn7: EARLY EXIT -> abort back to DJ_MODE
+                elif btn == 9:      # Physical Btn7 (Select): EARLY EXIT -> abort back to DJ_MODE
                     if _debounced(btn):
                         abort_game_mode_early()
-                elif btn == 7:      # Physical Btn8: also EARLY EXIT (2026-08-09 --
+                elif btn == 10:     # Physical Btn8 (Start): also EARLY EXIT (2026-08-09 --
                     if _debounced(btn):  # same as Btn7, just a second way out)
                         abort_game_mode_early()
 

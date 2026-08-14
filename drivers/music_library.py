@@ -14,6 +14,16 @@ import mutagen
 import config
 
 _LEADING_TRACK_NUM_RE = re.compile(r'^\d+[\s\-\.]*')
+# Strips a trailing "- Remastered", "(Remastered 2009)", "[2009 Remaster]"
+# etc. qualifier off a title -- these show up on a lot of catalog reissues
+# and just clutter the LED display / quiz question text, no show value.
+# Anchored to the end of the string since that's where taggers always put
+# it; doesn't touch "Remastered" if it shows up mid-title for some other
+# reason.
+_REMASTER_SUFFIX_RE = re.compile(
+    r'\s*[\(\[-]+\s*(?:\d{4}\s*)?remaster(?:ed)?(?:\s*\d{4})?(?:\s*version)?\s*[\)\]]*\s*$',
+    re.IGNORECASE,
+)
 # Public (not underscore-prefixed): web/remote_server.py's upload endpoint
 # validates against this same list, so an accepted extension always matches
 # what scan() will actually pick up -- one source of truth instead of a
@@ -91,6 +101,7 @@ class MusicLibrary:
             print(f"[MUSIC LIBRARY] Tag read failed for {filename}: {e}")
         if not title:
             title = _LEADING_TRACK_NUM_RE.sub('', os.path.splitext(filename)[0]).strip()
+        title = _REMASTER_SUFFIX_RE.sub('', title).strip()
         return title, artist or "", duration, bpm
 
     def all_tracks(self):

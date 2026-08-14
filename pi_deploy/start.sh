@@ -16,4 +16,11 @@ export DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/1000/bus
 
 sleep 5
 cd /home/mark/game-show-orchestrator
-exec .venv/bin/python main.py >> /home/mark/game-show-orchestrator/startup.log 2>&1
+# -u (unbuffered stdout/stderr): without it, output redirected to a file
+# (not a terminal) is fully block-buffered, so prints -- including the
+# "[BUTTON] Raw Button Pressed" diagnostic line -- can sit unflushed in
+# memory for a long time before ever reaching startup.log, even though the
+# action itself already fired. Confirmed 2026-08-14 debugging a button
+# remap: the log showed nothing for several real button presses even
+# though one of them visibly triggered Price Game.
+exec .venv/bin/python -u main.py >> /home/mark/game-show-orchestrator/startup.log 2>&1

@@ -16,9 +16,26 @@ import os
 import config
 
 
+# Raw pygame JOYBUTTONDOWN index -> the app's semantic "BtnN" name. Used to
+# be a plain `index + 1` (Windows/XInput happened to number every physical
+# button in order, 0-7 -> Btn1-8), but the Pi's controller doesn't: it has
+# more physical buttons than the pad this app was designed against (extra
+# triggers/stick-clicks occupy indices in between), pushing Select and
+# Start out to raw 9/10 while the face buttons stay at 0-3 and the
+# shoulders land on 5/6 -- confirmed live via the console's "[BUTTON] Raw
+# Button Pressed" log (2026-08-14). This table is the actual physical
+# mapping, not a formula -- update it here (and the matching raw-index
+# checks in inputs/gamepad.py's JOYBUTTONDOWN dispatch) if the controller
+# ever changes.
+_RAW_INDEX_TO_BTN_LABEL = {
+    0: "Btn1", 1: "Btn2", 2: "Btn3", 3: "Btn4",
+    5: "Btn5", 6: "Btn6", 9: "Btn7", 10: "Btn8",
+}
+
+
 def _btn_label(index):
     """Physical Btn number (1-based) for a pygame JOYBUTTONDOWN index."""
-    return f"Btn{index + 1}"
+    return _RAW_INDEX_TO_BTN_LABEL.get(index, f"Btn?(raw {index})")
 
 
 def _combo_label(indices):
