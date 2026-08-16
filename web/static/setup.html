@@ -120,6 +120,7 @@
   <section>
     <h2>System Status</h2>
     <div class="row" id="status-row" style="font-size:.85rem;color:#999">Checking...</div>
+    <button class="btn" style="margin-top:10px" onclick="reconnectGamepad()">RECONNECT GAMEPAD</button>
   </section>
 
   <section>
@@ -147,6 +148,21 @@ function showToast(msg) {
   el.classList.add('show');
   clearTimeout(_toastTimer);
   _toastTimer = setTimeout(() => el.classList.remove('show'), 2500);
+}
+
+async function reconnectGamepad() {
+  showToast('Reconnecting gamepad...');
+  const d = await api('/api/system/reconnect-gamepad', { method: 'POST' });
+  if (!d || !d.ok || !d.devices.length) {
+    showToast('No paired Bluetooth gamepad found.');
+    return;
+  }
+  const connected = d.devices.filter((dev) => dev.connected);
+  if (connected.length) {
+    showToast(`Reconnected: ${connected.map((dev) => dev.name).join(', ')}`);
+  } else {
+    showToast('Could not reconnect -- make sure the gamepad is powered on nearby.');
+  }
 }
 
 function toggleNavMenu() {

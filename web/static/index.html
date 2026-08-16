@@ -291,7 +291,8 @@
 
   <section>
     <h2>Application</h2>
-    <button class="btn danger" onclick="openShutdownModal()">SHUTDOWN APP</button>
+    <button class="btn" onclick="reconnectGamepad()">RECONNECT GAMEPAD</button>
+    <button class="btn danger" style="margin-top:8px" onclick="openShutdownModal()">SHUTDOWN APP</button>
   </section>
 
   <div class="modal-backdrop" id="shutdown-modal">
@@ -499,6 +500,21 @@ function showToast(msg) {
   el.classList.add('show');
   clearTimeout(_toastTimer);
   _toastTimer = setTimeout(() => el.classList.remove('show'), 2500);
+}
+
+async function reconnectGamepad() {
+  showToast('Reconnecting gamepad...');
+  const d = await api('/api/system/reconnect-gamepad', { method: 'POST' });
+  if (!d || !d.ok || !d.devices.length) {
+    showToast('No paired Bluetooth gamepad found.');
+    return;
+  }
+  const connected = d.devices.filter((dev) => dev.connected);
+  if (connected.length) {
+    showToast(`Reconnected: ${connected.map((dev) => dev.name).join(', ')}`);
+  } else {
+    showToast('Could not reconnect -- make sure the gamepad is powered on nearby.');
+  }
 }
 
 function openShutdownModal() { document.getElementById('shutdown-modal').classList.add('open'); }

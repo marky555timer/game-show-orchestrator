@@ -34,6 +34,8 @@ from drivers.factoid_engine import build_mock_question, advance_to_next_queued_q
 from drivers.branding_engine import get_current_text
 from drivers.announcement_engine import get_text_for as get_announcement_text_for
 from drivers import led_bridge
+from drivers.dmx_driver import dmx
+from drivers import tunnel_engine
 from drivers import idle_cycle_engine
 from graphics.text_render import (
     draw_marquee, wrap_two_lines, draw_bitmap_text, text_width, char_width,
@@ -1266,6 +1268,26 @@ def _render_show_outro(t):
                      TOP_COMBINED, align="center")
 
 
+def _draw_setup_status_chips():
+    """Four at-a-glance connectivity chips, one per remaining physical
+    panel (3-6), while the operator is standing at the rig itself setting
+    up -- the same signals graphics/overlay_panel.py's desktop overlay and
+    the web Setup page's status row already show, just small enough to fit
+    the matrix. scroll=False (truncate, not marquee) since these are meant
+    to be read all at once, not waited on."""
+    transport = led_bridge.current_transport()
+    led_label = "USB" if transport.startswith("SERIAL") else "UDP"
+    chips = (
+        (3, led_label),
+        (4, "DMX:Y" if dmx.active else "DMX:N"),
+        (5, "TUN:Y" if tunnel_engine.get_current_tunnel_url() else "TUN:N"),
+        (6, "NET:Y" if tunnel_engine.internet_reachable() else "NET:N"),
+    )
+    for panel_id, label in chips:
+        draw_marquee(matrix_surface, f"setup_status_{panel_id}", label,
+                     PANELS[panel_id], align="center", scroll=False)
+
+
 def _render_show_phase(t):
     """Setup/Countdown share a static held screen (nothing dramatic should
     happen on the physical rig just because the operator is filling out
@@ -1275,6 +1297,7 @@ def _render_show_phase(t):
     if phase in ("setup", "countdown"):
         draw_marquee(matrix_surface, "show_setup_banner", config.SHOW_SETUP_LED_TEXT,
                      TOP_COMBINED, align="center")
+        _draw_setup_status_chips()
     elif phase == "intro":
         _render_show_intro(t)
     elif phase == "outro":

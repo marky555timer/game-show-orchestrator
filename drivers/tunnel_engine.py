@@ -58,6 +58,30 @@ def get_current_tunnel_url():
         return _current_tunnel_url
 
 
+# Public-internet reachability probe (2026-08-16), shared by the Setup
+# page's status row (web/remote_server.py) and the LED matrix's own Setup-
+# phase status chips (graphics/matrix_canvas.py) -- cached/rate-limited so
+# neither caller's poll loop ever blocks on a down network.
+_net_check_cache = {"reachable": False, "checked_at": 0.0}
+_NET_CHECK_INTERVAL_S = 15.0
+
+
+def internet_reachable():
+    now = time.time()
+    if now - _net_check_cache["checked_at"] < _NET_CHECK_INTERVAL_S:
+        return _net_check_cache["reachable"]
+    reachable = False
+    if requests is not None:
+        try:
+            requests.head("https://1.1.1.1", timeout=1.5)
+            reachable = True
+        except Exception:
+            reachable = False
+    _net_check_cache["reachable"] = reachable
+    _net_check_cache["checked_at"] = now
+    return reachable
+
+
 def _set_status(value):
     global _status
     with _lock:

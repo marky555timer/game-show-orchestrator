@@ -20,11 +20,6 @@ import threading
 import time
 import uuid
 
-try:
-    import requests
-except ImportError:
-    requests = None
-
 import config
 from state import state
 from drivers import deck_orchestrator
@@ -42,31 +37,9 @@ from drivers import show_engine
 from drivers.dmx_driver import dmx
 from drivers import led_bridge
 from drivers import tunnel_engine
+from drivers import bluetooth_engine
 from graphics.animations import deal_panel_animations
 from web.net_info import get_lan_ip, get_play_url
-
-# Setup page status row (2026-08-16): cached/rate-limited public-internet
-# reachability probe -- no existing generic connectivity check exists
-# elsewhere in the codebase, and this must never let a down network stall
-# a /api/show/status request the operator's browser is actively polling.
-_net_check_cache = {"reachable": False, "checked_at": 0.0}
-_NET_CHECK_INTERVAL_S = 15.0
-
-
-def _internet_reachable():
-    now = time.time()
-    if now - _net_check_cache["checked_at"] < _NET_CHECK_INTERVAL_S:
-        return _net_check_cache["reachable"]
-    reachable = False
-    if requests is not None:
-        try:
-            requests.head("https://1.1.1.1", timeout=1.5)
-            reachable = True
-        except Exception:
-            reachable = False
-    _net_check_cache["reachable"] = reachable
-    _net_check_cache["checked_at"] = now
-    return reachable
 
 # How long a single web-remote D-pad "move" request keeps the virtual
 # direction alive (inputs/gamepad.py::_held_space_invaders_direction()) if
@@ -1039,7 +1012,7 @@ if app is not None:
             "led_transport": led_bridge.current_transport(),
             "dmx_active": dmx.active,
             "tunnel_live": tunnel_engine.get_current_tunnel_url() != "",
-            "internet_reachable": _internet_reachable(),
+            "internet_reachable": tunnel_engine.internet_reachable(),
         }
 
     @app.post("/api/show/save-and-start-now")
@@ -1184,6 +1157,17 @@ if app is not None:
         state.shutdown_reason = "WEB REMOTE"
         state.shutdown_requested = True
         return {"ok": True}
+
+    @app.post("/api/system/reconnect-gamepad")
+    def reconnect_gamepad():
+        # Safe to run directly on this uvicorn worker thread -- unlike
+        # shutdown above, this only shells out to bluetoothctl and touches
+        # no pygame/DMX state. Once BlueZ reports the reconnect, pygame
+        # picks the controller back up on its own (inputs/gamepad.py::
+        # init_joysticks(), wired to JOYDEVICEADDED).
+        print("[WEB REMOTE] Reconnect Gamepad requested via web remote.")
+        result = bluetooth_engine.reconnect_paired_devices()
+        return result
 
 
 def get_remote_url():
