@@ -1,0 +1,13 @@
+[Unit]
+Description=WiFi fallback hotspot provisioning check
+After=NetworkManager.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/bin/wifi_provision.sh
+RemainAfterExit=yes
+StandardOutput=append:/var/log/wifi-provision.log
+StandardError=append:/var/log/wifi-provision.log
+
+[Install]
+WantedBy=multi-user.target
