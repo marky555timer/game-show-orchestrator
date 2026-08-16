@@ -13,7 +13,7 @@ import time
 import pygame
 from config import ENTTEC_PORT
 from state import state
-from drivers.midi_driver import midi_status_str
+from drivers.midi_driver import midi_status_str, set_dj_volume
 from drivers.dmx_driver import dmx
 from drivers import lighting_engine
 from drivers import deck_orchestrator
@@ -33,6 +33,15 @@ def main():
     secondary_canvas.init()
     joypad_manual.write_manual()
     tunnel_engine.start()
+
+    # Sync the DJ engine's internal volume trackers (audio/dj_engine.py's
+    # _master_volume, midi_driver's own _current_fader_pct) to state.music_volume
+    # right away, rather than letting the 600ms intro-handoff tween
+    # (show_engine.py::_finish_intro) be the first thing to catch them up --
+    # otherwise the first live track can briefly play louder than the
+    # configured starting volume while that tween is still ramping down
+    # from the stale 100%-default trackers.
+    set_dj_volume(state.music_volume)
 
     # Trivia Night show flow (2026-08-13): the deck stays silent at launch
     # now -- state.show_phase starts at "setup", LEDs show "START UP", and

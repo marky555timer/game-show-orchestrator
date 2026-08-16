@@ -9,7 +9,7 @@ class State:
 
     def __init__(self):
         self.mode = self.MODE_DJ
-        self.music_volume = 100
+        self.music_volume = 50
         self.status_msg = "SYS OK"
         self.msg_timer = 0
         self.active_option = "A"
@@ -64,15 +64,22 @@ class State:
 
         # --- Multiplayer QR quiz (2026-08-09) ---
         # player_id -> {"initials": str, "selected_index": int, "locked": bool,
-        # "score": int, "locked_at": float}. "locked_at" (2026-08-11) is the
-        # timestamp of that player's own /api/player/lock call, used to find
-        # who answered first for the mystery-question bonus point.
+        # "score": int, "locked_at": float, "avatar_color": str}. "locked_at"
+        # (2026-08-11) is the timestamp of that player's own /api/player/lock
+        # call, used to find who answered first for the mystery-question
+        # bonus point. "avatar_color" (2026-08-16, QUIZCADE avatar feature)
+        # is one of AVATAR_COLORS below, chosen at join -- see
+        # web/static/play.html's palette picker; its JS AVATAR_COLORS array
+        # must stay in sync with this list (no shared config channel between
+        # the backend and static HTML in this codebase).
         # Populated by web/remote_server.py's /api/player/join; empty means
         # "nobody's signed up" -- every consumer (grading, the matrix
         # scorecard) falls back to the original single-shared-answer
         # behavior in that case, so the game works identically whether zero
         # or fifty phones are connected.
         self.quiz_players = {}
+        AVATAR_COLORS = ["red", "amber", "cyan", "green", "violet"]
+        self.AVATAR_COLORS = AVATAR_COLORS
         # Bumped every time a NEW question becomes the active one
         # (drivers/factoid_engine.py::_apply_active_question) -- player
         # phones poll this to know when to clear their local selection and
@@ -130,6 +137,12 @@ class State:
         self.tempo_tap_times = []
         self.dj_tempo_period = 0.6
         self.tempo_flash_at = 0.0
+        # --- Hot Track confirmation flash (drivers/hot_track_engine.py) ---
+        # 0.0 = no flash in progress. Set the instant AI trivia becomes
+        # ready for a priority-armed YouTube import; self-clears once
+        # graphics/matrix_canvas.py::_draw_hot_track_flash finishes its
+        # 4-phase sequence.
+        self.hot_track_flash_started_at = 0.0
         self.lighting_transition_started_at = 0.0  # 0 = no song-transition fade in progress
         # How long the song-intro BLACK stage holds for THIS transition.
         # Per-transition rather than a constant: an announced transition
@@ -341,10 +354,14 @@ class State:
         self.btn1_hold_overlay_active = False
         self.btn1_hold_overlay_until = 0.0
 
-        # --- Btn3 hold: session AI token-usage overlay (panel 3) ---
-        # True strictly while Btn3 is held past the threshold -- hides
-        # immediately on release, no persistence window (unlike Btn1 above).
-        self.btn3_token_overlay_active = False
+        # --- Btn3 hold: swear-tag toggle confirmation (panel 4) ---
+        # True for as long as Btn3 is physically held after a press flips
+        # the last-played announcement's swear tag; hides immediately on
+        # release, no persistence window. btn3_swear_toggle_text holds
+        # which confirmation ("*#@!" tagged / "a-ok" untagged) to show --
+        # see inputs/gamepad.py::toggle_last_announcement_swear().
+        self.btn3_swear_toggle_active = False
+        self.btn3_swear_toggle_text = ""
 
         # --- Space Invaders mini-game (DJ-mode Btn1+Btn3 combo Easter egg) ---
         # Entered/exited/simulated by drivers/space_invaders_engine.py,

@@ -55,8 +55,8 @@ DJ MODE
   Btn1 HOLD       Status overlay (star=questions ready, $=Price Game ready,
                   red down-arrow=no questions/AI exhausted)
   Btn2            Normal trivia: instant pull from pre-fetch quiz queue
-  Btn3 TAP        QR popup for the mobile Web Remote
-  Btn3 HOLD       Session AI token-usage overlay (hides on release)
+  Btn3            Toggle SWEAR tag on the last-played announcement clip --
+                  hold to see Panel 4 confirm ("*#@!" tagged / "a-ok" cleared)
   Btn4            No action (Auto-DJ toggle lives on the web remote only --
                   too easy to bump by accident here; Auto-DJ default ON)
   Btn5            Tempo Tap

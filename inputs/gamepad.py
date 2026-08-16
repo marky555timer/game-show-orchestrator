@@ -13,7 +13,6 @@ from config import (
     DMX_GRADE_FLASH_SECONDS,
     SI_ENTRY_BUTTONS, SI_EXIT_BUTTONS,
     BTN1_HOLD_THRESHOLD_SECONDS, BTN1_HOLD_OVERLAY_PERSIST_SECONDS,
-    BTN3_HOLD_THRESHOLD_SECONDS,
     SHUTDOWN_COMBO_BUTTONS, SHUTDOWN_COMBO_HOLD_SECONDS,
     FORCE_PRICE_GAME_COMBO_BUTTONS, FORCE_PRICE_GAME_COMBO_HOLD_SECONDS,
 )
@@ -37,7 +36,8 @@ from drivers import light_prefs_engine
 from drivers import show_engine
 from graphics import overlay_panel
 from graphics import secondary_canvas
-from web import qr_popup
+from drivers import announcement_engine
+from drivers import hot_track_engine
 from audio.audio_engine import (
     play_processed_sound, raw_buzzer, raw_bigwin, raw_clear, raw_ding,
     raw_coin, raw_buzz_short, stop_previous_audio, reverb_enabled
@@ -53,15 +53,13 @@ joysticks = []
 _vol_hold_dir = 0
 _vol_next_repeat = 0.0
 
-# Btn1/Btn3 tap-vs-hold state (Section: joystick remap + status overlays).
-# JOYBUTTONDOWN arms *_down_at and clears *_hold_fired; the per-frame
-# _process_btnX_hold() polls promote a still-held press past *_hold_fired
-# once BTNx_HOLD_THRESHOLD_SECONDS elapses; JOYBUTTONUP's
-# _handle_btnX_release() reads *_hold_fired to decide tap vs. hold.
+# Btn1 tap-vs-hold state (Section: joystick remap + status overlays).
+# JOYBUTTONDOWN arms _down_at and clears _hold_fired; the per-frame
+# _process_btn1_hold() poll promotes a still-held press past _hold_fired
+# once BTN1_HOLD_THRESHOLD_SECONDS elapses; JOYBUTTONUP's
+# _handle_btn1_release() reads _hold_fired to decide tap vs. hold.
 _btn1_down_at = None
 _btn1_hold_fired = False
-_btn3_down_at = None
-_btn3_hold_fired = False
 
 # Shutdown combo (Feature Update): Btn5+Btn2 held together continuously for
 # SHUTDOWN_COMBO_HOLD_SECONDS. None while the combo isn't currently held;
@@ -326,7 +324,7 @@ def _grade_multiplayer_round():
         correct = player["selected_index"] == state.factoid_correct_index
         if correct:
             player["score"] += 1
-        results.append({"initials": player["initials"], "correct": correct})
+        results.append({"player_id": player_id, "initials": player["initials"], "correct": correct})
     state.quiz_last_round_results = results
     state.round_winner_initials = [r["initials"] for r in results if r["correct"]]
 
@@ -801,6 +799,22 @@ def handle_color_cycle():
     light_prefs_engine.mark_dirty()
     print(f"[ACTION] Btn7 COLOR -> index {state.dj_color_index}")
 
+def toggle_last_announcement_swear():
+    """Btn3 press in DJ mode: flips the swear tag on whichever announcement
+    clip most recently played (state.last_announcement_filename -- the same
+    "what just played" pointer the caption editor reads/writes). No-ops
+    (console log only) if nothing's played yet this session. Panel 4 shows
+    the result for as long as Btn3 stays down -- see the JOYBUTTONUP
+    callsite in process_events() and matrix_canvas.py's pid==4 branch."""
+    filename = state.last_announcement_filename
+    if not filename:
+        print("[ACTION] Btn3 SWEAR TOGGLE -- no announcement has played yet this session, no-op.")
+        return
+    is_swear = announcement_engine.toggle_swear(filename)
+    state.btn3_swear_toggle_active = True
+    state.btn3_swear_toggle_text = "*#@!" if is_swear else "a-ok"
+    print(f"[ACTION] Btn3 SWEAR TOGGLE -- {filename!r} swear={is_swear}")
+
 def handle_theme_cycle():
     """Btn8 in DJ mode: cycles the DJ_THEME_COUNT animated uplighting
     themes. Deliberately excludes DJ_THEME_ALL_OFF_INDEX -- landing on a
@@ -961,15 +975,6 @@ def _process_btn1_hold():
         _btn1_hold_fired = True
         state.btn1_hold_overlay_active = True
 
-def _process_btn3_hold():
-    """Same pattern as _process_btn1_hold() for Btn3 (token overlay)."""
-    global _btn3_hold_fired
-    if state.mode != state.MODE_DJ or _btn3_down_at is None or _btn3_hold_fired:
-        return
-    if _joystick_button_held(2) and time.time() - _btn3_down_at >= BTN3_HOLD_THRESHOLD_SECONDS:
-        _btn3_hold_fired = True
-        state.btn3_token_overlay_active = True
-
 def _handle_btn1_release():
     """JOYBUTTONUP for Btn1 (DJ mode only -- see process_events()). Decides
     tap vs. hold using _btn1_hold_fired (set by _process_btn1_hold() above):
@@ -1001,25 +1006,6 @@ def _handle_btn1_release():
 
     if _debounced(0):
         handle_auto_announce_toggle()
-
-def _handle_btn3_release():
-    """JOYBUTTONUP for Btn3 (DJ mode only). Token overlay hides immediately
-    on release either way (no persistence, unlike Btn1); a quick tap opens
-    the QR remote popup. Same _btn3_down_at is None guard as Btn1 above for
-    Space Invaders combo safety."""
-    global _btn3_down_at, _btn3_hold_fired
-    if _btn3_down_at is None:
-        return
-    was_hold = _btn3_hold_fired
-    _btn3_down_at = None
-    _btn3_hold_fired = False
-    state.btn3_token_overlay_active = False
-
-    if was_hold:
-        return
-
-    if _debounced(2):
-        qr_popup.trigger_qr_popup()
 
 # ------------------------------------------
 # SHUTDOWN COMBO: Btn5 + Btn2 HELD TOGETHER FOR 5 CONTINUOUS SECONDS
@@ -1121,7 +1107,7 @@ def _process_space_invaders_movement():
 # ------------------------------------------
 def process_events():
     global last_axis_x, last_axis_y
-    global _btn1_down_at, _btn1_hold_fired, _btn3_down_at, _btn3_hold_fired
+    global _btn1_down_at, _btn1_hold_fired
 
     # Section 1: as soon as the active deck's track is confidently
     # identified, keep its question queue topped up in the background --
@@ -1131,6 +1117,7 @@ def process_events():
     confident = state.deck1_confident if state.active_deck == 1 else state.deck2_confident
     ensure_prefetch(title, artist, confident)
     mystery_band_engine.check_new_track(title, artist, confident)
+    hot_track_engine.update(time.time())
 
     _process_quiz_gate()
     deck_orchestrator.update(time.time())
@@ -1211,10 +1198,10 @@ def process_events():
                     # GAME_MODE still uses Btn2 to select Answer 2.
                     if _debounced(btn, QUIZ_GATE_DEBOUNCE_SECONDS):
                         handle_normal_trivia_button()
-                elif btn == 2:  # Physical Btn3: armed here, resolved to a tap
-                    # (QR remote popup) or a hold (token overlay) on release.
-                    _btn3_down_at = time.time()
-                    _btn3_hold_fired = False
+                elif btn == 2:  # Physical Btn3: plain press, no tap/hold split --
+                    # toggles the swear tag on the last-played announcement
+                    # and lights panel 4 for as long as the button stays down.
+                    toggle_last_announcement_swear()
                 elif btn == 3:  # Physical Btn4: no-op in DJ mode (2026-08-12
                     # -- too easy to bump by accident, and Auto-DJ is almost
                     # never turned off in practice). auto_dj_engine.
@@ -1271,7 +1258,7 @@ def process_events():
                 if event.button == 0:
                     _handle_btn1_release()
                 elif event.button == 2:
-                    _handle_btn3_release()
+                    state.btn3_swear_toggle_active = False
 
         elif event.type == pygame.MOUSEBUTTONDOWN:
             if event.button == 1:  # left click
@@ -1383,7 +1370,6 @@ def process_events():
     _process_volume_hold()
     _process_space_invaders_movement()
     _process_btn1_hold()
-    _process_btn3_hold()
     _process_shutdown_combo()
     _process_force_price_game_combo()
 

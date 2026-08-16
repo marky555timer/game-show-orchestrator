@@ -9,3 +9,5 @@ qrcode[pil]
 psutil
 mutagen
 pyserial
+yt-dlp
+imageio-ffmpeg

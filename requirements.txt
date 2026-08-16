@@ -13,3 +13,5 @@ uvicorn
 qrcode[pil]
 psutil
 mutagen
+yt-dlp
+imageio-ffmpeg

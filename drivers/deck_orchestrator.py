@@ -112,7 +112,16 @@ _history_index = -1  # index of the currently-active entry in _history
 # consumed by a "next" move, not sticky across multiple transitions. Holds
 # the track's path (music_library's own stable identity), not a track dict,
 # so it stays valid even if the library gets rescanned in between.
-_cued_track_path = None
+#
+# 2-deep as of 2026-08-15 (Hot Track feature): index 0 = the "next" override
+# (set_cued_track()), index 1 = "after next" (queue_cued_track_after_next(),
+# Hot Track only -- used when a YouTube import isn't ready in time to safely
+# take the very next slot). Every "next" move in _begin_move() consumes
+# slot 0 and promotes slot 1 up into slot 0, so a slot-1 entry always lands
+# exactly one transition later than whatever was already about to play.
+# Always the same list object -- plain item assignment throughout, no
+# `global` needed anywhere that mutates it.
+_cued_track_paths = [None, None]
 
 
 def _pick_next_track():
@@ -176,23 +185,41 @@ def set_cued_track(path):
     should win over passively stepping forward through where "back" had
     been. Resolved fresh (and consumed) inside _begin_move() at the moment
     "next" is actually pressed, not here, so it's correct regardless of
-    whatever got speculatively preloaded in between (see _begin_move)."""
-    global _cued_track_path
-    _cued_track_path = path
+    whatever got speculatively preloaded in between (see _begin_move).
+    Only ever touches slot 0 -- see queue_cued_track_after_next() for slot 1."""
+    _cued_track_paths[0] = path
+
+
+def queue_cued_track_after_next(path):
+    """Hot Track feature only (drivers/hot_track_engine.py): queues `path`
+    for the transition AFTER whatever's already going to play next. Never
+    touches slot 0 -- the track already lined up to play next keeps its
+    slot untouched, per the Hot Track 30s cue-placement barrier."""
+    _cued_track_paths[1] = path
 
 
 def clear_cued_track():
-    global _cued_track_path
-    _cued_track_path = None
+    """Only clears slot 0. A slot-1 entry, if any, is untouched and
+    promotes to slot 0 on the very next transition -- same as if slot 0 had
+    never been set."""
+    _cued_track_paths[0] = None
 
 
 def get_cued_track():
-    """Current cue, resolved against the live library (a cued file that's
-    since been deleted resolves to None), for web/remote_server.py's
+    """Current slot-0 cue, resolved against the live library (a cued file
+    that's since been deleted resolves to None), for web/remote_server.py's
     /api/library/tracks status. Does NOT consume it -- purely a read."""
-    if _cued_track_path is None:
+    if _cued_track_paths[0] is None:
         return None
-    return next((t for t in music_library.all_tracks() if t["path"] == _cued_track_path), None)
+    return next((t for t in music_library.all_tracks() if t["path"] == _cued_track_paths[0]), None)
+
+
+def get_queued_after_next_track():
+    """Read-only peek at slot 1 -- not consumed. Not wired to any UI yet;
+    exposed for a possible future Library-page "queued after next" indicator."""
+    if _cued_track_paths[1] is None:
+        return None
+    return next((t for t in music_library.all_tracks() if t["path"] == _cued_track_paths[1]), None)
 
 
 def _pick_with_history(paths, history, history_size):
@@ -345,7 +372,7 @@ def _begin_reactive_move(inactive, track, announced, direction, label, sweeper_o
 
 
 def _begin_move(direction, announced, sweeper_only=False):
-    global _pending, _preloaded_track, _history_index, _cued_track_path
+    global _pending, _preloaded_track, _history_index
     if _pending is not None:
         print("[DECK ORCHESTRATOR] Move already in flight -- ignoring duplicate trigger.")
         return
@@ -372,8 +399,10 @@ def _begin_move(direction, announced, sweeper_only=False):
     # mismatched preload: the operator explicitly picked this song, so it
     # always plays next, full stop. A stale cue (file deleted since) quietly
     # falls through to the normal pick below instead of erroring.
-    if _cued_track_path is not None:
-        cued_path, _cued_track_path = _cued_track_path, None
+    cued_path = _cued_track_paths[0]
+    _cued_track_paths[0] = _cued_track_paths[1]
+    _cued_track_paths[1] = None
+    if cued_path is not None:
         cued_track = next((t for t in music_library.all_tracks() if t["path"] == cued_path), None)
         if cued_track is not None:
             if _preloaded_track is not None and _preloaded_track["track"]["path"] == cued_path:

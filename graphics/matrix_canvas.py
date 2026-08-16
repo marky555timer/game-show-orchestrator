@@ -16,7 +16,8 @@ from config import (
     RED_FULL, RED_DIM, RED_OFF, BLACK, PANELS, TOP_COMBINED,
     TOP_CYCLE_TRACK_SECONDS, TOP_CYCLE_FACTOID_SECONDS,
     STATUS_PANEL_HOLD_SECONDS, TOP_SHOW_FACTOID_PAGE,
-    TEMPO_FLASH_DECAY_SECONDS, QUIZ_CELEBRATION_HOLD_SECONDS, QUIZ_STATS_HOLD_SECONDS,
+    TEMPO_FLASH_DECAY_SECONDS, HOT_TRACK_FLASH_PHASE_SECONDS,
+    QUIZ_CELEBRATION_HOLD_SECONDS, QUIZ_STATS_HOLD_SECONDS,
     QUIZ_TF_CORRECTION_HOLD_SECONDS,
     BRANDING_OVERLAY_INTERVAL_SECONDS, BRANDING_OVERLAY_DURATION_SECONDS,
     BRANDING_ASSEMBLY_DURATION_SECONDS, DJ_COLOR_PALETTE,
@@ -32,7 +33,6 @@ from drivers.deck_orchestrator import get_now_playing as get_rekordbox_track
 from drivers.factoid_engine import build_mock_question, advance_to_next_queued_question
 from drivers.branding_engine import get_current_text
 from drivers.announcement_engine import get_text_for as get_announcement_text_for
-from drivers import token_tracker
 from drivers import led_bridge
 from drivers import idle_cycle_engine
 from graphics.text_render import (
@@ -267,10 +267,12 @@ def _render_dj_mode(t):
                 # confidence/availability status overlay -- highest priority
                 # on panel 3, takes over even the AI-pipeline status indicator.
                 _render_btn1_status_overlay(rect, t)
-            elif pid == 3 and state.btn3_token_overlay_active:
-                # Btn3 held: session AI token-usage overlay (no persistence --
-                # hides the instant the button is released).
-                _render_token_overlay(rect, t)
+            elif pid == 4 and state.btn3_swear_toggle_active:
+                # Btn3 held: swear-tag toggle confirmation on the last-played
+                # announcement clip (no persistence -- hides the instant the
+                # button is released). Panel 4 has no other override in this
+                # chain, so this doesn't fight anything on panel 3.
+                _render_swear_toggle_overlay(rect, t)
             elif pid == 6 and t < state.vol_overlay_until:
                 _draw_volume_overlay(rect)
             elif pid == 3 and t < state.auto_dj_overlay_until:
@@ -294,6 +296,7 @@ def _render_dj_mode(t):
                 _render_idle_cycle_panel(pid, rect, anim_t)
 
     _draw_tempo_flash(t)
+    _draw_hot_track_flash(t)
 
 
 def _render_mystery_qmark_cycle(t):
@@ -475,12 +478,12 @@ def _render_btn1_status_overlay(rect, t):
         matrix_surface.set_clip(old_clip)
 
 
-def _render_token_overlay(rect, t):
-    """Btn3 held (Section: joystick remap + status overlays), panel 3: total
-    session AI token usage (drivers/token_tracker.py), reusing the same
-    marquee text path as the volume/toggle overlays."""
-    _, _, total = token_tracker.get_totals()
-    draw_marquee(matrix_surface, "btn3_token_overlay", f"{total} TOK", rect, align="center")
+def _render_swear_toggle_overlay(rect, t):
+    """Btn3 held, panel 4: confirms the swear-tag flip that just happened on
+    the last-played announcement clip -- "*#@!" if the press just tagged it,
+    "a-ok" if it just untagged it. Same marquee text path as the volume/
+    toggle overlays."""
+    draw_marquee(matrix_surface, "btn3_swear_toggle", state.btn3_swear_toggle_text, rect, align="center")
 
 
 def _branding_overlay_active(t):
@@ -613,6 +616,31 @@ def _draw_tempo_flash(t):
     for pid in (3, 4, 5, 6):
         x0, y0, w, h = PANELS[pid]
         pygame.draw.rect(matrix_surface, color, (x0, y0, w, h), 1)
+
+
+def _draw_hot_track_flash(t):
+    """Hot Track "trivia ready" confirmation (drivers/hot_track_engine.py):
+    4 alternating phases of HOT_TRACK_FLASH_PHASE_SECONDS each -- reverse
+    (solid bright fill) / normal (no-op, whatever's already drawn stands) /
+    reverse / normal -- then self-clears. Same cumulative-phase-boundary
+    style as drivers/lighting_engine.py::_song_intro_state(). Drawn
+    unconditionally right after _draw_tempo_flash(t) (see call site) so it
+    always composites on top regardless of what else panels 3-6 are showing
+    that frame -- same guarantee _draw_tempo_flash relies on."""
+    if not state.hot_track_flash_started_at:
+        return
+    elapsed = t - state.hot_track_flash_started_at
+    phase = HOT_TRACK_FLASH_PHASE_SECONDS
+    t1, t2, t3, t4 = phase, phase * 2, phase * 3, phase * 4
+    if elapsed >= t4:
+        state.hot_track_flash_started_at = 0.0
+        return
+    reverse = elapsed < t1 or t2 <= elapsed < t3
+    if not reverse:
+        return  # "normal" phase -- whatever's already drawn this frame stands
+    for pid in (3, 4, 5, 6):
+        x0, y0, w, h = PANELS[pid]
+        pygame.draw.rect(matrix_surface, RED_FULL, (x0, y0, w, h))  # solid fill, not an outline
 
 
 def _draw_volume_overlay(rect):

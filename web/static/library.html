@@ -138,6 +138,19 @@
     </div>
     <div id="lib-upload-status" style="font-size:.8rem;color:#999;margin-top:6px;"></div>
 
+    <div class="lib-yt-import" style="margin-top:12px">
+      <div class="row">
+        <input type="text" id="yt-import-url" placeholder="Paste a YouTube URL..." style="flex:1;min-width:200px">
+        <button class="btn primary" id="yt-import-btn" onclick="startYoutubeImport()">Import</button>
+      </div>
+      <div style="margin-top:6px;font-size:.75rem;color:#777;">Needs a live internet connection at the venue.</div>
+    </div>
+    <div class="tag-progress-wrap" id="yt-progress-wrap" style="display:none">
+      <div id="yt-progress-text" style="font-size:.8rem;color:#999;"></div>
+      <div class="tag-progress-bar"><div class="tag-progress-fill" id="yt-progress-fill"></div></div>
+    </div>
+    <div id="yt-error-text" style="font-size:.8rem;color:#ffb6b6;margin-top:6px;"></div>
+
     <div class="row" style="margin-top:16px;align-items:center;justify-content:space-between">
       <div>
         <button class="btn primary" id="tag-library-btn" onclick="startTagging()">Tag Library</button>
@@ -424,6 +437,78 @@ async function libUploadFiles(fileList) {
       libUploadFiles(e.dataTransfer.files);
     }
   });
+})();
+
+// ------------------------------------------
+// YOUTUBE IMPORT (audience song requests, operator-only -- background
+// download+convert job mirroring the Tag Library polling pattern below)
+// ------------------------------------------
+let _ytImportPollTimer = null;
+
+async function startYoutubeImport() {
+  const urlInput = document.getElementById('yt-import-url');
+  const url = urlInput.value.trim();
+  if (!url) {
+    showToast('Paste a YouTube URL first.');
+    return;
+  }
+  const d = await api('/api/library/youtube-import', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ url }),
+  });
+  if (!d || !d.ok) {
+    showToast('YouTube Import: ' + (d && d.reason ? d.reason : 'failed to start'));
+    return;
+  }
+  document.getElementById('yt-import-btn').disabled = true;
+  document.getElementById('yt-progress-wrap').style.display = '';
+  document.getElementById('yt-error-text').textContent = '';
+  _pollYoutubeImportStatus();
+}
+
+async function _pollYoutubeImportStatus() {
+  clearTimeout(_ytImportPollTimer);
+  const d = await api('/api/library/youtube-import-status');
+  if (!d || !d.ok) return;
+
+  const phaseLabels = {
+    fetching_info: 'Fetching video info...',
+    downloading: 'Downloading',
+    converting: 'Converting to MP3...',
+    done: 'Done',
+    error: 'Error',
+  };
+  const label = phaseLabels[d.phase] || 'Working...';
+  const pct = d.pct || 0;
+  document.getElementById('yt-progress-fill').style.width = pct + '%';
+  document.getElementById('yt-progress-text').textContent = d.title
+    ? `${label}${d.phase === 'downloading' ? ' ' + pct + '%' : ''}: ${d.title}`
+    : label;
+
+  if (d.running) {
+    _ytImportPollTimer = setTimeout(_pollYoutubeImportStatus, 1000);
+    return;
+  }
+
+  document.getElementById('yt-import-btn').disabled = false;
+  document.getElementById('yt-progress-wrap').style.display = 'none';
+  if (d.last_error) {
+    document.getElementById('yt-error-text').textContent = d.last_error;
+    showToast('YouTube Import failed: ' + d.last_error);
+  } else if (d.phase === 'done') {
+    document.getElementById('yt-import-url').value = '';
+    showToast(`Imported "${d.title}".`);
+    libRefresh();
+  }
+}
+
+// Resume polling if an import was already running when this page loaded.
+(async function checkYoutubeImportOnLoad() {
+  const d = await api('/api/library/youtube-import-status');
+  if (d && d.ok && d.running) {
+    document.getElementById('yt-import-btn').disabled = true;
+    document.getElementById('yt-progress-wrap').style.display = '';
+    _pollYoutubeImportStatus();
+  }
 })();
 
 // ------------------------------------------

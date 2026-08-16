@@ -4,6 +4,7 @@ import json
 import time
 import queue
 import random
+import itertools
 import threading
 
 try:
@@ -475,7 +476,15 @@ class TrackQuestionEngine:
     def __init__(self):
         self._cache = {}  # key -> list[question dict], up to TRACK_QUESTIONS_PER_TRACK
         self._cache_lock = threading.Lock()
-        self._queue = queue.Queue()
+        # PriorityQueue (2026-08-15, Hot Track feature): lower number =
+        # served first. _queue_seq is a tie-breaker so two same-priority
+        # items never fall back to comparing the (key, title, artist)
+        # tuples themselves (which would raise on a tie since strings don't
+        # define a total order the way this needs) -- also keeps
+        # same-priority items in FIFO order, matching plain Queue's old
+        # behavior for the common case (every normal prefetch request).
+        self._queue = queue.PriorityQueue()
+        self._queue_seq = itertools.count()
         self._inflight = set()
         self._price_offered = set()  # track keys already armed/offered a Price Game this session
 
@@ -607,7 +616,44 @@ class TrackQuestionEngine:
         if key in self._inflight:
             return  # already filling the next slot for this track
         self._inflight.add(key)
-        self._queue.put((key, title, artist))
+        self._queue.put((config.FACTOID_NORMAL_PREFETCH_PRIORITY, next(self._queue_seq), key, title, artist))
+
+    def ensure_priority_prefetch(self, title, artist):
+        """Hot Track feature (drivers/hot_track_engine.py): priority
+        prefetch for a track that ISN'T necessarily the currently-playing
+        deck track yet (a YouTube import still downloading/converting).
+        Unlike ensure_prefetch(), this NEVER touches state.factoid_track_key/
+        track_question_queue/price_game_*/light_prefs -- those reflect
+        whatever the deck is actually playing live, on air, and this track
+        may not be that yet. Enqueued at FACTOID_HOT_TRACK_PREFETCH_PRIORITY,
+        which PriorityQueue always drains ahead of the active deck's own
+        FACTOID_NORMAL_PREFETCH_PRIORITY refill requests. Returns True if a
+        fetch was actually queued."""
+        if not _looks_like_real_track(title, artist):
+            return False
+        key = _sanitize_track_key(title, artist)
+        with self._cache_lock:
+            cached_count = len(self._cache.get(key, []))
+        if cached_count >= config.TRACK_QUESTIONS_PER_TRACK:
+            return False
+        if self.is_exhausted(key):
+            return False
+        if not config.FACTOID_AI_ENABLED or requests is None or state.ai_suppressed:
+            return False
+        if key in self._inflight:
+            return False
+        self._inflight.add(key)
+        self._queue.put((config.FACTOID_HOT_TRACK_PREFETCH_PRIORITY, next(self._queue_seq), key, title, artist))
+        return True
+
+    def cached_question_count(self, title, artist):
+        """Thread-safe read of the in-memory cache (kept in sync with
+        track_cache.json -- every write goes through _save_cache() in the
+        same call) -- lets a caller ask "is there >=1 ready question for
+        this track" without assuming it's the currently active deck track."""
+        key = _sanitize_track_key(title, artist)
+        with self._cache_lock:
+            return len(self._cache.get(key, []))
 
     # ------------------------------------------------------------
     # State sync helpers -- these drive the DJ-mode panel3 AI-pipeline
@@ -652,8 +698,15 @@ class TrackQuestionEngine:
         if key in self._price_offered:
             return
         self._price_offered.add(key)
-        state.price_game_pending = True
-        state.price_game_decade = decade
+        # 2026-08-15 fix: this used to write unconditionally. That was safe
+        # while _fill_one_slot only ever ran for the currently-active key --
+        # the Hot Track feature's priority prefetch can now run this for an
+        # imported-but-not-yet-playing track, and an unconditional write
+        # here would silently arm the Price Game banner for whatever's
+        # actually playing right now, off a different track's release year.
+        if key == state.factoid_track_key:
+            state.price_game_pending = True
+            state.price_game_decade = decade
         print(f"[PRICE GAME] Armed {decade.upper()} price game for '{key}' (release_year={year}).")
 
     # Question-style variety (Section 4.1 legacy numbering): each of the 3
@@ -770,7 +823,7 @@ class TrackQuestionEngine:
     # ------------------------------------------------------------
     def _worker_loop(self):
         while True:
-            key, title, artist = self._queue.get()
+            _priority, _seq, key, title, artist = self._queue.get()
             try:
                 self._fill_one_slot(key, title, artist)
             finally:
@@ -1229,6 +1282,14 @@ track_engine = TrackQuestionEngine()
 
 def ensure_prefetch(title, artist, confident):
     track_engine.ensure_prefetch(title, artist, confident)
+
+
+def ensure_priority_prefetch(title, artist):
+    return track_engine.ensure_priority_prefetch(title, artist)
+
+
+def cached_question_count(title, artist):
+    return track_engine.cached_question_count(title, artist)
 
 
 def is_exhausted(key):

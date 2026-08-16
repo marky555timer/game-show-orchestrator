@@ -156,7 +156,7 @@ def _fetch_worker(key, decade_label, category_index, avoid_products=None):
 
 def _end_price_game_audio(brisk=False):
     """Fades the background bed out and tweens the channel faders back to
-    state.music_volume (the DJ's last stored level, 100% by default at
+    state.music_volume (the DJ's last stored level, 50% by default at
     launch). Idempotent -- safe to call even if already ended. `brisk=True`
     (used the instant a Price Game question is graded, see
     end_price_game_audio_on_answer) fades/tweens faster than the normal

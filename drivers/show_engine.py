@@ -221,8 +221,9 @@ def _finish_intro(now):
     deck_orchestrator.trigger_sweeper_only_track_move()). Every later
     transition that night still goes through the normal
     trigger_track_move()/Auto-DJ path (announced whenever
-    state.auto_announce_enabled is on), unaffected by this. Only ever
-    called from skip_intro() above."""
+    state.auto_announce_enabled is on), unaffected by this. Called from
+    skip_intro() above (manual early end) or update() below (automatic
+    fallback once ShowStart.mp3 finishes playing on its own)."""
     global _show_music_channel
     state.show_phase = "live"
     state.show_phase_started_at = now
@@ -257,3 +258,11 @@ def update(now):
             # Phase moved on (intro handed off via _finish_intro()'s own
             # fadeout, or the outro song finished) -- stop touching it.
             _show_music_channel = None
+
+    # If nobody ever pressed skip and ShowStart.mp3 simply finished playing
+    # on its own, the show would otherwise sit stuck in "intro" forever --
+    # nothing else transitions it. Auto-advance exactly as if skip had been
+    # pressed the instant the recorded intro track runs out.
+    if (state.show_phase == "intro" and _show_music_channel is not None
+            and not _show_music_channel.get_busy()):
+        _finish_intro(now)

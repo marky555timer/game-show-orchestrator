@@ -20,6 +20,11 @@ import threading
 import time
 import uuid
 
+try:
+    import requests
+except ImportError:
+    requests = None
+
 import config
 from state import state
 from drivers import deck_orchestrator
@@ -31,10 +36,37 @@ from drivers import branding_engine
 from drivers import announcement_engine
 from drivers.music_library import music_library, SUPPORTED_EXTENSIONS, sanitize_track_key
 from drivers import music_metadata_engine
+from drivers import youtube_import_engine
 from drivers import win_sequence_engine
 from drivers import show_engine
+from drivers.dmx_driver import dmx
+from drivers import led_bridge
+from drivers import tunnel_engine
 from graphics.animations import deal_panel_animations
 from web.net_info import get_lan_ip, get_play_url
+
+# Setup page status row (2026-08-16): cached/rate-limited public-internet
+# reachability probe -- no existing generic connectivity check exists
+# elsewhere in the codebase, and this must never let a down network stall
+# a /api/show/status request the operator's browser is actively polling.
+_net_check_cache = {"reachable": False, "checked_at": 0.0}
+_NET_CHECK_INTERVAL_S = 15.0
+
+
+def _internet_reachable():
+    now = time.time()
+    if now - _net_check_cache["checked_at"] < _NET_CHECK_INTERVAL_S:
+        return _net_check_cache["reachable"]
+    reachable = False
+    if requests is not None:
+        try:
+            requests.head("https://1.1.1.1", timeout=1.5)
+            reachable = True
+        except Exception:
+            reachable = False
+    _net_check_cache["reachable"] = reachable
+    _net_check_cache["checked_at"] = now
+    return reachable
 
 # How long a single web-remote D-pad "move" request keeps the virtual
 # direction alive (inputs/gamepad.py::_held_space_invaders_direction()) if
@@ -121,10 +153,15 @@ if app is not None:
 
     class PlayerJoin(BaseModel):
         initials: str
+        avatar_color: str | None = None
 
     class PlayerRename(BaseModel):
         player_id: str
         initials: str
+
+    class PlayerAvatarSet(BaseModel):
+        player_id: str
+        avatar_color: str
 
     class PlayerSelect(BaseModel):
         player_id: str
@@ -192,12 +229,14 @@ if app is not None:
     @app.post("/api/player/join")
     def player_join(body: PlayerJoin):
         initials = (body.initials or "").strip().upper()[:3] or "???"
+        avatar_color = body.avatar_color if body.avatar_color in state.AVATAR_COLORS else state.AVATAR_COLORS[0]
         player_id = uuid.uuid4().hex
         state.quiz_players[player_id] = {
             "initials": initials, "selected_index": -1, "locked": False, "score": 0,
+            "avatar_color": avatar_color,
         }
         print(f"[MULTIPLAYER QUIZ] '{initials}' joined ({len(state.quiz_players)} players signed up).")
-        return {"ok": True, "player_id": player_id, "initials": initials}
+        return {"ok": True, "player_id": player_id, "initials": initials, "avatar_color": avatar_color}
 
     @app.get("/api/player/whoami")
     def player_whoami(player_id: str):
@@ -209,7 +248,10 @@ if app is not None:
         player = state.quiz_players.get(player_id)
         if player is None:
             return {"ok": False}
-        return {"ok": True, "initials": player["initials"], "score": player["score"]}
+        return {
+            "ok": True, "initials": player["initials"], "score": player["score"],
+            "avatar_color": player.get("avatar_color", state.AVATAR_COLORS[0]),
+        }
 
     @app.post("/api/player/rename")
     def player_rename(body: PlayerRename):
@@ -221,6 +263,73 @@ if app is not None:
             return {"ok": False}
         player["initials"] = (body.initials or "").strip().upper()[:3] or "???"
         return {"ok": True, "initials": player["initials"]}
+
+    @app.post("/api/player/set-avatar")
+    def player_set_avatar(body: PlayerAvatarSet):
+        player = state.quiz_players.get(body.player_id)
+        if player is None:
+            return {"ok": False}
+        if body.avatar_color not in state.AVATAR_COLORS:
+            return {"ok": False, "reason": "bad avatar_color"}
+        player["avatar_color"] = body.avatar_color
+        return {"ok": True, "avatar_color": player["avatar_color"]}
+
+    def _build_round_roster():
+        """Per-player LIVE status for the round-roster UI shown on both
+        play.html (every phone) and index.html (operator) while a question
+        is in progress -- single source of truth for
+        /api/player/question and /api/gamepad/status so the two surfaces
+        can never disagree (2026-08-16, replaces the earlier reaction-feed
+        design, which only ever showed the post-grade reveal).
+
+        Never reveals correctness while a round is still live -- only
+        "thinking" (not locked in) vs "locked" (locked in, no result shown
+        yet), matching player_question()'s existing rule that correct_index
+        stays -1 until state.quiz_locked. Once graded, reuses the exact
+        same just_graded reveal-hold window that already gates
+        correct_index/correction so the roster clears in lockstep with the
+        rest of the reveal, rather than a separately-tuned duration.
+
+        Correctness comes from state.quiz_last_round_results (populated
+        once per round by inputs/gamepad.py::_grade_multiplayer_round(),
+        also read by graphics/matrix_canvas.py's physical-board scorecard)
+        -- this function only reshapes that existing data, never re-grades.
+
+        Iterates state.quiz_players in dict/join order -- deliberately NOT
+        score-sorted like `leaderboard` below -- so cards hold a stable
+        position turn to turn instead of reshuffling as scores change
+        mid-glance.
+
+        Deliberately does NOT gate on state.factoid_choices being non-empty
+        (confirmed live, 2026-08-16: choices can already be cleared/rolled
+        over to the next queued question the instant grading completes,
+        well before the reveal-hold window expires -- factoid_choices'
+        lifecycle isn't a reliable "is a round live or just-graded" signal
+        the way state.quiz_locked/quiz_graded_at are). `live` and
+        `just_graded` are each self-sufficient checks."""
+        just_graded = state.quiz_locked and (time.time() - state.quiz_graded_at) < config.QUIZ_TF_CORRECTION_HOLD_SECONDS
+        live = bool(state.factoid_choices) and not state.quiz_locked
+        if not live and not just_graded:
+            return []
+        correctness_by_player = {r["player_id"]: r["correct"] for r in state.quiz_last_round_results}
+        roster = []
+        for player_id, player in state.quiz_players.items():
+            if live:
+                status = "locked" if player["locked"] else "thinking"
+            elif player_id in correctness_by_player:
+                status = "correct" if correctness_by_player[player_id] else "incorrect"
+            else:
+                # Graded, but this player never locked in --
+                # _grade_multiplayer_round() skips them entirely (not
+                # counted as wrong), so give them a distinct neutral status
+                # instead of silently vanishing from the roster.
+                status = "no_answer"
+            roster.append({
+                "player_id": player_id, "initials": player["initials"],
+                "avatar_color": player.get("avatar_color", state.AVATAR_COLORS[0]),
+                "score": player["score"], "status": status,
+            })
+        return roster
 
     @app.get("/api/player/question")
     def player_question(player_id: str):
@@ -263,12 +372,20 @@ if app is not None:
         timeout_seconds = state.round_timeout_seconds if active else config.QUESTION_TIMEOUT_SECONDS
 
         win_message = ""
+        winner_initials = ""
+        winner_avatar_color = ""
         if state.win_sequence_active:
+            # Pulled out as their own fields (2026-08-16, QUIZCADE avatar
+            # feature) so play.html's win-screen celebration avatar doesn't
+            # need to string-parse win_message -- sent to EVERY client
+            # during the win sequence, not just the winner's own, since the
+            # celebration avatar shows for the whole room.
+            winner = state.quiz_players.get(state.game_winner_player_id)
+            winner_initials = winner["initials"] if winner else "???"
+            winner_avatar_color = winner.get("avatar_color", state.AVATAR_COLORS[0]) if winner else ""
             if player_id == state.game_winner_player_id:
                 win_message = "STAND UP! YOU WIN!"
             else:
-                winner = state.quiz_players.get(state.game_winner_player_id)
-                winner_initials = winner["initials"] if winner else "???"
                 win_message = f"Congratulations to {winner_initials}, the winner!"
 
         # First-correct-answer bonus (mystery question only) -- shown once
@@ -297,8 +414,10 @@ if app is not None:
         # Leaderboard for the "waiting for next question" view (item 18) --
         # top scorers, ranked descending, ties broken by join order.
         # player_id included so the client can bold its own row (item 28).
+        # avatar_color (2026-08-16) lets the leaderboard show a swatch per row.
         leaderboard = sorted(
-            ({"player_id": pid, "initials": p["initials"], "score": p["score"]}
+            ({"player_id": pid, "initials": p["initials"], "score": p["score"],
+              "avatar_color": p.get("avatar_color", state.AVATAR_COLORS[0])}
              for pid, p in state.quiz_players.items()),
             key=lambda p: p["score"], reverse=True,
         )[:8]
@@ -320,7 +439,11 @@ if app is not None:
             "correct_index": correct_index,
             "correction": correction,
             "win_message": win_message,
+            "winner_initials": winner_initials,
+            "winner_avatar_color": winner_avatar_color,
             "bonus_message": bonus_message,
+            "avatar_color": player.get("avatar_color", state.AVATAR_COLORS[0]),
+            "round_roster": _build_round_roster(),
             "intermission_active": state.intermission_active,
             "intermission_remaining_seconds": intermission_remaining,
             "score": player["score"],
@@ -487,6 +610,25 @@ if app is not None:
     @app.get("/api/library/tag-status")
     def library_tag_status():
         return {"ok": True, **music_metadata_engine.tagging_job_status()}
+
+    class YoutubeImportStart(BaseModel):
+        url: str
+
+    @app.post("/api/library/youtube-import")
+    def library_youtube_import_start(body: YoutubeImportStart):
+        """Library page YouTube Import: paste a URL, starts a background
+        download+convert job (drivers/youtube_import_engine.py) -- returns
+        immediately, client polls /api/library/youtube-import-status for
+        progress. Rejects a non-youtube.com/youtu.be URL or a second import
+        while one's already running, same guard shape as library_tag_start()."""
+        started, reason = youtube_import_engine.start_import(body.url)
+        if not started:
+            return {"ok": False, "reason": reason}
+        return {"ok": True}
+
+    @app.get("/api/library/youtube-import-status")
+    def library_youtube_import_status():
+        return {"ok": True, **youtube_import_engine.import_status()}
 
     class LibraryCue(BaseModel):
         filename: str
@@ -816,6 +958,7 @@ if app is not None:
             "auto_announce_enabled": state.auto_announce_enabled,
             "sfx_enabled": state.sfx_enabled,
             "quiz_player_count": len(state.quiz_players),
+            "round_roster": _build_round_roster(),
             "game_win_score": state.game_win_score,
             "intermission_minutes": state.intermission_minutes,
             "music_volume": state.music_volume,
@@ -893,6 +1036,10 @@ if app is not None:
             "avg_round_minutes": config.SHOW_AVG_ROUND_MINUTES,
             "time_slider_step_minutes": config.SHOW_TIME_SLIDER_STEP_MINUTES,
             "time_slider_max_hours_ahead": config.SHOW_TIME_SLIDER_MAX_HOURS_AHEAD,
+            "led_transport": led_bridge.current_transport(),
+            "dmx_active": dmx.active,
+            "tunnel_live": tunnel_engine.get_current_tunnel_url() != "",
+            "internet_reachable": _internet_reachable(),
         }
 
     @app.post("/api/show/save-and-start-now")
@@ -1049,6 +1196,6 @@ def _run_uvicorn():
 
 if app is not None and uvicorn is not None:
     threading.Thread(target=_run_uvicorn, daemon=True).start()
-    print(f"[WEB REMOTE] Serving at {get_remote_url()} (Btn3 tap for a QR popup).")
+    print(f"[WEB REMOTE] Serving at {get_remote_url()}.")
 else:
     print("[WEB REMOTE] fastapi/uvicorn not installed -- web remote control disabled.")

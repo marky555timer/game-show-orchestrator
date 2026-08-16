@@ -118,6 +118,11 @@
   </section>
 
   <section>
+    <h2>System Status</h2>
+    <div class="row" id="status-row" style="font-size:.85rem;color:#999">Checking...</div>
+  </section>
+
+  <section>
     <button class="btn primary big" onclick="startGameNow()">START GAME</button>
     <button class="btn big" style="margin-top:10px" id="start-scheduled-btn" onclick="startGameScheduled()">START GAME AT --:--</button>
   </section>
@@ -323,6 +328,31 @@ async function loadStatus() {
   }
 }
 loadStatus();
+
+// ------------------------------------------
+// SYSTEM STATUS ROW (polled independently of loadStatus() above, which
+// also resets the genre grid and form inputs from server state on every
+// call -- polling that on an interval would stomp on whatever the
+// operator is actively editing).
+// ------------------------------------------
+function _statusChip(label, ok, okText, badText) {
+  const color = ok ? '#4caf50' : '#666';
+  return `<span>${label}=<span style="color:${color}">${ok ? okText : badText}</span></span>`;
+}
+
+async function refreshStatusRow() {
+  const d = await api('/api/show/status');
+  if (!d) return;
+  const el = document.getElementById('status-row');
+  el.innerHTML = [
+    `<span>LED: <span style="color:#f2f2f2">${d.led_transport || '?'}</span></span>`,
+    _statusChip('DMX', !!d.dmx_active, 'Y', 'N'),
+    _statusChip('TUNL', !!d.tunnel_live, 'Y', 'N'),
+    _statusChip('NET', !!d.internet_reachable, 'Y', 'N'),
+  ].join(' &nbsp; ');
+}
+refreshStatusRow();
+setInterval(refreshStatusRow, 3000);
 </script>
 </body>
 </html>

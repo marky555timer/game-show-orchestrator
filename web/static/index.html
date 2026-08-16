@@ -79,6 +79,53 @@
   .nav-menu a:hover { background: #202024; }
   .nav-menu a.active { color: #ff3b30; font-weight: 700; }
   .volume-value { text-align: center; font-size: .95rem; color: #ccc; margin-top: 6px; font-variant-numeric: tabular-nums; }
+
+  /* round roster (2026-08-16): live per-player status while a question is
+     in progress -- ported avatar component structure from web/static/
+     play.html for visual continuity across pages, but this page's own
+     literal-hex colors (no CSS custom-property token system here) and no
+     decorative keyframe animation -- this is a utility glance-screen, not
+     the flagship phone experience. */
+  #roster-grid {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(64px, 1fr));
+    gap: 6px;
+  }
+  .roster-card {
+    display: flex; flex-direction: column; align-items: center; gap: 2px;
+    background: #202024; border-radius: 8px; padding: 6px 2px;
+  }
+  .roster-card .avatar { width: 44%; height: auto; aspect-ratio: 1 / 1; }
+  .roster-initials { font-size: .7rem; font-weight: 700; }
+  .roster-score { font-size: .65rem; color: #999; font-variant-numeric: tabular-nums; }
+  .roster-status-text {
+    font-size: .55rem; text-transform: uppercase; letter-spacing: .03em;
+    padding: 1px 4px; border-radius: 3px; text-align: center;
+  }
+  .status-thinking, .status-locked { color: #f5a623; background: rgba(245,166,35,.15); }
+  .status-correct { color: #3ba55c; background: rgba(59,165,92,.15); }
+  .status-incorrect { color: #ff3b30; background: rgba(255,59,48,.15); }
+  .status-no_answer { color: #888; background: rgba(255,255,255,.06); }
+  .roster-card--no_answer .avatar { opacity: .5; filter: grayscale(.5); }
+  #roster-grid.dense .roster-status-text { display: none; }
+  #roster-grid.dense .roster-card { padding: 5px 2px; gap: 1px; }
+
+  .avatar {
+    --avatar-size: 40px;
+    width: var(--avatar-size); height: var(--avatar-size); border-radius: 50%;
+    background: radial-gradient(circle at 35% 30%, color-mix(in srgb, var(--avatar-color) 28%, #241d16), #16110c 72%);
+    border: 2px solid color-mix(in srgb, var(--avatar-color) 55%, #333);
+    box-shadow: inset 0 0 8px rgba(0,0,0,.6);
+    position: relative; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0;
+  }
+  .avatar-face { position: relative; width: 58%; height: 44%; }
+  .avatar-eye { position: absolute; top: 8%; width: 22%; height: 10%; border-radius: 2px; background: #f5a623; }
+  .avatar-eye.l { left: 0; } .avatar-eye.r { right: 0; }
+  .avatar-mouth { position: absolute; bottom: 4%; left: 50%; transform: translateX(-50%); width: 56%; height: 12%; background: #f5a623; }
+  .avatar--excited .avatar-eye { clip-path: polygon(0% 100%, 50% 0%, 100% 100%); height: 22%; top: 4%; background: #3ba55c; }
+  .avatar--excited .avatar-mouth { border-radius: 0 0 50% 50%; height: 32%; background: #3ba55c; }
+  .avatar--disappointed .avatar-eye { clip-path: polygon(0% 0%, 50% 100%, 100% 0%); height: 22%; top: 6%; background: #ff3b30; }
+  .avatar--disappointed .avatar-mouth { border-radius: 50% 50% 0 0; height: 26%; bottom: 0; background: #ff3b30; }
+  .avatar--disappointed { filter: saturate(.7) brightness(.9); }
 </style>
 </head>
 <body>
@@ -135,6 +182,10 @@
     <h2>Play Along (QR Quiz)</h2>
     <div class="row" style="margin-bottom:10px">
       <span id="quiz-player-count" style="color:#999; font-size:.85rem;">0 players signed up</span>
+    </div>
+    <div id="roster-section" style="display:none; margin-bottom:12px;">
+      <div style="font-size:.75rem; text-transform:uppercase; letter-spacing:.05em; color:#777; margin-bottom:6px;">Round Roster</div>
+      <div id="roster-grid"></div>
     </div>
     <div class="row" style="align-items:center;gap:8px">
       <label style="font-weight:700;font-size:.85rem">Win Score:</label>
@@ -256,6 +307,48 @@
   <div class="toast" id="toast"></div>
 
 <script>
+const AVATAR_COLOR_VARS = { red: '#ff3b30', amber: '#f5a623', cyan: '#3ec9e0', green: '#3ba55c', violet: '#b06bff' };
+function rosterStatusLabel(status) {
+  switch (status) {
+    case 'thinking': return 'IS THINKING';
+    case 'locked': return 'LOCKED IN';
+    case 'correct': return 'GOT IT RIGHT!';
+    case 'incorrect': return 'GOT IT WRONG';
+    case 'no_answer': return 'NO ANSWER';
+    default: return '';
+  }
+}
+function rosterStatusPose(status) {
+  if (status === 'correct') return 'excited';
+  if (status === 'incorrect') return 'disappointed';
+  return 'idle';
+}
+let lastIndexRosterKey = '';
+function renderRoster(roster) {
+  const section = document.getElementById('roster-section');
+  const grid = document.getElementById('roster-grid');
+  if (!roster || !roster.length) {
+    section.style.display = 'none';
+    grid.innerHTML = '';
+    lastIndexRosterKey = '';
+    return;
+  }
+  section.style.display = '';
+  const key = roster.map(p => p.player_id + ':' + p.status + ':' + p.score).join(',');
+  if (key === lastIndexRosterKey) return;
+  lastIndexRosterKey = key;
+  grid.classList.toggle('dense', roster.length > 12);
+  grid.innerHTML = roster.map(p => `
+    <div class="roster-card roster-card--${p.status}">
+      <div class="avatar avatar--${rosterStatusPose(p.status)}" style="--avatar-color:${AVATAR_COLOR_VARS[p.avatar_color] || AVATAR_COLOR_VARS.red}">
+        <div class="avatar-face"><span class="avatar-eye l"></span><span class="avatar-eye r"></span><span class="avatar-mouth"></span></div>
+      </div>
+      <span class="roster-initials">${p.initials}</span>
+      <span class="roster-score">${p.score}</span>
+      <span class="roster-status-text status-${p.status}">${rosterStatusLabel(p.status)}</span>
+    </div>`).join('');
+}
+
 async function api(path, opts) {
   try {
     const res = await fetch(path, opts);
@@ -536,6 +629,8 @@ async function refreshGamepadStatus() {
   } else {
     introControls.style.display = 'none';
   }
+
+  renderRoster(d.round_roster);
 }
 
 function refreshAll() {

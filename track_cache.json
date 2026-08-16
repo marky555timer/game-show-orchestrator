@@ -17952,6 +17952,24 @@
       "release_year": 1996,
       "category": "true_false",
       "ts": 1786276062.1620214
+    },
+    {
+      "headline": "Ginuwine's silky smooth R&B classic",
+      "full": "Released in 1996, 'So Anxious' became one of Ginuwine's signature tracks, showcasing his signature vocal style over a sensual R&B groove.",
+      "question": "Which smartphone debuted in 1997?",
+      "choices": [
+        "iPhone",
+        "BlackBerry",
+        "Windows Phone",
+        "Android"
+      ],
+      "correct_index": 0,
+      "correction": "",
+      "release_year": 1996,
+      "bpm": 92.0,
+      "energy": "slow",
+      "category": "era",
+      "ts": 1786832318.837343
     }
   ],
   "michael jackson - billie jean": [
@@ -24426,6 +24444,428 @@
       "energy": "slow",
       "category": "real_name",
       "ts": 1786699860.4997714
+    }
+  ],
+  "neil young - heart of gold": [
+    {
+      "headline": "Neil Young's only #1 hit",
+      "full": "Released on 'Harvest' album, this acoustic ballad became Neil Young's biggest chart success and only US Top 10 hit, reaching #1 on Billboard's Hot 100.",
+      "question": "What year was 'Heart of Gold' released?",
+      "choices": [
+        "1978",
+        "1969",
+        "1985",
+        "1972"
+      ],
+      "correct_index": 3,
+      "correction": "",
+      "release_year": 1972,
+      "bpm": 76.0,
+      "energy": "slow",
+      "category": "date",
+      "ts": 1786829396.7835138
+    },
+    {
+      "headline": "Neil Young's only #1 hit on Billboard Ho",
+      "full": "Released on Young's 1972 album 'Harvest', 'Heart of Gold' became his signature song and highest-charting single, reaching #1 on the Billboard Hot 100 in 1972.",
+      "question": "T/F: 'Heart of Gold' won a Grammy Award for Song of the Year.",
+      "choices": [
+        "True",
+        "False"
+      ],
+      "correct_index": 1,
+      "correction": "The song was nominated but didn't win; it peaked at #1 commercially instead.",
+      "release_year": 1972,
+      "bpm": 76.0,
+      "energy": "slow",
+      "category": "true_false",
+      "ts": 1786829399.2230206
+    },
+    {
+      "headline": "Neil Young's only #1 hit on US charts",
+      "full": "Released in 1972, 'Heart of Gold' became Neil Young's sole chart-topper on the Billboard Hot 100, reaching #1 and staying on charts for months.",
+      "question": "What Canadian province is Neil Young from?",
+      "choices": [
+        "British Columbia",
+        "Alberta",
+        "Quebec",
+        "Ontario"
+      ],
+      "correct_index": 3,
+      "correction": "",
+      "release_year": 1972,
+      "bpm": 76.0,
+      "energy": "slow",
+      "category": "real_name",
+      "ts": 1786829401.0846796
+    }
+  ],
+  "berlin - take my breath away - love theme from \"top gun\"": [
+    {
+      "headline": "Top Gun's iconic love theme",
+      "full": "Berlin's synth-pop ballad became the theme for Top Gun (1986). It won a Golden Globe and topped charts worldwide, becoming one of the most iconic movie soundtrack songs ever.",
+      "question": "T/F: 'Take My Breath Away' won the Academy Award for Best Original Song.",
+      "choices": [
+        "True",
+        "False"
+      ],
+      "correct_index": 1,
+      "correction": "It won a Golden Globe but lost the Oscar to 'Under the Sea' from The Little Mermaid.",
+      "release_year": 1986,
+      "bpm": 80.0,
+      "energy": "slow",
+      "category": "true_false",
+      "ts": 1786829688.052111
+    },
+    {
+      "headline": "Top Gun's iconic love theme",
+      "full": "This power ballad became one of the biggest hits of 1986, winning a Golden Globe and earning a Grammy nomination for Best Pop Performance.",
+      "question": "What year was Berlin formed?",
+      "choices": [
+        "1982",
+        "1984",
+        "1975",
+        "1979"
+      ],
+      "correct_index": 3,
+      "correction": "",
+      "release_year": 1986,
+      "bpm": 76.0,
+      "energy": "slow",
+      "category": "real_name",
+      "ts": 1786829689.5985298
+    },
+    {
+      "headline": "Top Gun's iconic power ballad",
+      "full": "Berlin's synth-driven ballad became the signature love theme of Top Gun, reaching #1 on Billboard Hot 100 and winning a Golden Globe for Best Original Song.",
+      "question": "What year did the Chernobyl nuclear disaster occur?",
+      "choices": [
+        "1984",
+        "1986",
+        "1988",
+        "1985"
+      ],
+      "correct_index": 1,
+      "correction": "",
+      "release_year": 1986,
+      "bpm": 76.0,
+      "energy": "slow",
+      "category": "era",
+      "ts": 1786829691.8862317
+    }
+  ],
+  "siouxsie and the banshees - siouxsie and the banshees - spellbound (official music video)": [
+    {
+      "headline": "Post-punk masterpiece from '81",
+      "full": "Spellbound showcases Siouxsie's haunting vocals over hypnotic post-punk rhythms. A standout from Juju, it became one of the Banshees' most iconic tracks with its dark, mesmerizing atmosphere.",
+      "question": "What year was Spellbound released?",
+      "choices": [
+        "1978",
+        "1989",
+        "1985",
+        "1981"
+      ],
+      "correct_index": 3,
+      "correction": "",
+      "release_year": 1981,
+      "bpm": 120.0,
+      "energy": "dark",
+      "category": "date",
+      "ts": 1786829800.267461
+    }
+  ],
+  "siouxsie and the banshees - siouxsie and the banshees - cities in dust": [
+    {
+      "headline": "Post-punk masterpiece from 1985",
+      "full": "Epic gothic track from Siouxsie's 'Tinderbox' album, featuring hypnotic drums and soaring vocals over dark, atmospheric production.",
+      "question": "What was the top-grossing film of 1985?",
+      "choices": [
+        "Rambo: First Blood Part ",
+        "Rocky IV",
+        "Back to the Future",
+        "The Breakfast Club"
+      ],
+      "correct_index": 2,
+      "correction": "",
+      "release_year": 1985,
+      "bpm": 120.0,
+      "energy": "dark",
+      "category": "era",
+      "ts": 1786829828.1200554
+    }
+  ],
+  "depeche mode - depeche mode - enjoy the silence (live in berlin)": [
+    {
+      "headline": "Iconic silence speaks volumes",
+      "full": "Depeche Mode's masterpiece of restraint and emotion, performed live in Berlin with ethereal synths and Dave Gahan's vulnerable vocals creating pure transcendence.",
+      "question": "How many studio albums did Depeche Mode release?",
+      "choices": [
+        "12",
+        "15",
+        "10",
+        "18"
+      ],
+      "correct_index": 1,
+      "correction": "",
+      "release_year": 1990,
+      "bpm": 60.0,
+      "energy": "dark",
+      "category": "career_stat",
+      "ts": 1786830094.5524387
+    },
+    {
+      "headline": "Silent masterpiece from Berlin '90",
+      "full": "Iconic live performance of Depeche Mode's ethereal ballad, recorded during their Rose Bowl concert in Pasadena, California in 1990.",
+      "question": "What country is Depeche Mode from?",
+      "choices": [
+        "England",
+        "France",
+        "Sweden",
+        "Germany"
+      ],
+      "correct_index": 0,
+      "correction": "",
+      "release_year": 1990,
+      "bpm": 60.0,
+      "energy": "slow",
+      "category": "geography",
+      "ts": 1786830281.269998
+    },
+    {
+      "headline": "Silent Masterpiece from Berlin",
+      "full": "Iconic live performance of Depeche Mode's ethereal 1989 synth-pop ballad, captured during their legendary Berlin concert series.",
+      "question": "What is 'Enjoy The Silence' about?",
+      "choices": [
+        "Lost love",
+        "Finding peace",
+        "Radio silence",
+        "Empty rooms"
+      ],
+      "correct_index": 1,
+      "correction": "",
+      "release_year": 1990,
+      "bpm": 80.0,
+      "energy": "slow",
+      "category": "song_meaning",
+      "ts": 1786830283.0326977
+    }
+  ],
+  "misfits - last caress": [
+    {
+      "headline": "Misfits' proto-punk classic from '77",
+      "full": "Iconic opening track from their debut album '\u9759lation', featuring Glenn Danzig's menacing vocals. A staple of horror-punk that influenced countless bands.",
+      "question": "T/F: 'Last Caress' samples a real 1950s doo-wop song.",
+      "choices": [
+        "True",
+        "False"
+      ],
+      "correct_index": 1,
+      "correction": "The song is entirely original; no samples were used.",
+      "release_year": 1977,
+      "bpm": 180.0,
+      "energy": "dark",
+      "category": "true_false",
+      "ts": 1786830977.1853325
+    },
+    {
+      "headline": "Misfits' proto-punk shock classic",
+      "full": "Misfits' 1977 debut single 'Last Caress' is a short, crude proto-punk anthem known for its shocking lyrics and infectious bass riff. A staple of horror-punk.",
+      "question": "What year was 'Last Caress' released?",
+      "choices": [
+        "1981",
+        "1977",
+        "1985",
+        "1974"
+      ],
+      "correct_index": 1,
+      "correction": "",
+      "release_year": 1977,
+      "bpm": 140.0,
+      "energy": "fast",
+      "category": "date",
+      "ts": 1786831001.4361887
+    },
+    {
+      "headline": "Misfits' debut single from 1977",
+      "full": "Last Caress is the Misfits' raw, shocking debut single\u2014a brief burst of punk aggression that became a horror-punk classic. Originally released in 1977.",
+      "question": "Who founded the Misfits?",
+      "choices": [
+        "Glenn Danzig",
+        "Arthur Googy",
+        "Doyle Wolfgang von Frank",
+        "Jerry Only"
+      ],
+      "correct_index": 0,
+      "correction": "",
+      "release_year": 1977,
+      "bpm": 180.0,
+      "energy": "dark",
+      "category": "real_name",
+      "ts": 1786831003.4463437
+    }
+  ],
+  "queen - crazy little thing called love": [
+    {
+      "headline": "Queen's funky love song from 1979",
+      "full": "A funk-driven love anthem that became Queen's first #1 hit in the US. Freddie Mercury's playful vocals shine over the infectious groove.",
+      "question": "What does this Queen song celebrate?",
+      "choices": [
+        "loneliness",
+        "a breakup",
+        "love",
+        "heartbreak"
+      ],
+      "correct_index": 2,
+      "correction": "",
+      "release_year": 1979,
+      "bpm": 104.0,
+      "energy": "fast",
+      "category": "song_meaning",
+      "ts": 1786832415.3737493
+    },
+    {
+      "headline": "Queen's disco-funk masterpiece",
+      "full": "Queen's only #1 hit in the US, this disco-influenced track features Freddie Mercury's playful vocals and became their biggest chart success despite initial skepticism from the band.",
+      "question": "What year did Queen release 'Crazy Little Thing Called Love'?",
+      "choices": [
+        "1979",
+        "1975",
+        "1985",
+        "1991"
+      ],
+      "correct_index": 0,
+      "correction": "",
+      "release_year": 1979,
+      "bpm": 104.0,
+      "energy": "fast",
+      "category": "date",
+      "ts": 1786832417.246483
+    },
+    {
+      "headline": "Queen's only #1 US hit single",
+      "full": "Queen's 1979 disco-funk anthem was their only chart-topper on the US Billboard Hot 100, reaching #1 in 1980 and becoming a global dancefloor staple.",
+      "question": "What country is Queen's Freddie Mercury from?",
+      "choices": [
+        "India",
+        "England",
+        "Zanzibar",
+        "Brazil"
+      ],
+      "correct_index": 2,
+      "correction": "",
+      "release_year": 1979,
+      "bpm": 130.0,
+      "energy": "fast",
+      "category": "geography",
+      "ts": 1786832419.210117
+    }
+  ],
+  "fleetwood mac - everywhere": [
+    {
+      "headline": "Fleetwood Mac's 1988 pop-rock gem",
+      "full": "A glossy, synth-driven track from Tango in the Night, showcasing the band's late-80s pop reinvention with Christine McVie's vocals.",
+      "question": "What year was 'Everywhere' released?",
+      "choices": [
+        "1988",
+        "1992",
+        "1985",
+        "1977"
+      ],
+      "correct_index": 0,
+      "correction": "",
+      "release_year": 1988,
+      "bpm": 120.0,
+      "energy": "fast",
+      "category": "date",
+      "ts": 1786832812.1131568
+    },
+    {
+      "headline": "Christine McVie's masterpiece from 1988",
+      "full": "Released on Tango in the Night, this upbeat pop-rock track showcased Christine McVie's songwriting prowess and became a fan favorite, exemplifying Fleetwood Mac's ability to craft infectious melodies.",
+      "question": "T/F: Fleetwood Mac broke up permanently after the Tango in the Night tour.",
+      "choices": [
+        "True",
+        "False"
+      ],
+      "correct_index": 1,
+      "correction": "The band reunited for 2009's Unleashed tour and subsequent performances.",
+      "release_year": 1988,
+      "bpm": 120.0,
+      "energy": "fast",
+      "category": "true_false",
+      "ts": 1786832814.4804552
+    },
+    {
+      "headline": "1987 hit from Rumours' successor album",
+      "full": "From Tango in the Night (1987), this track became one of Fleetwood Mac's biggest late-period hits, reaching #4 on the Billboard Hot 100 and showcasing the band's enduring pop sensibility.",
+      "question": "Who was Fleetwood Mac's original drummer?",
+      "choices": [
+        "Peter Green",
+        "Jeremy Spencer",
+        "Danny Kirwan",
+        "Mick Fleetwood"
+      ],
+      "correct_index": 3,
+      "correction": "",
+      "release_year": 1987,
+      "bpm": 120.0,
+      "energy": "fast",
+      "category": "real_name",
+      "ts": 1786832816.4843125
+    }
+  ],
+  "pearl jam - daughter": [
+    {
+      "headline": "Pearl Jam's haunting ballad about loss",
+      "full": "Daughter is a deeply emotional song exploring themes of loss and disconnection, featuring Eddie Vedder's vulnerable vocals over sparse instrumentation.",
+      "question": "What is 'Daughter' mainly about?",
+      "choices": [
+        "loss and disconnection",
+        "falling in love",
+        "political protest",
+        "overcoming addiction"
+      ],
+      "correct_index": 0,
+      "correction": "",
+      "release_year": 1992,
+      "bpm": 76.0,
+      "energy": "dark",
+      "category": "song_meaning",
+      "ts": 1786871974.7772532
+    },
+    {
+      "headline": "Pearl Jam's haunting ballad about loss",
+      "full": "Released on Vitalogy, 'Daughter' is a deeply emotional track exploring themes of family pain and estrangement, becoming one of Pearl Jam's most beloved acoustic-driven songs.",
+      "question": "How many studio albums has Pearl Jam released?",
+      "choices": [
+        "11",
+        "8",
+        "9",
+        "13"
+      ],
+      "correct_index": 0,
+      "correction": "",
+      "release_year": 1994,
+      "bpm": 72.0,
+      "energy": "dark",
+      "category": "career_stat",
+      "ts": 1786871976.4231296
+    },
+    {
+      "headline": "Pearl Jam's haunting ballad from 1994",
+      "full": "A deeply personal song about Eddie Vedder's relationship with his estranged father. The stripped-down acoustic arrangement and vulnerable vocals made it one of Pearl Jam's most emotionally impactful t",
+      "question": "T/F: 'Daughter' was written about Eddie Vedder's actual daughter.",
+      "choices": [
+        "True",
+        "False"
+      ],
+      "correct_index": 1,
+      "correction": "The song was inspired by Vedder's strained relationship with his biological father, not about a daug",
+      "release_year": 1994,
+      "bpm": 72.0,
+      "energy": "dark",
+      "category": "true_false",
+      "ts": 1786871978.311907
     }
   ]
 }

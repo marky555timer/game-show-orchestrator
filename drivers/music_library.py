@@ -24,6 +24,16 @@ _REMASTER_SUFFIX_RE = re.compile(
     r'\s*[\(\[-]+\s*(?:\d{4}\s*)?remaster(?:ed)?(?:\s*\d{4})?(?:\s*version)?\s*[\)\]]*\s*$',
     re.IGNORECASE,
 )
+# Strips the common junk suffixes YouTube video titles carry -- "(Official
+# Video)", "(Official Audio)", "(Official Music Video)", "(Lyrics)"/"(Lyric
+# Video)", "[HD]"/"[4K]", "(HQ)" -- same anchored-at-the-end approach as
+# _REMASTER_SUFFIX_RE above. Wired into _read_tags() so every track through
+# that one choke point gets the cleanup, not just YouTube imports (a
+# manually-uploaded file with a messy title benefits too).
+_YOUTUBE_NOISE_SUFFIX_RE = re.compile(
+    r'\s*[\(\[]\s*(?:official\s*(?:music\s*)?(?:video|audio)|lyrics?(?:\s*video)?|hd|4k|hq)\s*[\)\]]\s*$',
+    re.IGNORECASE,
+)
 # Public (not underscore-prefixed): web/remote_server.py's upload endpoint
 # validates against this same list, so an accepted extension always matches
 # what scan() will actually pick up -- one source of truth instead of a
@@ -102,6 +112,7 @@ class MusicLibrary:
         if not title:
             title = _LEADING_TRACK_NUM_RE.sub('', os.path.splitext(filename)[0]).strip()
         title = _REMASTER_SUFFIX_RE.sub('', title).strip()
+        title = _YOUTUBE_NOISE_SUFFIX_RE.sub('', title).strip()
         return title, artist or "", duration, bpm
 
     def all_tracks(self):

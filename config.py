@@ -261,6 +261,13 @@ FACTOID_UNKNOWN_RETRY_SECONDS = 86400      # AI explicitly wasn't confident
 TRACK_QUESTIONS_PER_TRACK = 3
 TRACK_CACHE_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "track_cache.json")
 
+# Priority tiers for TrackQuestionEngine's background worker queue (lower
+# number = served first). A Hot Track import's prefetch (drivers/
+# hot_track_engine.py) jumps ahead of the currently-playing deck's own
+# per-frame refill requests in the shared queue.
+FACTOID_HOT_TRACK_PREFETCH_PRIORITY = 0
+FACTOID_NORMAL_PREFETCH_PRIORITY = 10
+
 # ==========================================
 # COLOR PALETTE
 # ==========================================
@@ -949,6 +956,43 @@ ANNOUNCEMENTS_DIR = resource_path("audio", "announcements")
 # an announcement (audio/dj_engine.py::play_sweeper_and_announcement).
 MUSIC_DIR = resource_path("audio", "music")
 SWEEPERS_DIR = resource_path("audio", "sweepers")
+
+# ==========================================
+# YOUTUBE IMPORT (Library page, operator-only -- drivers/youtube_import_engine.py)
+# ==========================================
+# Audience song-request feature: paste a URL, a background job downloads +
+# converts it with yt-dlp and drops the MP3 into MUSIC_DIR like any other
+# upload. Rejected outright (no download attempted) if the source video
+# runs longer than this -- keeps a mis-pasted URL (e.g. a full concert or
+# a podcast) from tying up the import worker for several minutes mid-show.
+YOUTUBE_IMPORT_MAX_DURATION_SECONDS = 1200  # 20 minutes
+# Matches typical DJ-pool MP3 quality -- no reason to import at anything
+# higher than what the rest of the library already sounds like.
+YOUTUBE_IMPORT_MP3_QUALITY_KBPS = 192
+
+# ==========================================
+# HOT TRACK (audience YouTube import priority treatment, 2026-08-15)
+# ==========================================
+# Gate: the entire hot-track treatment (priority prefetch + confirmation
+# flash + guaranteed fallback quiz + auto-cue) only applies if the
+# CURRENTLY PLAYING track has at least this much runway left at the moment
+# the import job starts (drivers/hot_track_engine.py::arm()). Below this,
+# the import still happens, it just proceeds as a plain, unhurried library
+# addition -- no priority prefetch, no flash, and no auto-cue-on-import.
+HOT_TRACK_MIN_REMAINING_SECONDS = 90.0
+
+# Cue-placement barrier, checked separately once the import is actually
+# ready to cue (drivers/hot_track_engine.py::place_cue()): if fewer than
+# this many seconds are left on the current track at that moment, the
+# imported track does NOT jump the already-queued "next" pick -- it's
+# placed in the slot AFTER that one instead (deck_orchestrator's 2-deep
+# cue queue).
+HOT_TRACK_CUE_BARRIER_SECONDS = 30.0
+
+# Confirmation flash (graphics/matrix_canvas.py::_draw_hot_track_flash):
+# 4 alternating reverse/normal phases of this length each -- 4x this is the
+# total flash duration (1.0s at the default).
+HOT_TRACK_FLASH_PHASE_SECONDS = 0.25
 
 # ==========================================
 # AUTO-ANNOUNCEMENT TOGGLE (Gamepad Btn1, DJ mode only)
