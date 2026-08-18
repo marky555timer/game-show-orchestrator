@@ -212,13 +212,11 @@
   <div id="live-panel" style="display:none">
 
     <section>
-      <h2>Virtual Gamepad <span style="color:#999;font-weight:400;font-size:.75rem">(no hardware controller needed)</span></h2>
+      <button class="btn primary big" onclick="transportNext()">NEXT TRACK</button>
+      <button class="btn big" style="margin-top:8px" onclick="reconnectGamepad()">RECONNECT GAMEPAD</button>
 
-      <div class="subhead">Transport</div>
-      <div class="row" style="align-items:center">
-        <button class="btn" onclick="transportPrev()">&laquo; Previous Track</button>
-        <button class="btn" onclick="transportNext()">Next Track &raquo;</button>
-        <label style="display:flex;align-items:center;gap:6px;font-weight:700;margin-left:8px">
+      <div class="row" style="align-items:center;margin-top:14px">
+        <label style="display:flex;align-items:center;gap:6px;font-weight:700">
           <input type="checkbox" id="announcements-checkbox" onchange="announcementsToggle()">
           ANNOUNCEMENTS
         </label>
@@ -227,6 +225,8 @@
           GAME SFX
         </label>
       </div>
+
+      <button class="btn" style="margin-top:10px" onclick="transportPrev()">&laquo; Previous Track</button>
     </section>
 
     <section>
@@ -349,8 +349,7 @@
 
     <section>
       <h2>Application</h2>
-      <button class="btn" onclick="reconnectGamepad()">RECONNECT GAMEPAD</button>
-      <button class="btn danger" style="margin-top:8px" onclick="openShutdownModal()">SHUTDOWN APP</button>
+      <button class="btn danger" onclick="openShutdownModal()">SHUTDOWN APP</button>
     </section>
 
   </div>
