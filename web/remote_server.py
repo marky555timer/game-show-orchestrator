@@ -1035,6 +1035,19 @@ if app is not None:
         show_engine.start_intro()
         return {"ok": True}
 
+    @app.post("/api/show/skip-intro")
+    def show_skip_intro():
+        # "PLAY TRACK" on the remote's intro-lockdown view (2026-08-18).
+        # Calls show_engine.skip_intro() directly -- the exact same call
+        # inputs/gamepad.py's JOYAXISMOTION handler makes for physical
+        # Joy X- during the intro -- rather than the general-purpose
+        # transport/next route above, which just moves the DJ deck and
+        # does nothing useful while the deck is silent through the intro
+        # (see show_engine.start_intro()'s docstring). No-ops outside the
+        # intro phase, same as the physical control.
+        show_engine.skip_intro()
+        return {"ok": True}
+
     @app.post("/api/show/abort-countdown")
     def show_abort_countdown():
         ok = show_engine.abort_schedule()

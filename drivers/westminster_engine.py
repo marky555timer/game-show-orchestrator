@@ -147,7 +147,18 @@ def update(now):
         _update_active(now)
         return
 
+    # 2026-08-18 fix: the automatic top-of-hour trigger used to fire off
+    # the wall clock alone, with no regard for state.show_phase -- if the
+    # hour turned over during "intro", its fader duck/chime collided with
+    # ShowStart.mp3's own one-shot playback (see show_engine.start_intro())
+    # and left the deck fader in a bad state once the real first track
+    # started. Gate the automatic clock to show_phase == "live", the same
+    # guard Btn2/Btn6 already use elsewhere (inputs/gamepad.py) -- if the
+    # hour turns over during setup/countdown/intro/outro, that hour's
+    # chime is simply skipped rather than deferred, since firing it late
+    # into a different moment would be just as wrong.
     lt = time.localtime(now)
-    if lt.tm_min == 0 and lt.tm_sec < 2 and state.westminster_last_fired_hour != lt.tm_hour:
+    if (state.show_phase == "live" and lt.tm_min == 0 and lt.tm_sec < 2
+            and state.westminster_last_fired_hour != lt.tm_hour):
         state.westminster_last_fired_hour = lt.tm_hour
         _start_sequence(now)

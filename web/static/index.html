@@ -126,6 +126,33 @@
   .avatar--disappointed .avatar-eye { clip-path: polygon(0% 0%, 50% 100%, 100% 0%); height: 22%; top: 6%; background: #ff3b30; }
   .avatar--disappointed .avatar-mouth { border-radius: 50% 50% 0 0; height: 26%; bottom: 0; background: #ff3b30; }
   .avatar--disappointed { filter: saturate(.7) brightness(.9); }
+
+  /* Show-start lockdown (2026-08-18): the ONLY thing on screen during the
+     "intro" phase. No section chrome (background/padding/margin) so it
+     reads as unmistakably different from the normal panel below it --
+     nothing to tap by accident, nothing to scroll past. */
+  #intro-lockdown { text-align: center; padding: 24px 8px; }
+  #intro-lockdown .lockdown-label {
+    font-size: .8rem; text-transform: uppercase; letter-spacing: .08em;
+    color: #999; margin-bottom: 14px;
+  }
+  #intro-lockdown .btn.primary.big { font-size: 1.4rem; padding: 28px 14px; }
+  #intro-lockdown .lockdown-hint { font-size: .8rem; color: #777; margin-top: 14px; }
+
+  /* Advanced/Show Configuration (2026-08-18): the rarely-touched, easy-to-
+     fat-finger technical controls (DMX, idle theme, branding text,
+     announcement captions, the Westminster test trigger) collapsed behind
+     one disclosure instead of five separate boxes competing for thumb
+     space with the controls actually used during a show. */
+  details.advanced-group { background: #17171a; border-radius: 10px; padding: 14px; margin-bottom: 14px; }
+  details.advanced-group summary {
+    font-size: .85rem; text-transform: uppercase; letter-spacing: .06em; color: #999;
+    cursor: pointer; list-style: none;
+  }
+  details.advanced-group summary::-webkit-details-marker { display: none; }
+  details.advanced-group summary::before { content: '\25b8\a0'; }
+  details.advanced-group[open] summary::before { content: '\25be\a0'; }
+  details.advanced-group[open] summary { margin-bottom: 10px; }
 </style>
 </head>
 <body>
@@ -147,153 +174,182 @@
     <div class="now-timer" id="autodj-remaining">--:--</div>
   </section>
 
-  <section id="show-controls-section" style="display:none">
-    <h2>Show</h2>
-    <div class="row">
-      <button class="btn danger" style="flex:1" onclick="stopShow()">STOP GAME</button>
-      <button class="btn" style="flex:1" onclick="startNewGame()">START NEW GAME</button>
-    </div>
+  <!-- Show-start lockdown (2026-08-18): shown ONLY while show_phase ==
+       "intro" (see refreshGamepadStatus() below). The deck is silent
+       through the whole intro and ShowStart.mp3/the LED choreography own
+       the moment -- every other control on this page either does nothing
+       useful right now or actively conflicts with that handoff. PLAY
+       TRACK calls the exact same show_engine.skip_intro() the physical
+       joystick's X- axis already calls (inputs/gamepad.py) -- it's the
+       one and only correct way to end the intro, so it's the one and
+       only thing offered here. -->
+  <section id="intro-lockdown" style="display:none">
+    <div class="lockdown-label">Show is starting &mdash; intro playing</div>
+    <button class="btn primary big" onclick="skipIntro()">PLAY TRACK</button>
+    <div class="lockdown-hint">Cues the first track and hands off to live gameplay.<br>Press when the host's spoken intro is wrapping up.</div>
   </section>
 
-  <section>
-    <h2>Virtual Gamepad <span style="color:#999;font-weight:400;font-size:.75rem">(no hardware controller needed)</span></h2>
+  <!-- Full panel: only rendered once show_phase == "live" (see
+       refreshGamepadStatus()). Ordered by how often an operator actually
+       reaches for it mid-show -- frequent/safe controls first, mode-shift
+       and destructive actions pushed down and (for Stop Game) behind a
+       confirmation, rarely-touched technical controls collapsed into one
+       disclosure at the bottom. -->
+  <div id="live-panel" style="display:none">
 
-    <div class="subhead">Transport</div>
-    <div class="row" style="align-items:center">
-      <button class="btn" onclick="transportPrev()">&laquo; Previous Track</button>
-      <button class="btn" onclick="transportNext()">Next Track &raquo;</button>
-      <label style="display:flex;align-items:center;gap:6px;font-weight:700;margin-left:8px">
-        <input type="checkbox" id="announcements-checkbox" onchange="announcementsToggle()">
-        ANNOUNCEMENTS
-      </label>
-      <label style="display:flex;align-items:center;gap:6px;font-weight:700;margin-left:8px">
-        <input type="checkbox" id="sfx-checkbox" onchange="sfxToggle()">
-        GAME SFX
-      </label>
-    </div>
-  </section>
+    <section>
+      <h2>Virtual Gamepad <span style="color:#999;font-weight:400;font-size:.75rem">(no hardware controller needed)</span></h2>
 
-  <section>
-    <h2>Price Game</h2>
-    <button class="btn primary big" onclick="startPriceGame()">PLAY PRICE GAME</button>
-  </section>
+      <div class="subhead">Transport</div>
+      <div class="row" style="align-items:center">
+        <button class="btn" onclick="transportPrev()">&laquo; Previous Track</button>
+        <button class="btn" onclick="transportNext()">Next Track &raquo;</button>
+        <label style="display:flex;align-items:center;gap:6px;font-weight:700;margin-left:8px">
+          <input type="checkbox" id="announcements-checkbox" onchange="announcementsToggle()">
+          ANNOUNCEMENTS
+        </label>
+        <label style="display:flex;align-items:center;gap:6px;font-weight:700;margin-left:8px">
+          <input type="checkbox" id="sfx-checkbox" onchange="sfxToggle()">
+          GAME SFX
+        </label>
+      </div>
+    </section>
 
-  <section>
-    <h2>Play Along (QR Quiz)</h2>
-    <div class="row" style="margin-bottom:10px">
-      <span id="quiz-player-count" style="color:#999; font-size:.85rem;">0 players signed up</span>
-    </div>
-    <div id="roster-section" style="display:none; margin-bottom:12px;">
-      <div style="font-size:.75rem; text-transform:uppercase; letter-spacing:.05em; color:#777; margin-bottom:6px;">Round Roster</div>
-      <div id="roster-grid"></div>
-    </div>
-    <div class="row" style="align-items:center;gap:8px">
-      <label style="font-weight:700;font-size:.85rem">Win Score:</label>
-      <input type="number" id="win-score-input" min="1" step="1" style="width:80px">
-      <button class="btn" onclick="winScoreSave()">Save</button>
-    </div>
-    <div class="row" style="align-items:center;gap:8px;margin-top:8px">
-      <label style="font-weight:700;font-size:.85rem">Intermission (min):</label>
-      <input type="number" id="intermission-minutes-input" min="1" step="1" style="width:80px">
-      <button class="btn" onclick="intermissionMinutesSave()">Save</button>
-    </div>
-    <div id="intermission-live-controls" style="display:none; margin-top:12px; padding:10px; border:1px solid #333; border-radius:8px; background:#18181b;">
+    <section>
+      <h2>Volume</h2>
+      <input type="range" id="volume-slider" min="0" max="100" value="100" oninput="volumeSlide(this.value)">
+      <div class="volume-value" id="volume-value">100%</div>
+    </section>
+
+    <section>
+      <h2>Play Along (QR Quiz)</h2>
+      <div class="row" style="margin-bottom:10px">
+        <span id="quiz-player-count" style="color:#999; font-size:.85rem;">0 players signed up</span>
+      </div>
+      <div id="roster-section" style="display:none; margin-bottom:12px;">
+        <div style="font-size:.75rem; text-transform:uppercase; letter-spacing:.05em; color:#777; margin-bottom:6px;">Round Roster</div>
+        <div id="roster-grid"></div>
+      </div>
       <div class="row" style="align-items:center;gap:8px">
-        <span id="intermission-countdown" style="font-weight:700;font-size:1.1rem">--:--</span>
-        <span id="intermission-paused-badge" style="display:none;color:#ffb6b6;font-weight:700;font-size:.8rem">PAUSED</span>
-        <button class="btn" id="intermission-pause-btn" onclick="intermissionPauseResume()">Pause</button>
+        <label style="font-weight:700;font-size:.85rem">Win Score:</label>
+        <input type="number" id="win-score-input" min="1" step="1" style="width:80px">
+        <button class="btn" onclick="winScoreSave()">Save</button>
       </div>
       <div class="row" style="align-items:center;gap:8px;margin-top:8px">
-        <label style="font-weight:700;font-size:.85rem">Set remaining (min):</label>
-        <input type="number" id="intermission-set-remaining-input" min="0" step="0.5" style="width:80px">
-        <button class="btn" onclick="intermissionSetRemaining()">Set</button>
+        <label style="font-weight:700;font-size:.85rem">Intermission (min):</label>
+        <input type="number" id="intermission-minutes-input" min="1" step="1" style="width:80px">
+        <button class="btn" onclick="intermissionMinutesSave()">Save</button>
+      </div>
+      <div id="intermission-live-controls" style="display:none; margin-top:12px; padding:10px; border:1px solid #333; border-radius:8px; background:#18181b;">
+        <div class="row" style="align-items:center;gap:8px">
+          <span id="intermission-countdown" style="font-weight:700;font-size:1.1rem">--:--</span>
+          <span id="intermission-paused-badge" style="display:none;color:#ffb6b6;font-weight:700;font-size:.8rem">PAUSED</span>
+          <button class="btn" id="intermission-pause-btn" onclick="intermissionPauseResume()">Pause</button>
+        </div>
+        <div class="row" style="align-items:center;gap:8px;margin-top:8px">
+          <label style="font-weight:700;font-size:.85rem">Set remaining (min):</label>
+          <input type="number" id="intermission-set-remaining-input" min="0" step="0.5" style="width:80px">
+          <button class="btn" onclick="intermissionSetRemaining()">Set</button>
+        </div>
+      </div>
+      <div style="margin-top:12px; text-align:center;">
+        <img src="/api/quiz/qr" style="width:200px; height:200px; border-radius:8px; background:#fff; padding:6px;">
+        <p style="color:#999; font-size:.8rem;">Guests scan this to join and play from their phone.</p>
+      </div>
+    </section>
+
+    <section>
+      <h2>Upcoming Question (Host Preview)</h2>
+      <div id="host-preview-empty" style="color:#999; font-size:.9rem;">No question queued yet.</div>
+      <div id="host-preview-body" style="display:none">
+        <div class="preview-row"><div class="label">Type</div><div class="value" id="hp-type"></div></div>
+        <div class="preview-row"><div class="label">Category</div><div class="value" id="hp-category"></div></div>
+        <div class="preview-row"><div class="label">Prompt</div><div class="value" id="hp-prompt"></div></div>
+        <div class="preview-row"><div class="label">Correct Answer</div><div class="value" id="hp-answer"></div></div>
+      </div>
+    </section>
+
+    <section>
+      <h2>Game Modes</h2>
+      <button class="btn primary big" onclick="startPriceGame()">PLAY PRICE GAME</button>
+    </section>
+
+    <section id="show-controls-section">
+      <h2>Show</h2>
+      <div class="row">
+        <button class="btn danger" style="flex:1" onclick="stopShow()">STOP GAME</button>
+        <button class="btn" style="flex:1" onclick="startNewGame()">START NEW GAME</button>
+      </div>
+    </section>
+
+    <details class="advanced-group">
+      <summary>Advanced / Show Configuration</summary>
+
+      <div class="subhead">DMX Scene Override</div>
+      <div class="row">
+        <!-- max must track config.DJ_THEME_COUNT (13 patterns, 0-12) plus
+             DJ_THEME_ALL_OFF_INDEX itself (13) -- this page is static HTML,
+             not templated, so it can't read the Python constant directly. -->
+        <label style="flex:1">Theme
+          <input type="range" id="theme-slider" min="0" max="13" value="0" onchange="dmxScene({theme_index: this.value})">
+        </label>
+      </div>
+      <div class="row" style="margin-top:6px">
+        <!-- max must track len(config.DJ_COLOR_PALETTE) - 1 (10 colors, 0-9),
+             same static-HTML caveat as above. -->
+        <label style="flex:1">Color
+          <input type="range" id="color-slider" min="0" max="9" value="0" onchange="dmxScene({color_index: this.value})">
+        </label>
+      </div>
+
+      <div class="subhead">Idle Animation Theme</div>
+      <div class="row">
+        <!-- Options must track config.IDLE_ANIMATION_THEMES; "selected"
+             must track config.IDLE_THEME_DEFAULT ("Question Marks"). -->
+        <label style="flex:1">Theme
+          <select id="idle-theme-select" onchange="idleTheme(this.value)">
+            <option value="Halloween">Halloween</option>
+            <option value="Birthday">Birthday</option>
+            <option value="Question Marks" selected>Question Marks</option>
+          </select>
+        </label>
+      </div>
+
+      <div class="subhead">Branding</div>
+      <input type="text" id="branding-text" placeholder="Show header / sub-banner / host branding text">
+      <div class="row" style="margin-top:8px">
+        <button class="btn primary" onclick="brandingSave()">Save</button>
+      </div>
+
+      <div class="subhead">Announcements Caption</div>
+      <label style="font-weight:700;font-size:.85rem">Last Announcement Text:</label>
+      <div id="announcement-text-filename" style="color:#999; font-size:.75rem; margin-bottom:4px;">(no announcement has played yet this session)</div>
+      <input type="text" id="announcement-text-input" placeholder="Tag phrase shown when this specific clip plays">
+      <div class="row" style="margin-top:8px">
+        <button class="btn primary" onclick="announcementTextSave()">Save</button>
+      </div>
+
+      <div class="subhead">Special Events</div>
+      <button class="btn" onclick="westminsterTest()">Test Westminster Clock</button>
+    </details>
+
+    <section>
+      <h2>Application</h2>
+      <button class="btn" onclick="reconnectGamepad()">RECONNECT GAMEPAD</button>
+      <button class="btn danger" style="margin-top:8px" onclick="openShutdownModal()">SHUTDOWN APP</button>
+    </section>
+
+  </div>
+
+  <div class="modal-backdrop" id="stop-modal">
+    <div class="modal-box">
+      <p>Stop the show? This ends the current game immediately in front of the room -- only do this if something's actually gone wrong.</p>
+      <div class="row">
+        <button class="btn" onclick="closeStopModal()">Cancel</button>
+        <button class="btn danger" style="width:auto" onclick="confirmStopShow()">Stop Game</button>
       </div>
     </div>
-    <div style="margin-top:12px; text-align:center;">
-      <img src="/api/quiz/qr" style="width:200px; height:200px; border-radius:8px; background:#fff; padding:6px;">
-      <p style="color:#999; font-size:.8rem;">Guests scan this to join and play from their phone.</p>
-    </div>
-  </section>
-
-  <section>
-    <h2>Upcoming Question (Host Preview)</h2>
-    <div id="host-preview-empty" style="color:#999; font-size:.9rem;">No question queued yet.</div>
-    <div id="host-preview-body" style="display:none">
-      <div class="preview-row"><div class="label">Type</div><div class="value" id="hp-type"></div></div>
-      <div class="preview-row"><div class="label">Category</div><div class="value" id="hp-category"></div></div>
-      <div class="preview-row"><div class="label">Prompt</div><div class="value" id="hp-prompt"></div></div>
-      <div class="preview-row"><div class="label">Correct Answer</div><div class="value" id="hp-answer"></div></div>
-    </div>
-  </section>
-
-  <section>
-    <h2>Volume</h2>
-    <input type="range" id="volume-slider" min="0" max="100" value="100" oninput="volumeSlide(this.value)">
-    <div class="volume-value" id="volume-value">100%</div>
-  </section>
-
-  <section>
-    <h2>DMX Scene Override</h2>
-    <div class="row">
-      <!-- max must track config.DJ_THEME_COUNT (13 patterns, 0-12) plus
-           DJ_THEME_ALL_OFF_INDEX itself (13) -- this page is static HTML,
-           not templated, so it can't read the Python constant directly. -->
-      <label style="flex:1">Theme
-        <input type="range" id="theme-slider" min="0" max="13" value="0" onchange="dmxScene({theme_index: this.value})">
-      </label>
-    </div>
-    <div class="row" style="margin-top:6px">
-      <!-- max must track len(config.DJ_COLOR_PALETTE) - 1 (10 colors, 0-9),
-           same static-HTML caveat as above. -->
-      <label style="flex:1">Color
-        <input type="range" id="color-slider" min="0" max="9" value="0" onchange="dmxScene({color_index: this.value})">
-      </label>
-    </div>
-  </section>
-
-  <section>
-    <h2>Idle Animation Theme</h2>
-    <div class="row">
-      <!-- Options must track config.IDLE_ANIMATION_THEMES; "selected"
-           must track config.IDLE_THEME_DEFAULT ("Question Marks"). -->
-      <label style="flex:1">Theme
-        <select id="idle-theme-select" onchange="idleTheme(this.value)">
-          <option value="Halloween">Halloween</option>
-          <option value="Birthday">Birthday</option>
-          <option value="Question Marks" selected>Question Marks</option>
-        </select>
-      </label>
-    </div>
-  </section>
-
-  <section>
-    <h2>Branding</h2>
-    <input type="text" id="branding-text" placeholder="Show header / sub-banner / host branding text">
-    <div class="row" style="margin-top:8px">
-      <button class="btn primary" onclick="brandingSave()">Save</button>
-    </div>
-  </section>
-
-  <section>
-    <h2>Announcements</h2>
-    <label style="font-weight:700;font-size:.85rem">Last Announcement Text:</label>
-    <div id="announcement-text-filename" style="color:#999; font-size:.75rem; margin-bottom:4px;">(no announcement has played yet this session)</div>
-    <input type="text" id="announcement-text-input" placeholder="Tag phrase shown when this specific clip plays">
-    <div class="row" style="margin-top:8px">
-      <button class="btn primary" onclick="announcementTextSave()">Save</button>
-    </div>
-  </section>
-
-  <section>
-    <h2>Special Events</h2>
-    <button class="btn" onclick="westminsterTest()">Test Westminster Clock</button>
-  </section>
-
-  <section>
-    <h2>Application</h2>
-    <button class="btn" onclick="reconnectGamepad()">RECONNECT GAMEPAD</button>
-    <button class="btn danger" style="margin-top:8px" onclick="openShutdownModal()">SHUTDOWN APP</button>
-  </section>
+  </div>
 
   <div class="modal-backdrop" id="shutdown-modal">
     <div class="modal-box">
@@ -541,7 +597,20 @@ function sfxToggle() {
 // ------------------------------------------
 // TRIVIA NIGHT SHOW FLOW (2026-08-13)
 // ------------------------------------------
-function stopShow() {
+
+// Show-start safety (2026-08-18): the one and only action available while
+// show_phase == "intro" -- see #intro-lockdown above. Calls the same
+// show_engine.skip_intro() the physical joystick's X- axis already calls,
+// NOT the general transport/next route (which just moves the silent DJ
+// deck and does nothing useful mid-intro).
+function skipIntro() {
+  api('/api/show/skip-intro', { method: 'POST' }).then(refreshGamepadStatus);
+}
+
+function stopShow() { document.getElementById('stop-modal').classList.add('open'); }
+function closeStopModal() { document.getElementById('stop-modal').classList.remove('open'); }
+function confirmStopShow() {
+  closeStopModal();
   api('/api/show/stop', { method: 'POST' }).then(refreshGamepadStatus);
 }
 function startNewGame() {
@@ -601,15 +670,24 @@ async function refreshGamepadStatus() {
   // Setup page whenever a show isn't actually running -- covers app
   // launch, a scheduled countdown, AND right when a show ends (Stop Game
   // or the final round), so the operator lands back on Setup without
-  // needing a manual refresh. "intro" stays here -- the choreography is a
-  // physical-rig thing, nothing useful to show differently on the phone
-  // for those ~20 seconds.
+  // needing a manual refresh.
   if (d.show_phase && d.show_phase !== 'live' && d.show_phase !== 'intro') {
     window.location = (d.show_phase === 'countdown') ? '/countdown' : '/setup';
     return;
   }
-  document.getElementById('show-controls-section').style.display =
-    (d.show_phase === 'live') ? '' : 'none';
+
+  // Show-start lockdown (2026-08-18): "intro" and "live" both stay on
+  // this page, but render almost entirely different things -- during
+  // intro the deck is silent and ShowStart.mp3/the LED choreography own
+  // the moment, so nothing else on this page is safe to show (see
+  // #intro-lockdown's comment above). The full panel only unlocks once
+  // the server confirms the phase actually flipped to "live" -- not
+  // optimistically the instant PLAY TRACK is tapped.
+  document.getElementById('intro-lockdown').style.display = (d.show_phase === 'intro') ? '' : 'none';
+  document.getElementById('live-panel').style.display = (d.show_phase === 'live') ? '' : 'none';
+  if (d.show_phase !== 'live') {
+    return;
+  }
 
   document.getElementById('announcements-checkbox').checked = !!d.auto_announce_enabled;
   document.getElementById('sfx-checkbox').checked = !!d.sfx_enabled;
