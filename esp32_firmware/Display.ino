@@ -65,21 +65,6 @@
 // running) before going back to the LOADING screen.
 #define FRAME_TIMEOUT_MS 2000
 
-// A single distinct byte written back to the Pi every HEARTBEAT_INTERVAL_MS
-// once this sketch has actually reached loop() (i.e. finished setup(),
-// including display.begin()). led_bridge.py's serial connect previously
-// trusted a fixed post-open timer to guess when boot was done -- fine
-// normally, but when the Pi and this board power on together, this board
-// is also fighting its own cold boot on top of the open-triggered reset, so
-// the guess isn't always long enough: led_bridge.py would start streaming
-// real frames into a board that was still resetting, see the write()
-// syscall succeed (it always does, the OS-level TX buffer doesn't know or
-// care if anything's listening), and report "SERIAL" connected with
-// nothing actually on screen. This byte is the only real proof of life --
-// see the matching read-side logic in led_bridge.py's _drain_heartbeat().
-#define HEARTBEAT_BYTE 0x5A
-#define HEARTBEAT_INTERVAL_MS 250
-
 static const uint16_t kQW = PANEL_WIDTH / 2;  // 32
 static const uint16_t kQH = PANEL_HEIGHT / 3; // 16
 
@@ -255,17 +240,6 @@ void loop() {
   // Persistence-of-vision scan -- must run every iteration regardless of
   // link state, or the panels just go dark.
   display.loop();
-
-  // Proof-of-life byte for led_bridge.py -- see HEARTBEAT_BYTE above.
-  // Only ever reached once setup() (display.begin() included) is done, so
-  // its mere presence on the wire already means "past boot," before
-  // considering timing at all.
-  static unsigned long lastHeartbeatMs = 0;
-  unsigned long nowHb = millis();
-  if (nowHb - lastHeartbeatMs >= HEARTBEAT_INTERVAL_MS) {
-    Serial.write(HEARTBEAT_BYTE);
-    lastHeartbeatMs = nowHb;
-  }
 
   wifiFieldSetupLoop();
   WifiFieldState wifiState = wifiFieldSetupState();
