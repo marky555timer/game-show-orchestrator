@@ -58,18 +58,25 @@ _SERIAL_BAUD = 921600
 # Labs CP2102, and the two common CH340/CH9102 variants).
 _ESP32_VID_PIDS = {(0x10C4, 0xEA60), (0x1A86, 0x7523), (0x1A86, 0x55D4)}
 _SERIAL_RESCAN_INTERVAL_S = 3.0
-# Must match Display.ino's HEARTBEAT_BYTE/HEARTBEAT_INTERVAL_MS. Opening
-# the port resets the ESP32 (see the dtr/rts comment below), so a fresh
-# connection isn't actually usable until the firmware finishes booting and
-# starts writing this back -- streaming real frames before that just piles
-# up backlog nothing is reading yet. Rather than guess how long boot takes
-# (unreliable when the Pi and the board power on together and the board is
-# fighting its own cold boot on top of the reset), fall back to UDP
-# whenever a heartbeat hasn't been seen recently, and switch back to
-# serial the moment one is -- this also self-heals if the board resets or
-# hangs mid-show, which a one-shot post-connect timer never could.
-_HEARTBEAT_BYTE = 0x5A
-_HEARTBEAT_TIMEOUT_S = 1.0
+# Opening the port resets the ESP32 (see the dtr/rts comment below), and
+# the firmware takes ~1.5s to boot before its main loop starts draining
+# the UART. Streaming into that window just piles up backlog in a buffer
+# nothing is reading yet, so the firmware starts life digging out of a
+# hole instead of from a clean slate. Fall back to UDP for a couple
+# seconds after every fresh connection to let the boot finish first.
+#
+# 2026-08-18: briefly replaced with a heartbeat-byte handshake (Display.ino
+# still writes one every 250ms, harmlessly unused now) gating readiness on
+# actually seeing it rather than a blind timer -- reverted the same day
+# after it caused constant flapping between "SERIAL"/"SERIAL (booting)" on
+# live hardware (confirmed via /api/show/status polling: sub-second
+# oscillation, not the rare once-per-connect race it was meant to fix) and
+# a severe real-world frame rate drop. Root cause not yet isolated -- did
+# not repro as a simple logic bug on read-through, so likely something
+# about actual serial I/O timing on this hardware/driver combination that
+# unit-level reasoning didn't catch. Don't re-attempt the heartbeat-gating
+# approach without reproducing and fixing that first, off a live rig.
+_SERIAL_SETTLE_S = 2.0
 
 # Max frames/sec to push over the wire. Measured on this ESP32 (2026-08-10):
 # one full frame costs ~18.9ms to render (unpack -> canvas -> panel blit ->
@@ -123,39 +130,18 @@ def _try_connect_serial():
         _serial_link.dtr = False
         _serial_link.rts = False
         _connect_time = time.monotonic()
-        _last_heartbeat_time = 0.0  # unproven until a heartbeat actually arrives
         print(f"[LED BRIDGE] Connected to display over serial on {device}.")
     except Exception as e:
         print(f"[LED BRIDGE] Could not open {device}: {e}")
-
-
-def _drain_heartbeat():
-    """Non-blocking read of whatever's waiting on the RX line, looking for
-    the firmware's heartbeat byte (see Display.ino's HEARTBEAT_BYTE). This
-    is the only actual proof the ESP32 is booted and alive in its main
-    loop -- an open file descriptor alone only proves the USB-serial chip
-    enumerated."""
-    global _last_heartbeat_time
-    if _serial_link is None:
-        return
-    try:
-        waiting = _serial_link.in_waiting
-        if waiting and _HEARTBEAT_BYTE in _serial_link.read(waiting):
-            _last_heartbeat_time = time.monotonic()
-    except Exception:
-        pass
-
-
-def _serial_ready():
-    return (_serial_link is not None
-            and time.monotonic() - _last_heartbeat_time < _HEARTBEAT_TIMEOUT_S)
 
 
 def current_transport():
     """For the operator overlay panel (graphics/overlay_panel.py)."""
     if _serial_link is None:
         return "WIFI UDP"
-    return "SERIAL" if _serial_ready() else "SERIAL (booting)"
+    if time.monotonic() - _connect_time < _SERIAL_SETTLE_S:
+        return "SERIAL (booting)"
+    return "SERIAL"
 
 
 def _panel_bytes(red_channel, rect):
@@ -204,8 +190,8 @@ def send_frame(matrix_surface):
     if _serial_link is None and time.monotonic() - _last_scan_time >= _SERIAL_RESCAN_INTERVAL_S:
         _try_connect_serial()
 
-    _drain_heartbeat()
-    if _serial_ready():
+    settling = _serial_link is not None and time.monotonic() - _connect_time < _SERIAL_SETTLE_S
+    if _serial_link is not None and not settling:
         try:
             _serial_link.write(bytes(payload))
             return
