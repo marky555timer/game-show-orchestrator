@@ -15,3 +15,6 @@ psutil
 mutagen
 yt-dlp
 imageio-ffmpeg
+# Used by drivers/led_bridge.py for the ESP32 serial link. Already in
+# requirements-linux.txt -- was missing here too until 2026-08-18.
+pyserial
