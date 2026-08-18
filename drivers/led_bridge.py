@@ -4,9 +4,14 @@ regions matrix_canvas.py already renders into matrix_surface every frame
 and sends them to the rig over a wired USB-serial link when the ESP32 is
 plugged in (preferred -- no WiFi hop, so it avoids the RF-jitter stutter
 the UDP path picks up from the venue network), falling back to UDP
-broadcast otherwise. Either way it's fire-and-forget, no acks needed: the
-firmware handles its own reconnect/timeout/LOADING fallback independently,
-so a dropped frame here just gets superseded by the next one.
+broadcast otherwise. Individual frames are fire-and-forget (a dropped one
+just gets superseded by the next), but the serial *connection* itself is
+gated on a 1-byte heartbeat the firmware writes back once it's actually
+past boot and in its main loop (see Display.ino's HEARTBEAT_BYTE) -- an
+open file descriptor only proves the USB-serial chip enumerated, not that
+anything on the other end is listening, and opening the port resets the
+ESP32, so a blind "wait N seconds" guess isn't reliable when both devices
+power on together and the board is fighting its own cold boot too.
 
 Frame wire format (must match Display.ino's FRAME_MAGIC/FRAME_SIZE
 exactly, identical on both transports): 1 magic byte (0xA5) + 6 panels x
@@ -53,13 +58,18 @@ _SERIAL_BAUD = 921600
 # Labs CP2102, and the two common CH340/CH9102 variants).
 _ESP32_VID_PIDS = {(0x10C4, 0xEA60), (0x1A86, 0x7523), (0x1A86, 0x55D4)}
 _SERIAL_RESCAN_INTERVAL_S = 3.0
-# Opening the port resets the ESP32 (see the dtr/rts comment below), and
-# the firmware takes ~1.5s to boot before its main loop starts draining
-# the UART. Streaming into that window just piles up backlog in a buffer
-# nothing is reading yet, so the firmware starts life digging out of a
-# hole instead of from a clean slate. Fall back to UDP for a couple
-# seconds after every fresh connection to let the boot finish first.
-_SERIAL_SETTLE_S = 2.0
+# Must match Display.ino's HEARTBEAT_BYTE/HEARTBEAT_INTERVAL_MS. Opening
+# the port resets the ESP32 (see the dtr/rts comment below), so a fresh
+# connection isn't actually usable until the firmware finishes booting and
+# starts writing this back -- streaming real frames before that just piles
+# up backlog nothing is reading yet. Rather than guess how long boot takes
+# (unreliable when the Pi and the board power on together and the board is
+# fighting its own cold boot on top of the reset), fall back to UDP
+# whenever a heartbeat hasn't been seen recently, and switch back to
+# serial the moment one is -- this also self-heals if the board resets or
+# hangs mid-show, which a one-shot post-connect timer never could.
+_HEARTBEAT_BYTE = 0x5A
+_HEARTBEAT_TIMEOUT_S = 1.0
 
 # Max frames/sec to push over the wire. Measured on this ESP32 (2026-08-10):
 # one full frame costs ~18.9ms to render (unpack -> canvas -> panel blit ->
@@ -80,7 +90,8 @@ _sock.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
 
 _serial_link = None  # serial.Serial once connected, else None
 _last_scan_time = 0.0
-_connect_time = 0.0
+_connect_time = 0.0  # for the "(booting)" status label only, not routing
+_last_heartbeat_time = 0.0
 _last_send_time = 0.0
 _udp_unreachable = False  # logs only on the down/up transition, not every throttled send
 
@@ -93,7 +104,7 @@ def _find_esp32_port():
 
 
 def _try_connect_serial():
-    global _serial_link, _last_scan_time, _connect_time
+    global _serial_link, _last_scan_time, _connect_time, _last_heartbeat_time
     _last_scan_time = time.monotonic()
     device = _find_esp32_port()
     if device is None:
@@ -112,18 +123,39 @@ def _try_connect_serial():
         _serial_link.dtr = False
         _serial_link.rts = False
         _connect_time = time.monotonic()
+        _last_heartbeat_time = 0.0  # unproven until a heartbeat actually arrives
         print(f"[LED BRIDGE] Connected to display over serial on {device}.")
     except Exception as e:
         print(f"[LED BRIDGE] Could not open {device}: {e}")
+
+
+def _drain_heartbeat():
+    """Non-blocking read of whatever's waiting on the RX line, looking for
+    the firmware's heartbeat byte (see Display.ino's HEARTBEAT_BYTE). This
+    is the only actual proof the ESP32 is booted and alive in its main
+    loop -- an open file descriptor alone only proves the USB-serial chip
+    enumerated."""
+    global _last_heartbeat_time
+    if _serial_link is None:
+        return
+    try:
+        waiting = _serial_link.in_waiting
+        if waiting and _HEARTBEAT_BYTE in _serial_link.read(waiting):
+            _last_heartbeat_time = time.monotonic()
+    except Exception:
+        pass
+
+
+def _serial_ready():
+    return (_serial_link is not None
+            and time.monotonic() - _last_heartbeat_time < _HEARTBEAT_TIMEOUT_S)
 
 
 def current_transport():
     """For the operator overlay panel (graphics/overlay_panel.py)."""
     if _serial_link is None:
         return "WIFI UDP"
-    if time.monotonic() - _connect_time < _SERIAL_SETTLE_S:
-        return "SERIAL (booting)"
-    return "SERIAL"
+    return "SERIAL" if _serial_ready() else "SERIAL (booting)"
 
 
 def _panel_bytes(red_channel, rect):
@@ -172,8 +204,8 @@ def send_frame(matrix_surface):
     if _serial_link is None and time.monotonic() - _last_scan_time >= _SERIAL_RESCAN_INTERVAL_S:
         _try_connect_serial()
 
-    settling = _serial_link is not None and time.monotonic() - _connect_time < _SERIAL_SETTLE_S
-    if _serial_link is not None and not settling:
+    _drain_heartbeat()
+    if _serial_ready():
         try:
             _serial_link.write(bytes(payload))
             return
