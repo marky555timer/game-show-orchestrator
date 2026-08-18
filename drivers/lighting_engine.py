@@ -585,13 +585,17 @@ def _render_westminster_dmx(now):
 
 def _render_show_dmx(now):
     """Trivia Night show flow (2026-08-13, drivers/show_engine.py): Setup/
-    Countdown sit dark (no light show while the operator configures things
-    or waits on a scheduled start); Intro/Outro run their own scripted
-    choreography, purely off state.show_phase_started_at /
-    state.show_outro_music_ends_at -- same "compute everything from
-    elapsed time" shape as _render_westminster_dmx() above."""
+    Countdown/Dark all sit with lights off (no light show while the
+    operator configures things, waits on a scheduled start, or during the
+    2026-08-18 "dark" pause between "Start Game" and the operator manually
+    cueing the intro -- state.show_phase == "dark" specifically, not to be
+    confused with this function's own "no lights" behavior for the other
+    two phases); Intro/Outro run their own scripted choreography, purely
+    off state.show_phase_started_at / state.show_outro_music_ends_at --
+    same "compute everything from elapsed time" shape as
+    _render_westminster_dmx() above."""
     phase = state.show_phase
-    if phase in ("setup", "countdown"):
+    if phase in ("setup", "countdown", "dark"):
         dmx.set_all_uplights(0, 0, 0, 0)
         dmx.set_fixture1(0, 0, 0, 0)
         return

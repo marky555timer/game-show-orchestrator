@@ -150,7 +150,7 @@ def update(now):
     # 2026-08-18 fix: the automatic top-of-hour trigger used to fire off
     # the wall clock alone, with no regard for state.show_phase -- if the
     # hour turned over during "intro", its fader duck/chime collided with
-    # ShowStart.mp3's own one-shot playback (see show_engine.start_intro())
+    # ShowStart.mp3's own one-shot playback (see show_engine.begin_intro())
     # and left the deck fader in a bad state once the real first track
     # started. Gate the automatic clock to show_phase == "live", the same
     # guard Btn2/Btn6 already use elsewhere (inputs/gamepad.py) -- if the

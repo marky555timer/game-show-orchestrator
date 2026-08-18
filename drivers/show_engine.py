@@ -1,5 +1,7 @@
 """drivers/show_engine.py
-Trivia Night show flow (2026-08-13): Setup -> Countdown -> scripted open
+Trivia Night show flow (2026-08-13, "dark" phase added 2026-08-18): Setup
+-> Countdown -> Dark (silent blank-panel/no-DMX pause, entered by "Start
+Game"/countdown-zero, manually advanced by next-track) -> scripted open
 (ShowStart.mp3 choreography) -> live show (state.mode/win_sequence_engine/
 etc keep working completely unchanged) -> scripted close (ShowEnd.mp3
 choreography, crowns a cumulative-score champion) -> back to Setup.
@@ -40,18 +42,23 @@ _show_music_channel = None
 _outro_music_started = False
 
 
-def start_intro():
+def enter_dark():
     """'Start Game' (immediate) or a scheduled countdown reaching zero /
     'Start Now'. Resets everything that means "fresh night": round
     numbering back to 1, the cumulative scoreboard cleared, every player's
-    per-round score cleared. Deck stays silent -- ShowStart.mp3 plays as a
-    one-shot SFX, not through the deck channels -- until _finish_intro()
-    hands off into the first real track at the scripted end of the intro."""
+    per-round score cleared. Enters the "dark" phase -- a deliberate,
+    silent, blank-panel/no-DMX pause (2026-08-18) so the audience has a
+    beat of anticipation before anything starts, rather than ShowStart.mp3
+    firing the instant the operator clicks a button. The operator then
+    manually cues the actual intro via next-track (begin_intro() below,
+    either the physical joystick's Joy X- or the web remote's equivalent
+    while show_phase == "dark") -- see graphics/matrix_canvas.py's
+    _render_show_phase and drivers/lighting_engine.py's _render_show_dmx
+    for how "dark" renders as literally nothing on both."""
     if state.show_phase not in ("setup", "countdown", "outro"):
-        return  # already intro/live, or a stray call -- never re-fire mid-show
-    global _show_music_channel
+        return  # already dark/intro/live, or a stray call -- never re-fire mid-show
     now = time.time()
-    state.show_phase = "intro"
+    state.show_phase = "dark"
     state.show_phase_started_at = now
     state.show_scheduled_start_at = 0.0
     state.game_round_number = 1
@@ -59,6 +66,26 @@ def start_intro():
     state.game_winner_player_id = ""
     for player in state.quiz_players.values():
         player["score"] = 0
+    print("[SHOW] Entered dark/waiting state.")
+
+
+def begin_intro():
+    """Next-track (physical joystick's Joy X- or the web remote) pressed
+    while show_phase == "dark" -- the operator's manual cue to actually
+    start the scripted open. Split out of enter_dark() above (2026-08-18)
+    specifically so there's a deliberate silent pause between "Start Game"
+    being pressed and the show actually beginning, rather than the two
+    being the same instant. Deck stays silent -- ShowStart.mp3 plays as a
+    one-shot SFX, not through the deck channels -- until _finish_intro()
+    hands off into the first real track at the scripted end of the intro
+    (skip_intro() below, itself unchanged by this split). No-op outside
+    the dark phase."""
+    if state.show_phase != "dark":
+        return
+    global _show_music_channel
+    now = time.time()
+    state.show_phase = "intro"
+    state.show_phase_started_at = now
     _show_music_channel = play_processed_sound(show_start_sound)
     print("[SHOW] Intro started.")
 
@@ -66,7 +93,7 @@ def start_intro():
 def schedule_start(target_epoch):
     """'Start Game at 7PM' -- arms the countdown page. Valid from the Setup
     page itself, or right after a previous show's outro (which -- like
-    start_intro() below -- stays "outro" indefinitely for the LED contact
+    enter_dark() below -- stays "outro" indefinitely for the LED contact
     card rather than auto-reverting to "setup", so this needs the same
     allowance or scheduling the NEXT show would silently fail forever
     after the first one ends)."""
@@ -241,7 +268,7 @@ def update(now):
     if (state.show_phase == "countdown"
             and state.show_scheduled_start_at
             and now >= state.show_scheduled_start_at):
-        start_intro()
+        enter_dark()
 
     global _outro_music_started
     if (state.show_phase == "outro" and not _outro_music_started

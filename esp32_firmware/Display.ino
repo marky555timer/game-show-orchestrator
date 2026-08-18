@@ -65,6 +65,16 @@
 // running) before going back to the LOADING screen.
 #define FRAME_TIMEOUT_MS 2000
 
+// A single distinct byte written back to the Pi every HEARTBEAT_INTERVAL_MS
+// once this sketch has actually reached loop() (i.e. finished setup(),
+// including display.begin()) -- the Pi's only real proof of life, since a
+// successfully-opened serial port only means the USB-serial chip
+// enumerated, not that this sketch is actually running. See
+// led_bridge.py's _HEARTBEAT_TIMEOUT_S for the read side and its history
+// note on why the freshness window there is 4.0s, not something tighter.
+#define HEARTBEAT_BYTE 0x5A
+#define HEARTBEAT_INTERVAL_MS 250
+
 static const uint16_t kQW = PANEL_WIDTH / 2;  // 32
 static const uint16_t kQH = PANEL_HEIGHT / 3; // 16
 
@@ -240,6 +250,15 @@ void loop() {
   // Persistence-of-vision scan -- must run every iteration regardless of
   // link state, or the panels just go dark.
   display.loop();
+
+  // Proof-of-life byte for led_bridge.py -- see HEARTBEAT_BYTE above. Only
+  // ever reached once setup() (display.begin() included) is done.
+  static unsigned long lastHeartbeatMs = 0;
+  unsigned long nowHb = millis();
+  if (nowHb - lastHeartbeatMs >= HEARTBEAT_INTERVAL_MS) {
+    Serial.write(HEARTBEAT_BYTE);
+    lastHeartbeatMs = nowHb;
+  }
 
   wifiFieldSetupLoop();
   WifiFieldState wifiState = wifiFieldSetupState();

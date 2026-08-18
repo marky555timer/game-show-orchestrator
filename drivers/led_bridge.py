@@ -58,25 +58,29 @@ _SERIAL_BAUD = 921600
 # Labs CP2102, and the two common CH340/CH9102 variants).
 _ESP32_VID_PIDS = {(0x10C4, 0xEA60), (0x1A86, 0x7523), (0x1A86, 0x55D4)}
 _SERIAL_RESCAN_INTERVAL_S = 3.0
-# Opening the port resets the ESP32 (see the dtr/rts comment below), and
-# the firmware takes ~1.5s to boot before its main loop starts draining
-# the UART. Streaming into that window just piles up backlog in a buffer
-# nothing is reading yet, so the firmware starts life digging out of a
-# hole instead of from a clean slate. Fall back to UDP for a couple
-# seconds after every fresh connection to let the boot finish first.
+# Must match Display.ino's HEARTBEAT_BYTE/HEARTBEAT_INTERVAL_MS. Opening
+# the port resets the ESP32 (see the dtr/rts comment below), so a fresh
+# connection isn't actually usable until the firmware finishes booting and
+# starts writing this back -- an open file descriptor only proves the
+# USB-serial chip enumerated, not that anything on the other end is
+# listening or has finished its ~1.5s boot.
 #
-# 2026-08-18: briefly replaced with a heartbeat-byte handshake (Display.ino
-# still writes one every 250ms, harmlessly unused now) gating readiness on
-# actually seeing it rather than a blind timer -- reverted the same day
-# after it caused constant flapping between "SERIAL"/"SERIAL (booting)" on
-# live hardware (confirmed via /api/show/status polling: sub-second
-# oscillation, not the rare once-per-connect race it was meant to fix) and
-# a severe real-world frame rate drop. Root cause not yet isolated -- did
-# not repro as a simple logic bug on read-through, so likely something
-# about actual serial I/O timing on this hardware/driver combination that
-# unit-level reasoning didn't catch. Don't re-attempt the heartbeat-gating
-# approach without reproducing and fixing that first, off a live rig.
-_SERIAL_SETTLE_S = 2.0
+# 2026-08-18 history: first attempt at this used a 1.0s freshness window,
+# which caused constant flapping between "SERIAL"/"SERIAL (booting)" on
+# live hardware and a severe frame-rate/corruption problem, and was fully
+# reverted to a blind post-connect timer (_SERIAL_SETTLE_S, no longer used)
+# same day. Root cause found on review: 1.0s is too tight against this
+# process's own real-world scheduling jitter (single-threaded pygame loop
+# sharing time with audio, DMX, and the FastAPI/uvicorn thread) -- a
+# routine stall just over a second, nothing actually wrong with the ESP32,
+# was enough to flip "ready" to false, and the resulting mid-stream
+# transport flapping (not the timeout logic itself) is what corrupted the
+# frame alignment on the wire. _HEARTBEAT_TIMEOUT_S below is now 4.0s --
+# still 16x the heartbeat interval (plenty fast to protect against the
+# original race, which only needs to survive the ~1.5s boot window) but
+# generous enough to absorb realistic jitter instead of chasing it.
+_HEARTBEAT_BYTE = 0x5A
+_HEARTBEAT_TIMEOUT_S = 4.0
 
 # Max frames/sec to push over the wire. Measured on this ESP32 (2026-08-10):
 # one full frame costs ~18.9ms to render (unpack -> canvas -> panel blit ->
@@ -101,6 +105,7 @@ _connect_time = 0.0  # for the "(booting)" status label only, not routing
 _last_heartbeat_time = 0.0
 _last_send_time = 0.0
 _udp_unreachable = False  # logs only on the down/up transition, not every throttled send
+_last_ready_state = None  # None=unknown yet, else bool -- for transition-only logging
 
 
 def _find_esp32_port():
@@ -130,18 +135,51 @@ def _try_connect_serial():
         _serial_link.dtr = False
         _serial_link.rts = False
         _connect_time = time.monotonic()
+        _last_heartbeat_time = 0.0  # unproven until a heartbeat actually arrives
         print(f"[LED BRIDGE] Connected to display over serial on {device}.")
     except Exception as e:
         print(f"[LED BRIDGE] Could not open {device}: {e}")
+
+
+def _drain_heartbeat():
+    """Non-blocking read of whatever's waiting on the RX line, looking for
+    the firmware's heartbeat byte (see Display.ino's HEARTBEAT_BYTE). This
+    is the only actual proof the ESP32 is booted and alive in its main
+    loop -- an open file descriptor alone only proves the USB-serial chip
+    enumerated."""
+    global _last_heartbeat_time
+    if _serial_link is None:
+        return
+    try:
+        waiting = _serial_link.in_waiting
+        if waiting and _HEARTBEAT_BYTE in _serial_link.read(waiting):
+            _last_heartbeat_time = time.monotonic()
+    except Exception:
+        pass
+
+
+def _serial_ready():
+    """True only while a heartbeat has actually been seen recently -- see
+    _HEARTBEAT_TIMEOUT_S's history note above for why this window is 4.0s,
+    not something tighter. Logs on transition only (not every call, which
+    would spam at up to 20Hz) so a future incident has real evidence of
+    exactly when and how often readiness actually flips, instead of having
+    to infer it after the fact from symptoms alone."""
+    global _last_ready_state
+    ready = (_serial_link is not None
+             and time.monotonic() - _last_heartbeat_time < _HEARTBEAT_TIMEOUT_S)
+    if ready != _last_ready_state:
+        print(f"[LED BRIDGE] Serial ready: {_last_ready_state} -> {ready} "
+              f"(last heartbeat {time.monotonic() - _last_heartbeat_time:.2f}s ago).")
+        _last_ready_state = ready
+    return ready
 
 
 def current_transport():
     """For the operator overlay panel (graphics/overlay_panel.py)."""
     if _serial_link is None:
         return "WIFI UDP"
-    if time.monotonic() - _connect_time < _SERIAL_SETTLE_S:
-        return "SERIAL (booting)"
-    return "SERIAL"
+    return "SERIAL" if _serial_ready() else "SERIAL (booting)"
 
 
 def _panel_bytes(red_channel, rect):
@@ -190,8 +228,8 @@ def send_frame(matrix_surface):
     if _serial_link is None and time.monotonic() - _last_scan_time >= _SERIAL_RESCAN_INTERVAL_S:
         _try_connect_serial()
 
-    settling = _serial_link is not None and time.monotonic() - _connect_time < _SERIAL_SETTLE_S
-    if _serial_link is not None and not settling:
+    _drain_heartbeat()
+    if _serial_ready():
         try:
             _serial_link.write(bytes(payload))
             return

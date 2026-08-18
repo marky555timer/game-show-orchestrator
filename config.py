@@ -1309,10 +1309,10 @@ SHOW_END_LED_CONTACT_TEXT = "DJ MARK TRIVIA 740-396-8036"
 # intro's hard-cut flashes -- "when song stops, fade out DMX").
 SHOW_OUTRO_DMX_FADE_SECONDS = 2.5
 
-# Setup-phase LED text (state.show_phase == "setup") -- held statically on
-# panels 1+2 while the operator configures the Setup page, from app launch
-# until "Start Game" is pressed.
-SHOW_SETUP_LED_TEXT = "START UP"
+# Setup-phase LED text (state.show_phase == "setup"/"countdown") -- held
+# statically on panels 1+2 while the operator configures the Setup page or
+# waits on a scheduled start, from app launch until "Start Game" is pressed.
+SHOW_SETUP_LED_TEXT = "READY"
 
 # ==========================================
 # BITMAP PIXEL FONT ENGINE (5x7 Grid)

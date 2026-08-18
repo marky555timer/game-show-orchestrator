@@ -1287,7 +1287,16 @@ def process_events():
 
                 elif event.axis in (0, 6) and val != last_axis_x:
                     last_axis_x = val
-                    if val == -1 and state.show_phase == "intro":
+                    if val == -1 and state.show_phase == "dark":
+                        # Trivia Night show flow (2026-08-18): the
+                        # operator's manual cue to leave the silent dark
+                        # pause and actually start the scripted open.
+                        # Takes priority over the normal MODE_DJ mapping
+                        # below for the same reason the intro-skip branch
+                        # does -- nothing useful happens from the deck
+                        # during dark/intro anyway.
+                        show_engine.begin_intro()
+                    elif val == -1 and state.show_phase == "intro":
                         # Trivia Night show flow (2026-08-13): during the
                         # scripted open, X- ends the intro immediately and
                         # hands off into live gameplay -- the intro has no
@@ -1314,6 +1323,11 @@ def process_events():
                 state.toggle_mode()
             elif event.key == pygame.K_q:
                 return False
+            elif event.key == pygame.K_RIGHT and state.show_phase == "dark":
+                # Keyboard test shim for the Joy X- dark-to-intro mapping
+                # above -- takes priority over the MODE_DJ K_RIGHT mapping
+                # below for the same reason the joystick version does.
+                show_engine.begin_intro()
             elif event.key == pygame.K_RIGHT and state.show_phase == "intro":
                 # Keyboard test shim for the Joy X- intro-skip mapping
                 # above -- takes priority over the MODE_DJ K_RIGHT mapping

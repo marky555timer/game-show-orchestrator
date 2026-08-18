@@ -128,16 +128,16 @@
   .avatar--disappointed { filter: saturate(.7) brightness(.9); }
 
   /* Show-start lockdown (2026-08-18): the ONLY thing on screen during the
-     "intro" phase. No section chrome (background/padding/margin) so it
-     reads as unmistakably different from the normal panel below it --
-     nothing to tap by accident, nothing to scroll past. */
-  #intro-lockdown { text-align: center; padding: 24px 8px; }
-  #intro-lockdown .lockdown-label {
+     "dark" or "intro" phases. No section chrome (background/padding/
+     margin) so it reads as unmistakably different from the normal panel
+     below it -- nothing to tap by accident, nothing to scroll past. */
+  #dark-lockdown, #intro-lockdown { text-align: center; padding: 24px 8px; }
+  #dark-lockdown .lockdown-label, #intro-lockdown .lockdown-label {
     font-size: .8rem; text-transform: uppercase; letter-spacing: .08em;
     color: #999; margin-bottom: 14px;
   }
-  #intro-lockdown .btn.primary.big { font-size: 1.4rem; padding: 28px 14px; }
-  #intro-lockdown .lockdown-hint { font-size: .8rem; color: #777; margin-top: 14px; }
+  #dark-lockdown .btn.primary.big, #intro-lockdown .btn.primary.big { font-size: 1.4rem; padding: 28px 14px; }
+  #dark-lockdown .lockdown-hint, #intro-lockdown .lockdown-hint { font-size: .8rem; color: #777; margin-top: 14px; }
 
   /* Advanced/Show Configuration (2026-08-18): the rarely-touched, easy-to-
      fat-finger technical controls (DMX, idle theme, branding text,
@@ -172,6 +172,20 @@
     <div class="now-artist" id="np-artist"></div>
     <div class="now-tags" id="np-tags"></div>
     <div class="now-timer" id="autodj-remaining">--:--</div>
+  </section>
+
+  <!-- Dark-phase lockdown (2026-08-18): shown ONLY while show_phase ==
+       "dark" -- the deliberate silent, blank-panel pause entered by
+       "Start Game"/a scheduled countdown reaching zero (see
+       show_engine.enter_dark()). No status, no lighting, nothing for the
+       audience to see yet -- the operator's phone mirrors that with a
+       single control. BEGIN INTRO calls the exact same
+       show_engine.begin_intro() the physical joystick's X- axis already
+       calls during this phase. -->
+  <section id="dark-lockdown" style="display:none">
+    <div class="lockdown-label">Show armed &mdash; holding dark</div>
+    <button class="btn primary big" onclick="beginIntro()">BEGIN INTRO</button>
+    <div class="lockdown-hint">Starts ShowStart.mp3 and the LED intro choreography.<br>Press when the room's ready for the show to begin.</div>
   </section>
 
   <!-- Show-start lockdown (2026-08-18): shown ONLY while show_phase ==
@@ -599,6 +613,13 @@ function sfxToggle() {
 // ------------------------------------------
 
 // Show-start safety (2026-08-18): the one and only action available while
+// show_phase == "dark" -- see #dark-lockdown above. Calls the same
+// show_engine.begin_intro() the physical joystick's X- axis already calls.
+function beginIntro() {
+  api('/api/show/begin-intro', { method: 'POST' }).then(refreshGamepadStatus);
+}
+
+// Show-start safety (2026-08-18): the one and only action available while
 // show_phase == "intro" -- see #intro-lockdown above. Calls the same
 // show_engine.skip_intro() the physical joystick's X- axis already calls,
 // NOT the general transport/next route (which just moves the silent DJ
@@ -666,23 +687,27 @@ async function refreshGamepadStatus() {
   const d = await api('/api/gamepad/status');
   if (!d) return;
 
-  // Trivia Night show flow (2026-08-13): the admin panel belongs on the
-  // Setup page whenever a show isn't actually running -- covers app
-  // launch, a scheduled countdown, AND right when a show ends (Stop Game
-  // or the final round), so the operator lands back on Setup without
-  // needing a manual refresh.
-  if (d.show_phase && d.show_phase !== 'live' && d.show_phase !== 'intro') {
+  // Trivia Night show flow (2026-08-13, "dark" added 2026-08-18): the
+  // admin panel belongs on the Setup page whenever a show isn't actually
+  // running -- covers app launch, a scheduled countdown, AND right when a
+  // show ends (Stop Game or the final round), so the operator lands back
+  // on Setup without needing a manual refresh. "dark" and "intro" both
+  // stay on this page (their own lockdown views below), only "live" gets
+  // the full panel.
+  if (d.show_phase && d.show_phase !== 'live' && d.show_phase !== 'dark' && d.show_phase !== 'intro') {
     window.location = (d.show_phase === 'countdown') ? '/countdown' : '/setup';
     return;
   }
 
-  // Show-start lockdown (2026-08-18): "intro" and "live" both stay on
-  // this page, but render almost entirely different things -- during
-  // intro the deck is silent and ShowStart.mp3/the LED choreography own
-  // the moment, so nothing else on this page is safe to show (see
-  // #intro-lockdown's comment above). The full panel only unlocks once
-  // the server confirms the phase actually flipped to "live" -- not
-  // optimistically the instant PLAY TRACK is tapped.
+  // Show-start lockdown (2026-08-18): "dark", "intro", and "live" all stay
+  // on this page, but render almost entirely different things -- during
+  // dark/intro the deck is silent and (once intro starts) ShowStart.mp3/
+  // the LED choreography own the moment, so nothing else on this page is
+  // safe to show (see #dark-lockdown/#intro-lockdown's comments above).
+  // The full panel only unlocks once the server confirms the phase
+  // actually flipped to "live" -- not optimistically the instant a
+  // lockdown button is tapped.
+  document.getElementById('dark-lockdown').style.display = (d.show_phase === 'dark') ? '' : 'none';
   document.getElementById('intro-lockdown').style.display = (d.show_phase === 'intro') ? '' : 'none';
   document.getElementById('live-panel').style.display = (d.show_phase === 'live') ? '' : 'none';
   if (d.show_phase !== 'live') {

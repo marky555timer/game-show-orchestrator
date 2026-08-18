@@ -337,7 +337,7 @@ async function loadStatus() {
   // If a game is already live (e.g. this page was reached mid-show via
   // the hamburger menu rather than the intended flow), send the operator
   // back to the remote page instead of letting them fire a second intro.
-  if (d.show_phase === 'live' || d.show_phase === 'intro') {
+  if (d.show_phase === 'live' || d.show_phase === 'dark' || d.show_phase === 'intro') {
     window.location = '/';
   } else if (d.show_phase === 'countdown') {
     window.location = '/countdown';

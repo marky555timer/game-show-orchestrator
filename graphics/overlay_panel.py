@@ -168,10 +168,11 @@ def handle_click(click_id):
         # Game" button -- valid from "setup"/"countdown"/"outro" (skips the
         # rest of a countdown, or starts the next show right after a
         # previous one's outro); a safe no-op otherwise, guarded inside
-        # start_intro() itself. Lazy import, same rationale as westminster
-        # above.
+        # enter_dark() itself. Lazy import, same rationale as westminster
+        # above. Lands in the "dark" phase now (2026-08-18), same as the
+        # web remote -- next-track (physical or web) advances it from there.
         from drivers import show_engine
-        show_engine.start_intro()
+        show_engine.enter_dark()
     elif click_id == "show_stop_game":
         from drivers import show_engine
         show_engine.stop_show()

@@ -1269,16 +1269,33 @@ def _render_show_outro(t):
 
 
 def _draw_setup_status_chips():
-    """Four at-a-glance connectivity chips, one per remaining physical
-    panel (3-6), while the operator is standing at the rig itself setting
-    up -- the same signals graphics/overlay_panel.py's desktop overlay and
-    the web Setup page's status row already show, just small enough to fit
-    the matrix. scroll=False (truncate, not marquee) since these are meant
-    to be read all at once, not waited on."""
+    """At-a-glance connectivity chips on physical panels 3-6, while the
+    operator is standing at the rig itself setting up -- the same signals
+    graphics/overlay_panel.py's desktop overlay and the web Setup page's
+    status row already show, just small enough to fit the matrix.
+    scroll=False (truncate, not marquee) since these are meant to be read
+    all at once, not waited on.
+
+    Panel 3 carries two stacked chips (2026-08-18): LED transport (USB/
+    UDP) on top, joystick connection (JOY:Y/N) below -- the joystick is
+    what actually drives the show (dark->intro->live handoffs, DJ
+    transport, game input), so its connection state belongs at-a-glance
+    here too, not just discoverable via RECONNECT GAMEPAD after the fact."""
+    from inputs import gamepad  # lazy: avoids a hard import-order dependency
+
     transport = led_bridge.current_transport()
     led_label = "USB" if transport.startswith("SERIAL") else "UDP"
+    joy_label = "JOY:Y" if gamepad.joysticks else "JOY:N"
+
+    x0, y0, w, h = PANELS[3]
+    top_half = (x0, y0, w, h // 2)
+    bottom_half = (x0, y0 + h // 2, w, h - h // 2)
+    draw_marquee(matrix_surface, "setup_status_3_top", led_label,
+                 top_half, align="center", scroll=False)
+    draw_marquee(matrix_surface, "setup_status_3_bottom", joy_label,
+                 bottom_half, align="center", scroll=False)
+
     chips = (
-        (3, led_label),
         (4, "DMX:Y" if dmx.active else "DMX:N"),
         (5, "TUN:Y" if tunnel_engine.get_current_tunnel_url() else "TUN:N"),
         (6, "NET:Y" if tunnel_engine.internet_reachable() else "NET:N"),
@@ -1292,12 +1309,18 @@ def _render_show_phase(t):
     """Setup/Countdown share a static held screen (nothing dramatic should
     happen on the physical rig just because the operator is filling out
     the Setup form or waiting on a scheduled start) -- Intro/Outro run
-    their scripted choreography above."""
+    their scripted choreography above. "Dark" (2026-08-18) deliberately
+    renders nothing at all -- matrix_surface is already filled BLACK by
+    update_matrix_canvas() before this is called, so the panels just go
+    fully blank for the audience-anticipation pause between "Start Game"
+    and the operator actually cueing the intro (show_engine.begin_intro())."""
     phase = state.show_phase
     if phase in ("setup", "countdown"):
         draw_marquee(matrix_surface, "show_setup_banner", config.SHOW_SETUP_LED_TEXT,
                      TOP_COMBINED, align="center")
         _draw_setup_status_chips()
+    elif phase == "dark":
+        pass
     elif phase == "intro":
         _render_show_intro(t)
     elif phase == "outro":

@@ -1018,7 +1018,7 @@ if app is not None:
     @app.post("/api/show/save-and-start-now")
     def show_save_and_start_now(body: ShowSetupSave):
         _apply_show_setup(body)
-        show_engine.start_intro()
+        show_engine.enter_dark()
         return {"ok": True}
 
     @app.post("/api/show/save-and-schedule")
@@ -1030,9 +1030,18 @@ if app is not None:
     @app.post("/api/show/start-now")
     def show_start_now():
         # Countdown page's "Start Now" -- settings were already saved by
-        # save-and-schedule above; this just fires the intro immediately
-        # instead of waiting out the rest of the countdown.
-        show_engine.start_intro()
+        # save-and-schedule above; this just fires straight to the dark
+        # phase immediately instead of waiting out the rest of the countdown.
+        show_engine.enter_dark()
+        return {"ok": True}
+
+    @app.post("/api/show/begin-intro")
+    def show_begin_intro():
+        # "BEGIN INTRO" on the remote's dark-lockdown view (2026-08-18).
+        # Calls show_engine.begin_intro() directly -- the exact same call
+        # inputs/gamepad.py's JOYAXISMOTION handler makes for physical
+        # Joy X- during the dark phase. No-ops outside the dark phase.
+        show_engine.begin_intro()
         return {"ok": True}
 
     @app.post("/api/show/skip-intro")
@@ -1043,7 +1052,7 @@ if app is not None:
         # Joy X- during the intro -- rather than the general-purpose
         # transport/next route above, which just moves the DJ deck and
         # does nothing useful while the deck is silent through the intro
-        # (see show_engine.start_intro()'s docstring). No-ops outside the
+        # (see show_engine.begin_intro()'s docstring). No-ops outside the
         # intro phase, same as the physical control.
         show_engine.skip_intro()
         return {"ok": True}
