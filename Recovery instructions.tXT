@@ -1,0 +1,197 @@
+RECOVERY INSTRUCTIONS - GAME SHOW ORCHESTRATOR
+================================================
+Written 2026-09-15. Read this assuming you have NO AI assistant helping you,
+just this file, a web browser, and the GitHub repo. Follow it top to bottom.
+
+WHAT THIS COVERS
+----------------
+How to get this project running again from nothing, on either machine:
+  A) the Windows dev/laptop machine
+  B) a brand new Raspberry Pi (the actual show machine)
+It assumes the Windows machine and the Pi died/were replaced separately --
+follow whichever Part applies, or both.
+
+
+BEFORE YOU START - WHAT YOU NEED
+---------------------------------
+1. Access to the GitHub account that owns this repo:
+     https://github.com/marky555timer/game-show-orchestrator
+   This is the master copy of all the CODE. It does NOT contain:
+     - the Anthropic API key (anthropic_key.txt / .env / *.key files)
+     - the music library (audio/music/)
+   Those two things only exist on whatever machine you're replacing, so
+   they must come from a SEPARATE backup you made yourself (password
+   manager for the key, external drive/cloud folder for the music). If you
+   never made that backup, you cannot recover them here -- go make one now
+   for next time, and re-source the key/music manually.
+
+2. Physical hardware you'll be reconnecting (show rig only, not needed
+   for a plain Windows dev setup):
+     - Enttec DMX USB Pro (drives the 176-channel DMX lighting rig)
+     - ESP32 #1 -- runs esp32_firmware/Display.ino, drives the 6-panel
+       LED matrix
+     - ESP32 #2 -- runs stock WLED firmware, drives the marquee outline
+       LEDs, mDNS name "wled-2bb8e8.local"
+     - LCUS-8 USB relay board (8-channel relay, drives the doorbell pulse
+       and 3 DMX-side relay channels)
+     - USB gamepad/joystick (game control input)
+     - 4 arcade buttons + 4 LEDs wired to the Pi's GPIO header (Simon
+       mini-game hardware)
+     - A physical shutdown/power button wired to GPIO3/GND (Pi 40-pin
+       header pins 5 and 6)
+
+3. A GitHub account with push access, if you intend to commit again.
+
+
+PART A - GET THE CODE (do this first, on either machine)
+----------------------------------------------------------
+1. Install Git if it isn't already there.
+     Windows: https://git-scm.com/download/win
+     Raspberry Pi OS: sudo apt-get update && sudo apt-get install -y git
+2. Open a terminal (PowerShell on Windows, a normal terminal on the Pi)
+   and run:
+     git clone https://github.com/marky555timer/game-show-orchestrator.git
+3. This creates a folder called "game-show-orchestrator" with all the code,
+   but NOT the two items listed in step 1 above (API key, music). You
+   restore those separately in Part D.
+
+
+PART B - REBUILD THE WINDOWS DEV MACHINE
+-------------------------------------------
+1. Install Python 3.11 or newer from https://python.org (check "Add
+   python.exe to PATH" during install).
+2. Open PowerShell in the cloned folder and run:
+     python -m venv .venv
+     .venv\Scripts\pip install -r requirements.txt
+3. Restore the Anthropic API key (see Part D, item 1).
+4. Run the app to confirm it starts:
+     .venv\Scripts\python main.py
+   On Windows this runs in a simulator mode (no real DMX/LED/Pi hardware
+   attached) -- that's normal and expected on a dev machine.
+
+
+PART C - REBUILD THE RASPBERRY PI (SHOW MACHINE)
+---------------------------------------------------
+1. Flash a fresh SD card with Raspberry Pi OS (64-bit) using the official
+   Raspberry Pi Imager (https://www.raspberrypi.com/software/). In the
+   imager's settings (gear icon) before writing:
+     - set hostname to "trivia" (so it's reachable at trivia.local)
+     - set username "mark" and a password
+     - enable SSH
+     - set your WiFi network name/password (or skip -- see the WiFi
+       fallback hotspot note in step 8 below)
+2. Boot the Pi, SSH in (or use a keyboard/monitor), then run Part A above
+   to clone the repo into /home/mark/game-show-orchestrator.
+3. Install Python and system packages:
+     sudo apt-get update
+     sudo apt-get install -y python3-venv python3-pip swig liblgpio-dev
+4. Build the virtual environment using the LINUX requirements file (not
+   the root one -- it swaps out Windows-only packages):
+     cd ~/game-show-orchestrator
+     python3 -m venv .venv
+     .venv/bin/pip install -r pi_deploy/requirements-linux.txt
+5. Restore the Anthropic API key (Part D, item 1) and the music folder
+   (Part D, item 2).
+6. Set up autostart:
+     cp pi_deploy/start.sh ~/game-show-orchestrator/start.sh
+     chmod +x ~/game-show-orchestrator/start.sh
+     mkdir -p ~/.config/autostart
+     cp pi_deploy/game-show-orchestrator.desktop ~/.config/autostart/
+     cp pi_deploy/game-show-orchestrator.desktop ~/Desktop/
+     gio set ~/Desktop/game-show-orchestrator.desktop metadata::trusted true
+   (That last line stops the desktop from showing an "untrusted launcher"
+   prompt instead of running it.)
+7. Allow the in-app "Shut Down Pi" button to actually power off the
+   machine (it runs as user "mark", not root, so it needs one-time
+   permission):
+     sudo visudo -f /etc/sudoers.d/game-show-orchestrator
+   Add this single line, save, and exit:
+     mark ALL=(root) NOPASSWD: /sbin/shutdown -h now
+8. (Optional but recommended) WiFi fallback hotspot, so a bad venue
+   network doesn't strand the Pi -- read pi_deploy/README.md's "WiFi
+   fallback hotspot" section in full and follow it exactly; it involves
+   downloading a third-party binary (balena wifi-connect) that is not
+   part of this repo.
+9. (Optional) Physical shutdown/power button -- read pi_deploy/README.md's
+   "Exterior shutdown/power button" section; it's a one-line edit to
+   /boot/firmware/config.txt plus a momentary button wired to GPIO3/GND.
+10. Reboot the Pi. The app should auto-launch on login. Check
+    ~/game-show-orchestrator/startup.log if it doesn't.
+
+
+PART D - THINGS GIT DOES NOT HAVE (must restore by hand)
+------------------------------------------------------------
+1. ANTHROPIC API KEY
+   Create a plain text file named exactly:
+     anthropic_key.txt
+   directly inside the project folder (next to main.py), containing only
+   the key itself, no quotes, no extra lines. Get the key value from
+   wherever you separately saved it (password manager, etc.) -- it is
+   NOT in GitHub and NEVER should be. If you don't have it saved anywhere,
+   you'll need to generate a new one from the Anthropic console and update
+   it there too.
+   (Alternative: instead of the file, you can set an environment variable
+   named ANTHROPIC_API_KEY to the same value. The file takes priority if
+   both exist.)
+
+2. MUSIC LIBRARY
+   The folder audio/music/ is deliberately excluded from GitHub (it's
+   large media, not code). Copy it back in from whatever backup you made
+   (external drive, cloud folder, or a copy pulled from the machine being
+   replaced via a USB drive or "scp"/"tar over ssh" before it's decommissioned).
+   Without this folder the app will still run, it just won't have any
+   music library.
+
+
+PART E - RECONNECT AND VERIFY THE HARDWARE (show Pi only)
+---------------------------------------------------------------
+None of the hardware below needs manual COM-port or serial-path
+configuration -- the software finds each USB device automatically by its
+vendor/product ID, so just plug things in:
+  1. Plug in the Enttec DMX USB Pro.
+  2. Plug in ESP32 #1 (LED matrix, running Display.ino).
+  3. Plug in ESP32 #2 (marquee, running WLED). If this is a truly NEW
+     ESP32 board (not the original), you must first flash it with WLED
+     yourself: install WLED from https://install.wled.me using Chrome or
+     Edge, then rename it to "wled-2bb8e8" in WLED's own web settings so
+     config.py's WLED_HOST keeps matching it. Use the standard/release
+     WLED build, NOT a "_debug" build -- the debug build's extra serial
+     logging corrupts the direct USB link this rig relies on.
+  4. Plug in the LCUS-8 USB relay board.
+  5. Plug in the USB gamepad/joystick.
+  6. Wire the 4 Simon buttons and 4 Simon LEDs to the Pi's GPIO header
+     per pi_deploy/README.md's "Simon hardware" pin table (buttons on BCM
+     17/23/22/27, LEDs on BCM 13/5/6/12, both commons to GND).
+  7. If ESP32 #1's firmware also needs reflashing (new/replacement board):
+     open esp32_firmware/Display.ino in the Arduino IDE, install the ESP32
+     board package via Boards Manager, install the "FthnLabsDisplay" and
+     "Adafruit GFX" libraries via Library Manager, select the correct
+     ESP32 board type, and upload.
+
+Start the app (Part C, step 10, or manually with
+".venv/bin/python -u main.py") and check, in order:
+  - DMX fixtures respond (lighting_engine test / a cue from the remote)
+  - LED matrix panels light up (not stuck on a black/loading screen)
+  - Marquee outline lights respond
+  - Pressing a Simon button lights the matching Simon LED
+  - The USB relay clicks when a "point scored" event fires
+  - The web remote loads at http://trivia.local:<port> (check main.py /
+    web/remote_server.py for the exact port) from another device on the
+    same network
+  - Joystick buttons work; if you need to remap them, use the "Joystick
+    Assign" page (web/static/joyassign.html) rather than hand-editing
+    joystick_bindings.json
+
+
+KEEPING THIS RECOVERY PATH GOOD GOING FORWARD
+-----------------------------------------------
+This whole plan only works if GitHub is actually kept up to date. From
+the project folder, periodically run:
+     git status
+If it lists modified or untracked files, that work only exists on this
+one machine. Commit and push it:
+     git add -A
+     git commit -m "describe what changed"
+     git push
+An empty "git status" (nothing to commit, up to date with origin/main) is
+what "recoverable" looks like.
