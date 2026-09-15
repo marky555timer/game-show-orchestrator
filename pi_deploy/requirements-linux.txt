@@ -11,3 +11,4 @@ mutagen
 pyserial
 yt-dlp
 imageio-ffmpeg
+rpi-lgpio

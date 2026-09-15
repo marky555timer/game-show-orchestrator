@@ -44,7 +44,9 @@ import pygame.surfarray
 import serial
 import serial.tools.list_ports
 
+import config
 from config import PANELS
+from drivers import serial_ports
 
 _UDP_PORT = 6767
 _BROADCAST_ADDR = "255.255.255.255"
@@ -54,9 +56,6 @@ _FRAME_MAGIC = 0xA5
 # ~7.7KB/s a 386-byte frame at _MAX_SEND_HZ needs -- the bottleneck is the
 # ESP32's render speed, never the line rate.
 _SERIAL_BAUD = 921600
-# USB-UART bridge chips used on ESP32 DevKit V1 boards/clones (Silicon
-# Labs CP2102, and the two common CH340/CH9102 variants).
-_ESP32_VID_PIDS = {(0x10C4, 0xEA60), (0x1A86, 0x7523), (0x1A86, 0x55D4)}
 _SERIAL_RESCAN_INTERVAL_S = 3.0
 # Must match Display.ino's HEARTBEAT_BYTE/HEARTBEAT_INTERVAL_MS. Opening
 # the port resets the ESP32 (see the dtr/rts comment below), so a fresh
@@ -81,6 +80,19 @@ _SERIAL_RESCAN_INTERVAL_S = 3.0
 # generous enough to absorb realistic jitter instead of chasing it.
 _HEARTBEAT_BYTE = 0x5A
 _HEARTBEAT_TIMEOUT_S = 4.0
+
+# Separate, much more generous timeout for "this connection has NEVER once
+# proven itself alive" -- distinct from _HEARTBEAT_TIMEOUT_S above, which
+# re-checks freshness on an already-proven-good link and must tolerate this
+# process's own scheduling jitter (see that constant's history note; the
+# two must not be conflated or that same flapping bug comes back). This one
+# fires at most once per bad connection: since the marquee WLED ESP32
+# (2026-09) shares config.ESP32_USB_SERIAL_VID_PIDS with this board,
+# _find_esp32_port() can grab the wrong one, and an open-but-wrong serial
+# port never raises -- it just never heartbeats. 6s is comfortably longer
+# than Display.ino's own ~1.5s boot + 250ms heartbeat interval, so it only
+# ever trips on a genuinely wrong (or dead) board, never a normal cold boot.
+_NEVER_READY_TIMEOUT_S = 6.0
 
 # Max frames/sec to push over the wire. Measured on this ESP32 (2026-08-10):
 # one full frame costs ~18.9ms to render (unpack -> canvas -> panel blit ->
@@ -109,10 +121,27 @@ _last_ready_state = None  # None=unknown yet, else bool -- for transition-only l
 
 
 def _find_esp32_port():
-    for port in serial.tools.list_ports.comports():
-        if (port.vid, port.pid) in _ESP32_VID_PIDS:
-            return port.device
-    return None
+    """VID/PID auto-discovery, skipping whatever any other module holds
+    (see drivers/serial_ports.py) -- not just wled_engine.py by name, since
+    a third CH340-identity device (e.g. a USB relay board) can now share
+    config.ESP32_USB_SERIAL_VID_PIDS too and needs the same protection.
+    Also de-prioritizes -- but doesn't permanently ban -- a port this
+    module has itself previously rejected (_check_never_ready): without
+    that, once wled_engine.py stops competing for the other candidate
+    (e.g. config.WLED_SERIAL_ENABLED is off), nothing forces this scan off
+    "the first matching port" anymore, and it would just keep re-picking
+    the same wrong board on every rescan forever instead of ever trying
+    the other one. Falls back to a self-rejected candidate only if it's
+    the sole match left, so a stale or mistaken rejection can't
+    permanently strand this module with no port at all."""
+    rejected = serial_ports.rejected_port()
+    candidates = [port.device for port in serial.tools.list_ports.comports()
+                  if (port.vid, port.pid) in config.ESP32_USB_SERIAL_VID_PIDS
+                  and serial_ports.held_by(port.device) is None]
+    non_rejected = [d for d in candidates if d != rejected]
+    if non_rejected:
+        return non_rejected[0]
+    return candidates[0] if candidates else None
 
 
 def _try_connect_serial():
@@ -136,9 +165,38 @@ def _try_connect_serial():
         _serial_link.rts = False
         _connect_time = time.monotonic()
         _last_heartbeat_time = 0.0  # unproven until a heartbeat actually arrives
+        serial_ports.hold(device, "led_bridge")
         print(f"[LED BRIDGE] Connected to display over serial on {device}.")
     except Exception as e:
         print(f"[LED BRIDGE] Could not open {device}: {e}")
+
+
+def _check_never_ready():
+    """Closes and releases the current link if it has NEVER once
+    heartbeated within _NEVER_READY_TIMEOUT_S of connecting -- see that
+    constant's comment. Marks the port rejected so wled_engine.py can
+    positively identify it as its own board instead of guessing, and
+    pushes _last_scan_time out a full rescan interval (rather than
+    retrying instantly) so wled_engine.py has time to notice the rejection
+    and vacate whatever port it's wrongly squatting on before this module
+    scans again -- without that gap the two can keep re-swapping the same
+    wrong ports past each other indefinitely."""
+    global _serial_link, _last_scan_time
+    if _serial_link is None or _last_heartbeat_time != 0.0:
+        return
+    if time.monotonic() - _connect_time < _NEVER_READY_TIMEOUT_S:
+        return
+    device = _serial_link.port
+    print(f"[LED BRIDGE] No heartbeat from {device} after {_NEVER_READY_TIMEOUT_S:.0f}s -- "
+          f"probably the wrong board (see config.ESP32_USB_SERIAL_VID_PIDS). Releasing it.")
+    try:
+        _serial_link.close()
+    except Exception:
+        pass
+    serial_ports.release(device)
+    serial_ports.reject(device)
+    _serial_link = None
+    _last_scan_time = time.monotonic()
 
 
 def _drain_heartbeat():
@@ -212,19 +270,20 @@ def send_frame(matrix_surface):
         return
     _last_send_time = now
 
-    red = pygame.surfarray.pixels_red(matrix_surface)  # locks the surface
-    try:
-        payload = bytearray([_FRAME_MAGIC])
-        for panel_id in range(1, 7):
-            payload += _panel_bytes(red, PANELS[panel_id])
-    finally:
-        del red  # releases the surface lock
+    pixels = pygame.surfarray.pixels_red(matrix_surface)  # locks the surface
+    red = np.array(pixels)  # detach a copy so the lock releases immediately
+    del pixels
+
+    payload = bytearray([_FRAME_MAGIC])
+    for panel_id in range(1, 7):
+        payload += _panel_bytes(red, PANELS[panel_id])
 
     checksum = 0
     for b in payload[1:]:
         checksum ^= b
     payload.append(checksum)
 
+    _check_never_ready()
     if _serial_link is None and time.monotonic() - _last_scan_time >= _SERIAL_RESCAN_INTERVAL_S:
         _try_connect_serial()
 
@@ -235,10 +294,12 @@ def send_frame(matrix_surface):
             return
         except Exception as e:
             print(f"[LED BRIDGE] Serial write failed ({e}); falling back to WiFi UDP.")
+            device = _serial_link.port
             try:
                 _serial_link.close()
             except Exception:
                 pass
+            serial_ports.release(device)
             _serial_link = None
 
     global _udp_unreachable

@@ -36,6 +36,7 @@ from drivers import auto_dj_engine
 from drivers.midi_driver import handle_dj_volume
 from drivers.dmx_driver import dmx
 from drivers import led_bridge
+from drivers import wled_engine
 from drivers import tunnel_engine
 from web.net_info import get_admin_url, get_play_url
 
@@ -300,6 +301,8 @@ def render(screen, t):
                color=_TEXT if dmx_ok else _DIM)
     y += _ROW_H
     _draw_text(screen, f"LED display: {led_bridge.current_transport()}", x, y)
+    y += _ROW_H
+    _draw_text(screen, f"Marquee: {wled_engine.current_transport()}", x, y)
     y += _ROW_H
     _draw_text(screen, f"Tunnel: {_TUNNEL_STATUS_LABELS.get(tunnel_engine.get_status(), '?')}",
                x, y, color=_TEXT if tunnel_engine.get_status() == "live" else _DIM)

@@ -174,6 +174,23 @@ raw_coin = load_sound(config.resource_path("audio", "sound_effects", "mario_coin
 raw_clear = generate_low_clear_sound()
 raw_buzz_short = load_sound(config.resource_path("audio", "sound_effects", "buzzShort.wav"), fallback_sound_fn=generate_low_beep_sound)
 
+# Milton Bradley "Simon" mini-game (drivers/simon_engine.py). One clip per
+# pad color, order matching config.SIMON_HW_COLOR_ORDER (and so also
+# SIMON_HW_BUTTON_PINS/SIMON_HW_LED_PINS' pad-index mapping) -- load_sound()
+# falls back to a synthesized tone if a clip is ever missing, so this can
+# never crash startup even before the real assets are dropped in.
+simon_sound_green = load_sound(config.resource_path("audio", "Simon", "green.wav"), fallback_freq=329.63)  # E4
+simon_sound_red = load_sound(config.resource_path("audio", "Simon", "red.wav"), fallback_freq=261.63)      # C4
+simon_sound_yellow = load_sound(config.resource_path("audio", "Simon", "yellow.wav"), fallback_freq=220.00)  # A3
+simon_sound_blue = load_sound(config.resource_path("audio", "Simon", "blue.wav"), fallback_freq=164.81)    # E3
+simon_sounds = [simon_sound_green, simon_sound_red, simon_sound_yellow, simon_sound_blue]
+
+# "It's Simon!" hardware-entry intro jingle (audio/gameMusic/simon.wav) --
+# played once via a Channel (not pygame.mixer.music, which the Price Game
+# background bed already owns) so drivers/simon_engine.py can poll the
+# returned Channel's get_busy() to know exactly when to start the real game.
+simon_intro_sound = load_sound(config.SIMON_INTRO_SOUND_PATH, fallback_freq=440)
+
 # Westminster "Bat Clock" top-of-hour chime (drivers/westminster_engine.py).
 # A folder of bell samples, not one fixed file -- pick_random_chime() below
 # picks one each time the chime fires.
@@ -458,11 +475,16 @@ def stop_all_arcade_audio():
         sound.stop()
 
 
-def play_processed_sound(sound_asset, volume=1.0):
+def play_processed_sound(sound_asset, volume=1.0, loops=0):
     """Plays audio asset through the active reverb DSP filter if enabled, at
     `volume` (0.0-1.0, a call site's own RELATIVE level -- e.g. Space
     Invaders balances its own effects against each other at 0.5-0.9) scaled
-    by the admin's master volume (state.music_volume, 0-100).
+    by the admin's master volume (state.music_volume, 0-100). `loops`
+    passes straight through to pygame's Sound.play() (0 = play once, the
+    default; -1 = repeat indefinitely) -- added for drivers/simon_engine.py's
+    held-button sustain, which loops a short sample for as long as a
+    physical Simon button stays down, same as the real 1978 device's
+    continuous tone.
 
     2026-08-12 fix: every game SFX (ding, bigwin, buzzer, coin chime, clear,
     applause, the Westminster chime...) plays via this one function, but
@@ -488,7 +510,7 @@ def play_processed_sound(sound_asset, volume=1.0):
         # a channel already reset to full volume regardless of whatever the
         # Sound's own set_volume() was called with beforehand, which is why
         # this scaling silently had no audible effect until moved here.
-        channel = target.play()
+        channel = target.play(loops=loops)
         if channel is not None:
             channel.set_volume(final_volume)
         return channel

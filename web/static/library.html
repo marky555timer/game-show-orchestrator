@@ -108,6 +108,7 @@
       <a href="/">Remote</a>
       <a href="/library" class="active">File Manager</a>
       <a href="/setup">Setup</a>
+      <a href="/joyassign">Joy Assign</a>
     </div>
   </div>
   <h1>File Manager</h1>
@@ -205,12 +206,33 @@
   <div class="toast" id="toast"></div>
 
 <script>
+// Tunnel-churn recovery (2026-09-08): see web/static/index.html's copy of
+// this same guard for the full rationale -- every cloudflared restart
+// mints a new *.trycloudflare.com URL, stranding any tab left open across
+// one. Only bounces a tab that's actually on the ephemeral tunnel domain.
+const _ADMIN_FALLBACK_URL = 'https://yannitellphotography.com/trivia/admin.php';
+const _API_FAIL_REDIRECT_THRESHOLD = 5;
+let _apiFailStreak = 0;
+let _apiFailRedirecting = false;
+
+function _onApiFailure() {
+  if (_apiFailRedirecting || !location.hostname.endsWith('trycloudflare.com')) return;
+  _apiFailStreak++;
+  if (_apiFailStreak >= _API_FAIL_REDIRECT_THRESHOLD) {
+    _apiFailRedirecting = true;
+    location.href = _ADMIN_FALLBACK_URL;
+  }
+}
+
 async function api(path, opts) {
   try {
     const res = await fetch(path, opts);
-    return await res.json();
+    const data = await res.json();
+    _apiFailStreak = 0;
+    return data;
   } catch (e) {
     console.error(path, e);
+    _onApiFailure();
     return null;
   }
 }

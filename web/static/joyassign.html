@@ -1,0 +1,647 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Game Show Remote &mdash; Joy Assign</title>
+<style>
+  :root { color-scheme: dark; }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; padding: 16px 16px 48px;
+    background: #0b0b0d; color: #f2f2f2;
+    font-family: -apple-system, Segoe UI, Roboto, sans-serif;
+  }
+  h1 { font-size: 1.1rem; text-transform: uppercase; letter-spacing: .08em; color: #ff3b30; margin: 0 0 16px; }
+  h2 { font-size: .85rem; text-transform: uppercase; letter-spacing: .06em; color: #999; margin: 24px 0 8px; }
+  section { background: #17171a; border-radius: 10px; padding: 14px; margin-bottom: 14px; }
+  .row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+  button { cursor: pointer; }
+  .btn { padding: 10px 14px; border-radius: 8px; border: 1px solid #333; background: #202024; color: #f2f2f2; font-size: .9rem; }
+  .btn.primary { background: #ff3b30; border-color: #ff3b30; color: #fff; font-weight: 700; }
+  .btn.small { padding: 6px 10px; font-size: .8rem; }
+  .btn.danger { background: #4a0f0f; border-color: #ff3b30; color: #ffb6b6; font-weight: 700; }
+  .btn:disabled { opacity: .4; cursor: default; }
+  input[type=text], input[type=number], select {
+    padding: 10px 12px; border-radius: 8px; border: 1px solid #333;
+    background: #202024; color: #f2f2f2; font-size: .9rem;
+  }
+
+  .nav-bar { display: flex; align-items: center; gap: 10px; margin-bottom: 4px; position: relative; }
+  .hamburger-btn {
+    background: none; border: 1px solid #333; border-radius: 8px; color: #f2f2f2;
+    font-size: 1.2rem; line-height: 1; padding: 6px 12px; cursor: pointer;
+  }
+  .nav-menu {
+    display: none; position: absolute; top: 42px; left: 0; background: #17171a;
+    border: 1px solid #333; border-radius: 8px; z-index: 300; overflow: hidden; min-width: 170px;
+  }
+  .nav-menu.open { display: block; }
+  .nav-menu a {
+    display: block; padding: 12px 16px; color: #f2f2f2; text-decoration: none;
+    font-size: .9rem; border-bottom: 1px solid #2a2a2e;
+  }
+  .nav-menu a:last-child { border-bottom: none; }
+  .nav-menu a:hover { background: #202024; }
+  .nav-menu a.active { color: #ff3b30; font-weight: 700; }
+
+  .action-row {
+    display: flex; align-items: center; justify-content: space-between; gap: 10px;
+    padding: 10px 0; border-top: 1px solid #2a2a2e;
+  }
+  .action-row:first-child { border-top: none; }
+  .action-row.readonly { opacity: .55; }
+  .action-label { font-size: .92rem; }
+  .action-note { font-size: .75rem; color: #888; margin-top: 2px; }
+  .button-badge {
+    font-variant-numeric: tabular-nums; font-size: .85rem; font-weight: 700;
+    background: #202024; border: 1px solid #333; border-radius: 6px; padding: 6px 10px; min-width: 34px; text-align: center;
+  }
+  .button-badge.unbound { color: #888; font-weight: 400; }
+
+  .combo-card { background: #202024; border: 1px solid #333; border-radius: 8px; padding: 10px 12px; margin-bottom: 8px; }
+  .combo-card .combo-title { font-weight: 700; font-size: .92rem; margin-bottom: 2px; }
+  .combo-card .combo-detail { font-size: .8rem; color: #999; }
+  .combo-chip {
+    display: inline-block; background: #17171a; border: 1px solid #333; border-radius: 6px;
+    padding: 3px 8px; font-size: .8rem; margin-right: 4px; font-variant-numeric: tabular-nums;
+  }
+
+  .modal-backdrop {
+    display: none; position: fixed; inset: 0; background: rgba(0,0,0,.7);
+    align-items: center; justify-content: center; z-index: 100; padding: 16px;
+  }
+  .modal-backdrop.open { display: flex; }
+  .modal-box { background: #17171a; border: 1px solid #ff3b30; border-radius: 10px; padding: 24px 20px; max-width: 340px; text-align: center; }
+  .modal-box p { margin: 0 0 18px; font-size: 1rem; }
+  .modal-pulse { font-size: 2rem; margin-bottom: 10px; animation: pulse 1s ease-in-out infinite; }
+  @keyframes pulse { 0%, 100% { opacity: .4; } 50% { opacity: 1; } }
+
+  .toast {
+    position: fixed; left: 50%; bottom: 16px; transform: translateX(-50%);
+    background: #202024; border: 1px solid #333; border-radius: 8px;
+    padding: 8px 14px; font-size: .85rem; opacity: 0; transition: opacity .2s;
+    pointer-events: none; z-index: 200; max-width: 90vw; text-align: center;
+  }
+  .toast.show { opacity: 1; }
+
+  #combo-builder { display: none; margin-top: 10px; padding-top: 10px; border-top: 1px solid #2a2a2e; }
+  #combo-builder.open { display: block; }
+  #combo-builder label { display: block; font-size: .8rem; color: #999; margin: 10px 0 4px; }
+  #combo-builder input, #combo-builder select { width: 100%; }
+</style>
+</head>
+<body>
+  <div class="nav-bar">
+    <button class="hamburger-btn" onclick="toggleNavMenu()">&#9776;</button>
+    <div class="nav-menu" id="nav-menu">
+      <a href="/">Remote</a>
+      <a href="/library">File Manager</a>
+      <a href="/setup">Setup</a>
+      <a href="/joyassign" class="active">Joy Assign</a>
+    </div>
+  </div>
+  <h1>Joy Assign</h1>
+  <div class="row" style="color:#999; font-size:.85rem; margin-bottom: 8px;">
+    Actions: tap "Rebind," then press the button on the joystick -- captured automatically.
+    Combos: tap "Rebind" on the combo card, capture each button in order, then "Save" (built-in combos can be
+    rebound this way too, just not deleted).
+  </div>
+
+  <section>
+    <h2>Joystick Profile</h2>
+    <div style="font-size:.85rem; color:#999; margin-bottom:10px;">
+      Active: <span id="active-profile-label" style="color:#f2f2f2; font-weight:700;">none saved</span>
+    </div>
+    <label style="display:block; font-size:.8rem; color:#999; margin-bottom:4px;">Load a saved profile</label>
+    <div class="row">
+      <select id="profile-select" style="flex:1"></select>
+      <button class="btn small" onclick="profileLoad()">Load</button>
+      <button class="btn small danger" onclick="profileDelete()">Delete</button>
+    </div>
+    <label style="display:block; font-size:.8rem; color:#999; margin:12px 0 4px;">Save current setup as&hellip;</label>
+    <div class="row">
+      <input type="text" id="profile-name-input" placeholder="e.g. New Joystick" style="flex:1">
+      <button class="btn small primary" onclick="profileSave()">Save</button>
+    </div>
+  </section>
+
+  <div id="sections"></div>
+
+  <section>
+    <h2>CPU Temp Overlay (Panel 5)</h2>
+    <div style="font-size:.85rem; color:#999; margin-bottom:10px;">
+      Hold the button(s) below to show the Pi's CPU temperature on panel 5 -- hides the instant you let go.
+    </div>
+    <label style="display:block; font-size:.8rem; color:#999; margin-bottom:4px;">Trigger</label>
+    <div class="row" id="cpu-temp-trigger-row" style="margin-bottom:10px"></div>
+    <div class="row">
+      <button class="btn small" onclick="cpuTempCaptureButton()">+ Capture Button</button>
+      <button class="btn small" onclick="cpuTempRemoveLastButton()">Remove Last</button>
+      <button class="btn small primary" onclick="cpuTempTriggerSave()">Save Trigger</button>
+      <button class="btn small danger" onclick="cpuTempTriggerClear()">Clear</button>
+    </div>
+  </section>
+
+  <section>
+    <h2>Combos</h2>
+    <div id="combo-list"></div>
+    <div class="row">
+      <button class="btn" style="flex:1" onclick="toggleComboBuilder()">+ Add Combo</button>
+    </div>
+    <div id="combo-builder">
+      <label>Name</label>
+      <input type="text" id="combo-label-input" placeholder="e.g. Confetti Cannon">
+      <label>Buttons (press Capture for each one)</label>
+      <div class="row" id="combo-buttons-row"></div>
+      <div class="row" style="margin-top:8px">
+        <button class="btn small" onclick="comboCaptureButton()">+ Capture Button</button>
+        <button class="btn small" onclick="comboRemoveLastButton()">Remove Last</button>
+      </div>
+      <label>Hold Seconds</label>
+      <input type="number" id="combo-hold-input" value="1.0" min="0" step="0.1">
+      <label>Fires</label>
+      <select id="combo-fires-select"></select>
+      <div class="row" style="margin-top:14px">
+        <button class="btn primary" style="flex:1" onclick="comboSave()">Save Combo</button>
+        <button class="btn" style="flex:1" onclick="toggleComboBuilder()">Cancel</button>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <button class="btn danger" style="width:100%" onclick="resetToDefaults()">RESET ALL TO DEFAULTS</button>
+  </section>
+
+  <div class="modal-backdrop" id="capture-modal">
+    <div class="modal-box">
+      <div class="modal-pulse">&#127918;</div>
+      <p>Press a button on the joystick&hellip;</p>
+      <button class="btn" onclick="captureCancel()">Cancel</button>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+<script>
+// Tunnel-churn recovery (2026-09-08): see web/static/index.html's copy of
+// this same guard for the full rationale -- every cloudflared restart
+// mints a new *.trycloudflare.com URL, stranding any tab left open across
+// one. Only bounces a tab that's actually on the ephemeral tunnel domain.
+const _ADMIN_FALLBACK_URL = 'https://yannitellphotography.com/trivia/admin.php';
+const _API_FAIL_REDIRECT_THRESHOLD = 5;
+let _apiFailStreak = 0;
+let _apiFailRedirecting = false;
+
+function _onApiFailure() {
+  if (_apiFailRedirecting || !location.hostname.endsWith('trycloudflare.com')) return;
+  _apiFailStreak++;
+  if (_apiFailStreak >= _API_FAIL_REDIRECT_THRESHOLD) {
+    _apiFailRedirecting = true;
+    location.href = _ADMIN_FALLBACK_URL;
+  }
+}
+
+async function api(path, opts) {
+  try {
+    const res = await fetch(path, opts);
+    const data = await res.json();
+    _apiFailStreak = 0;
+    return data;
+  } catch (e) {
+    console.error(path, e);
+    _onApiFailure();
+    return null;
+  }
+}
+
+function toggleNavMenu() {
+  document.getElementById('nav-menu').classList.toggle('open');
+}
+document.addEventListener('click', (e) => {
+  const menu = document.getElementById('nav-menu');
+  if (!menu || !menu.classList.contains('open')) return;
+  if (!menu.contains(e.target) && !e.target.closest('.hamburger-btn')) {
+    menu.classList.remove('open');
+  }
+});
+
+let _toastTimer = null;
+function showToast(msg) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  clearTimeout(_toastTimer);
+  _toastTimer = setTimeout(() => el.classList.remove('show'), 2500);
+}
+
+let _comboTargets = {};
+
+async function loadBindings() {
+  const d = await api('/api/joystick/bindings');
+  if (!d || !d.ok) return;
+  renderSections(d.actions);
+  renderCombos(d.combos);
+  _comboTargets = d.combo_targets;
+  renderComboFiresOptions();
+  renderProfiles(d.profiles, d.active_profile);
+  _cpuTempTriggerButtons = d.cpu_temp_trigger || [];
+  renderCpuTempTriggerRow();
+}
+
+function renderProfiles(profiles, active) {
+  document.getElementById('active-profile-label').textContent = active || 'none saved';
+  const sel = document.getElementById('profile-select');
+  const prevValue = sel.value;
+  sel.innerHTML = profiles.length
+    ? profiles.map(p => `<option value="${p}">${p}</option>`).join('')
+    : '<option value="">(no profiles saved yet)</option>';
+  if (profiles.includes(prevValue)) sel.value = prevValue;
+  else if (active && profiles.includes(active)) sel.value = active;
+}
+
+async function profileSave() {
+  const name = document.getElementById('profile-name-input').value.trim();
+  if (!name) { showToast('Give the profile a name first.'); return; }
+  const res = await api('/api/joystick/profiles/save', {
+    method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({name}),
+  });
+  if (res && res.ok) {
+    showToast(`Saved as "${name}".`);
+    document.getElementById('profile-name-input').value = '';
+    loadBindings();
+  } else {
+    showToast(res && res.reason ? res.reason : 'Save failed.');
+  }
+}
+
+async function profileLoad() {
+  const name = document.getElementById('profile-select').value;
+  if (!name) return;
+  if (!confirm(`Load "${name}"? Any unsaved changes to the current setup will be lost.`)) return;
+  const res = await api('/api/joystick/profiles/load', {
+    method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({name}),
+  });
+  if (res && res.ok) {
+    showToast(`Loaded "${name}".`);
+    loadBindings();
+  } else {
+    showToast(res && res.reason ? res.reason : 'Load failed.');
+  }
+}
+
+async function profileDelete() {
+  const name = document.getElementById('profile-select').value;
+  if (!name) return;
+  if (!confirm(`Delete the saved profile "${name}"? This can't be undone.`)) return;
+  const res = await api('/api/joystick/profiles/delete', {
+    method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({name}),
+  });
+  if (res && res.ok) {
+    showToast(`Deleted "${name}".`);
+    loadBindings();
+  } else {
+    showToast(res && res.reason ? res.reason : 'Delete failed.');
+  }
+}
+
+function renderSections(actions) {
+  const bySection = {};
+  const order = [];
+  for (const a of actions) {
+    if (!(a.section in bySection)) { bySection[a.section] = []; order.push(a.section); }
+    bySection[a.section].push(a);
+  }
+  const container = document.getElementById('sections');
+  container.innerHTML = order.map(section => `
+    <section>
+      <h2>${section}</h2>
+      ${bySection[section].map(rowHtml).join('')}
+    </section>
+  `).join('');
+}
+
+function rowHtml(a) {
+  if (a.kind === 'axis') {
+    return `<div class="action-row readonly">
+      <div><div class="action-label">${a.label}</div><div class="action-note">${a.note || ''}</div></div>
+    </div>`;
+  }
+  const bound = a.button !== null && a.button !== undefined;
+  return `<div class="action-row">
+    <div>
+      <div class="action-label">${a.label}</div>
+      ${a.note ? `<div class="action-note">${a.note}</div>` : ''}
+    </div>
+    <div class="row" style="gap:6px">
+      <span class="button-badge ${bound ? '' : 'unbound'}">${bound ? 'Btn ' + a.button : 'unbound'}</span>
+      <button class="btn small" onclick="rebind('${a.id}')">Rebind</button>
+      <button class="btn small" ${bound ? '' : 'disabled'} onclick="unbindAction('${a.id}')" title="Clear this binding">&times;</button>
+    </div>
+  </div>`;
+}
+
+async function unbindAction(actionId) {
+  const res = await api('/api/joystick/unbind', {
+    method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({action_id: actionId}),
+  });
+  if (res && res.ok) {
+    showToast('Cleared.');
+    loadBindings();
+  } else {
+    showToast('Unbind failed.');
+  }
+}
+
+let _lastCombos = [];
+let _comboRebindId = null;
+let _comboRebindButtons = [];
+let _comboRebindHold = 1.0;
+
+function renderCombos(combos) {
+  if (combos) _lastCombos = combos;
+  const list = document.getElementById('combo-list');
+  if (!_lastCombos.length) {
+    list.innerHTML = '<div style="color:#888; font-size:.85rem;">No combos configured.</div>';
+    return;
+  }
+  list.innerHTML = _lastCombos.map(c => {
+    if (c.id === _comboRebindId) {
+      return `
+      <div class="combo-card">
+        <div class="combo-title">${c.label}</div>
+        <div class="combo-detail">held ${c.hold_seconds}s &rarr; ${(_comboTargets[c.fires] || c.fires)}</div>
+        <div class="row" style="margin-top:8px">
+          ${_comboRebindButtons.length
+            ? _comboRebindButtons.map(b => `<span class="combo-chip">Btn ${b}</span>`).join('')
+            : '<span style="color:#888;font-size:.85rem">none captured yet</span>'}
+        </div>
+        <div class="row" style="margin-top:8px">
+          <button class="btn small" onclick="comboRebindCaptureButton()">+ Capture Button</button>
+          <button class="btn small" onclick="comboRebindRemoveLastButton()">Remove Last</button>
+        </div>
+        <div class="row" style="margin-top:8px">
+          <button class="btn small primary" onclick="comboRebindSave()">Save</button>
+          <button class="btn small" onclick="comboRebindCancel()">Cancel</button>
+        </div>
+      </div>`;
+    }
+    return `
+    <div class="combo-card">
+      <div class="combo-title">${c.label}</div>
+      <div class="combo-detail">
+        ${c.buttons.map(b => `<span class="combo-chip">Btn ${b}</span>`).join('')}
+        held ${c.hold_seconds}s &rarr; ${(_comboTargets[c.fires] || c.fires)}
+      </div>
+      <div class="row" style="margin-top:8px">
+        <button class="btn small" onclick="comboRebindStart('${c.id}')">Rebind</button>
+        ${c.built_in
+          ? '<span style="font-size:.75rem;color:#888">built-in (can’t delete)</span>'
+          : `<button class="btn small danger" onclick="comboDelete('${c.id}')">Delete</button>`}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function comboRebindStart(comboId) {
+  const c = _lastCombos.find(x => x.id === comboId);
+  if (!c) return;
+  _comboRebindId = comboId;
+  _comboRebindButtons = [...c.buttons];
+  _comboRebindHold = c.hold_seconds;
+  renderCombos();
+}
+
+function comboRebindCancel() {
+  _comboRebindId = null;
+  _comboRebindButtons = [];
+  renderCombos();
+}
+
+async function comboRebindCaptureButton() {
+  _captureContext = 'comboRebind';
+  await api('/api/joystick/capture/start', { method: 'POST' });
+  _openCaptureModal();
+  _pollCapture();
+}
+
+function comboRebindRemoveLastButton() {
+  _comboRebindButtons.pop();
+  renderCombos();
+}
+
+async function comboRebindSave() {
+  if (_comboRebindButtons.length < 2) {
+    showToast('Capture at least 2 buttons first.');
+    return;
+  }
+  const res = await api('/api/joystick/combo/rebind', {
+    method: 'POST', headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({ combo_id: _comboRebindId, buttons: _comboRebindButtons, hold_seconds: _comboRebindHold }),
+  });
+  if (res && res.ok) {
+    showToast('Combo rebound.');
+    _comboRebindId = null;
+    _comboRebindButtons = [];
+    loadBindings();
+  } else {
+    showToast(res && res.reason ? res.reason : 'Rebind failed.');
+  }
+}
+
+function renderComboFiresOptions() {
+  const sel = document.getElementById('combo-fires-select');
+  sel.innerHTML = Object.entries(_comboTargets)
+    .map(([id, label]) => `<option value="${id}">${label}</option>`).join('');
+}
+
+// ------------------------------------------
+// Press-to-bind capture
+// ------------------------------------------
+// _captureContext distinguishes what a captured press should DO once it
+// arrives -- 'action' binds a single remappable action (_captureTarget
+// holds its id), 'combo' appends to the combo builder's button list,
+// 'cpuTemp' appends to the CPU-temp trigger builder's button list. Only
+// one capture is ever in flight at a time (server-side capture mode is
+// itself a single global flag -- see drivers/joystick_bindings.py).
+let _captureContext = null;
+let _captureTarget = null;   // action_id being rebound, only meaningful when _captureContext === 'action'
+let _capturePolling = null;
+
+function _openCaptureModal() {
+  document.getElementById('capture-modal').classList.add('open');
+}
+function _closeCaptureModal() {
+  document.getElementById('capture-modal').classList.remove('open');
+}
+
+async function rebind(actionId) {
+  _captureContext = 'action';
+  _captureTarget = actionId;
+  await api('/api/joystick/capture/start', { method: 'POST' });
+  _openCaptureModal();
+  _pollCapture();
+}
+
+async function captureCancel() {
+  await api('/api/joystick/capture/cancel', { method: 'POST' });
+  clearTimeout(_capturePolling);
+  _closeCaptureModal();
+  _captureContext = null;
+  _captureTarget = null;
+}
+
+async function _pollCapture() {
+  const d = await api('/api/joystick/capture/poll');
+  if (!d || !d.ok) return;
+  if (d.captured) {
+    _closeCaptureModal();
+    if (_captureContext === 'action') {
+      const res = await api('/api/joystick/bind', {
+        method: 'POST', headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({action_id: _captureTarget, button: d.button}),
+      });
+      if (res && res.ok) {
+        showToast(`Bound to Button ${d.button}.`);
+        loadBindings();
+      } else {
+        showToast('Bind failed.');
+      }
+      _captureTarget = null;
+    } else if (_captureContext === 'cpuTemp') {
+      _cpuTempTriggerButtons.push(d.button);
+      renderCpuTempTriggerRow();
+    } else if (_captureContext === 'comboRebind') {
+      _comboRebindButtons.push(d.button);
+      renderCombos();
+    } else {
+      // Combo builder (Add Combo) capture -- add the chip, no bind API call.
+      _comboButtons.push(d.button);
+      renderComboButtonsRow();
+    }
+    _captureContext = null;
+    return;
+  }
+  _capturePolling = setTimeout(_pollCapture, 300);
+}
+
+async function resetToDefaults() {
+  if (!confirm('Reset every button and combo back to default? This can\'t be undone.')) return;
+  await api('/api/joystick/reset', { method: 'POST' });
+  showToast('Reset to defaults.');
+  loadBindings();
+}
+
+// ------------------------------------------
+// Combo builder
+// ------------------------------------------
+let _comboButtons = [];
+
+function toggleComboBuilder() {
+  const el = document.getElementById('combo-builder');
+  el.classList.toggle('open');
+  if (el.classList.contains('open')) {
+    _comboButtons = [];
+    document.getElementById('combo-label-input').value = '';
+    document.getElementById('combo-hold-input').value = '1.0';
+    renderComboButtonsRow();
+  }
+}
+
+function renderComboButtonsRow() {
+  const row = document.getElementById('combo-buttons-row');
+  row.innerHTML = _comboButtons.length
+    ? _comboButtons.map(b => `<span class="combo-chip">Btn ${b}</span>`).join('')
+    : '<span style="color:#888;font-size:.85rem">none captured yet</span>';
+}
+
+async function comboCaptureButton() {
+  _captureContext = 'combo';
+  await api('/api/joystick/capture/start', { method: 'POST' });
+  _openCaptureModal();
+  _pollCapture();
+}
+
+// ------------------------------------------
+// CPU Temp Overlay trigger
+// ------------------------------------------
+let _cpuTempTriggerButtons = [];
+
+function renderCpuTempTriggerRow() {
+  const row = document.getElementById('cpu-temp-trigger-row');
+  row.innerHTML = _cpuTempTriggerButtons.length
+    ? _cpuTempTriggerButtons.map(b => `<span class="combo-chip">Btn ${b}</span>`).join('')
+    : '<span style="color:#888;font-size:.85rem">none set</span>';
+}
+
+async function cpuTempCaptureButton() {
+  _captureContext = 'cpuTemp';
+  await api('/api/joystick/capture/start', { method: 'POST' });
+  _openCaptureModal();
+  _pollCapture();
+}
+
+function cpuTempRemoveLastButton() {
+  _cpuTempTriggerButtons.pop();
+  renderCpuTempTriggerRow();
+}
+
+async function cpuTempTriggerSave() {
+  const res = await api('/api/joystick/cpu-temp-trigger', {
+    method: 'POST', headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({ buttons: _cpuTempTriggerButtons }),
+  });
+  if (res && res.ok) showToast('Trigger saved.');
+  else showToast('Save failed.');
+}
+
+function cpuTempTriggerClear() {
+  _cpuTempTriggerButtons = [];
+  renderCpuTempTriggerRow();
+  cpuTempTriggerSave();
+}
+
+function comboRemoveLastButton() {
+  _comboButtons.pop();
+  renderComboButtonsRow();
+}
+
+async function comboSave() {
+  if (_comboButtons.length < 2) {
+    showToast('Capture at least 2 buttons first.');
+    return;
+  }
+  const label = document.getElementById('combo-label-input').value.trim();
+  const holdSeconds = parseFloat(document.getElementById('combo-hold-input').value) || 0;
+  const fires = document.getElementById('combo-fires-select').value;
+  const res = await api('/api/joystick/combo', {
+    method: 'POST', headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({ label, buttons: _comboButtons, hold_seconds: holdSeconds, fires }),
+  });
+  if (res && res.ok) {
+    showToast('Combo saved.');
+    toggleComboBuilder();
+    loadBindings();
+  } else {
+    showToast(res && res.reason ? res.reason : 'Save failed.');
+  }
+}
+
+async function comboDelete(comboId) {
+  if (!confirm('Delete this combo?')) return;
+  const res = await api('/api/joystick/combo/delete', {
+    method: 'POST', headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({ combo_id: comboId }),
+  });
+  if (res && res.ok) {
+    showToast('Combo deleted.');
+    loadBindings();
+  } else {
+    showToast(res && res.reason ? res.reason : 'Delete failed.');
+  }
+}
+
+loadBindings();
+</script>
+</body>
+</html>

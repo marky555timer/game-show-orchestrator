@@ -74,7 +74,12 @@ def _load_anthropic_api_key():
 # ==========================================
 # HARDWARE PORTS & CANVAS SETTINGS
 # ==========================================
-ENTTEC_PORT = "COM5"
+# No ENTTEC_PORT here anymore (2026-08-19) -- drivers/dmx_driver.py finds
+# the Enttec DMX USB PRO by USB VID/PID instead of a fixed path, since
+# which /dev/ttyUSBx or COMx it lands on isn't stable across boots. Also
+# means this one line no longer needs to differ between the Windows dev
+# machine (COM5) and the Pi (was /dev/ttyUSB0) -- one less thing to keep
+# in sync by hand when deploying.
 MIDI_PORT_NAME = "Python_PMC_Port"
 
 # Exact window caption of the pygame canvas simulator (set via
@@ -83,6 +88,17 @@ MIDI_PORT_NAME = "Python_PMC_Port"
 # resolve the canvas HWND -- kept as a single constant so the two stay in
 # sync if the caption is ever changed.
 CANVAS_WINDOW_TITLE = "6-Panel Game Show Matrix Simulator"
+
+# USB-UART bridge chips used on the ESP32 DevKit V1 boards/clones this rig
+# uses (Silicon Labs CP2102, and the two common CH340/CH9102 variants) --
+# shared by drivers/led_bridge.py (matrix panel ESP32) and
+# drivers/wled_engine.py (marquee WLED ESP32) since both auto-discover
+# their board by USB VID/PID rather than a fixed port path (same reasoning
+# as MIDI_PORT_NAME's comment above). Both boards can enumerate with the
+# same VID/PID, so the two modules coordinate over drivers/serial_ports.py
+# (see that module's docstring) instead of each independently grabbing
+# "the first matching port" and racing/colliding.
+ESP32_USB_SERIAL_VID_PIDS = {(0x10C4, 0xEA60), (0x1A86, 0x7523), (0x1A86, 0x55D4)}
 
 # ==========================================
 # PHYSICAL PANEL LAYOUT
@@ -340,6 +356,201 @@ DMX_FIXTURE_CHANNELS = 16
 DMX_NUM_FIXTURES = 11
 DMX_TOTAL_CHANNELS = DMX_FIXTURE_CHANNELS * DMX_NUM_FIXTURES  # 176
 
+# 3-channel DMX relay block, address 177 (right after the 176-channel
+# fixture rig above -- see pi_deploy or the dip-switch note from setup).
+# Relay logic per the hardware: any non-zero channel value energizes that
+# relay, 0 de-energizes it. Relay 1 does a brief one-shot pulse on the
+# BIG WIN game SFX (see inputs/gamepad.py::trigger_big_win() and
+# drivers/dmx_driver.py::pulse_channel()/poll_pulses()) -- deliberately
+# gated on state.sfx_enabled the same as the sound itself, so muting Game
+# SFX also silences the relay.
+RELAY1_CHANNEL = 177
+RELAY2_CHANNEL = 178
+RELAY3_CHANNEL = 179
+RELAY_PULSE_SECONDS = 0.25
+
+# ==========================================
+# USB RELAY BOARD (LCUS-8, drivers/relay_engine.py, added 2026-09-14)
+# ==========================================
+# Separate physical board from the 3-channel DMX relay block above --
+# an 8-channel LCUS-8 USB relay module, addressed directly over its own
+# serial link (NOT part of the 176-channel DMX universe). Protocol is the
+# standard LCUS 4-byte command frame: [0xA0, channel(1-8), state, checksum],
+# 9600 baud -- see drivers/relay_engine.py's module docstring.
+#
+# This board's CH340 USB-UART chip enumerates under the SAME VID/PID as
+# some ESP32 clones already listed in ESP32_USB_SERIAL_VID_PIDS above.
+# This board's firmware doesn't echo commands back (confirmed live
+# 2026-09-14), so unlike led_bridge.py/wled_engine.py's heartbeat/JSON
+# proof, relay_engine.py trusts VID/PID alone -- safe today since this is
+# the only CH340 device on the rig (both ESP32 boards are CP2102). Would
+# need a real disambiguation step if a CH340-based ESP32 (e.g. the
+# still-pending accent board) ever joins. led_bridge.py/wled_engine.py's
+# own port scans were fixed the same day this board was added
+# (serial_ports.held_by(port) is None, not a hardcoded other-module name)
+# so they can't fight over this board's port either way.
+USB_RELAY_VID_PID = (0x1A86, 0x7523)
+USB_RELAY_SERIAL_BAUD = 9600
+# Which LCUS-8 channel does the brief "point scored" pulse -- currently:
+# Simon round cleared (drivers/simon_engine.py::press()'s round-clear
+# block). NOT gated on state.sfx_enabled -- it's a physical scoring signal
+# to external hardware, not an SFX accent.
+#
+# Channel 8 (2026-09-14: moved off channel 2) drives a physical
+# electromagnetic doorbell -- there's a one-shot relay timer wired in
+# front of the doorbell coil itself that caps how long the coil actually
+# gets energized regardless of how long this software pulse holds the
+# LCUS-8 channel closed, so USB_RELAY_PULSE_SECONDS below only needs to be
+# long enough to reliably trigger that hardware timer, not sized to the
+# coil's safe duration -- this software pulse is NOT what's protecting
+# the coil from damage.
+USB_RELAY_POINT_CHANNEL = 8
+USB_RELAY_PULSE_SECONDS = 0.25
+
+# ==========================================
+# MARQUEE LIGHTS (2026-08-23, drivers/wled_engine.py)
+# ==========================================
+# "Marquee lights" = the WS2811 "bullet bulb" LEDs outlining the edges of
+# the physical panel sections -- distinct from the pixels *inside* the
+# panels, which drivers/led_bridge.py's own ESP32 already drives. Driven by
+# a separate ESP32 running third-party WLED firmware (not esp32_firmware/
+# Display.ino). Now that this board lives permanently on the rig next to
+# the Pi (2026-09) instead of moving between the dev laptop and the show
+# rig, drivers/wled_engine.py prefers a direct USB-serial link (WLED's
+# native Adalight/"LEDstream" realtime-input protocol) and falls back to
+# DDP (a realtime UDP pixel-push protocol WLED also supports natively)
+# over WiFi -- e.g. when working on this board from the dev laptop instead
+# of the Pi. WLED_HOST/WLED_DDP_PORT below are about that DDP fallback
+# specifically (still addressed by mDNS hostname rather than a raw IP for
+# the same reason as this file's own ENTTEC_PORT, since the DDP path can
+# still land on whatever network the board was last tested on); the
+# serial link needs no address, just USB-VID/PID auto-discovery (see
+# ESP32_USB_SERIAL_VID_PIDS above). MARQUEE_-prefixed constants below are
+# about the lights themselves, independent of either transport.
+#
+# WLED_SERIAL_ENABLED = True (2026-09-02): was False while this board ran
+# WLED's "esp32dev_debug" build (WLED_DEBUG's verbose Serial prints
+# corrupted the Adalight stream -- see git history/this file's prior
+# comment here for the full diagnosis). Board was reflashed with a
+# standard (non-debug) WLED 0.15.2 release build via its own web OTA
+# updater; confirmed via /json/info afterward -- release: "ESP32" (was
+# "ESP32_DEBUG"). Re-enabling serial gets the marquee off WiFi/DDP
+# entirely, which is the actual fix for the WiFi-jitter chase-pattern
+# stutter DDP could never fully avoid -- not just another mitigation.
+WLED_SERIAL_ENABLED = True
+#
+# Hardware is a work in progress -- LED counts/segments below will grow as
+# more panels get wired; confirm against the physical rig before trusting
+# them stale. As of this note: LEDs 1-30 outline the combined "title"
+# panels (1 and 2 together, 2x width hence 30 rather than 18), LEDs 31-102
+# outline panels 3-6 individually at 18 LEDs each -- matching
+# config.py's own PANELS dict for the matrix (6 physical panels; the
+# marquee only has 5 outline sections because 1+2 combine into one "title"
+# run). All 5 sections now wired. Pixel index 0 of EACH segment starts at
+# that segment's top-right corner (confirmed against the physical build,
+# direction of travel around the loop not yet confirmed -- verify
+# empirically with a chase effect before relying on it).
+WLED_HOST = "wled-2bb8e8.local"
+WLED_DDP_PORT = 4048
+MARQUEE_TOTAL_LEDS = 102
+# "reverse": physical loop-travel direction isn't confirmed yet (only the
+# top-right start corner is) -- flip per-segment here if a chase effect
+# turns out to visually run backwards once seen live, rather than
+# reworking the effect code itself.
+MARQUEE_SEGMENTS = {
+    "title": {"start": 0, "count": 30, "reverse": False},    # panels 1+2 combined outline
+    # panel3/panel4 fixed 2026-09-14: the physical strip is snaked
+    # title -> panel4 -> panel3 -> panel5 -> panel6, NOT in panel-number
+    # order -- confirmed live (Simon's green/panel3 command was visually
+    # landing on panel4's real outline while panel4's own command also
+    # correctly landed there, i.e. panel3's declared range was physically
+    # sitting on panel4's wiring). Every caller addresses segments by
+    # name, so swapping just these two start offsets is the whole fix.
+    "panel4": {"start": 30, "count": 18, "reverse": False},  # panel 4 outline -- wired right after title
+    "panel3": {"start": 48, "count": 18, "reverse": False},  # panel 3 outline -- wired after panel4
+    "panel5": {"start": 66, "count": 18, "reverse": False},  # panel 5 outline
+    "panel6": {"start": 84, "count": 18, "reverse": False},  # panel 6 outline
+}
+
+# --- Third ESP32/WLED board: "outlines" accent strip -- ON HOLD 2026-09-14 ---
+# A separate, third board from the marquee/outline ESP32 above
+# (WLED_HOST/MARQUEE_* -- USB-serial + DDP, raw pixel push for
+# frame-accurate chase effects). Drives a 120-lamp strip, controlled by
+# WLED preset/effect switches only (no second WiFi client, no per-pixel
+# timing needed for this effect).
+#
+# The originally-purchased board (a WeGoIOT "ESP32 WLED" DOM-WLE-18P
+# commercial controller) turned out to be a dead end for wired control:
+# its exposed "IO33/GND" terminal looked like a UART pin but is actually
+# WLED's plain pushbutton input (GPIO33 = Button 0, confirmed via WLED's
+# own docs), and its "INPUT/UART" USB-C jack never enumerated as a USB
+# device at all -- not a cable/power/hub problem (ruled out one at a
+# time: known-good data cable confirmed with an iPhone, independent
+# barrel-jack power confirmed present, still nothing) -- and its manual
+# never documents a wired-PC connection method at all. Conclusion: this
+# specific product is WiFi/app-control-only. Decision (2026-09-14): user
+# refuses to manage a second WiFi access point, so instead of accepting
+# WiFi control, replacing this board entirely with a plain ESP32 DevKit
+# V1 flashed with stock WLED -- i.e. built the same way as the marquee
+# board above, which has never had any of these problems since it's a
+# generic devkit with real UART0 exposed over USB, not a sandboxed
+# commercial product. New board on order; work paused until it arrives.
+#
+# When wiring the replacement: prefer a board whose USB-UART chip is
+# NOT Silicon Labs CP2102 (the marquee and matrix boards both already
+# are) -- picking a CH340/CH9102 clone instead lets drivers/
+# accent_engine.py identify its port directly by VID/PID, with none of
+# the heartbeat/elimination guessing drivers/serial_ports.py needs for
+# the marquee-vs-matrix pair. Watch out for USB relay boards/other
+# accessories on the same rig also using CH340 -- confirm identity by
+# probing with WLED's JSON API (send {"v":true}, expect a JSON reply),
+# not by VID/PID alone, before wiring any code to a specific port.
+ACCENT_SERIAL_BAUD = 115200
+ACCENT_EFFECT_CYCLE_SECONDS = 3.0
+# Built-in WLED effect IDs (not user-defined presets -- these ship with
+# every WLED install, so the bring-up test below works with zero WLED
+# configuration). Exact IDs/names can shift slightly between WLED
+# versions; picked for visually obvious changes (solid/breathe/rainbow/
+# chase/fireworks), not for the specific IDs mattering.
+ACCENT_TEST_EFFECTS = [0, 2, 9, 38, 66]
+
+# Marquee light-show timing (drivers/wled_engine.py::update()). v1 scope is
+# deliberately a simplified subset of the DMX rig's full state machine
+# (drivers/lighting_engine.py) -- show-phase gating, DJ-color sync, a game-
+# mode chase, win/loss flashes, and Westminster twinkle, but NOT yet the
+# mystery-sting/song-intro-sparkle branches DMX also handles. Reuses the
+# DMX rig's own intro-flash timing constants (SHOW_INTRO_DMX_FLASH_AT_
+# SECONDS etc., further down this file) so the two rigs' flashes land in
+# the same instant rather than drifting apart.
+MARQUEE_FLASH_SECONDS = 0.25
+MARQUEE_DJ_BREATHE_PERIOD_SECONDS = 4.0
+
+# DJ-mode "dance" patterns: state.dj_theme_index (already used to pick one
+# of the DMX rig's 13 uplight themes) also selects one of these, purely by
+# `dj_theme_index % len(patterns)` -- so cycling DJ themes from the
+# existing controls changes the marquee's character too, no separate
+# control needed. See drivers/wled_engine.py's _DJ_PATTERNS list.
+MARQUEE_DJ_WAVE_LENGTH_LEDS = 12     # traveling brightness wave's wavelength, in pixels
+MARQUEE_DJ_WAVE_SPEED_SECONDS = 3.0  # seconds for the wave to shift one full wavelength
+MARQUEE_DJ_CHASE_LAP_SECONDS = 2.0   # seconds per full lap, complement-trail comet pattern
+MARQUEE_DJ_BOUNCE_PERIOD_SECONDS = 3.0  # seconds per full there-and-back sweep, bounce pattern
+MARQUEE_DJ_RAINBOW_SPEED = 0.15      # hue cycles/sec, rainbow chase pattern
+
+# Game-mode: an all-white comet-style chase per segment (loops within its
+# own segment, not across the whole strip -- title and panel3 are two
+# separate physical loops, not one continuous run) plus a periodic double
+# flash burst. Deliberately keyed off state.price_game_active rather than
+# only state.mode == MODE_GAME in drivers/wled_engine.py::update() -- Price
+# Game sets price_game_active True immediately (drivers/price_game_engine.
+# py::_arm_intro()) but doesn't flip state.mode to MODE_GAME until its
+# ~3.5s strobe+banner intro finishes, so gating on mode alone left the
+# marquee still doing the DJ pattern for that whole window instead of
+# snapping to the chase the instant the round starts.
+MARQUEE_GAME_CHASE_STEP_SECONDS = 0.06  # time per 1-pixel step of the comet
+MARQUEE_GAME_COMET_LENGTH = 6           # lit pixels in the comet's fading tail
+MARQUEE_GAME_FLASH_INTERVAL_SECONDS = 4.0  # how often a flash burst interrupts the chase
+MARQUEE_GAME_FLASH_BURST_SECONDS = 0.15    # each of the burst's 2 flashes
+
 # Tap-tempo: rolling window of taps used to compute the period, and the
 # sane clamp range so a mis-tap can't produce a silly-fast/slow oscillation.
 TEMPO_TAP_WINDOW = 4
@@ -447,6 +658,106 @@ SI_INVADER_TICK_MIN_SECONDS = 0.15     # step interval, last invader standing
 SI_PLAYER_WIDTH = 5
 SI_PLAYER_HEIGHT = 3
 SI_PLAYER_Y_FROM_BOTTOM = 3            # px up from the bottom edge
+
+# --- Milton Bradley "Simon" mini-game (2026-08-20) ---
+# Second DJ-mode secret combo, same "in the same vein" pattern as
+# SI_ENTRY_BUTTONS above. Originally (3, 4) -- changed to (0, 1) 2026-08-21,
+# too awkward a reach on the physical pad. Only matters as the DEFAULT now
+# that combos can be rebound in place from Joy Assign (see
+# joystick_bindings.py's update_combo()) without touching this file again.
+SIMON_ENTRY_BUTTONS = (0, 1)
+SIMON_FLASH_ON_SECONDS = 0.45     # a pad lit/sounding, playback step or input echo
+SIMON_FLASH_GAP_SECONDS = 0.25    # dark pause between playback steps
+SIMON_FAIL_HOLD_SECONDS = 1.5     # correct-answer flash hold before the game ends/restarts
+SIMON_SOUND_VOLUME = 0.9
+
+# Physical Simon hardware (2026-09-11): real arcade buttons + LEDs wired
+# directly to the Pi's 40-pin GPIO header, separate from the joystick-pad
+# simulation above -- see drivers/simon_hardware.py for the bring-up/test
+# driver these back (Advanced panel, web remote). BCM numbering (matches
+# RPi.GPIO.setmode(GPIO.BCM)); physical pin numbers noted per operator's
+# wiring notes.
+SIMON_HW_BUTTON_PINS = {
+    "green": 17,   # physical pin 11
+    "red": 23,     # physical pin 16 -- swapped with blue 2026-09-13, red/blue leads were crossed on the header
+    "yellow": 22,  # physical pin 15
+    "blue": 27,    # physical pin 13 -- swapped with red 2026-09-13, red/blue leads were crossed on the header
+}  # common return: GND, physical pin 14
+SIMON_HW_LED_PINS = {
+    "green": 13,   # physical pin 33 -- 2026-09-13 remap (was wired one color off in a 4-way rotation): green/red/yellow/blue each mapped to the next color's old pin
+    "red": 5,      # physical pin 29
+    "yellow": 6,   # physical pin 31
+    "blue": 12,    # physical pin 32
+}  # common return: GND, physical pin 30 -- LEDs run on 12V through a MOSFET per channel, GPIO only drives the gate
+SIMON_HW_LED_PULSE_SECONDS = 1.0
+
+# Real-game entry via the physical arcade buttons (2026-09-13), separate
+# from the joystick's secret-combo Easter egg above -- see drivers/
+# simon_engine.py's "intro" phase / enter_simon_hardware(). Pad index 0-3
+# order, matching both SIMON_HW_BUTTON_PINS/SIMON_HW_LED_PINS' dict order
+# and panels 3-6 (graphics/matrix_canvas.py's _SIMON_PANEL_IDS) --
+# explicit rather than reading dict key order so re-sorting either pin
+# dict for documentation reasons can never silently reassign a pad index.
+SIMON_HW_COLOR_ORDER = ["green", "red", "yellow", "blue"]
+SIMON_HW_COLOR_RGB = {
+    "green": (0, 255, 0),
+    "red": (255, 0, 0),
+    # Pure (255,255,0) reproduces as green on this marquee's LEDs (2026-09-14
+    # operator feedback) -- red-shifted toward amber instead, reusing the
+    # exact warm-amber value drivers/wled_engine.py::_resolve_marquee_color()
+    # already uses as this same hardware's approximation for the DMX rig's
+    # dedicated amber emitter (a color the operator confirmed looks good live).
+    "yellow": (255, 140, 20),
+    "blue": (0, 0, 255),
+}
+# "It's Simon!" intro jingle -- plays once while the top-panel banner/white
+# chase and the panel3-6/physical-LED green-red-yellow-blue rotation run;
+# the real game starts the instant it finishes. Not tracked in git (see
+# pi_deploy/README.md's audio note) -- transferred to the Pi directly.
+SIMON_INTRO_SOUND_PATH = resource_path("audio", "gameMusic", "simon.wav")
+SIMON_INTRO_FALLBACK_SECONDS = 3.0   # used only if the intro sound fails to load/play
+SIMON_INTRO_MAX_SECONDS = 20.0       # hard cap so a stuck/looping sound can never hang the intro forever
+# Loss sequence: the correct answer's LED (physical button + matrix panel
+# accent + marquee panel color) flashes at this rate for SIMON_FAIL_HOLD_
+# SECONDS while its own color's sound effect plays once.
+SIMON_LOSS_FLASH_PERIOD_SECONDS = 0.11   # 110ms
+SIMON_LOSS_FLASH_DUTY = 0.90             # 90% on, 10% off
+# No button pressed for this long while waiting on the player ("input"
+# phase) -> time out and return to DJ mode (2026-09-13, still experimental/
+# tunable -- see drivers/simon_engine.py's _handle_input_timeout()).
+SIMON_INPUT_TIMEOUT_SECONDS = 20.0
+# Pause between the player finishing a round (their last correct press) and
+# the computer replaying the full (now one-longer) sequence for the next
+# round -- 2026-09-14, operator feedback that the old ~0.7s gap (just
+# SIMON_FLASH_ON/GAP_SECONDS) felt unfairly abrupt.
+SIMON_ROUND_BREAK_SECONDS = 2.0
+# DJ deck duck for the duration of a Simon game (entry through end), same
+# "fade to silent, fade back" shape as Price Game's background-music duck
+# (drivers/price_game_engine.py) -- reuses that module's already-per-frame-
+# pumped drivers/midi_driver.py::update_fader_tween().
+SIMON_MUSIC_DUCK_TWEEN_SECONDS = 0.4
+SIMON_MUSIC_RESTORE_TWEEN_SECONDS = 0.6
+# Top-strip ("title" segment) marquee chase during Simon (drivers/
+# wled_engine.py::_apply_simon) -- a theater-marquee bulb chase (every
+# SIMON_MARQUEE_CHASE_SPACING'th pixel lit across the WHOLE loop at once,
+# shifting by one pixel every SIMON_MARQUEE_CHASE_STEP_SECONDS) rather than
+# a single moving comet, per 2026-09-14 operator feedback.
+SIMON_MARQUEE_CHASE_SPACING = 4          # 1 lit pixel then 3 dark, repeating
+SIMON_MARQUEE_CHASE_STEP_SECONDS = 0.09  # time per 1-pixel shift of the whole pattern
+# "Get Ready" pause between the intro jingle ending and round 1's first
+# tone (2026-09-14, operator feedback that the game started right on the
+# song's last beat, too abruptly) -- top banner reads "GET READY", marquee
+# chase keeps running, no pad lit; see drivers/simon_engine.py's
+# _update_get_ready().
+SIMON_GET_READY_SECONDS = 1.0  # was 2.0 -- 2026-09-14 operator feedback that the break felt a little long
+# Extended hold on the final score display after a hardware loss (2026-09-
+# 14, operator feedback the old flash-then-immediately-gone felt too quick
+# to actually read the score) -- marquee chase resumes around the still-
+# displayed round count for this long before the game actually ends. Only
+# applies to hardware-sourced games; the joystick combo's auto-restart is
+# unchanged. See drivers/simon_engine.py's _update_score_review().
+SIMON_SCORE_REVIEW_SECONDS = 3.0
+
 SI_PLAYER_SPEED = 60.0                 # px/sec while held
 
 SI_BULLET_SPEED = 90.0                 # px/sec, travels upward
@@ -925,6 +1236,46 @@ AUTODJ_DEFAULT_TRACK_SECONDS = 210.0  # 3.5 minutes
 # trusted, and falls back to AUTODJ_DEFAULT_TRACK_SECONDS instead.
 AUTODJ_MIN_PLAUSIBLE_DURATION_SECONDS = 30.0
 
+# ==========================================
+# POWER MONITOR (2026-08-17): BROWNOUT/UNDER-VOLTAGE LOGGING
+# ==========================================
+# Diagnostic aid for the occasional live-show brownout on the show Pi --
+# drivers/power_monitor.py polls `vcgencmd get_throttled` on this interval
+# and prints a timestamped line (captured into startup.log by pi_deploy/
+# start.sh) the instant the Pi's own power-management chip reports an
+# under-voltage condition, tagged with whatever track was playing at that
+# moment. Lets a brownout be lined up against the "[AUTO-DJ] Tracking ..."
+# lines already in the same log to check whether rapid track
+# changes/seeks are actually the trigger. No-op on anything that isn't
+# Linux with vcgencmd on PATH (the Windows dev machine included), so this
+# is always safe to poll from main.py's loop regardless of host.
+POWER_MONITOR_POLL_SECONDS = 2.0
+
+# LED_BROWNOUT_GUARD_* removed 2026-09-02 -- was a field-emergency software
+# mitigation (drivers/led_bridge.py dropped pixels on full/near-full-matrix
+# flashes to cap simultaneous-LEDs-on current draw) for touring rig
+# brownouts on an underpowered 5V supply. Superseded by installing the
+# higher-wattage DC converter this was always meant to be a stopgap for
+# (see the removed comment's own "the real fix is a beefier 5V supply"
+# note) -- the matrix now renders whatever's commanded at full brightness,
+# no pixel-dropping.
+
+# ==========================================
+# MAIN-LOOP STALL LOGGING (2026-08-19)
+# ==========================================
+# Diagnostic aid for the recurring ~4s LED-heartbeat/DMX-ready flapping on
+# the show Pi (drivers/led_bridge.py's _HEARTBEAT_TIMEOUT_S window) --
+# main.py times each stage of its per-frame loop (input processing, DMX
+# render, LED matrix render/send, etc.) and prints a line naming the
+# worst-offending stage the instant one iteration takes noticeably longer
+# than its 25ms budget (40fps). The goal is to catch the NEXT occurrence
+# with hard per-stage numbers in startup.log instead of having to infer
+# which subsystem stalled from symptoms alone. 300ms is deliberately loose
+# (12x the normal 25ms frame budget) so ordinary GC/scheduler jitter stays
+# quiet and only a real stall -- this one's suspected to run ~4 FULL
+# seconds -- actually logs.
+MAIN_LOOP_STALL_WARN_SECONDS = 0.3
+
 # Auto-advance transition sequence (station announcement + deck-start MIDI
 # + TrackSearch) starts arming this many seconds before the calculated/
 # fallback end of the track -- see drivers/auto_dj_engine.py::update() and
@@ -1097,6 +1448,12 @@ TUNNEL_REDIRECT_SECRET = "m8YaRwCJ_cmRybVu0VGhNbKuvyU9T_xqw4c79ZjXQlQ"
 # hasn't changed, so cloudflare_redirect/'s staleness check (STALE_AFTER_
 # SECONDS in its config.php) never times out while the app is running.
 TUNNEL_HEARTBEAT_SECONDS = 60.0
+
+# How long tunnel_engine.py waits before respawning cloudflared after it
+# exits (e.g. launched before the network was up on a cold boot). Short
+# enough to come back quickly once the network's actually ready, long
+# enough not to hammer subprocess spawns during a longer outage.
+TUNNEL_RETRY_SECONDS = 10.0
 
 # Remote's "+10 Seconds" Auto-DJ button: how far to push the elapsed-track
 # window back (i.e. buy the DJ more time before the auto-advance transition
@@ -1299,6 +1656,15 @@ SHOW_INTRO_CHASE_PERIOD_SECONDS = 0.35
 # hard-cutting.
 SHOW_INTRO_HANDOFF_FADE_MS = 600
 
+# How long a still-playing outro (ShowEnd.mp3 + applause) fades out if
+# "Start Game"/schedule_start() re-enters "dark" before that outro ever
+# got the chance to finish on its own (2026-08-20 fix) -- "dark" is
+# supposed to be a deliberate SILENT pause, which a leftover outro track
+# still audibly playing underneath it defeats entirely. Quick, not
+# instant -- an abrupt hard cut reads as a glitch, same reasoning as the
+# intro handoff fade above.
+SHOW_DARK_ENTRY_FADE_MS = 600
+
 # Show-close script: fade whatever's on the deck, play SHOW_END_MUSIC_PATH
 # + a random applause clip together, LED champion banner, DMX twinkle for
 # the song's duration, then blackout + a persistent contact-info banner
@@ -1313,6 +1679,32 @@ SHOW_OUTRO_DMX_FADE_SECONDS = 2.5
 # statically on panels 1+2 while the operator configures the Setup page or
 # waits on a scheduled start, from app launch until "Start Game" is pressed.
 SHOW_SETUP_LED_TEXT = "READY"
+
+# Unattended-autoplay fallback (2026-08-19): if the Setup/"READY" screen
+# sits untouched -- no physical rig input, no web remote action -- for this
+# long, the show starts itself: straight to live/the first track, no dark
+# pause, no ShowStart.mp3/LED intro choreography, so the room doesn't sit
+# on dead air if the host hasn't shown up yet. See drivers/show_engine.py::
+# _update_unattended_autoplay().
+SHOW_UNATTENDED_AUTOPLAY_TIMEOUT_SECONDS = 60.0
+
+# Blink rate for the "AUTO :NN" countdown banner (panels 1+2) and the
+# final-10s "SHOW WILL START NOW" panels (3-6) -- shared by both so they
+# flash in sync rather than drifting against each other. 0.5s on/off (1s
+# full cycle) -- clearly noticeable without being frantic.
+SHOW_UNATTENDED_FLASH_PERIOD_SECONDS = 0.5
+
+# Inside this many remaining seconds, panels 3-6 (normally the DMX/LED/
+# tunnel/network status chips) switch to a flashing "SHOW WILL START NOW",
+# one word per panel -- an unmissable last warning right before the
+# unattended-autoplay fallback actually fires.
+SHOW_UNATTENDED_FINAL_WARNING_SECONDS = 10.0
+
+# How long the deck fades out when the host hits "Reset to Setup" on an
+# unattended-autoplay show (web remote only, live-panel banner) -- no
+# outro fanfare, since this wasn't a real hosted show, just a fast fade
+# back to the blank Setup screen.
+SHOW_UNATTENDED_RESET_FADE_SECONDS = 2.0
 
 # ==========================================
 # BITMAP PIXEL FONT ENGINE (5x7 Grid)

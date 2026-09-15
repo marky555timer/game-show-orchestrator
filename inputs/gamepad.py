@@ -11,11 +11,17 @@ from config import (
     DJ_THEME_COUNT, DJ_COLOR_PALETTE,
     QUIZ_CELEBRATION_HOLD_SECONDS,
     DMX_GRADE_FLASH_SECONDS,
-    SI_ENTRY_BUTTONS, SI_EXIT_BUTTONS,
     BTN1_HOLD_THRESHOLD_SECONDS, BTN1_HOLD_OVERLAY_PERSIST_SECONDS,
-    SHUTDOWN_COMBO_BUTTONS, SHUTDOWN_COMBO_HOLD_SECONDS,
-    FORCE_PRICE_GAME_COMBO_BUTTONS, FORCE_PRICE_GAME_COMBO_HOLD_SECONDS,
+    RELAY1_CHANNEL, RELAY_PULSE_SECONDS,
 )
+from drivers.dmx_driver import dmx
+from drivers import wled_engine
+# SI_ENTRY_BUTTONS/SI_EXIT_BUTTONS/SHUTDOWN_COMBO_BUTTONS/
+# SHUTDOWN_COMBO_HOLD_SECONDS/FORCE_PRICE_GAME_COMBO_BUTTONS/
+# FORCE_PRICE_GAME_COMBO_HOLD_SECONDS no longer imported here (2026-08-20)
+# -- drivers/joystick_bindings.py reads them once at module load to seed
+# its default combos, and everything at runtime now goes through its
+# combos()/buttons_for() lookups instead of these raw constants.
 from state import state
 from drivers.midi_driver import handle_dj_volume
 from drivers.deck_orchestrator import get_now_playing as get_rekordbox_track
@@ -28,12 +34,14 @@ from drivers import price_game_engine
 from drivers import mystery_band_engine
 from drivers import auto_dj_engine
 from drivers import space_invaders_engine
+from drivers import simon_engine
 from drivers import westminster_engine
 from drivers import idle_cycle_engine
 from drivers import live_round_engine
 from drivers import win_sequence_engine
 from drivers import light_prefs_engine
 from drivers import show_engine
+from drivers import joystick_bindings
 from graphics import overlay_panel
 from graphics import secondary_canvas
 from drivers import announcement_engine
@@ -61,23 +69,17 @@ _vol_next_repeat = 0.0
 _btn1_down_at = None
 _btn1_hold_fired = False
 
-# Shutdown combo (Feature Update): Btn5+Btn2 held together continuously for
-# SHUTDOWN_COMBO_HOLD_SECONDS. None while the combo isn't currently held;
-# set to the time.time() the combo FIRST became held once both buttons are
-# down together, so elapsed hold time survives across frames.
-_shutdown_combo_since = None
-
-# Force Price Game combo: Btn5+Btn6 held together continuously for
-# FORCE_PRICE_GAME_COMBO_HOLD_SECONDS -- same shape as the shutdown combo
-# above. NOT a joystick-axis long-press (an earlier X- hold version was
-# tried and reverted): the X-axis is edge-triggered straight to
+# Combo hold-tracking (Shutdown, Force Price Game, Space Invaders entry,
+# and any user-defined ones) now lives in _combo_since/_combo_fired near
+# _process_combos() further down -- one generalized mechanism instead of a
+# separate pair of module globals per combo. NOT a joystick-axis long-press
+# for Force Price Game specifically (an earlier X- hold version was tried
+# and reverted): the X-axis is edge-triggered straight to
 # deck_orchestrator.trigger_track_move("next") the instant it crosses the
 # threshold, in the SAME JOYAXISMOTION handler, before any hold-duration
 # check could ever tell a tap from a hold -- so holding X- also fired an
 # unwanted, audience-visible track transition every single time. A
-# two-button combo has no such quick-tap side effect to worry about.
-_force_price_game_combo_since = None
-_force_price_game_fired = False
+# multi-button combo has no such quick-tap side effect to worry about.
 
 def init_joysticks():
     global joysticks
@@ -117,6 +119,7 @@ def trigger_loss(play_sfx=True):
     print("[ACTION] Btn6 GRADE -> LOSS")
     if state.sfx_enabled and play_sfx:
         play_processed_sound(raw_buzzer)
+        wled_engine.flash(255, 0, 0)
 
     # Fixture 1 (win/loss indicator lamp): solid red, latched until an
     # explicit reset (board clear / new question / return to DJ mode) --
@@ -420,6 +423,8 @@ def trigger_big_win():
     print("[ACTION] BIG WIN")
     if state.sfx_enabled:
         play_processed_sound(raw_bigwin)
+        dmx.pulse_channel(RELAY1_CHANNEL, 255, RELAY_PULSE_SECONDS)
+        wled_engine.flash(255, 255, 255)
 
     # Fixture 1: pulsing green, rendered every frame by lighting_engine.py
     # from this state until the next reset (board clear / new question /
@@ -833,6 +838,107 @@ def handle_theme_cycle():
 # JOYBUTTONDOWN dispatch above). auto_dj_engine.toggle_auto_dj() is still
 # reachable from the web remote's Auto-DJ control (web/remote_server.py).
 
+# ------------------------------------------------------------
+# SECTION 4B: JOYSTICK REMAPPING (2026-08-20, "Joy Assign" web page,
+# drivers/joystick_bindings.py) -- every simple "one press, one call"
+# action's handler, keyed by the stable action id joystick_bindings.py's
+# registry uses instead of a raw button number. dj_auto_announce (tap/hold
+# split) and si_exit_1/si_exit_2 (need the "everything else fires"
+# membership check) still get bespoke handling in process_events() below
+# -- they're in here too, since a combo firing them just means "do the
+# tap behavior"/"exit", no tap/hold or membership logic needed for that.
+# ------------------------------------------------------------
+ACTION_HANDLERS = {
+    "dj_auto_announce": handle_auto_announce_toggle,
+    "dj_trivia_pull": handle_normal_trivia_button,
+    "dj_swear_toggle": toggle_last_announcement_swear,
+    "dj_tempo_tap": handle_tempo_tap,
+    "dj_force_price_game": handle_quiz_gate_button,
+    "dj_color_cycle": handle_color_cycle,
+    "dj_theme_cycle": handle_theme_cycle,
+    "game_select_1": lambda: select_quiz_answer(0),
+    "game_select_2": lambda: select_quiz_answer(1),
+    "game_select_3": lambda: select_quiz_answer(2),
+    "game_select_4": lambda: select_quiz_answer(3),
+    "game_clear": clear_quiz_selection,
+    "game_grade": grade_quiz_selection,
+    "game_exit_1": abort_game_mode_early,
+    "game_exit_2": abort_game_mode_early,
+    "si_exit_1": lambda: space_invaders_engine.exit_space_invaders(),
+    "si_exit_2": lambda: space_invaders_engine.exit_space_invaders(),
+    "simon_select_1": lambda: simon_engine.press(0),
+    "simon_select_2": lambda: simon_engine.press(1),
+    "simon_select_3": lambda: simon_engine.press(2),
+    "simon_select_4": lambda: simon_engine.press(3),
+    "simon_exit_1": lambda: simon_engine.exit_simon(),
+    "simon_exit_2": lambda: simon_engine.exit_simon(),
+}
+
+# Per-action debounce window for the DIRECT per-button dispatch path only
+# (a combo has its own hold_seconds + one-shot latch, no separate debounce
+# needed on top). Missing from this dict = no debounce, matching exactly
+# which buttons had no _debounced() wrapper in the original hardcoded
+# chain (e.g. the Game Mode answer-select buttons, Btn3's swear toggle).
+_ACTION_DEBOUNCE = {
+    "dj_trivia_pull": QUIZ_GATE_DEBOUNCE_SECONDS,
+    "dj_force_price_game": QUIZ_GATE_DEBOUNCE_SECONDS,
+    "dj_tempo_tap": BUTTON_DEBOUNCE_SECONDS,
+    "dj_color_cycle": BUTTON_DEBOUNCE_SECONDS,
+    "dj_theme_cycle": BUTTON_DEBOUNCE_SECONDS,
+    "game_clear": BUTTON_DEBOUNCE_SECONDS,
+    "game_grade": BUTTON_DEBOUNCE_SECONDS,
+    "game_exit_1": BUTTON_DEBOUNCE_SECONDS,
+    "game_exit_2": BUTTON_DEBOUNCE_SECONDS,
+}
+
+_MODE_NAMES = {
+    state.MODE_DJ: "DJ",
+    state.MODE_GAME: "GAME",
+    state.MODE_SPACE_INVADERS: "SPACE_INVADERS",
+    state.MODE_SIMON: "SIMON",
+}
+
+
+def _mode_name():
+    return _MODE_NAMES.get(state.mode, "DJ")
+
+
+def _dispatch_action(action_id):
+    """Direct per-button press path: looks up action_id's handler and
+    applies its debounce window (if any), exactly replacing what used to
+    be an individual `if _debounced(btn): handle_x()` line per button."""
+    handler = ACTION_HANDLERS.get(action_id)
+    if handler is None:
+        return
+    debounce_s = _ACTION_DEBOUNCE.get(action_id)
+    if debounce_s is None:
+        handler()
+    elif _debounced(action_id, debounce_s):
+        handler()
+
+
+def _button_is_forming_a_combo(btn):
+    """True if `btn` is one button of a multi-button combo (applicable to
+    the current mode) whose OTHER buttons are ALSO currently held --
+    generalizes the original bespoke "suppress this button's own action
+    while the other combo button is already down" checks for Space
+    Invaders entry and Force Price Game to any number of user-defined
+    combos. _process_combos() (polled every frame) owns the actual
+    hold-to-fire logic; this only stops the individual press from ALSO
+    firing its own single-button action on top while the combo forms."""
+    mode = _mode_name()
+    for combo in joystick_bindings.combos():
+        buttons = combo["buttons"]
+        if btn not in buttons:
+            continue
+        modes = combo.get("modes", ["any"])
+        if "any" not in modes and mode not in modes:
+            continue
+        others = [b for b in buttons if b != btn]
+        if others and all(_joystick_button_held(b) for b in others):
+            return True
+    return False
+
 # ------------------------------------------
 # BUTTON DEBOUNCE (Btns 5-8, Section 5.3)
 # ------------------------------------------
@@ -930,34 +1036,71 @@ def _joystick_button_held(button_index):
     return False
 
 
-def _process_force_price_game_combo():
-    """Per-frame: Btn5+Btn6 held together continuously for
-    FORCE_PRICE_GAME_COMBO_HOLD_SECONDS force-starts a Price Game round
-    (force_price_game()). Same shape as _process_shutdown_combo() below --
-    hardware polling (not JOYBUTTONDOWN events), since a "held together"
-    combo can't be detected reliably off events alone (whichever button's
-    event fires first can't see the other's state yet mid-event-loop).
-    `_force_price_game_fired` latches so this fires exactly once per hold,
-    not every single frame the combo stays down past threshold -- without
-    it, the second and later frames would see price_game_pending already
-    cleared (start_price_game() clears it on success) and spam the "NO
-    PRICE GAME ARMED YET" status message right after a successful trigger."""
-    global _force_price_game_combo_since, _force_price_game_fired
-    both_held = (
-        _joystick_button_held(FORCE_PRICE_GAME_COMBO_BUTTONS[0])
-        and _joystick_button_held(FORCE_PRICE_GAME_COMBO_BUTTONS[1])
-    )
-    if not both_held:
-        _force_price_game_combo_since = None
-        _force_price_game_fired = False
-        return
-    if _force_price_game_combo_since is None:
-        _force_price_game_combo_since = time.time()
-        return
-    if (not _force_price_game_fired
-            and time.time() - _force_price_game_combo_since >= FORCE_PRICE_GAME_COMBO_HOLD_SECONDS):
-        _force_price_game_fired = True
-        force_price_game()
+# ------------------------------------------------------------
+# COMBOS (2026-08-20): generalized hold-to-fire, replacing the three
+# separate bespoke functions this used to be (Space Invaders entry, Force
+# Price Game, Shutdown) -- see joystick_bindings.py's module docstring for
+# why SI entry (originally edge-triggered) now goes through the same
+# polled-hold model as the other two.
+# ------------------------------------------------------------
+_combo_since = {}   # combo_id -> time.time() first became fully held
+_combo_fired = set()  # combo_id -> already fired this hold (latched until release)
+
+
+def _combo_target_handler(fires):
+    """Resolves a combo's "fires" target to a callable -- either one of
+    the three combo-only special targets (no plain single-button action
+    behind them) or, for any ordinary remappable action, its normal
+    ACTION_HANDLERS entry -- so a combo can target literally any
+    single-button action too, not just the three built-ins."""
+    if fires == "__space_invaders_entry__":
+        return lambda: space_invaders_engine.enter_space_invaders()
+    if fires == "__simon_entry__":
+        return lambda: simon_engine.enter_simon()
+    if fires == "__force_price_game__":
+        return force_price_game
+    if fires == "__shutdown__":
+        def _do_shutdown():
+            print("SYSTEM SHUTDOWN: Triggered via configured joystick combo")
+            state.shutdown_reason = "JOYSTICK COMBO"
+            state.shutdown_requested = True
+        return _do_shutdown
+    return ACTION_HANDLERS.get(fires)
+
+
+def _process_combos():
+    """Per-frame, regardless of mode (each combo's own "modes" list gates
+    whether it's live right now -- see joystick_bindings.py). Hardware-
+    polled (_joystick_button_held()), not event-driven, since a "held
+    together" combo can't be detected reliably off JOYBUTTONDOWN events
+    alone (whichever button's event fires first can't see the others'
+    state yet mid-event-loop). Each combo latches via _combo_fired so it
+    fires exactly once per hold, not every frame past its threshold --
+    same reasoning the original Force Price Game combo's own latch had
+    (avoids spamming a "nothing armed" status message right after a
+    successful trigger clears the thing that made it succeed)."""
+    if state.shutdown_requested:
+        return  # already triggered (this or the web remote) -- no more combo work needed
+    mode = _mode_name()
+    now = time.time()
+    for combo in joystick_bindings.combos():
+        combo_id = combo["id"]
+        buttons = combo["buttons"]
+        modes = combo.get("modes", ["any"])
+        applies = "any" in modes or mode in modes
+        all_held = applies and bool(buttons) and all(_joystick_button_held(b) for b in buttons)
+        if not all_held:
+            _combo_since.pop(combo_id, None)
+            _combo_fired.discard(combo_id)
+            continue
+        since = _combo_since.setdefault(combo_id, now)
+        if combo_id in _combo_fired:
+            continue
+        if now - since >= combo["hold_seconds"]:
+            _combo_fired.add(combo_id)
+            handler = _combo_target_handler(combo["fires"])
+            if handler:
+                handler()
 
 # ------------------------------------------
 # BTN1/BTN3 TAP-VS-HOLD: PER-FRAME HOLD-PROMOTION + RELEASE HANDLERS
@@ -971,9 +1114,23 @@ def _process_btn1_hold():
     global _btn1_hold_fired
     if state.mode != state.MODE_DJ or _btn1_down_at is None or _btn1_hold_fired:
         return
-    if _joystick_button_held(0) and time.time() - _btn1_down_at >= BTN1_HOLD_THRESHOLD_SECONDS:
+    btn1 = joystick_bindings.button_for("dj_auto_announce")
+    if btn1 is not None and _joystick_button_held(btn1) and time.time() - _btn1_down_at >= BTN1_HOLD_THRESHOLD_SECONDS:
         _btn1_hold_fired = True
         state.btn1_hold_overlay_active = True
+
+def _process_cpu_temp_overlay():
+    """Called once per frame, regardless of mode/show_phase -- a hardware
+    diagnostic shouldn't be gated behind DJ mode any more than the
+    shutdown combo is. Sets state.cpu_temp_overlay_active for as long as
+    every button in the configured trigger (Joy Assign page, 1 or more
+    buttons) is held simultaneously; graphics/matrix_canvas.py reads that
+    flag to draw panel 5's overlay. No persistence window like Btn1's --
+    this hides the instant any trigger button releases, matching "while
+    engaged" rather than a confirmation toast."""
+    trigger = joystick_bindings.cpu_temp_trigger()
+    state.cpu_temp_overlay_active = bool(trigger) and all(_joystick_button_held(b) for b in trigger)
+
 
 def _handle_btn1_release():
     """JOYBUTTONUP for Btn1 (DJ mode only -- see process_events()). Decides
@@ -1004,39 +1161,12 @@ def _handle_btn1_release():
         state.btn1_hold_overlay_until = 0.0  # dismiss early, no toggle
         return
 
-    if _debounced(0):
+    if _debounced("dj_auto_announce"):
         handle_auto_announce_toggle()
 
-# ------------------------------------------
-# SHUTDOWN COMBO: Btn5 + Btn2 HELD TOGETHER FOR 5 CONTINUOUS SECONDS
-# ------------------------------------------
-def _process_shutdown_combo():
-    """Called once per frame, regardless of mode -- an emergency/admin
-    shutdown control shouldn't be gated behind DJ mode. Polls hardware
-    state (not events) the same way _held_volume_direction() does, since a
-    "held together" combo can't be detected reliably off JOYBUTTONDOWN
-    events alone (whichever button's event fires first can't see the
-    other's state yet mid-event-loop)."""
-    global _shutdown_combo_since
-    if state.shutdown_requested:
-        return  # already triggered (from here or the web remote) -- no-op
-
-    both_held = (
-        _joystick_button_held(SHUTDOWN_COMBO_BUTTONS[0])
-        and _joystick_button_held(SHUTDOWN_COMBO_BUTTONS[1])
-    )
-    if not both_held:
-        _shutdown_combo_since = None
-        return
-
-    if _shutdown_combo_since is None:
-        _shutdown_combo_since = time.time()
-        return
-
-    if time.time() - _shutdown_combo_since >= SHUTDOWN_COMBO_HOLD_SECONDS:
-        print("SYSTEM SHUTDOWN: Triggered via Gamepad 5+2 5-second hold")
-        state.shutdown_reason = "GAMEPAD 5+2 HOLD"
-        state.shutdown_requested = True
+# Shutdown is now just another entry in joystick_bindings.py's combo list
+# (combo_shutdown, modes=["any"]) -- _process_combos() above owns firing
+# it, replacing what used to be its own bespoke _process_shutdown_combo().
 
 _si_last_move_at = None
 
@@ -1132,8 +1262,17 @@ def process_events():
     show_engine.update(time.time())
     if state.mode == state.MODE_SPACE_INVADERS:
         space_invaders_engine.update(time.time())
+    if state.mode == state.MODE_SIMON:
+        simon_engine.update(time.time())
+    simon_engine.poll_hardware(time.time())
 
     for event in pygame.event.get():
+        if event.type in (pygame.JOYBUTTONDOWN, pygame.JOYHATMOTION, pygame.KEYDOWN):
+            # Unattended-autoplay fallback (drivers/show_engine.py): any
+            # deliberate physical-rig press resets the Setup-page idle
+            # clock. Cheap no-op outside show_phase == "setup".
+            show_engine.mark_operator_interaction()
+
         if event.type == pygame.QUIT:
             return False
 
@@ -1153,111 +1292,66 @@ def process_events():
             btn = event.button
             print(f"[BUTTON] Raw Button Pressed: {btn}")
 
-            # Space Invaders dual-button entry (Section 1): Btn1 AND Btn3
-            # held simultaneously, DJ mode only. Checked before the normal
-            # single-button DJ actions below -- if the combo actually
-            # fires, this event is fully consumed so Btn1's Auto-Announce
-            # toggle / Btn3's "back" track move never also happen on top
-            # of it. If the other combo button ISN'T currently held, this
-            # falls through to the ordinary single-button handling
-            # untouched.
-            if state.mode == state.MODE_DJ and btn in SI_ENTRY_BUTTONS:
-                other_btn = SI_ENTRY_BUTTONS[1] if btn == SI_ENTRY_BUTTONS[0] else SI_ENTRY_BUTTONS[0]
-                if _joystick_button_held(other_btn):
-                    if _debounced("si_entry"):
-                        space_invaders_engine.enter_space_invaders()
-                    continue
+            # Press-to-bind capture (Joy Assign page, web/static/
+            # joyassign.html): consumes this press entirely if capture
+            # mode is currently armed -- no normal dispatch happens for
+            # it at all, regardless of mode.
+            if joystick_bindings.offer_capture(btn):
+                continue
 
-            # Force Price Game combo (Btn5+Btn6): suppress each button's own
-            # single-press action (tempo tap / bank-sourced Price Game)
-            # while the OTHER combo button is already held -- otherwise
-            # forming the combo would also fire an unwanted tempo
-            # recalculation and, worse, an unwanted bank Price Game round
-            # (or intermission-blocked message) from the stray individual
-            # Btn6 press, before the hold timer even reaches
-            # FORCE_PRICE_GAME_COMBO_HOLD_SECONDS.
-            # _process_force_price_game_combo() (polled every frame, not
-            # event-driven) owns the actual hold-to-fire logic; this just
-            # keeps the two buttons' normal taps out of the way while it's
-            # forming. Same shape as the Space Invaders combo check above.
-            if state.mode == state.MODE_DJ and btn in FORCE_PRICE_GAME_COMBO_BUTTONS:
-                other_btn = (FORCE_PRICE_GAME_COMBO_BUTTONS[1] if btn == FORCE_PRICE_GAME_COMBO_BUTTONS[0]
-                             else FORCE_PRICE_GAME_COMBO_BUTTONS[0])
-                if _joystick_button_held(other_btn):
-                    continue
+            # Combo suppression (generalized 2026-08-20 -- see
+            # _button_is_forming_a_combo()'s docstring): if btn is part of
+            # a combo (applicable to this mode) whose other buttons are
+            # ALSO already held, this press is forming that combo -- don't
+            # ALSO fire its own single-press action on top.
+            # _process_combos() (polled every frame, not event-driven)
+            # owns the actual hold-to-fire logic.
+            if _button_is_forming_a_combo(btn):
+                continue
 
             if state.mode == state.MODE_DJ:
-                if btn == 0:  # Physical Btn1: armed here, resolved to a tap
-                    # (Auto-Announce toggle) or a hold (status overlay) on
-                    # release -- see _handle_btn1_release()/_process_btn1_hold().
+                action = joystick_bindings.action_for_button("DJ", btn)
+                if action == "dj_auto_announce":
+                    # Armed here, resolved to a tap (Auto-Announce toggle)
+                    # or a hold (status overlay) on release -- see
+                    # _handle_btn1_release()/_process_btn1_hold().
                     _btn1_down_at = time.time()
                     _btn1_hold_fired = False
-                elif btn == 1:  # Physical Btn2: normal trivia gate (moved
-                    # here from Btn6, 2026-08-12 -- Btn6 is now a dedicated
-                    # Price Game trigger, see handle_quiz_gate_button()).
-                    # GAME_MODE still uses Btn2 to select Answer 2.
-                    if _debounced(btn, QUIZ_GATE_DEBOUNCE_SECONDS):
-                        handle_normal_trivia_button()
-                elif btn == 2:  # Physical Btn3: plain press, no tap/hold split --
-                    # toggles the swear tag on the last-played announcement
-                    # and lights panel 4 for as long as the button stays down.
+                elif action == "dj_swear_toggle":
+                    # Plain press, no tap/hold split -- toggles the swear
+                    # tag on the last-played announcement; JOYBUTTONUP
+                    # below clears state.btn3_swear_toggle_active once
+                    # this same physical button releases.
                     toggle_last_announcement_swear()
-                elif btn == 3:  # Physical Btn4: no-op in DJ mode (2026-08-12
-                    # -- too easy to bump by accident, and Auto-DJ is almost
-                    # never turned off in practice). auto_dj_engine.
-                    # toggle_auto_dj() itself is untouched -- still reachable
-                    # from the web remote's Auto-DJ control (web/
-                    # remote_server.py) -- this only removes the physical-
-                    # button trigger. GAME_MODE still uses Btn4 to select
-                    # Answer 1.
-                    pass
-                elif btn == 5:  # Physical Btn5 (L shoulder): tempo tap
-                    if _debounced(btn):
-                        handle_tempo_tap()
-                elif btn == 6:  # Physical Btn6 (R shoulder): force Price Game (local bank)
-                    if _debounced(btn, QUIZ_GATE_DEBOUNCE_SECONDS):
-                        handle_quiz_gate_button()
-                elif btn == 9:  # Physical Btn7 (Select): color cycle
-                    if _debounced(btn):
-                        handle_color_cycle()
-                elif btn == 10:  # Physical Btn8 (Start): theme cycle
-                    if _debounced(btn):
-                        handle_theme_cycle()
+                elif action is not None:
+                    _dispatch_action(action)
+                # else: unbound button in DJ mode -- silent no-op (matches
+                # the original Btn4 no-op, now generalized to any
+                # currently-unassigned button).
 
             elif state.mode == state.MODE_GAME:
-                if btn == 0:        # Physical Btn1: select Answer 4 (index 3)
-                    select_quiz_answer(3)
-                elif btn == 1:      # Physical Btn2: select Answer 2 (index 1)
-                    select_quiz_answer(1)
-                elif btn == 2:      # Physical Btn3: select Answer 3 (index 2) -- was unmapped
-                    select_quiz_answer(2)
-                elif btn == 3:      # Physical Btn4: select Answer 1 (index 0)
-                    select_quiz_answer(0)
-                elif btn == 5:      # Physical Btn5 (L shoulder): GAME_MODE-only swap -> clear the current selection
-                    if _debounced(btn):
-                        clear_quiz_selection()
-                elif btn == 6:      # Physical Btn6 (R shoulder): GAME_MODE-only swap -> grade the current selection
-                    if _debounced(btn):
-                        grade_quiz_selection()
-                elif btn == 9:      # Physical Btn7 (Select): EARLY EXIT -> abort back to DJ_MODE
-                    if _debounced(btn):
-                        abort_game_mode_early()
-                elif btn == 10:     # Physical Btn8 (Start): also EARLY EXIT (2026-08-09 --
-                    if _debounced(btn):  # same as Btn7, just a second way out)
-                        abort_game_mode_early()
+                action = joystick_bindings.action_for_button("GAME", btn)
+                if action is not None:
+                    _dispatch_action(action)
 
             elif state.mode == state.MODE_SPACE_INVADERS:
-                if btn in SI_EXIT_BUTTONS:  # Physical Btn7 or Btn8: IMMEDIATE exit
+                si_exit_buttons = joystick_bindings.buttons_for(["si_exit_1", "si_exit_2"])
+                if btn in si_exit_buttons:  # IMMEDIATE exit
                     if _debounced("si_exit"):
                         space_invaders_engine.exit_space_invaders()
                 else:                        # Any other button: fire
                     space_invaders_engine.fire()
 
+            elif state.mode == state.MODE_SIMON:
+                action = joystick_bindings.action_for_button("SIMON", btn)
+                if action is not None:
+                    _dispatch_action(action)
+
         elif event.type == pygame.JOYBUTTONUP:
             if state.mode == state.MODE_DJ:
-                if event.button == 0:
+                if event.button == joystick_bindings.button_for("dj_auto_announce"):
                     _handle_btn1_release()
-                elif event.button == 2:
+                elif event.button == joystick_bindings.button_for("dj_swear_toggle"):
                     state.btn3_swear_toggle_active = False
 
         elif event.type == pygame.MOUSEBUTTONDOWN:
@@ -1384,8 +1478,8 @@ def process_events():
     _process_volume_hold()
     _process_space_invaders_movement()
     _process_btn1_hold()
-    _process_shutdown_combo()
-    _process_force_price_game_combo()
+    _process_cpu_temp_overlay()
+    _process_combos()
 
     if state.shutdown_requested:
         return False

@@ -133,9 +133,22 @@ def _run_import(url):
     try:
         ffmpeg_path = imageio_ffmpeg.get_ffmpeg_exe()
 
+        # 2026-08-19: yt-dlp's default extraction path goes through
+        # YouTube's "web" player client, which is the one most aggressively
+        # gated behind PO Token bot-detection right now -- that's the
+        # actual source of most 403s here, not a stale yt-dlp build (this
+        # one already tracks latest). The android/ios clients' extraction
+        # path doesn't require a PO Token, so preferring them dodges the
+        # 403 far more reliably. Applied to both the probe and the real
+        # download so a URL that fails to even fetch info doesn't
+        # misleadingly look like a different problem than the download
+        # phase hitting the same wall.
+        _YTDLP_EXTRACTOR_ARGS = {"youtube": {"player_client": ["android", "ios"]}}
+
         # Phase 1: info only, no download -- validates before committing to
         # any bandwidth.
-        probe_opts = {"quiet": True, "no_warnings": True, "skip_download": True}
+        probe_opts = {"quiet": True, "no_warnings": True, "skip_download": True,
+                      "extractor_args": _YTDLP_EXTRACTOR_ARGS}
         with yt_dlp.YoutubeDL(probe_opts) as ydl:
             info = ydl.extract_info(url, download=False)
 
@@ -189,6 +202,7 @@ def _run_import(url):
             "format": "bestaudio/best",
             "outtmpl": os.path.join(temp_dir, "%(id)s.%(ext)s"),
             "ffmpeg_location": ffmpeg_path,
+            "extractor_args": _YTDLP_EXTRACTOR_ARGS,
             "postprocessors": [{
                 "key": "FFmpegExtractAudio",
                 "preferredcodec": "mp3",

@@ -662,6 +662,9 @@ def update(now):
     """Per-frame DMX renderer, called once per frame from main.py. Owns
     the entire 176-channel frame and calls dmx.render() itself, replacing
     the old event-driven closures that used to live in inputs/gamepad.py."""
+    dmx.maybe_reconnect()
+    dmx.poll_pulses()
+
     if state.show_phase != "live":
         # Highest-priority override, ahead of even Westminster -- Setup/
         # Countdown/Intro/Outro fully own the rig. "live" falls straight

@@ -6,6 +6,7 @@ class State:
     MODE_DJ = 0
     MODE_GAME = 1
     MODE_SPACE_INVADERS = 2
+    MODE_SIMON = 3
 
     def __init__(self):
         self.mode = self.MODE_DJ
@@ -354,6 +355,14 @@ class State:
         self.btn1_hold_overlay_active = False
         self.btn1_hold_overlay_until = 0.0
 
+        # --- CPU temp overlay (2026-08-20, panel 5) --- True for as long
+        # as the joystick button/combo configured on the Joy Assign page
+        # (drivers/joystick_bindings.py's CPU-temp trigger) is held --
+        # no persistence window like Btn1's, hides the instant it's
+        # released. Set by inputs/gamepad.py's per-frame hardware poll,
+        # read by graphics/matrix_canvas.py's overlay draw.
+        self.cpu_temp_overlay_active = False
+
         # --- Btn3 hold: swear-tag toggle confirmation (panel 4) ---
         # True for as long as Btn3 is physically held after a press flips
         # the last-played announcement's swear tag; hides immediately on
@@ -376,6 +385,28 @@ class State:
         self.si_last_fire_at = 0.0
         self.si_score = 0
         self.si_wave = 1
+
+        # --- Simon memory mini-game --- reachable via the joystick's secret
+        # combo Easter egg (config.SIMON_ENTRY_BUTTONS, DJ mode) or the
+        # physical arcade buttons (config.SIMON_HW_BUTTON_PINS, any mode
+        # while a live show is running -- see drivers/simon_hardware.py).
+        # Entered/exited/simulated by drivers/simon_engine.py, rendered by
+        # graphics/matrix_canvas.py::_render_simon.
+        self.simon_sequence = []        # [0-3, ...] full sequence so far, oldest first
+        self.simon_round = 1
+        self.simon_phase = "playback"   # "intro" | "get_ready" | "playback" | "input" | "fail" | "score_review"
+        self.simon_playback_index = 0
+        self.simon_playback_step_started_at = 0.0
+        self.simon_input_index = 0
+        self.simon_active_pad = None    # 0-3 currently lit pad, or None
+        self.simon_active_pad_until = 0.0
+        self.simon_active_pad_held = False  # True while a physical button is held (release-driven, ignores simon_active_pad_until) -- see drivers/simon_engine.py's press()/release()
+        self.simon_fail_started_at = 0.0
+        self.simon_source = "joystick"  # "joystick" | "hardware" -- governs what happens after the loss flash (restart vs. return to DJ)
+        self.simon_intro_started_at = 0.0
+        self.simon_last_input_at = 0.0  # reset on entering "input" and on every press -- drives the 20s no-input timeout
+        self.simon_get_ready_started_at = 0.0
+        self.simon_score_review_started_at = 0.0
 
         # --- Web remote virtual D-pad (no-hardware-gamepad fallback) ---
         # Mirrors a physical held direction: inputs/gamepad.py's
@@ -420,7 +451,7 @@ class State:
         # scripted open -> live show -> scripted close. Sits ABOVE self.mode
         # (DJ/GAME/SPACE_INVADERS), which keeps working unmodified during
         # "live" -- this only owns the bookends. See drivers/show_engine.py.
-        self.show_phase = "setup"  # "setup" | "countdown" | "intro" | "live" | "outro"
+        self.show_phase = "setup"  # "setup" | "countdown" | "dark" | "intro" | "live" | "outro"
         self.show_phase_started_at = 0.0
         # Epoch timestamp for a scheduled "Start Game at 7PM" -- 0 means no
         # scheduled start is armed (operator used "Start Game" immediately,
@@ -435,6 +466,22 @@ class State:
         # same timestamp so they can never drift out of sync with each other.
         self.show_outro_message = ""
         self.show_outro_music_ends_at = 0.0
+
+        # --- Unattended-autoplay fallback (2026-08-19) ---
+        # 0.0 sentinel -- lazily set the first frame show_phase == "setup"
+        # is observed (drivers/show_engine.py::_update_unattended_autoplay()),
+        # same pattern as drivers/idle_cycle_engine.py's phase clock, so it
+        # never computes elapsed time against the Unix epoch. Reset to 0.0
+        # any time an operator (physical rig or web remote) does something,
+        # or the moment show_phase leaves "setup".
+        self.last_operator_interaction_at = 0.0
+        # True once SHOW_UNATTENDED_AUTOPLAY_TIMEOUT_SECONDS of Setup-page
+        # inactivity auto-started the show -- lets the host tell a real
+        # "Start Game" apart from the timeout fallback and reset back to
+        # Setup instead of it running through a full outro as if someone
+        # had actually hosted it.
+        self.show_unattended_autoplay = False
+        self.show_unattended_autoplay_started_at = 0.0
 
         # --- Music-matching filters (Setup page checkboxes) -- wires the
         # music_metadata_engine tags (previously unwired, "Phase 3") into
@@ -479,6 +526,16 @@ class State:
         # blackout, driver stop) instead of each trigger duplicating it.
         self.shutdown_requested = False
         self.shutdown_reason = ""
+
+        # Set True only by the admin "SHUT DOWN PI" path (web remote or the
+        # exterior GPIO button, once wired -- see pi_deploy/README.md) --
+        # tells main.py's teardown block to actually power off the Pi
+        # (`sudo shutdown -h now`) after the ordinary app teardown above
+        # finishes, instead of just exiting the Python process. Left False
+        # for the other three shutdown_requested triggers and for SIGTERM
+        # (an OS-initiated shutdown is already in progress in that case --
+        # the app just needs to exit cleanly, not request a second one).
+        self.poweroff_after_exit = False
 
     def set_status(self, msg, duration=2.0):
         self.status_msg = msg

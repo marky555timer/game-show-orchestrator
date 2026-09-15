@@ -1,9 +1,5 @@
-#include <WiFi.h>
-#include <WiFiUdp.h>
-
 #include "config.h"
 #include "panel_output.h"
-#include "wifi_field_setup.h"
 
 // !! EXTERNAL DEPENDENCY WARNING (2026-08-10) !!
 // This sketch requires a one-line patch to the FthnLabsDisplay library,
@@ -29,26 +25,27 @@
 // timerAlarmWrite/timerAlarmEnable) that 3.x removed.
 
 // Frame packet format (sent by the orchestrator's led_bridge.py, one per
-// render tick, over either transport below): 1 magic byte + 6 panels x 64
-// bytes. Each panel is packed 1bpp, row-major, MSB-first, 4 bytes/row
-// (32px wide) x 16 rows -- in chain-letter order A-F, i.e. the same
-// logical top-left origins panel_output.cpp's kQuadMap uses as `src`.
+// render tick, over USB serial): 1 magic byte + 6 panels x 64 bytes. Each
+// panel is packed 1bpp, row-major, MSB-first, 4 bytes/row (32px wide) x 16
+// rows -- in chain-letter order A-F, i.e. the same logical top-left
+// origins panel_output.cpp's kQuadMap uses as `src`.
 //
-// Two transports feed the same frame format: WiFi/UDP broadcast (original
-// path, works from anywhere on the venue LAN) and USB serial (preferred
-// by led_bridge.py when a cable is present -- no WiFi hop, so it dodges
-// the RF-jitter stutter the UDP path inherits from the venue network).
-// Whichever arrives is applied; there's no arbitration beyond "freshest
-// frame wins".
+// USB serial only (2026-08-19: WiFi/UDP fallback + the in-field WiFi setup
+// AP removed entirely) -- this rig and the Pi driving it are permanently
+// cabled together, so there's no scenario left where a wireless transport
+// is actually needed, and running the WiFi stack alongside serial was the
+// prime suspect for a recurring multi-second stall in this sketch's
+// loop() (WiFi connect/retry churn blocking everything else, including
+// the heartbeat write below, for seconds at a time). See wifi_field_setup.*
+// for the removed captive-portal code, kept on disk but no longer called
+// from anywhere in this sketch.
 //
-// A trailing XOR checksum over the panel payload lets both transports
-// reject a corrupted/misaligned frame (treated as "no frame this tick")
-// rather than drawing garbage. It matters far more for serial than UDP:
-// a UDP datagram is always whole-or-absent, whereas the serial byte
-// stream has no framing of its own, so one byte lost to an RX overflow
-// shifts the magic-byte resync onto the wrong offset and every window
-// after it decodes as noise until something resyncs.
-#define UDP_PORT 6767
+// A trailing XOR checksum over the panel payload lets a corrupted/
+// misaligned frame be treated as "no frame this tick" rather than drawn
+// as garbage -- the serial byte stream has no framing of its own, so one
+// byte lost to an RX overflow shifts the magic-byte resync onto the wrong
+// offset and every window after it decodes as noise until something
+// resyncs.
 #define FRAME_MAGIC 0xA5
 #define FRAME_PANEL_BYTES 64 // 32x16px / 8 bits per byte
 #define FRAME_PAYLOAD_SIZE (6 * FRAME_PANEL_BYTES)
@@ -61,8 +58,8 @@
 #define SERIAL_BAUD 921600
 
 // How long to keep showing the last received frame after the stream goes
-// quiet (WiFi still up, just no packets -- e.g. the orchestrator app isn't
-// running) before going back to the LOADING screen.
+// quiet (e.g. the orchestrator app isn't running) before going back to the
+// LOADING screen.
 #define FRAME_TIMEOUT_MS 2000
 
 // A single distinct byte written back to the Pi every HEARTBEAT_INTERVAL_MS
@@ -83,11 +80,8 @@ static const uint16_t kQH = PANEL_HEIGHT / 3; // 16
 static const uint16_t kPanelSrcX[6] = { 0, kQW, 0, kQW, 0, kQW };
 static const uint16_t kPanelSrcY[6] = { 0, 0, kQH, kQH, 2 * kQH, 2 * kQH };
 
-static WiFiUDP udp;
-static bool udpStarted = false;
 static bool everLive = false;
 static unsigned long lastFrameMs = 0;
-static uint8_t frameBuf[FRAME_SIZE];
 
 // Serial frame reception state. Unlike a UDP packet, serial is just a
 // continuous byte stream with no built-in framing, so we resync on the
@@ -198,8 +192,7 @@ static bool serialFrameLoop() {
 
 // Renders a short two-line status message + cycling "still alive" dots
 // through the same verified blitToPanels() pipeline as real content.
-// Used for both LOADING (waiting on WiFi/frames) and SETUP mode (WiFi
-// field setup fallback active).
+// Shown while waiting on the first (or next) serial frame from led_bridge.py.
 static void showStatus(const char *line1, const char *line2, unsigned long nowMs) {
   canvas.fillScreen(0);
   canvas.setTextSize(2);
@@ -226,7 +219,8 @@ void setup() {
   // (FRAME_SIZE = 386), so a single render (~19ms, far longer than the
   // ~4ms a frame takes to arrive at this baud) would overflow it and drop
   // bytes mid-frame. 4KB gives roughly ten frames of slack, enough to ride
-  // out a render plus any WiFi-stack hiccup. Must be set before begin().
+  // out a render plus any brief stall elsewhere in loop(). Must be set
+  // before begin().
   Serial.setRxBufferSize(4096);
   Serial.begin(SERIAL_BAUD);
   delay(1000);
@@ -242,8 +236,6 @@ void setup() {
   Serial.println("[BOOT] display.begin() done.");
   display.setBrightness(BRIGHTNESS);
   showStatus("LOAD", "ING", millis());
-
-  wifiFieldSetupBegin();
 }
 
 void loop() {
@@ -260,48 +252,15 @@ void loop() {
     lastHeartbeatMs = nowHb;
   }
 
-  wifiFieldSetupLoop();
-  WifiFieldState wifiState = wifiFieldSetupState();
-  bool wifiUp = (wifiState == WifiFieldState::CONNECTED);
-
-  if (wifiUp && !udpStarted) {
-    udp.begin(UDP_PORT);
-    udpStarted = true;
-  } else if (!wifiUp && udpStarted) {
-    udp.stop();
-    udpStarted = false;
-  }
-
-  // Serial checked first: it's the preferred transport when a USB cable
-  // is present, and led_bridge.py only sends one or the other per frame
-  // (never both), so there's no real contention in practice.
   bool gotFrame = serialFrameLoop();
-
-  if (!gotFrame && udpStarted) {
-    int packetSize = udp.parsePacket();
-    if (packetSize == FRAME_SIZE) {
-      udp.read(frameBuf, FRAME_SIZE);
-      if (frameBuf[0] == FRAME_MAGIC && frameBuf[FRAME_SIZE - 1] == frameChecksum(frameBuf)) {
-        applyFrame(frameBuf);
-        blitToPanels();
-        display.display();
-        everLive = true;
-        lastFrameMs = millis();
-        gotFrame = true;
-      }
-    } else if (packetSize > 0) {
-      udp.flush(); // discard anything malformed/unexpected size
-    }
-  }
 
   if (gotFrame) {
     return;
   }
 
   if (everLive && millis() - lastFrameMs <= FRAME_TIMEOUT_MS) {
-    // Was live very recently (over either transport) -- ride out a brief
-    // hiccup silently rather than flashing back to LOADING for a dropped
-    // packet or a gap between serial bytes.
+    // Was live very recently -- ride out a brief hiccup silently rather
+    // than flashing back to LOADING for a gap between serial bytes.
     return;
   }
 
@@ -316,11 +275,7 @@ void loop() {
   static unsigned long lastStatusRenderMs = 0;
   unsigned long now = millis();
   if (now - lastStatusRenderMs >= 200) {
-    if (wifiState == WifiFieldState::AP_SETUP) {
-      showStatus("SETUP", "MODE", now);
-    } else {
-      showStatus("LOAD", "ING", now);
-    }
+    showStatus("LOAD", "ING", now);
     lastStatusRenderMs = now;
   }
 }

@@ -1,0 +1,174 @@
+{
+  "bindings": {
+    "dj_tempo_tap": 5,
+    "dj_color_cycle": 9,
+    "dj_theme_cycle": 10,
+    "dj_trivia_pull": null,
+    "dj_force_price_game": null,
+    "dj_swear_toggle": 2,
+    "dj_auto_announce": 0,
+    "game_select_1": 3,
+    "game_select_2": 1,
+    "game_select_3": 2,
+    "game_select_4": 0,
+    "game_clear": 5,
+    "game_grade": 6,
+    "game_exit_1": 9,
+    "game_exit_2": 10,
+    "si_exit_1": 9,
+    "si_exit_2": 10,
+    "simon_select_1": 0,
+    "simon_select_2": 1,
+    "simon_select_3": 2,
+    "simon_select_4": 3,
+    "simon_exit_1": 9,
+    "simon_exit_2": 10
+  },
+  "combos": [
+    {
+      "id": "combo_space_invaders_entry",
+      "label": "Space Invaders Entry",
+      "buttons": [
+        0,
+        2
+      ],
+      "hold_seconds": 0.05,
+      "fires": "__space_invaders_entry__",
+      "modes": [
+        "DJ"
+      ],
+      "built_in": true
+    },
+    {
+      "id": "combo_force_price_game",
+      "label": "Force Decade Price Game",
+      "buttons": [
+        5,
+        6
+      ],
+      "hold_seconds": 2.0,
+      "fires": "__force_price_game__",
+      "modes": [
+        "DJ"
+      ],
+      "built_in": true
+    },
+    {
+      "id": "combo_shutdown",
+      "label": "Shutdown",
+      "buttons": [
+        5,
+        1
+      ],
+      "hold_seconds": 5.0,
+      "fires": "__shutdown__",
+      "modes": [
+        "any"
+      ],
+      "built_in": true
+    },
+    {
+      "id": "combo_simon_entry",
+      "label": "Simon Entry",
+      "buttons": [
+        0,
+        1
+      ],
+      "hold_seconds": 0.05,
+      "fires": "__simon_entry__",
+      "modes": [
+        "DJ"
+      ],
+      "built_in": true
+    }
+  ],
+  "active_profile": "Green",
+  "profiles": {
+    "Green": {
+      "bindings": {
+        "dj_tempo_tap": 5,
+        "dj_color_cycle": 9,
+        "dj_theme_cycle": 10,
+        "dj_trivia_pull": 1,
+        "dj_force_price_game": null,
+        "dj_swear_toggle": 2,
+        "dj_auto_announce": 0,
+        "game_select_1": 3,
+        "game_select_2": 1,
+        "game_select_3": 2,
+        "game_select_4": 0,
+        "game_clear": 5,
+        "game_grade": 6,
+        "game_exit_1": 9,
+        "game_exit_2": 10,
+        "si_exit_1": 9,
+        "si_exit_2": 10,
+        "simon_select_1": 0,
+        "simon_select_2": 1,
+        "simon_select_3": 2,
+        "simon_select_4": 3,
+        "simon_exit_1": 9,
+        "simon_exit_2": 10
+      },
+      "combos": [
+        {
+          "id": "combo_space_invaders_entry",
+          "label": "Space Invaders Entry",
+          "buttons": [
+            0,
+            2
+          ],
+          "hold_seconds": 0.05,
+          "fires": "__space_invaders_entry__",
+          "modes": [
+            "DJ"
+          ],
+          "built_in": true
+        },
+        {
+          "id": "combo_force_price_game",
+          "label": "Force Decade Price Game",
+          "buttons": [
+            5,
+            6
+          ],
+          "hold_seconds": 2.0,
+          "fires": "__force_price_game__",
+          "modes": [
+            "DJ"
+          ],
+          "built_in": true
+        },
+        {
+          "id": "combo_shutdown",
+          "label": "Shutdown",
+          "buttons": [
+            5,
+            1
+          ],
+          "hold_seconds": 5.0,
+          "fires": "__shutdown__",
+          "modes": [
+            "any"
+          ],
+          "built_in": true
+        },
+        {
+          "id": "combo_simon_entry",
+          "label": "Simon Entry",
+          "buttons": [
+            0,
+            1
+          ],
+          "hold_seconds": 0.05,
+          "fires": "__simon_entry__",
+          "modes": [
+            "DJ"
+          ],
+          "built_in": true
+        }
+      ]
+    }
+  },
+  "cpu_temp_trigger": []
+}

@@ -655,6 +655,18 @@ class TrackQuestionEngine:
         with self._cache_lock:
             return len(self._cache.get(key, []))
 
+    def get_cached_questions(self, title, artist):
+        """Full set of cached questions for this track (asked or not),
+        for play.html's "waiting for next song" recap -- unlike
+        state.track_question_queue, which only holds what's left to ask,
+        this is the complete on-disk set so a player who joined mid-song
+        still gets every Q&A already generated for it. Correct answers are
+        safe to hand out here: the round(s) this cache backs are always
+        either already graded or not yet armed, never live."""
+        key = _sanitize_track_key(title, artist)
+        with self._cache_lock:
+            return [dict(q) for q in self._cache.get(key, [])]
+
     # ------------------------------------------------------------
     # State sync helpers -- these drive the DJ-mode panel3 AI-pipeline
     # status indicator (star/cat/coin) and the optional top-page factoid

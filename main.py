@@ -8,15 +8,22 @@ import os
 # pygame.midi.init(), so this has to come before even that.
 os.environ["SDL_JOYSTICK_ALLOW_BACKGROUND_EVENTS"] = "1"
 
+import signal
+import subprocess
 import sys
 import time
 import pygame
-from config import ENTTEC_PORT
+from config import MAIN_LOOP_STALL_WARN_SECONDS
 from state import state
 from drivers.midi_driver import midi_status_str, set_dj_volume
 from drivers.dmx_driver import dmx
 from drivers import lighting_engine
 from drivers import deck_orchestrator
+from drivers import power_monitor
+from drivers import wled_engine
+from drivers import simon_hardware
+from drivers import accent_engine
+from drivers import relay_engine
 from drivers.factoid_engine import save_track_cache
 from graphics.matrix_canvas import update_matrix_canvas, render_led_grid
 from graphics import secondary_canvas
@@ -26,13 +33,32 @@ from web import remote_server
 from web import qr_popup
 from drivers import tunnel_engine
 
+def _handle_sigterm(signum, frame):
+    # Fires when the OS itself is shutting down (systemd stopping the
+    # session on poweroff -- including the exterior GPIO shutdown button,
+    # once wired via dtoverlay=gpio-shutdown; see pi_deploy/README.md) and
+    # sends this process SIGTERM. Just flips the same flag the web
+    # remote/gamepad-combo/overlay-button triggers use so the loop's
+    # regular teardown block (cache save, DMX blackout, driver stop) still
+    # runs before the process dies, instead of being killed cold mid-frame.
+    # Deliberately does NOT set state.poweroff_after_exit -- the OS is
+    # already in the middle of shutting down in this case, so the app just
+    # needs to exit cleanly, not request a second poweroff.
+    if not state.shutdown_requested:
+        state.shutdown_reason = "SIGTERM (OS shutdown)"
+        state.shutdown_requested = True
+
 def main():
+    signal.signal(signal.SIGTERM, _handle_sigterm)
     clock = pygame.time.Clock()
     running = True
     qr_popup.init()
     secondary_canvas.init()
     joypad_manual.write_manual()
     tunnel_engine.start()
+    simon_hardware.init()
+    accent_engine.init()
+    relay_engine.init()
 
     # Sync the DJ engine's internal volume trackers (audio/dj_engine.py's
     # _master_volume, midi_driver's own _current_fader_pct) to state.music_volume
@@ -54,7 +80,8 @@ def main():
     print("\n==========================================")
     print(" 6-PANEL LED MATRIX & NATIVE DJ ORCHESTRATOR ")
     print("==========================================")
-    print(f"  Enttec Port : {ENTTEC_PORT}")
+    print(f"  Enttec Port : {dmx.port or 'not found yet (will keep retrying)'}")
+    print(f"  Relay Board : {relay_engine.port() or 'not found yet (will keep retrying)'}")
     print(f"  MIDI Status : {midi_status_str}")
     print(f"  Web Remote  : {remote_server.get_remote_url()}")
     print("  [TAB]            : Manual DJ <-> QUIZ mode override")
@@ -98,19 +125,61 @@ def main():
     print("==========================================\n")
 
     while running:
+        # Loop-stall diagnostic (2026-08-19, config.MAIN_LOOP_STALL_WARN_SECONDS):
+        # times each stage below and prints the worst offender the instant
+        # one iteration runs noticeably over its 25ms (40fps) budget --
+        # see config.py's comment for why (chasing the recurring ~4s
+        # LED-heartbeat/DMX-ready flapping). clock.tick() itself is timed
+        # too, but only for completeness -- it's deliberate frame-pacing
+        # sleep, not app work, so it's never actually the culprit.
+        _stage_t0 = time.perf_counter()
         clock.tick(40)
+        _stage_t1 = time.perf_counter()
 
         # 1. Process Inputs & Game Logic
         running = process_events()
+        _stage_t2 = time.perf_counter()
         qr_popup.pump()
+        _stage_t3 = time.perf_counter()
+        power_monitor.poll(time.time())
+        relay_engine.poll()
+        _stage_t4 = time.perf_counter()
 
         # 2. Render the full 176-channel DMX frame (DJ uplighting themes,
         # game-mode chase, Fixture 1 win/loss/reset)
         lighting_engine.update(time.time())
+        _stage_t5 = time.perf_counter()
 
         # 3. Render Canvas & LED Grid
         update_matrix_canvas()
+        _stage_t6 = time.perf_counter()
         render_led_grid()
+        _stage_t7 = time.perf_counter()
+
+        # 4. Compute + push the current frame to the panel-outline WLED
+        # strip (see drivers/wled_engine.py) -- same "fire and forget every
+        # frame" shape as dmx.render() above, just over UDP/DDP instead of
+        # serial.
+        wled_engine.maybe_reresolve()
+        wled_engine.update(time.time())
+        _stage_t8 = time.perf_counter()
+
+        _stage_total = _stage_t8 - _stage_t0
+        if _stage_total >= MAIN_LOOP_STALL_WARN_SECONDS:
+            _stages = [
+                ("clock.tick", _stage_t1 - _stage_t0),
+                ("process_events", _stage_t2 - _stage_t1),
+                ("qr_popup.pump", _stage_t3 - _stage_t2),
+                ("power_monitor.poll+relay_engine.poll", _stage_t4 - _stage_t3),
+                ("lighting_engine.update", _stage_t5 - _stage_t4),
+                ("update_matrix_canvas", _stage_t6 - _stage_t5),
+                ("render_led_grid", _stage_t7 - _stage_t6),
+                ("wled_engine.render", _stage_t8 - _stage_t7),
+            ]
+            _worst_name, _worst_s = max(_stages, key=lambda s: s[1])
+            print(f"[LOOP STALL] frame took {_stage_total * 1000:.0f}ms (budget 25ms) -- "
+                  f"worst stage: {_worst_name} ({_worst_s * 1000:.0f}ms). "
+                  f"All: {', '.join(f'{n}={s * 1000:.0f}ms' for n, s in _stages)}")
 
     # Shutdown -- shared graceful teardown regardless of which of the three
     # triggers ended the loop (pygame QUIT/ALT+F4, the web remote's
@@ -125,7 +194,29 @@ def main():
     deck_orchestrator.dj_engine.stop()
     deck_orchestrator._decode_process.stop()
     dmx.blackout()
+    simon_hardware.cleanup()
+    accent_engine.cleanup()
+    relay_engine.cleanup()
     pygame.quit()
+
+    if state.poweroff_after_exit:
+        # Admin-requested full Pi poweroff (web remote "SHUT DOWN PI"), as
+        # opposed to the ordinary app-only triggers above. Requires the
+        # passwordless sudoers entry for this exact command -- see
+        # pi_deploy/README.md. No-op (with a log line, never a crash) on
+        # anything that isn't Linux, same defensive pattern as
+        # power_monitor.py, since this path is reachable from the Windows
+        # dev machine too if the button is ever clicked there.
+        if sys.platform.startswith("linux"):
+            print("[SHUTDOWN] Admin poweroff requested -- shutting down the Pi now.")
+            try:
+                subprocess.run(["sudo", "shutdown", "-h", "now"], timeout=10)
+            except Exception as e:
+                print(f"[SHUTDOWN] Could not power off the Pi ({e}) -- "
+                      f"is the passwordless sudoers entry set up? See pi_deploy/README.md.")
+        else:
+            print("[SHUTDOWN] Admin poweroff requested, but this isn't Linux -- skipping.")
+
     sys.exit()
 
 if __name__ == "__main__":

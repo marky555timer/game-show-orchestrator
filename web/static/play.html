@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Quizcade Music Trivia</title>
+<title>Triviacade Music Trivia</title>
 <style>
 @font-face {
   font-family: 'Michroma';
@@ -74,6 +74,12 @@ h1 span { color: var(--signal-red); }
   color: var(--ink-dim); margin: 0 0 18px;
 }
 .subtitle i { width: 4px; height: 4px; border-radius: 50%; background: var(--signal-cyan); box-shadow: 0 0 5px var(--signal-cyan); }
+.listen-row {
+  display: flex; align-items: center; justify-content: center; gap: 14px;
+  font-size: 1rem; font-weight: 600; color: var(--ink); margin: 18px auto 0; cursor: pointer;
+  max-width: 380px;
+}
+.listen-row input[type=checkbox] { width: 40px; height: 40px; accent-color: var(--signal-cyan); flex-shrink: 0; }
 
 section {
   background: var(--surface);
@@ -124,6 +130,16 @@ button { cursor: pointer; font-family: var(--font-body); }
 .leaderboard-row.me .rank { color: var(--signal-red); }
 .leaderboard-row .lb-init { flex: 1; }
 .leaderboard-row .lb-score { font-variant-numeric: tabular-nums; }
+
+.now-playing { text-align: left; margin-top: 18px; }
+.now-playing-label { font-family: var(--font-display); font-size: .68rem; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-dim); border-bottom: 1px solid var(--hairline); padding-bottom: 8px; margin-bottom: 8px; }
+.now-playing-track { font-size: 1rem; font-weight: 700; color: var(--ink); }
+.now-playing-artist { font-size: .85rem; color: var(--ink-dim); margin-bottom: 10px; }
+.trivia-card { padding: 8px 0; border-bottom: 1px solid var(--hairline); }
+.trivia-card:last-child { border-bottom: none; }
+.trivia-q { font-size: .88rem; font-weight: 600; margin-bottom: 4px; text-wrap: balance; }
+.trivia-a { font-size: .82rem; color: var(--ink-dim); }
+.trivia-a b { color: var(--signal-green); font-weight: 700; }
 
 .question { font-size: 1.05rem; margin-bottom: 14px; text-wrap: balance; }
 .playing-as { font-size: .82rem; color: var(--ink-dim); margin-bottom: 4px; display: flex; align-items: center; justify-content: center; gap: 8px; }
@@ -246,13 +262,8 @@ button { cursor: pointer; font-family: var(--font-body); }
 </style>
 </head>
 <body>
-  <h1>QUIZ<span>CADE</span></h1>
+  <h1>TRIVIA<span>CADE</span></h1>
   <div class="subtitle">MUSIC <i></i> TRIVIA</div>
-
-  <section id="qr-block">
-    <img id="qr-img" src="/api/quiz/qr" alt="QR code">
-    <p>Scan to invite others -- same page, same game.</p>
-  </section>
 
   <section id="signup-section">
     <div class="playing-as">Enter your initials to join</div>
@@ -287,6 +298,7 @@ button { cursor: pointer; font-family: var(--font-body); }
     <div id="waiting-block" class="status">
       <div class="waiting-title" id="waiting-title">Waiting for the next question&hellip;</div>
       <div id="waiting-leaderboard" class="leaderboard"></div>
+      <div id="now-playing-trivia" class="now-playing hidden"></div>
     </div>
 
     <div id="question-block" class="hidden">
@@ -299,6 +311,17 @@ button { cursor: pointer; font-family: var(--font-body); }
       <div class="status hidden" id="locked-status">Locked in! Waiting for the round to end&hellip;</div>
     </div>
   </section>
+
+  <section id="qr-block">
+    <img id="qr-img" src="/api/quiz/qr" alt="QR code">
+    <p>Scan to invite others -- same page, same game.</p>
+  </section>
+
+  <label class="listen-row" for="listen-toggle">
+    <input type="checkbox" id="listen-toggle">
+    <span>&#128266; Listen to the show</span>
+  </label>
+  <audio id="listen-audio" preload="none"></audio>
 
 <script>
 const AVATAR_COLORS = ['red', 'amber', 'cyan', 'green', 'violet'];
@@ -448,6 +471,35 @@ function renderLeaderboard(leaderboard, winScore) {
   box.innerHTML = `<div class="leaderboard-title">${title}</div>${rows}`;
 }
 
+let lastTriviaKey = '';
+function renderSongTrivia(title, artist, trivia) {
+  const box = document.getElementById('now-playing-trivia');
+  if (!title) {
+    box.classList.add('hidden');
+    lastTriviaKey = '';
+    return;
+  }
+  // Same cheap re-render guard as renderRoundRoster -- the track doesn't
+  // change every 1.2s poll, no reason to rebuild the DOM that often.
+  const key = title + '|' + artist + '|' + (trivia ? trivia.length : 0);
+  if (key === lastTriviaKey) {
+    box.classList.remove('hidden');
+    return;
+  }
+  lastTriviaKey = key;
+  const cards = (trivia || []).filter(t => t.correct_index >= 0 && t.choices[t.correct_index] !== undefined).map(t => `
+    <div class="trivia-card">
+      <div class="trivia-q">${t.question}</div>
+      <div class="trivia-a">Answer: <b>${t.choices[t.correct_index]}</b></div>
+    </div>`).join('');
+  box.innerHTML = `
+    <div class="now-playing-label">Now Playing</div>
+    <div class="now-playing-track">${title}</div>
+    <div class="now-playing-artist">${artist}</div>
+    ${cards}`;
+  box.classList.remove('hidden');
+}
+
 function rosterStatusLabel(status) {
   switch (status) {
     case 'thinking': return 'IS THINKING';
@@ -505,6 +557,7 @@ async function poll() {
   document.getElementById('my-score').textContent = d.score;
   lastCorrectIndex = d.correct_index;
   lastLocked = d.locked_globally;
+  updateMediaSession(d.now_playing_title, d.now_playing_artist);
   if (d.avatar_color && d.avatar_color !== myAvatarColor) {
     myAvatarColor = d.avatar_color;
     localStorage.setItem('avatar_color', myAvatarColor);
@@ -575,6 +628,12 @@ async function poll() {
     document.getElementById('waiting-title').textContent =
       (d.mode === 'DJ') ? 'Waiting for the next song…' : 'Waiting for the next question…';
     renderLeaderboard(d.leaderboard, d.win_score);
+    if (d.mode === 'DJ' && !d.win_message) {
+      renderSongTrivia(d.now_playing_title, d.now_playing_artist, d.song_trivia);
+    } else {
+      document.getElementById('now-playing-trivia').classList.add('hidden');
+      lastTriviaKey = '';
+    }
     if (!d.win_message) setAvatarPose(myAvatar, 'idle');
     return;
   }
@@ -612,6 +671,53 @@ async function poll() {
     document.getElementById('lock-btn').classList.remove('hidden');
   }
 }
+
+// Lock-screen / CarPlay "Now Playing" title (2026-08-19). NOT the same
+// thing as /api/audio/stream's ICY metadata (web/remote_server.py) --
+// that's for dedicated Shoutcast/Icecast-aware clients (VLC, standalone
+// internet-radio hardware) that connect to the stream URL directly and
+// parse the interleaved metadata themselves. A plain HTML5 <audio> element
+// in Safari does none of that; iOS instead reads whatever the page sets
+// via the Web MediaSession API and mirrors it to the lock screen and any
+// connected CarPlay display. Without this, both just showed the page's
+// own <title> ("Triviacade Music Trivia") regardless of what's playing.
+//
+// Reuses d.now_playing_title/now_playing_artist -- the exact same
+// spoiler-safe fields renderSongTrivia() above already gets from
+// /api/player/question (empty while a mystery "Who is this?" round could
+// still be pending for the current artist, or while a question's live) --
+// rather than pulling the real title from some other unguarded endpoint,
+// so the lock screen can't hand out an answer this page itself is
+// otherwise careful not to reveal yet.
+function updateMediaSession(title, artist) {
+  if (!('mediaSession' in navigator)) return;
+  if (!listenAudio || listenAudio.paused) return; // nothing of ours is actually playing
+  navigator.mediaSession.metadata = new MediaMetadata({
+    title: title || 'Triviacade Music Trivia',
+    artist: artist || '',
+    album: 'Triviacade',
+  });
+}
+
+// "Listen to the show" (normally unchecked): streams whatever's actually
+// playing on the Pi's speakers to this phone. The checkbox click itself is
+// the user gesture mobile browsers require before audio.play() is allowed
+// to start -- unchecking fully drops the <audio> src (not just pause) so
+// the phone stops pulling the MP3 stream instead of buffering it unheard.
+const listenAudio = document.getElementById('listen-audio');
+document.getElementById('listen-toggle').addEventListener('change', (e) => {
+  if (e.target.checked) {
+    listenAudio.src = '/api/audio/stream?t=' + Date.now();
+    listenAudio.play().catch(() => { e.target.checked = false; });
+  } else {
+    listenAudio.pause();
+    listenAudio.removeAttribute('src');
+    listenAudio.load();
+  }
+});
+listenAudio.addEventListener('error', () => {
+  document.getElementById('listen-toggle').checked = false;
+});
 
 async function init() {
   renderAvatarPicker();

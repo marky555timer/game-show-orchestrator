@@ -153,6 +153,16 @@
   details.advanced-group summary::before { content: '\25b8\a0'; }
   details.advanced-group[open] summary::before { content: '\25be\a0'; }
   details.advanced-group[open] summary { margin-bottom: 10px; }
+
+  /* Simon hardware test (2026-09-11): dim by default, lights up green the
+     instant that color's physical switch reads pressed (polled while the
+     Advanced panel is open -- see simonHwStartPolling()). */
+  .simon-hw-sw {
+    display: inline-block; padding: 4px 10px; border-radius: 6px;
+    font-size: .75rem; font-weight: 700; letter-spacing: .04em;
+    background: #222; color: #777;
+  }
+  .simon-hw-sw.pressed { background: #2e7d32; color: #fff; }
 </style>
 </head>
 <body>
@@ -162,6 +172,7 @@
       <a href="/" class="active">Remote</a>
       <a href="/library">File Manager</a>
       <a href="/setup">Setup</a>
+      <a href="/joyassign">Joy Assign</a>
     </div>
   </div>
   <h1>Game Show Orchestrator &mdash; Remote</h1>
@@ -210,6 +221,22 @@
        confirmation, rarely-touched technical controls collapsed into one
        disclosure at the bottom. -->
   <div id="live-panel" style="display:none">
+
+    <!-- Unattended-autoplay fallback (2026-08-19): shown only while
+         state.show_unattended_autoplay is true -- the Setup/"READY" page
+         sat untouched for 30s and the show started itself (straight to a
+         track, no dark pause, no intro choreography). Lets the host tell
+         this apart from a real "Start Game" and drop back to a blank
+         Setup screen instead of leaving an unhosted show running, or
+         instead of ending it via Stop Game (which would run the full
+         champion-banner/ShowEnd.mp3 outro over a show nobody hosted). -->
+    <div id="unattended-banner" style="display:none; background:#4a2f0f; border:1px solid #f5a623; border-radius:10px; padding:12px 14px; margin-bottom:14px;">
+      <div style="font-weight:700; color:#ffd28a; margin-bottom:2px;">&#9888; UNATTENDED AUTOPLAY</div>
+      <div style="font-size:.82rem; color:#ccc; margin-bottom:10px;">
+        Setup sat untouched for 30s, so the show started itself &mdash; running since <span id="unattended-since"></span>.
+      </div>
+      <button class="btn danger" onclick="resetUnattended()">RESET TO SETUP</button>
+    </div>
 
     <section>
       <button class="btn primary big" onclick="transportNext()">NEXT TRACK</button>
@@ -296,7 +323,7 @@
       </div>
     </section>
 
-    <details class="advanced-group">
+    <details class="advanced-group" id="advanced-panel" ontoggle="simonHwOnAdvancedToggle()">
       <summary>Advanced / Show Configuration</summary>
 
       <div class="subhead">DMX Scene Override</div>
@@ -345,11 +372,57 @@
 
       <div class="subhead">Special Events</div>
       <button class="btn" onclick="westminsterTest()">Test Westminster Clock</button>
+
+      <div class="subhead">DMX Relay Test</div>
+      <div class="row">
+        <button class="btn" onclick="relayTest(1)">Test Relay 1</button>
+        <button class="btn" onclick="relayTest(2)">Test Relay 2</button>
+        <button class="btn" onclick="relayTest(3)">Test Relay 3</button>
+      </div>
+
+      <div class="subhead">Raw DMX Injection</div>
+      <div class="row" style="align-items:center;gap:8px">
+        <label style="font-weight:700;font-size:.85rem">Ch:</label>
+        <input type="number" id="raw-dmx-channel" min="1" max="512" step="1" style="width:70px" placeholder="177">
+        <label style="font-weight:700;font-size:.85rem">Val:</label>
+        <input type="number" id="raw-dmx-value" min="0" max="255" step="1" style="width:70px" placeholder="255">
+        <button class="btn" onclick="rawDmxSend()">Send</button>
+      </div>
+
+      <div class="subhead">Simon Hardware Test</div>
+      <div id="simon-hw-unavailable" style="display:none;color:#999;font-size:.8rem;margin-bottom:6px;">
+        GPIO not available on this host (RPi.GPIO not installed, or not running on the Pi).
+      </div>
+      <div class="row" style="flex-wrap:wrap;gap:8px">
+        <button class="btn" style="flex:1;min-width:70px" onclick="simonHwLedTest('green')">Green LED</button>
+        <button class="btn" style="flex:1;min-width:70px" onclick="simonHwLedTest('red')">Red LED</button>
+        <button class="btn" style="flex:1;min-width:70px" onclick="simonHwLedTest('yellow')">Yellow LED</button>
+        <button class="btn" style="flex:1;min-width:70px" onclick="simonHwLedTest('blue')">Blue LED</button>
+      </div>
+      <div class="row" style="margin-top:8px;gap:8px;align-items:center;flex-wrap:wrap">
+        <span style="font-weight:700;font-size:.8rem">Switches:</span>
+        <span id="simon-hw-sw-green" class="simon-hw-sw">GREEN</span>
+        <span id="simon-hw-sw-red" class="simon-hw-sw">RED</span>
+        <span id="simon-hw-sw-yellow" class="simon-hw-sw">YELLOW</span>
+        <span id="simon-hw-sw-blue" class="simon-hw-sw">BLUE</span>
+      </div>
+
+      <div class="subhead">Outline Strip (Accent) Test</div>
+      <div id="accent-unavailable" style="display:none;color:#999;font-size:.8rem;margin-bottom:6px;">
+        Serial port not available (not running on the Pi, or the board isn't wired up).
+      </div>
+      <div class="row" style="gap:8px;align-items:center">
+        <button class="btn" onclick="accentNextEffect()">Next Effect</button>
+        <span id="accent-current-effect" style="font-size:.85rem;color:#999"></span>
+      </div>
     </details>
 
     <section>
       <h2>Application</h2>
       <button class="btn danger" onclick="openShutdownModal()">SHUTDOWN APP</button>
+
+      <div class="subhead">Administrator</div>
+      <button class="btn danger" onclick="openPoweroffModal()">SHUT DOWN PI</button>
     </section>
 
   </div>
@@ -370,6 +443,16 @@
       <div class="row">
         <button class="btn" onclick="closeShutdownModal()">Cancel</button>
         <button class="btn danger" style="width:auto" onclick="confirmShutdown()">Shutdown</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-backdrop" id="poweroff-modal">
+    <div class="modal-box">
+      <p>Power off the Raspberry Pi itself, not just this app? Everything stops -- DMX, LEDs, audio, this web remote, all of it. To turn it back on, press the button on the outside of the box (or unplug/replug power).</p>
+      <div class="row">
+        <button class="btn" onclick="closePoweroffModal()">Cancel</button>
+        <button class="btn danger" style="width:auto" onclick="confirmPoweroff()">Power Off Pi</button>
       </div>
     </div>
   </div>
@@ -419,12 +502,43 @@ function renderRoster(roster) {
     </div>`).join('');
 }
 
+// Tunnel-churn recovery (2026-09-08): every cloudflared restart mints a
+// brand-new *.trycloudflare.com URL (drivers/tunnel_engine.py), so a tab
+// left open across one -- or one that was just backgrounded and comes back
+// stale -- silently stops getting real responses, with no way for a plain
+// refresh to help (that just re-requests the same now-dead subdomain; the
+// only fix used to be manually navigating back to the static redirector,
+// config.TUNNEL_REDIRECT_ADMIN_URL). refreshAll() fires 5 api() calls every
+// cycle, so a genuine full outage hits this threshold within one cycle;
+// a single flaky call among otherwise-healthy ones gets reset by its
+// neighbors succeeding, so this doesn't false-trigger on an ordinary
+// one-off dropped request.
+const _ADMIN_FALLBACK_URL = 'https://yannitellphotography.com/trivia/admin.php';
+const _API_FAIL_REDIRECT_THRESHOLD = 5;
+let _apiFailStreak = 0;
+let _apiFailRedirecting = false;
+
+function _onApiFailure() {
+  // Only bounce a tab that's actually on the ephemeral tunnel domain -- a
+  // LAN-IP tab hitting a normal WiFi blip should just keep retrying in
+  // place, not get redirected off the local network.
+  if (_apiFailRedirecting || !location.hostname.endsWith('trycloudflare.com')) return;
+  _apiFailStreak++;
+  if (_apiFailStreak >= _API_FAIL_REDIRECT_THRESHOLD) {
+    _apiFailRedirecting = true;
+    location.href = _ADMIN_FALLBACK_URL;
+  }
+}
+
 async function api(path, opts) {
   try {
     const res = await fetch(path, opts);
-    return await res.json();
+    const data = await res.json();
+    _apiFailStreak = 0;
+    return data;
   } catch (e) {
     console.error(path, e);
+    _onApiFailure();
     return null;
   }
 }
@@ -552,6 +666,71 @@ function westminsterTest() {
   api('/api/westminster/test', { method: 'POST' }).then(() => showToast('Westminster clock triggered.'));
 }
 
+function relayTest(num) {
+  api(`/api/dmx/relay${num}-test`, { method: 'POST' }).then(() => showToast(`Relay ${num} pulsed.`));
+}
+
+function rawDmxSend() {
+  const channel = parseInt(document.getElementById('raw-dmx-channel').value, 10);
+  const value = parseInt(document.getElementById('raw-dmx-value').value, 10);
+  if (!channel || channel < 1 || channel > 512 || isNaN(value)) {
+    showToast('Enter a channel (1-512) and a value (0-255).');
+    return;
+  }
+  api('/api/dmx/raw-set', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({channel, value}) })
+    .then(() => showToast(`Ch ${channel} = ${value}`));
+}
+
+// Simon hardware bring-up/test (2026-09-11): drivers/simon_hardware.py.
+// Live switch status only needs to poll while the Advanced panel is
+// actually open (ontoggle on #advanced-panel), same "don't poll what
+// nobody's looking at" restraint as the Joy Assign capture poll.
+const SIMON_HW_COLORS = ['green', 'red', 'yellow', 'blue'];
+let _simonHwPollTimer = null;
+
+function simonHwLedTest(color) {
+  api('/api/simon-hw/led-test', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({color}) })
+    .then(data => { if (!data.ok) showToast(data.reason || `${color} LED test unavailable.`); });
+}
+
+function simonHwPoll() {
+  api('/api/simon-hw/status').then(data => {
+    document.getElementById('simon-hw-unavailable').style.display = data.available ? 'none' : '';
+    SIMON_HW_COLORS.forEach(color => {
+      const el = document.getElementById(`simon-hw-sw-${color}`);
+      if (el) el.classList.toggle('pressed', !!(data.buttons && data.buttons[color]));
+    });
+  });
+}
+
+function accentNextEffect() {
+  api('/api/accent/next-effect', { method: 'POST' }).then(data => {
+    if (!data.ok) { showToast('Outline strip unavailable.'); return; }
+    document.getElementById('accent-current-effect').textContent = `Effect ${data.effect}`;
+  });
+}
+
+function accentPoll() {
+  api('/api/accent/status').then(data => {
+    document.getElementById('accent-unavailable').style.display = data.available ? 'none' : '';
+    if (data.available) document.getElementById('accent-current-effect').textContent = `Effect ${data.current_effect}`;
+  });
+}
+
+function simonHwOnAdvancedToggle() {
+  const panel = document.getElementById('advanced-panel');
+  if (panel.open) {
+    if (!_simonHwPollTimer) {
+      simonHwPoll();
+      accentPoll();
+      _simonHwPollTimer = setInterval(() => { simonHwPoll(); accentPoll(); }, 300);
+    }
+  } else if (_simonHwPollTimer) {
+    clearInterval(_simonHwPollTimer);
+    _simonHwPollTimer = null;
+  }
+}
+
 async function startPriceGame() {
   const d = await api('/api/game/price-game', { method: 'POST' });
   if (d && d.ok) {
@@ -592,6 +771,14 @@ function confirmShutdown() {
   closeShutdownModal();
   api('/api/system/shutdown', { method: 'POST' });
   showToast('Shutting down the app...');
+}
+
+function openPoweroffModal() { document.getElementById('poweroff-modal').classList.add('open'); }
+function closePoweroffModal() { document.getElementById('poweroff-modal').classList.remove('open'); }
+function confirmPoweroff() {
+  closePoweroffModal();
+  api('/api/system/poweroff', { method: 'POST' });
+  showToast('Powering off the Pi...');
 }
 
 // ------------------------------------------
@@ -635,6 +822,14 @@ function confirmStopShow() {
 }
 function startNewGame() {
   window.location = '/setup';
+}
+
+// Unattended-autoplay fallback (2026-08-19) -- see #unattended-banner
+// above. No confirmation modal like Stop Game gets: unattended autoplay
+// never had a host running it, so there's no in-progress official show to
+// accidentally cut off.
+function resetUnattended() {
+  api('/api/show/reset-unattended', { method: 'POST' }).then(refreshGamepadStatus);
 }
 
 let _winScoreLoaded = false;
@@ -709,6 +904,14 @@ async function refreshGamepadStatus() {
   document.getElementById('dark-lockdown').style.display = (d.show_phase === 'dark') ? '' : 'none';
   document.getElementById('intro-lockdown').style.display = (d.show_phase === 'intro') ? '' : 'none';
   document.getElementById('live-panel').style.display = (d.show_phase === 'live') ? '' : 'none';
+
+  document.getElementById('unattended-banner').style.display = d.show_unattended_autoplay ? '' : 'none';
+  if (d.show_unattended_autoplay && d.show_unattended_autoplay_started_at) {
+    const since = new Date(d.show_unattended_autoplay_started_at * 1000);
+    document.getElementById('unattended-since').textContent =
+      since.toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'});
+  }
+
   if (d.show_phase !== 'live') {
     return;
   }

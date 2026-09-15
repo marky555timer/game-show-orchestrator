@@ -34,6 +34,7 @@ from drivers.factoid_engine import build_mock_question, advance_to_next_queued_q
 from drivers.branding_engine import get_current_text
 from drivers.announcement_engine import get_text_for as get_announcement_text_for
 from drivers import led_bridge
+from drivers import power_monitor
 from drivers.dmx_driver import dmx
 from drivers import tunnel_engine
 from drivers import idle_cycle_engine
@@ -1064,6 +1065,46 @@ def _render_space_invaders(t):
         )
 
 
+_SIMON_PANEL_IDS = (3, 4, 5, 6)
+
+
+def _render_simon(t):
+    """Milton Bradley "Simon" mini-game (joystick secret combo or the
+    physical arcade buttons): draws the 4 memory pads on panels 3-6 straight
+    from drivers/simon_engine.py's state.simon_* fields -- solid fill while
+    state.simon_active_pad names that pad (intro rotation step, computer
+    playback step, live input echo, or the loss sequence's correct-answer
+    flash), a thin outline otherwise so all 4 stay visible as targets. This
+    red monochrome matrix can't show which COLOR is active -- that's what
+    drivers/wled_engine.py's per-panel marquee color and the physical LEDs
+    are for; this is accent only. Panels 1+2 (TOP_COMBINED) show, per
+    phase: "IT'S SIMON!" (intro), "GET READY" (the pause before round 1's
+    first tone), "SCORE: N" during actual play, or the rounds cleared
+    during the loss flash and the score-review hold that follows it."""
+    for i, pid in enumerate(_SIMON_PANEL_IDS):
+        rect = PANELS[pid]
+        if state.simon_active_pad == i:
+            pygame.draw.rect(matrix_surface, RED_FULL, rect)
+        else:
+            pygame.draw.rect(matrix_surface, RED_DIM, rect, 1)
+
+    if state.simon_phase == "intro":
+        draw_marquee(matrix_surface, "simon_status", "IT'S SIMON!", TOP_COMBINED, align="center", scroll=False)
+    elif state.simon_phase == "get_ready":
+        draw_marquee(matrix_surface, "simon_status", "GET READY", TOP_COMBINED, align="center", scroll=False)
+    elif state.simon_phase in ("fail", "score_review"):
+        rounds_cleared = max(0, state.simon_round - 1)
+        draw_marquee(matrix_surface, "simon_status", f"{rounds_cleared} ROUNDS",
+                     TOP_COMBINED, align="center", scroll=False)
+    else:
+        # state.simon_round is the round CURRENTLY being attempted (starts
+        # at 1) -- score is rounds actually CLEARED, so this reads 0 until
+        # round 1 is cleared, matching the same rounds_cleared math the
+        # "fail"/"score_review" branch above already uses.
+        draw_marquee(matrix_surface, "simon_status", f"SCORE: {state.simon_round - 1}",
+                     TOP_COMBINED, align="center", scroll=False)
+
+
 def _render_westminster(t):
     """Westminster "Bat Clock" top-of-hour event (Feature Update): full-canvas
     takeover, highest render priority (checked before Space Invaders/Price
@@ -1305,6 +1346,66 @@ def _draw_setup_status_chips():
                      PANELS[panel_id], align="center", scroll=False)
 
 
+_SHOW_WILL_START_WORDS = {3: "Show", 4: "will", 5: "start", 6: "now"}
+
+
+def _unattended_remaining_seconds(now):
+    """Seconds left before drivers/show_engine.py's unattended-autoplay
+    fallback fires, or the full timeout if the idle clock hasn't actually
+    started ticking yet this instant (0.0 sentinel -- see
+    state.last_operator_interaction_at, lazily initialized on the first
+    frame show_phase == "setup" is observed)."""
+    if state.last_operator_interaction_at == 0.0:
+        return config.SHOW_UNATTENDED_AUTOPLAY_TIMEOUT_SECONDS
+    elapsed = now - state.last_operator_interaction_at
+    return max(0.0, config.SHOW_UNATTENDED_AUTOPLAY_TIMEOUT_SECONDS - elapsed)
+
+
+def _unattended_flash_on(now):
+    """Shared blink clock for both the "AUTO :NN" banner and the final-10s
+    "SHOW WILL START NOW" panels, so the two flash in sync rather than
+    drifting against each other."""
+    return int(now / config.SHOW_UNATTENDED_FLASH_PERIOD_SECONDS) % 2 == 0
+
+
+def _draw_unattended_countdown_bar(remaining):
+    """Shrinking bar along the bottom few rows of the "AUTO :NN" banner
+    (panels 1+2) -- visual countdown to the unattended-autoplay fallback,
+    so someone standing at the rig can see how much idle time is left
+    before the show starts itself, appliance-style, without needing a
+    phone or laptop open. Always solid (not gated by the flash clock --
+    only the banner TEXT blinks, a continuously shrinking bar reads better
+    than a flickering one).
+
+    Sits clear of the banner text above it: draw_marquee() vertically
+    centers 7px-tall (GLYPH_HEIGHT) text in TOP_COMBINED's 16px height,
+    landing at rows 4-10 -- this bar uses rows 13-15, a comfortable 2px
+    gap below the text with room to spare."""
+    remaining_frac = remaining / config.SHOW_UNATTENDED_AUTOPLAY_TIMEOUT_SECONDS
+    x0, y0, w, h = TOP_COMBINED
+    bar_h = 3
+    bar_y = y0 + h - bar_h
+    bar_w = int(round(w * remaining_frac))
+    if bar_w > 0:
+        pygame.draw.rect(matrix_surface, RED_FULL, (x0, bar_y, bar_w, bar_h))
+
+
+def _draw_unattended_final_warning(now):
+    """Inside config.SHOW_UNATTENDED_FINAL_WARNING_SECONDS of the
+    unattended-autoplay fallback firing: replaces the status chips
+    (panels 3-6) with a flashing "SHOW WILL START NOW", one word per
+    panel -- an unmissable last warning right before the show starts
+    itself. Skips drawing entirely on the "off" half of the flash --
+    matrix_surface is already filled BLACK by update_matrix_canvas()
+    before this runs, so panels 3-6 just go dark that frame, same as the
+    "dark" show phase does elsewhere."""
+    if not _unattended_flash_on(now):
+        return
+    for panel_id, word in _SHOW_WILL_START_WORDS.items():
+        draw_marquee(matrix_surface, f"unattended_final_{panel_id}", word,
+                     PANELS[panel_id], align="center", scroll=False)
+
+
 def _render_show_phase(t):
     """Setup/Countdown share a static held screen (nothing dramatic should
     happen on the physical rig just because the operator is filling out
@@ -1315,7 +1416,24 @@ def _render_show_phase(t):
     fully blank for the audience-anticipation pause between "Start Game"
     and the operator actually cueing the intro (show_engine.begin_intro())."""
     phase = state.show_phase
-    if phase in ("setup", "countdown"):
+    if phase == "setup":
+        # Unattended-autoplay idle countdown (2026-08-19) -- "countdown"
+        # (a scheduled start the operator already armed) doesn't get any
+        # of this; that idle clock only runs during "setup" (see
+        # show_engine._update_unattended_autoplay()).
+        remaining = _unattended_remaining_seconds(t)
+        seconds_display = min(int(config.SHOW_UNATTENDED_AUTOPLAY_TIMEOUT_SECONDS) - 1, int(remaining))
+        # Solid, not flashing (2026-08-19: the blink read as "too much" on
+        # the physical rig) -- only the final-10s panels 3-6 warning below
+        # still flashes.
+        draw_marquee(matrix_surface, "show_setup_banner", f"AUTO :{seconds_display:02d}",
+                     TOP_COMBINED, align="center")
+        _draw_unattended_countdown_bar(remaining)
+        if remaining <= config.SHOW_UNATTENDED_FINAL_WARNING_SECONDS:
+            _draw_unattended_final_warning(t)
+        else:
+            _draw_setup_status_chips()
+    elif phase == "countdown":
         draw_marquee(matrix_surface, "show_setup_banner", config.SHOW_SETUP_LED_TEXT,
                      TOP_COMBINED, align="center")
         _draw_setup_status_chips()
@@ -1327,7 +1445,28 @@ def _render_show_phase(t):
         _render_show_outro(t)
 
 
+def _draw_cpu_temp_overlay():
+    """Panel 5 overlay (2026-08-20, Joy Assign page): drawn for as long as
+    state.cpu_temp_overlay_active is True (inputs/gamepad.py's per-frame
+    hardware poll of the configured trigger button/combo). Applied in
+    update_matrix_canvas() AFTER all normal per-frame rendering below, on
+    top of whatever else panel 5 would otherwise show -- a true "while
+    engaged" overlay that works regardless of show_phase/mode, rather than
+    needing its own check duplicated into every render path (setup,
+    win celebration, DJ/Game/Space Invaders, ...) the way a check earlier
+    in the pipeline would."""
+    temp_c = power_monitor.read_cpu_temp_c()
+    text = f"CPU {temp_c:.0f}C" if temp_c is not None else "CPU N/A"
+    draw_marquee(matrix_surface, "cpu_temp_overlay", text, PANELS[5], align="center", scroll=False)
+
+
 def update_matrix_canvas():
+    _render_matrix_canvas_content()
+    if state.cpu_temp_overlay_active:
+        _draw_cpu_temp_overlay()
+
+
+def _render_matrix_canvas_content():
     matrix_surface.fill(BLACK)
     t = time.time()
 
@@ -1364,6 +1503,8 @@ def update_matrix_canvas():
         _render_westminster(t)
     elif state.mode == state.MODE_SPACE_INVADERS:
         _render_space_invaders(t)
+    elif state.mode == state.MODE_SIMON:
+        _render_simon(t)
     elif state.price_game_active and state.price_game_phase == "banner":
         _render_price_banner(t)
     elif state.mode == state.MODE_DJ:

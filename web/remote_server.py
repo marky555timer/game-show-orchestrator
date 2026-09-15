@@ -14,8 +14,10 @@ Threading/Concurrency notes in the feature plan: request handlers run on
 uvicorn's own thread(s), separate from the main pygame loop; state writes
 here aren't mutex-protected against the main thread, which is an accepted
 trade-off at human input speed for a live-show control surface."""
+import asyncio
 import io
 import os
+import queue
 import threading
 import time
 import uuid
@@ -38,6 +40,11 @@ from drivers.dmx_driver import dmx
 from drivers import led_bridge
 from drivers import tunnel_engine
 from drivers import bluetooth_engine
+from drivers import audio_stream_bridge
+from drivers import factoid_engine
+from drivers import joystick_bindings
+from drivers import simon_hardware
+from drivers import accent_engine
 from graphics.animations import deal_panel_animations
 from web.net_info import get_lan_ip, get_play_url
 
@@ -50,8 +57,8 @@ _WEB_SI_DIRECTION_HOLD_SECONDS = 0.5
 
 try:
     import uvicorn
-    from fastapi import FastAPI, File, UploadFile
-    from fastapi.responses import FileResponse, JSONResponse, Response
+    from fastapi import FastAPI, File, Request, UploadFile
+    from fastapi.responses import FileResponse, JSONResponse, Response, StreamingResponse
     from pydantic import BaseModel
 except ImportError:
     uvicorn = None
@@ -68,8 +75,48 @@ _PLAY_HTML_PATH = os.path.join(_STATIC_DIR, "play.html")
 _LIBRARY_HTML_PATH = os.path.join(_STATIC_DIR, "library.html")
 _SETUP_HTML_PATH = os.path.join(_STATIC_DIR, "setup.html")
 _COUNTDOWN_HTML_PATH = os.path.join(_STATIC_DIR, "countdown.html")
+_JOYASSIGN_HTML_PATH = os.path.join(_STATIC_DIR, "joyassign.html")
 
 app = FastAPI(title="Game Show Orchestrator Remote") if FastAPI else None
+
+if app is not None:
+    @app.middleware("http")
+    async def _mark_operator_interaction_middleware(request: Request, call_next):
+        # Unattended-autoplay fallback (drivers/show_engine.py): any
+        # mutating web-remote action resets the Setup-page idle clock.
+        # Scoped to everything EXCEPT /api/player/* -- those are guest
+        # actions from play.html on a player's own phone, not evidence an
+        # operator is actually present. Cheap no-op outside show_phase ==
+        # "setup". Marked before the handler runs, not after -- a no-op/
+        # failed action still means someone touched the remote.
+        if request.method == "POST" and not request.url.path.startswith("/api/player/"):
+            show_engine.mark_operator_interaction()
+        return await call_next(request)
+
+
+# ICY metadata (2026-08-19, /api/audio/stream) -- see that endpoint's
+# docstring. 8192 bytes matches classic Shoutcast's own default interval,
+# the value the widest range of players/car stereos are tested against.
+_ICY_METAINT = 8192
+
+
+def _current_stream_title():
+    title, artist = deck_orchestrator.get_now_playing()
+    title = (title or "").strip()
+    artist = (artist or "").strip()
+    if title and artist:
+        return f"{artist} - {title}"
+    return title or artist or "Triviacade Music Trivia"
+
+
+def _icy_metadata_block(title):
+    """One ICY metadata frame: a single length byte (count of 16-byte
+    units that follow, so payload is capped at 255*16=4080 bytes -- ample
+    for "Artist - Title") plus the null-padded StreamTitle string itself."""
+    payload = f"StreamTitle='{title}';".encode("utf-8", errors="replace")
+    payload += b"\x00" * ((-len(payload)) % 16)
+    length_units = min(255, len(payload) // 16)
+    return bytes([length_units]) + payload[:length_units * 16]
 
 
 def _track_status(confident, source):
@@ -98,6 +145,13 @@ if app is not None:
 
     class AnnouncementTextSet(BaseModel):
         text: str
+
+    class RawDmxSet(BaseModel):
+        channel: int
+        value: int
+
+    class SimonHwLedTest(BaseModel):
+        color: str
 
     class WinScoreSet(BaseModel):
         score: int
@@ -143,6 +197,34 @@ if app is not None:
     class PlayerLock(BaseModel):
         player_id: str
 
+    class JoystickBind(BaseModel):
+        action_id: str
+        button: int
+
+    class JoystickUnbind(BaseModel):
+        action_id: str
+
+    class JoystickProfileName(BaseModel):
+        name: str
+
+    class JoystickComboCreate(BaseModel):
+        label: str = ""
+        buttons: list[int]
+        hold_seconds: float = 1.0
+        fires: str
+        modes: list[str] | None = None
+
+    class JoystickComboDelete(BaseModel):
+        combo_id: str
+
+    class JoystickComboRebind(BaseModel):
+        combo_id: str
+        buttons: list[int]
+        hold_seconds: float | None = None
+
+    class JoystickCpuTempTrigger(BaseModel):
+        buttons: list[int]
+
     @app.get("/")
     def index():
         return FileResponse(_INDEX_HTML_PATH)
@@ -170,6 +252,12 @@ if app is not None:
         # "Start Game at [time]" lands here: a live "Game Start in H:MM:SS"
         # countdown with ABORT (back to Setup) and Start Now.
         return FileResponse(_COUNTDOWN_HTML_PATH)
+
+    @app.get("/joyassign")
+    def joyassign_page():
+        # Joystick button/combo remapping (2026-08-20) -- see
+        # drivers/joystick_bindings.py for the backing data model.
+        return FileResponse(_JOYASSIGN_HTML_PATH)
 
     # ------------------------------------------
     # MULTIPLAYER QR QUIZ (2026-08-09)
@@ -210,6 +298,85 @@ if app is not None:
         }
         print(f"[MULTIPLAYER QUIZ] '{initials}' joined ({len(state.quiz_players)} players signed up).")
         return {"ok": True, "player_id": player_id, "initials": initials, "avatar_color": avatar_color}
+
+    @app.get("/api/audio/stream")
+    async def audio_stream(request: Request):
+        """Backs the normally-unchecked "Listen to the show" toggle
+        (web/static/play.html): live-streams whatever's actually coming out
+        of the Pi's speakers to the requesting phone as MP3.
+
+        Async, with an explicit request.is_disconnected() poll -- NOT a
+        plain blocking `q.get()` loop in a sync generator (tried first,
+        2026-08-17): a sync generator can only be interrupted at a `yield`,
+        never while a worker thread is blocked inside a queue.get() call
+        underneath one, so Starlette's disconnect handling had no way to
+        reach in and stop it -- confirmed live: the shared ffmpeg encoder
+        (drivers/audio_stream_bridge.py) kept running well after the test
+        client disconnected, which would orphan one ffmpeg process per
+        phone that closes the tab instead of unchecking the toggle. The
+        1s q.get(timeout=...) here bounds how long that can ever linger,
+        and is_disconnected() is what actually ends it promptly.
+
+        ICY metadata (2026-08-19): a car stereo, VLC, or any other client
+        that wants "Now Playing" text sends the request header
+        `Icy-MetaData: 1` -- classic Shoutcast/Icecast protocol, unrelated
+        to and much older than HTTP's own header casing (all lowercase
+        here since Starlette normalizes for lookup regardless of how the
+        client actually cased it). Opting in gets an `icy-metaint` response
+        header (bytes of MP3 between metadata blocks) and, at exactly that
+        interval, a length-prefixed `StreamTitle='Artist - Title';` block
+        spliced into the byte stream itself -- the receiving player knows
+        to strip these back out before feeding the rest to its MP3 decoder.
+        A plain browser/play.html request never sends that header, so it
+        gets the exact same raw passthrough as before -- zero behavior
+        change for the existing listener toggle."""
+        q = audio_stream_bridge.subscribe()
+        if q is None:
+            return JSONResponse(
+                {"ok": False, "error": "Audio streaming isn't available on this rig."},
+                status_code=503,
+            )
+
+        icy_enabled = request.headers.get("icy-metadata") == "1"
+
+        async def gen():
+            bytes_since_meta = 0
+            try:
+                while True:
+                    if await request.is_disconnected():
+                        break
+                    try:
+                        chunk = await asyncio.to_thread(q.get, timeout=1.0)
+                    except queue.Empty:
+                        continue
+                    if chunk is None:
+                        break
+
+                    if not icy_enabled:
+                        yield chunk
+                        continue
+
+                    # Splice in a metadata block every _ICY_METAINT bytes of
+                    # AUDIO -- chunk boundaries from the encoder (_CHUNK_SIZE
+                    # in drivers/audio_stream_bridge.py) don't line up with
+                    # that interval, so this slices across them as needed.
+                    pos = 0
+                    while pos < len(chunk):
+                        take = min(len(chunk) - pos, _ICY_METAINT - bytes_since_meta)
+                        yield chunk[pos:pos + take]
+                        pos += take
+                        bytes_since_meta += take
+                        if bytes_since_meta >= _ICY_METAINT:
+                            yield _icy_metadata_block(_current_stream_title())
+                            bytes_since_meta = 0
+            finally:
+                audio_stream_bridge.unsubscribe(q)
+
+        headers = {}
+        if icy_enabled:
+            headers["icy-metaint"] = str(_ICY_METAINT)
+            headers["icy-name"] = "Triviacade"
+        return StreamingResponse(gen(), media_type="audio/mpeg", headers=headers)
 
     @app.get("/api/player/whoami")
     def player_whoami(player_id: str):
@@ -382,7 +549,22 @@ if app is not None:
         # only revealed once graded. play.html phrases the lead-in
         # ("That's right..." vs "Actually...") based on whether THIS
         # player's own answer was correct.
-        correction = state.factoid_correction if (state.quiz_locked and state.factoid_choices == ["True", "False"]) else ""
+        #
+        # identify_band (the "Who is this?" Mystery Band question, choices
+        # are artist names only) reuses the same field for the same reason:
+        # once everyone's answered/timed out, reveal the actual song
+        # (title, not just the artist already highlighted among the
+        # choices) before the client falls through to the normal "waiting
+        # for next song" view -- matches the reveal-then-resume sequence
+        # graphics/matrix_canvas.py already runs on the physical board
+        # (mystery_reveal blink of the real title/artist).
+        if state.quiz_locked and state.factoid_category == "identify_band":
+            now_title, now_artist = deck_orchestrator.get_now_playing()
+            correction = f"it's \"{now_title}\" by {now_artist}."
+        elif state.quiz_locked and state.factoid_choices == ["True", "False"]:
+            correction = state.factoid_correction
+        else:
+            correction = ""
 
         # Leaderboard for the "waiting for next question" view (item 18) --
         # top scorers, ranked descending, ties broken by join order.
@@ -394,6 +576,47 @@ if app is not None:
              for pid, p in state.quiz_players.items()),
             key=lambda p: p["score"], reverse=True,
         )[:8]
+
+        # "Waiting for the next song..." (mode DJ, no active round): give the
+        # waiting screen something to do besides sit on the leaderboard --
+        # show what's actually playing plus whatever quiz Q&A has already
+        # been ASKED for it. Two separate spoiler risks here, both gated
+        # below (2026-08-19 fix -- players were reading the answer before
+        # the round ever ran):
+        #   1. track_cache.json holds every question generated for this
+        #      track, asked or not -- state.track_question_queue is what's
+        #      LEFT to ask this playthrough, so anything still sitting in
+        #      it hasn't been asked yet and must not be shown.
+        #   2. Just naming the track is itself a spoiler for the Mystery
+        #      Band "Who is this?" teaser (drivers/mystery_band_engine.py),
+        #      which answers with this exact title/artist -- and that
+        #      teaser doesn't arm the instant the track starts, it can sit
+        #      pending for a few seconds (state.mystery_defer_until, while
+        #      an announcement VO finishes) during which state.active is
+        #      already False and this endpoint would otherwise happily
+        #      print the answer. state.asked_artists is the same dedup set
+        #      mystery_band_engine.check_new_track() itself consults to
+        #      decide whether a teaser is even coming for this artist --
+        #      reusing it here means we don't have to duplicate its
+        #      pending/deferred logic, just defer to the same source of
+        #      truth: not shown until either the teaser has actually fired
+        #      (which marks the artist asked) or never will.
+        now_playing_title = ""
+        now_playing_artist = ""
+        song_trivia = []
+        if not active and state.mode != state.MODE_GAME:
+            title, artist = deck_orchestrator.get_now_playing()
+            artist_key = str(artist).strip().lower()
+            mystery_pending = bool(artist_key) and artist_key not in state.asked_artists
+            if not mystery_pending and factoid_engine._looks_like_real_track(title, artist):
+                now_playing_title, now_playing_artist = title, artist
+                unasked = {q.get("question") for q in state.track_question_queue}
+                song_trivia = [
+                    {"question": q.get("question", ""), "choices": q.get("choices", []),
+                     "correct_index": q.get("correct_index", -1)}
+                    for q in factoid_engine.track_engine.get_cached_questions(title, artist)
+                    if q.get("question") and q.get("choices") and q.get("question") not in unasked
+                ]
 
         return {
             "ok": True,
@@ -424,6 +647,9 @@ if app is not None:
             "timeout_seconds": timeout_seconds,
             "leaderboard": leaderboard,
             "win_score": state.game_win_score,
+            "now_playing_title": now_playing_title,
+            "now_playing_artist": now_playing_artist,
+            "song_trivia": song_trivia,
         }
 
     @app.post("/api/player/select")
@@ -859,6 +1085,179 @@ if app is not None:
             state.dj_color_index = max(0, min(len(config.DJ_COLOR_PALETTE) - 1, body.color_index))
         return {"ok": True, "theme_index": state.dj_theme_index, "color_index": state.dj_color_index}
 
+    # Relay hardware bring-up/test (2026-08-23): fires the same one-shot
+    # pulse_channel() the live BIG WIN trigger uses, but standalone -- lets
+    # the relay block's DMX addressing/wiring be verified directly from the
+    # web remote instead of needing to play a full trivia round to a
+    # correct answer just to prove a relay clicks.
+    @app.post("/api/dmx/relay1-test")
+    def dmx_relay1_test():
+        print("[WEB REMOTE] Test Relay 1 requested via web remote.")
+        dmx.pulse_channel(config.RELAY1_CHANNEL, 255, config.RELAY_PULSE_SECONDS)
+        return {"ok": True}
+
+    @app.post("/api/dmx/relay2-test")
+    def dmx_relay2_test():
+        print("[WEB REMOTE] Test Relay 2 requested via web remote.")
+        dmx.pulse_channel(config.RELAY2_CHANNEL, 255, config.RELAY_PULSE_SECONDS)
+        return {"ok": True}
+
+    @app.post("/api/dmx/relay3-test")
+    def dmx_relay3_test():
+        print("[WEB REMOTE] Test Relay 3 requested via web remote.")
+        dmx.pulse_channel(config.RELAY3_CHANNEL, 255, config.RELAY_PULSE_SECONDS)
+        return {"ok": True}
+
+    @app.post("/api/dmx/raw-set")
+    def dmx_raw_set(body: RawDmxSet):
+        # Bare channel/value injection for hardware bring-up (2026-08-23) --
+        # unlike pulse_channel() above, this is a direct, PERSISTENT
+        # dmx.set_channel() write with no auto-off timer, so a value holds
+        # until explicitly changed again. Nothing else in this app's
+        # per-frame render path ever touches channels beyond the 176-channel
+        # fixture rig (dmx.blackout() is the only thing that would clear
+        # it, and that's only called on connect/app-shutdown), so this is
+        # safe to use for probing exactly one channel at a time without the
+        # fixture rig or anything else stomping it mid-test.
+        if not (1 <= body.channel <= 512):
+            return {"ok": False, "error": "channel must be 1-512"}
+        value = max(0, min(255, int(body.value)))
+        print(f"[WEB REMOTE] Raw DMX set: channel {body.channel} = {value}")
+        dmx.set_channel(body.channel, value)
+        return {"ok": True, "channel": body.channel, "value": value}
+
+    # Simon hardware bring-up/test (2026-09-11): drivers/simon_hardware.py
+    # backs the physical arcade buttons + LEDs wired straight to the Pi's
+    # GPIO header -- separate from drivers/simon_engine.py's existing
+    # joystick-driven pad simulation. Same "prove the wiring works" role
+    # as the DMX relay test buttons above, just over GPIO. status is
+    # polled by the Advanced panel's test section while it's open; led-test
+    # is a one-shot pulse per color.
+    @app.get("/api/simon-hw/status")
+    def simon_hw_status():
+        return {
+            "ok": True,
+            "available": simon_hardware.available(),
+            "buttons": simon_hardware.read_buttons(),
+        }
+
+    @app.post("/api/simon-hw/led-test")
+    def simon_hw_led_test(body: SimonHwLedTest):
+        fired = simon_hardware.pulse_led(body.color)
+        return {"ok": fired, "color": body.color,
+                "reason": None if fired else "GPIO unavailable or unknown color."}
+
+    # Outline-strip (accent) manual effect control (2026-09-12):
+    # drivers/accent_engine.py -- the third ESP32's serial link only
+    # supports preset/effect switching (see that module's docstring for
+    # why), so the bring-up control here is a single "step to next
+    # effect" button rather than the free-form raw injection the DMX
+    # test above allows.
+    @app.get("/api/accent/status")
+    def accent_status():
+        return {"ok": True, "available": accent_engine.available(),
+                "current_effect": accent_engine.current_effect()}
+
+    @app.post("/api/accent/next-effect")
+    def accent_next_effect():
+        fx = accent_engine.next_effect()
+        return {"ok": fx is not None, "effect": fx}
+
+    # ------------------------------------------
+    # JOY ASSIGN (2026-08-20): drivers/joystick_bindings.py backs all of
+    # this -- see its module docstring for the architecture (per-action
+    # remapping + generalized combos, press-to-bind capture consumed by
+    # inputs/gamepad.py's JOYBUTTONDOWN handler).
+    # ------------------------------------------
+    @app.get("/api/joystick/bindings")
+    def joystick_bindings_get():
+        return {
+            "ok": True,
+            "actions": joystick_bindings.all_bindings(),
+            "combos": joystick_bindings.combos(),
+            "combo_targets": joystick_bindings.combo_target_choices(),
+            "capture_armed": joystick_bindings.capture_is_armed(),
+            "profiles": joystick_bindings.list_profiles(),
+            "active_profile": joystick_bindings.active_profile_name(),
+            "cpu_temp_trigger": joystick_bindings.cpu_temp_trigger(),
+        }
+
+    @app.post("/api/joystick/unbind")
+    def joystick_unbind(body: JoystickUnbind):
+        ok = joystick_bindings.unbind_action(body.action_id)
+        return {"ok": ok, "reason": None if ok else "Unknown action id."}
+
+    @app.post("/api/joystick/profiles/save")
+    def joystick_profile_save(body: JoystickProfileName):
+        ok, reason = joystick_bindings.save_profile(body.name)
+        return {"ok": ok, "reason": reason}
+
+    @app.post("/api/joystick/profiles/load")
+    def joystick_profile_load(body: JoystickProfileName):
+        ok, reason = joystick_bindings.load_profile(body.name)
+        return {"ok": ok, "reason": reason}
+
+    @app.post("/api/joystick/profiles/delete")
+    def joystick_profile_delete(body: JoystickProfileName):
+        ok, reason = joystick_bindings.delete_profile(body.name)
+        return {"ok": ok, "reason": reason}
+
+    @app.post("/api/joystick/capture/start")
+    def joystick_capture_start():
+        joystick_bindings.start_capture()
+        return {"ok": True}
+
+    @app.post("/api/joystick/capture/cancel")
+    def joystick_capture_cancel():
+        joystick_bindings.cancel_capture()
+        return {"ok": True}
+
+    @app.get("/api/joystick/capture/poll")
+    def joystick_capture_poll():
+        # Polled by the Joy Assign page every few hundred ms while waiting
+        # for a press -- returns (and consumes) the captured button the
+        # instant inputs/gamepad.py's JOYBUTTONDOWN handler sees one while
+        # capture mode is armed. Auto-clears on read so a stale result
+        # can't be picked up twice.
+        button = joystick_bindings.capture_result()
+        if button is not None:
+            joystick_bindings.clear_capture_result()
+        return {"ok": True, "captured": button is not None, "button": button,
+                "armed": joystick_bindings.capture_is_armed()}
+
+    @app.post("/api/joystick/bind")
+    def joystick_bind(body: JoystickBind):
+        ok = joystick_bindings.set_binding(body.action_id, body.button)
+        return {"ok": ok, "reason": None if ok else "Unknown action id."}
+
+    @app.post("/api/joystick/combo")
+    def joystick_combo_create(body: JoystickComboCreate):
+        ok, result = joystick_bindings.add_combo(
+            body.label, body.buttons, body.hold_seconds, body.fires, body.modes)
+        if ok:
+            return {"ok": True, "combo_id": result}
+        return {"ok": False, "reason": result}
+
+    @app.post("/api/joystick/combo/rebind")
+    def joystick_combo_rebind(body: JoystickComboRebind):
+        ok, reason = joystick_bindings.update_combo(body.combo_id, body.buttons, body.hold_seconds)
+        return {"ok": ok, "reason": reason}
+
+    @app.post("/api/joystick/combo/delete")
+    def joystick_combo_delete(body: JoystickComboDelete):
+        ok, reason = joystick_bindings.delete_combo(body.combo_id)
+        return {"ok": ok, "reason": reason}
+
+    @app.post("/api/joystick/reset")
+    def joystick_reset():
+        joystick_bindings.reset_to_defaults()
+        return {"ok": True}
+
+    @app.post("/api/joystick/cpu-temp-trigger")
+    def joystick_cpu_temp_trigger_set(body: JoystickCpuTempTrigger):
+        joystick_bindings.set_cpu_temp_trigger(body.buttons)
+        return {"ok": True}
+
     @app.post("/api/idle/theme")
     def idle_theme_set(body: IdleThemeSet):
         """Switches the idle-animation theme (panels 3-6's dot/line/critter
@@ -939,6 +1338,8 @@ if app is not None:
             "intermission_paused": state.intermission_paused,
             "intermission_remaining_seconds": win_sequence_engine.get_intermission_remaining_seconds(time.time()),
             "show_phase": state.show_phase,
+            "show_unattended_autoplay": state.show_unattended_autoplay,
+            "show_unattended_autoplay_started_at": state.show_unattended_autoplay_started_at,
         }
 
     @app.post("/api/game/price-game")
@@ -1067,6 +1468,16 @@ if app is not None:
         ok = show_engine.stop_show()
         return {"ok": ok, "reason": None if ok else "Show isn't live."}
 
+    @app.post("/api/show/reset-unattended")
+    def show_reset_unattended():
+        # "Reset to Setup" -- live-panel banner shown only while
+        # state.show_unattended_autoplay is True (see gamepad_status()
+        # above). Fast fade, no outro fanfare -- see
+        # show_engine.reset_unattended_autoplay()'s docstring for why this
+        # is a separate path from the normal Stop Game -> outro flow.
+        ok = show_engine.reset_unattended_autoplay()
+        return {"ok": ok, "reason": None if ok else "Not currently in unattended autoplay."}
+
     @app.post("/api/game/intermission-pause")
     def intermission_pause():
         ok = win_sequence_engine.pause_intermission()
@@ -1178,6 +1589,21 @@ if app is not None:
         print("[WEB REMOTE] SHUTDOWN APP requested via web remote.")
         state.shutdown_reason = "WEB REMOTE"
         state.shutdown_requested = True
+        return {"ok": True}
+
+    @app.post("/api/system/poweroff")
+    def system_poweroff():
+        # Administrator action: powers off the Raspberry Pi itself, not
+        # just this app. Runs the exact same graceful app teardown as
+        # SHUTDOWN APP above (same flag, same main-thread block in
+        # main.py), then -- because poweroff_after_exit is set -- that
+        # block also shells out to `sudo shutdown -h now` right before
+        # exiting. Requires a one-time passwordless sudoers entry on the
+        # Pi for that exact command; see pi_deploy/README.md.
+        print("[WEB REMOTE] POWER OFF PI (admin) requested via web remote.")
+        state.shutdown_reason = "ADMIN POWEROFF (web remote)"
+        state.shutdown_requested = True
+        state.poweroff_after_exit = True
         return {"ok": True}
 
     @app.post("/api/system/reconnect-gamepad")

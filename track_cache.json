@@ -24867,5 +24867,837 @@
       "category": "true_false",
       "ts": 1786871978.311907
     }
+  ],
+  "the mamas & the papas - california dreamin' - single version": [
+    {
+      "headline": "1960s California dreaming anthem",
+      "full": "The Mamas & The Papas' iconic 1965 hit captures wintry East Coast longing for sunny California. A cornerstone of '60s pop-rock harmony.",
+      "question": "What US city were The Mamas & The Papas formed in?",
+      "choices": [
+        "Los Angeles",
+        "Nashville",
+        "San Francisco",
+        "New York"
+      ],
+      "correct_index": 0,
+      "correction": "",
+      "release_year": 1965,
+      "bpm": 76.0,
+      "energy": "slow",
+      "category": "geography",
+      "ts": 1786926052.8793676
+    },
+    {
+      "headline": "1960s folk-pop masterpiece",
+      "full": "The Mamas & The Papas' signature hit defined the California sound of the 1960s with lush harmonies and dreamy melodies.",
+      "question": "How many members were in The Mamas & The Papas?",
+      "choices": [
+        "4",
+        "5",
+        "3",
+        "6"
+      ],
+      "correct_index": 0,
+      "correction": "",
+      "release_year": 1965,
+      "bpm": 92.0,
+      "energy": "slow",
+      "category": "career_stat",
+      "ts": 1786926054.5544512
+    },
+    {
+      "headline": "1965 California dream that topped charts",
+      "full": "The Mamas & The Papas' iconic ballad became a #4 hit on the Billboard Hot 100. Its wistful melody and lyrics about missing California became a cultural touchstone of the 1960s.",
+      "question": "T/F: The song was written by John Phillips.",
+      "choices": [
+        "True",
+        "False"
+      ],
+      "correct_index": 0,
+      "correction": "",
+      "release_year": 1965,
+      "bpm": 76.0,
+      "energy": "slow",
+      "category": "true_false",
+      "ts": 1786926057.4857323
+    }
+  ],
+  "the kinks - you really got me": [
+    {
+      "headline": "Proto-punk proto-riff perfection",
+      "full": "The Kinks' raw, distorted guitar riff became a template for hard rock. Dave Davies' fuzzy tone\u2014created by slashing his amp speaker\u2014was scandalous for 1964.",
+      "question": "What year did The Kinks release 'You Really Got Me'?",
+      "choices": [
+        "1964",
+        "1982",
+        "1971",
+        "1959"
+      ],
+      "correct_index": 0,
+      "correction": "",
+      "release_year": 1964,
+      "bpm": 120.0,
+      "energy": "fast",
+      "category": "date",
+      "ts": 1786926699.4241555
+    },
+    {
+      "headline": "Proto-punk guitar riff that changed rock",
+      "full": "The Kinks' debut single featured one of rock's most iconic distorted guitar riffs, pioneering the sound that would influence punk and hard rock for decades.",
+      "question": "Which British band released 'A Hard Day's Night' in 1964?",
+      "choices": [
+        "The Beatles",
+        "The Rolling Stones",
+        "The Who",
+        "The Animals"
+      ],
+      "correct_index": 0,
+      "correction": "",
+      "release_year": 1964,
+      "bpm": 120.0,
+      "energy": "fast",
+      "category": "era",
+      "ts": 1786926701.2064216
+    },
+    {
+      "headline": "The Kinks' 1964 proto-punk classic",
+      "full": "Groundbreaking guitar riff pioneered by Dave Davies. Originally written about a girl, became an iconic rock anthem that influenced generations of musicians.",
+      "question": "What's this song really about?",
+      "choices": [
+        "partying all night",
+        "teenage rebellion",
+        "attraction to a girl",
+        "a breakup"
+      ],
+      "correct_index": 2,
+      "correction": "",
+      "release_year": 1964,
+      "bpm": 120.0,
+      "energy": "fast",
+      "category": "song_meaning",
+      "ts": 1786926703.2815542
+    }
+  ],
+  "the romantics - talking in your sleep": [
+    {
+      "headline": "1983 new wave hit about nocturnal confes",
+      "full": "The Romantics' biggest hit reached #3 on the Billboard Hot 100. The song's synth-driven production and catchy chorus made it a staple of 80s radio and MTV.",
+      "question": "What city were The Romantics formed in?",
+      "choices": [
+        "Chicago",
+        "Detroit",
+        "Cleveland",
+        "Milwaukee"
+      ],
+      "correct_index": 1,
+      "correction": "",
+      "release_year": 1983,
+      "bpm": 120.0,
+      "energy": "fast",
+      "category": "geography",
+      "ts": 1786936505.6395898
+    },
+    {
+      "headline": "1983 new wave hit about pillow talk",
+      "full": "The Romantics' biggest chart success, this 1983 new wave track topped the Billboard Hot 100 and became a staple of 80s radio with its infectious hooks and playful lyrics.",
+      "question": "What year did The Romantics form?",
+      "choices": [
+        "1981",
+        "1980",
+        "1978",
+        "1975"
+      ],
+      "correct_index": 2,
+      "correction": "",
+      "release_year": 1983,
+      "bpm": 120.0,
+      "energy": "fast",
+      "category": "real_name",
+      "ts": 1786936507.3980975
+    },
+    {
+      "headline": "1984 hit about nocturnal confessions",
+      "full": "The Romantics' biggest chart success, this new wave staple reached #4 on Billboard Hot 100 and became an 80s radio staple with its infectious hook about revealing secrets while sleeping.",
+      "question": "T/F: The Romantics broke up permanently after 1984.",
+      "choices": [
+        "True",
+        "False"
+      ],
+      "correct_index": 1,
+      "correction": "The band reunited in 2004 and continued performing together.",
+      "release_year": 1983,
+      "bpm": 120.0,
+      "energy": "fast",
+      "category": "true_false",
+      "ts": 1786936509.5917444
+    }
+  ],
+  "crazy town - butterfly": [
+    {
+      "headline": "Crazy Town's butterfly rap-rock smash",
+      "full": "Released in 2001, this nu-metal rap-rock track became Crazy Town's biggest hit, reaching #1 on Billboard Hot 100 and dominating early 2000s radio.",
+      "question": "Which boy band dominated pop music in 2001?",
+      "choices": [
+        "98 Degrees",
+        "Backstreet Boys",
+        "O-Town",
+        "*NSYNC"
+      ],
+      "correct_index": 3,
+      "correction": "",
+      "release_year": 2001,
+      "bpm": 92.0,
+      "energy": "fast",
+      "category": "era",
+      "ts": 1786939505.6663983
+    },
+    {
+      "headline": "Crazy Town's biggest hit from 2001",
+      "full": "This nu-metal/rap-rock track became Crazy Town's signature song, reaching #1 on the Billboard Hot 100 and dominating early 2000s radio and clubs worldwide.",
+      "question": "Who founded Crazy Town?",
+      "choices": [
+        "Fred Durst",
+        "Seth Binzer",
+        "Shifty Shellshock",
+        "Jonathan Davis"
+      ],
+      "correct_index": 1,
+      "correction": "",
+      "release_year": 2001,
+      "bpm": 92.0,
+      "energy": "fast",
+      "category": "real_name",
+      "ts": 1786939507.464427
+    },
+    {
+      "headline": "Butterfly by Crazy Town - 2001",
+      "full": "Crazy Town's debut hit 'Butterfly' peaked at #1 on the Billboard Hot 100 in 2001. The rap-rock track featured infectious hooks and became a massive summer anthem during the nu-metal era.",
+      "question": "T/F: Butterfly was Crazy Town's only Top 10 hit on the Billboard Hot 100.",
+      "choices": [
+        "True",
+        "False"
+      ],
+      "correct_index": 0,
+      "correction": "",
+      "release_year": 2001,
+      "bpm": 92.0,
+      "energy": "fast",
+      "category": "true_false",
+      "ts": 1786939509.206621
+    }
+  ],
+  "eminem - the real slim shady": [
+    {
+      "headline": "Will the real Slim Shady please stand up",
+      "full": "Iconic 2000 single from The Marshall Mathers LP. Became one of Eminem's signature tracks with its infectious hook and satirical commentary on celebrity culture.",
+      "question": "What gaming console launched in North America in 2000?",
+      "choices": [
+        "PlayStation 2",
+        "Xbox",
+        "Dreamcast",
+        "GameCube"
+      ],
+      "correct_index": 0,
+      "correction": "",
+      "release_year": 2000,
+      "bpm": 104.0,
+      "energy": "fast",
+      "category": "era",
+      "ts": 1786939990.476713
+    },
+    {
+      "headline": "Will the real Slim Shady please stand up",
+      "full": "2000 hit from The Marshall Mathers LP with iconic call-and-response hook. Satirizes celebrity culture & media obsession while cementing Eminem's superstardom.",
+      "question": "What's Eminem's real first name?",
+      "choices": [
+        "Michael",
+        "Matthew",
+        "Marshall",
+        "Martin"
+      ],
+      "correct_index": 2,
+      "correction": "",
+      "release_year": 2000,
+      "bpm": 104.0,
+      "energy": "fast",
+      "category": "real_name",
+      "ts": 1786939992.110515
+    },
+    {
+      "headline": "Marshall's 2000 mega-hit & cultural mome",
+      "full": "Released May 23, 2000, this satirical anthem became Eminem's breakthrough smash, topping charts globally and spawning the iconic music video where he impersonates various pop stars.",
+      "question": "What year was 'The Real Slim Shady' released?",
+      "choices": [
+        "1997",
+        "1999",
+        "2000",
+        "2002"
+      ],
+      "correct_index": 2,
+      "correction": "",
+      "release_year": 2000,
+      "bpm": 92.0,
+      "energy": "fast",
+      "category": "date",
+      "ts": 1786939993.8877254
+    }
+  ],
+  "manfred mann - do wah diddy diddy": [
+    {
+      "headline": "A #1 hit from a South African band",
+      "full": "This 1964 novelty classic became Manfred Mann's biggest US hit, reaching #1 on the Billboard Hot 100. The song's infectious 'do wah diddy' hook made it instantly memorable.",
+      "question": "What country was Manfred Mann formed in?",
+      "choices": [
+        "England",
+        "Australia",
+        "Germany",
+        "South Africa"
+      ],
+      "correct_index": 3,
+      "correction": "",
+      "release_year": 1964,
+      "bpm": 120.0,
+      "energy": "fast",
+      "category": "geography",
+      "ts": 1786940997.5703723
+    },
+    {
+      "headline": "British Invasion hit from '64",
+      "full": "Manfred Mann's infectious cover of this Leiber-Stoller composition became a transatlantic smash, reaching #1 in the US and #1 in the UK, defining the British Invasion sound.",
+      "question": "What year was 'Do Wah Diddy Diddy' released?",
+      "choices": [
+        "1956",
+        "1971",
+        "1964",
+        "1959"
+      ],
+      "correct_index": 2,
+      "correction": "",
+      "release_year": 1964,
+      "bpm": 120.0,
+      "energy": "fast",
+      "category": "date",
+      "ts": 1786940999.1639118
+    },
+    {
+      "headline": "Chart-topper from 1964",
+      "full": "Manfred Mann's 'Do Wah Diddy Diddy' hit #1 on the Billboard Hot 100 in 1964, becoming their signature song and a rock & roll classic.",
+      "question": "What year did Manfred Mann top the charts?",
+      "choices": [
+        "1965",
+        "1963",
+        "1964",
+        "1966"
+      ],
+      "correct_index": 2,
+      "correction": "",
+      "release_year": 1964,
+      "bpm": 120.0,
+      "energy": "fast",
+      "category": "career_stat",
+      "ts": 1786941000.7616498
+    }
+  ],
+  "queen - another one bites the dust": [
+    {
+      "headline": "Queen's killer bass groove",
+      "full": "Bass-driven disco-funk anthem with iconic John Deacon riff. One of Queen's biggest hits and a staple of sports arenas worldwide.",
+      "question": "What year was 'Another One Bites The Dust' released?",
+      "choices": [
+        "1975",
+        "1982",
+        "1980",
+        "1978"
+      ],
+      "correct_index": 2,
+      "correction": "",
+      "release_year": 1980,
+      "bpm": 110.0,
+      "energy": "fast",
+      "category": "date",
+      "ts": 1786946450.9660678
+    },
+    {
+      "headline": "Bass line heard 'round the world",
+      "full": "One of Queen's biggest hits with an iconic John Deacon bass line that defined 70s rock. Featured in countless films and became a cultural phenomenon.",
+      "question": "What city was Queen formed in?",
+      "choices": [
+        "Dublin",
+        "Los Angeles",
+        "New York",
+        "London"
+      ],
+      "correct_index": 3,
+      "correction": "",
+      "release_year": 1980,
+      "bpm": 110.0,
+      "energy": "fast",
+      "category": "geography",
+      "ts": 1786946461.988422
+    },
+    {
+      "headline": "Bass line that changed rock forever",
+      "full": "One of the most recognizable bass lines in music history, played by John Deacon. The song's infectious groove dominated charts globally and remains a staple of sports events and celebrations.",
+      "question": "T/F: Freddie Mercury wrote 'Another One Bites The Dust'.",
+      "choices": [
+        "True",
+        "False"
+      ],
+      "correct_index": 1,
+      "correction": "John Deacon wrote the song, one of his few lead compositions for Queen.",
+      "release_year": 1980,
+      "bpm": 217.0,
+      "energy": "fast",
+      "category": "true_false",
+      "ts": 1786946465.4570715
+    }
+  ],
+  "foreigner - i want to know what love is": [
+    {
+      "headline": "Power ballad from the 80s rock era",
+      "full": "1985 power ballad that became Foreigner's biggest hit and a staple of weddings and proms worldwide.",
+      "question": "What is this song fundamentally about?",
+      "choices": [
+        "heartbreak and loss",
+        "love and relationships",
+        "overcoming adversity",
+        "a romantic proposal"
+      ],
+      "correct_index": 1,
+      "correction": "",
+      "release_year": 1985,
+      "bpm": 76.0,
+      "energy": "slow",
+      "category": "song_meaning",
+      "ts": 1786947377.7556808
+    },
+    {
+      "headline": "Power ballad that topped charts worldwid",
+      "full": "1985 power ballad became Foreigner's biggest hit, reaching #2 on Billboard Hot 100 and winning a Grammy. Iconic synth-driven anthem of the 80s.",
+      "question": "Who founded Foreigner in 1973?",
+      "choices": [
+        "Jason Bonham",
+        "Lou Gramm",
+        "Mick Jones",
+        "Rick Hansen"
+      ],
+      "correct_index": 2,
+      "correction": "",
+      "release_year": 1985,
+      "bpm": 76.0,
+      "energy": "slow",
+      "category": "real_name",
+      "ts": 1786947379.5730183
+    },
+    {
+      "headline": "1985 power ballad mega-hit",
+      "full": "Foreigner's biggest chart success, reaching #2 on Billboard Hot 100. A defining 80s rock ballad that became a wedding staple and cultural phenomenon.",
+      "question": "How many band members did Foreigner have?",
+      "choices": [
+        "4",
+        "6",
+        "5",
+        "3"
+      ],
+      "correct_index": 0,
+      "correction": "",
+      "release_year": 1985,
+      "bpm": 76.0,
+      "energy": "slow",
+      "category": "career_stat",
+      "ts": 1786947381.5997112
+    }
+  ],
+  "ricky martin - livin' la vida loca": [
+    {
+      "headline": "Martin's Latin Party Anthem",
+      "full": "Released in 1999, this reggaeton-influenced hit became Ricky Martin's signature song and a global phenomenon, helping launch Latin music into the mainstream.",
+      "question": "What movie won Best Picture at the 1999 Oscars?",
+      "choices": [
+        "The Truman Show",
+        "Saving Private Ryan",
+        "Elizabeth",
+        "Titanic"
+      ],
+      "correct_index": 3,
+      "correction": "",
+      "release_year": 1999,
+      "bpm": 94.0,
+      "energy": "fast",
+      "category": "era",
+      "ts": 1786950482.0378618
+    },
+    {
+      "headline": "Latin Pop Anthem That Defined '90s",
+      "full": "Ricky Martin's signature hit topped charts worldwide & became a cultural phenomenon, helping launch Latin pop into mainstream global consciousness.",
+      "question": "What country is Ricky Martin from?",
+      "choices": [
+        "Spain",
+        "Mexico",
+        "Puerto Rico",
+        "Cuba"
+      ],
+      "correct_index": 2,
+      "correction": "",
+      "release_year": 1999,
+      "bpm": 100.0,
+      "energy": "fast",
+      "category": "geography",
+      "ts": 1786950484.060986
+    },
+    {
+      "headline": "1994 Latin Pop Crossover Smash",
+      "full": "Ricky Martin's breakthrough hit that launched him to global superstardom, reaching #1 on the Billboard Hot 100 and becoming a cultural phenomenon worldwide.",
+      "question": "How many Grammy Awards has Ricky Martin won?",
+      "choices": [
+        "5",
+        "2",
+        "3",
+        "7"
+      ],
+      "correct_index": 2,
+      "correction": "",
+      "release_year": 1994,
+      "bpm": 94.0,
+      "energy": "fast",
+      "category": "career_stat",
+      "ts": 1786950485.7020082
+    }
+  ],
+  "paul mccartney, wings - band on the run": [
+    {
+      "headline": "McCartney's jail-break concept album",
+      "full": "Title track from Wings' 1974 concept album about escaping constraints. Features Paul's adventurous production & storytelling at creative peak.",
+      "question": "What year was 'Band On The Run' released?",
+      "choices": [
+        "1982",
+        "1968",
+        "1974",
+        "1971"
+      ],
+      "correct_index": 2,
+      "correction": "",
+      "release_year": 1974,
+      "bpm": 120.0,
+      "energy": "fast",
+      "category": "date",
+      "ts": 1786950998.1103895
+    },
+    {
+      "headline": "Wings' biggest album masterpiece",
+      "full": "Band On The Run was the title track of Wings' 1973 album, a commercial and critical smash that won a Grammy and became one of the best-selling albums of the decade.",
+      "question": "How many studio albums did Wings release?",
+      "choices": [
+        "6",
+        "9",
+        "5",
+        "7"
+      ],
+      "correct_index": 3,
+      "correction": "",
+      "release_year": 1973,
+      "bpm": 120.0,
+      "energy": "fast",
+      "category": "career_stat",
+      "ts": 1786950999.764391
+    },
+    {
+      "headline": "Wings' jail escape concept album",
+      "full": "Title track from Wings' 1973 album about a band fleeing persecution. Features a memorable guitar riff and was a major hit, reaching #1 in several countries.",
+      "question": "What is 'Band On The Run' about?",
+      "choices": [
+        "touring the world",
+        "prison break",
+        "escaping persecution",
+        "road trip adventure"
+      ],
+      "correct_index": 2,
+      "correction": "",
+      "release_year": 1973,
+      "bpm": 102.0,
+      "energy": "fast",
+      "category": "song_meaning",
+      "ts": 1786951001.9151936
+    }
+  ],
+  "journey - separate ways (worlds apart)": [
+    {
+      "headline": "Journey's 1985 power ballad masterpiece",
+      "full": "Epic synth-driven power ballad that became Journey's signature song, reaching #8 on Billboard Hot 100 in 1985. Features one of rock's most iconic guitar solos.",
+      "question": "What blockbuster movie topped US box office in 1985?",
+      "choices": [
+        "Back to the Future",
+        "The Breakfast Club",
+        "Ghostbusters II",
+        "Rambo: First Blood Part "
+      ],
+      "correct_index": 0,
+      "correction": "",
+      "release_year": 1985,
+      "bpm": 92.0,
+      "energy": "slow",
+      "category": "era",
+      "ts": 1786951840.0431085
+    },
+    {
+      "headline": "Journey's power ballad masterpiece",
+      "full": "Epic 1995 power ballad showcasing Steve Perry's soaring vocals and a signature synth-driven arrangement that became a global hit.",
+      "question": "What year was 'Separate Ways' released?",
+      "choices": [
+        "1979",
+        "1995",
+        "2001",
+        "1987"
+      ],
+      "correct_index": 1,
+      "correction": "",
+      "release_year": 1995,
+      "bpm": 76.0,
+      "energy": "slow",
+      "category": "date",
+      "ts": 1786951841.7459152
+    },
+    {
+      "headline": "Journey's 1985 power ballad masterpiece",
+      "full": "Epic synth-driven power ballad from Journey's 'Frontiers' album. Became one of their biggest hits and a staple of 80s rock radio.",
+      "question": "What US city was Journey formed in?",
+      "choices": [
+        "Boston",
+        "Seattle",
+        "San Francisco",
+        "Los Angeles"
+      ],
+      "correct_index": 2,
+      "correction": "",
+      "release_year": 1985,
+      "bpm": 76.0,
+      "energy": "slow",
+      "category": "geography",
+      "ts": 1786951843.623044
+    }
+  ],
+  "the clash - rock the casbah": [
+    {
+      "headline": "1982 hit banned in some countries",
+      "full": "This 1982 hit was banned by some radio stations for its satirical lyrics about Middle Eastern conflict. The song became The Clash's biggest US chart success.",
+      "question": "Who was The Clash's bassist and co-founder?",
+      "choices": [
+        "Mick Jones",
+        "Joe Strummer",
+        "Topper Headon",
+        "Paul Simonon"
+      ],
+      "correct_index": 3,
+      "correction": "",
+      "release_year": 1982,
+      "bpm": 104.0,
+      "energy": "fast",
+      "category": "real_name",
+      "ts": 1786952837.0285957
+    },
+    {
+      "headline": "The Clash's banned-in-many-countries hit",
+      "full": "Controversial 1982 track banned by some radio stations for perceived anti-Islamic imagery. Actually a critique of cultural imperialism and Western influence spreading globally.",
+      "question": "What does 'Rock the Casbah' critique?",
+      "choices": [
+        "cultural imperialism",
+        "Islamic extremism",
+        "Moroccan nightlife",
+        "Middle Eastern politics"
+      ],
+      "correct_index": 0,
+      "correction": "",
+      "release_year": 1982,
+      "bpm": 104.0,
+      "energy": "fast",
+      "category": "song_meaning",
+      "ts": 1786952839.3164577
+    },
+    {
+      "headline": "The Clash's 1982 hit banned in some coun",
+      "full": "This iconic track was controversially banned by some radio stations for its lyrics about Islamic culture. It became one of The Clash's biggest hits worldwide.",
+      "question": "What year was 'Rock the Casbah' released?",
+      "choices": [
+        "1982",
+        "1991",
+        "1975",
+        "1979"
+      ],
+      "correct_index": 0,
+      "correction": "",
+      "release_year": 1982,
+      "bpm": 104.0,
+      "energy": "fast",
+      "category": "date",
+      "ts": 1786952841.021347
+    }
+  ],
+  "alice in chains - would?": [
+    {
+      "headline": "Grunge masterpiece from Temple of the Do",
+      "full": "Written as a tribute to Andrew Wood of Soundgarden, this Alice In Chains classic became a defining grunge anthem with its haunting vocal harmonies and heavy riffing.",
+      "question": "Who was the lead singer of Alice In Chains?",
+      "choices": [
+        "Kurt Cobain",
+        "Layne Staley",
+        "Chris Cornell",
+        "Mark Lanegan"
+      ],
+      "correct_index": 1,
+      "correction": "",
+      "release_year": 1990,
+      "bpm": 120.0,
+      "energy": "dark",
+      "category": "real_name",
+      "ts": 1786953262.6151116
+    },
+    {
+      "headline": "Soundgarden tribute in grunge anthem",
+      "full": "Written as a tribute to Andrew Wood of Soundgarden after his 1990 death. The title reflects the band's question of what would happen if he were still alive.",
+      "question": "What tragedy inspired this song?",
+      "choices": [
+        "Kurt Cobain's suicide",
+        "Andrew Wood's death",
+        "A friend's addiction",
+        "A broken relationship"
+      ],
+      "correct_index": 1,
+      "correction": "",
+      "release_year": 1990,
+      "bpm": 120.0,
+      "energy": "dark",
+      "category": "song_meaning",
+      "ts": 1786953265.3682163
+    },
+    {
+      "headline": "Grunge classic from 'Singles' film",
+      "full": "Written as tribute to Andrew Wood of Temple of the Dog, featured in 1992 'Singles' soundtrack. Iconic heavy yet melodic grunge anthem.",
+      "question": "What Seattle-area city was Alice In Chains formed in?",
+      "choices": [
+        "Tacoma",
+        "Seattle",
+        "Olympia",
+        "Portland"
+      ],
+      "correct_index": 1,
+      "correction": "",
+      "release_year": 1990,
+      "bpm": 120.0,
+      "energy": "dark",
+      "category": "geography",
+      "ts": 1786953267.39835
+    }
+  ],
+  "queen, david bowie - under pressure": [
+    {
+      "headline": "Queen & Bowie's chart-topping collab",
+      "full": "This 1981 synth-pop masterpiece topped charts worldwide. The iconic bassline was played by John Deacon, and the song features one of rock's most memorable vocal duets.",
+      "question": "Which Queen bassist played on this track?",
+      "choices": [
+        "Roger Taylor",
+        "John Deacon",
+        "Brian May",
+        "Tim Staffell"
+      ],
+      "correct_index": 1,
+      "correction": "",
+      "release_year": 1981,
+      "bpm": 110.0,
+      "energy": "fast",
+      "category": "real_name",
+      "ts": 1786955778.9762113
+    },
+    {
+      "headline": "Queen & Bowie's chart-topping collab",
+      "full": "1981 hit single from Queen's 'Hot Space' album, featuring David Bowie on vocals. Topped charts worldwide and became one of their biggest commercial successes.",
+      "question": "What does this song warn against?",
+      "choices": [
+        "war",
+        "peer pressure",
+        "heartbreak",
+        "fame"
+      ],
+      "correct_index": 1,
+      "correction": "",
+      "release_year": 1981,
+      "bpm": 104.0,
+      "energy": "fast",
+      "category": "song_meaning",
+      "ts": 1786955780.6289184
+    },
+    {
+      "headline": "Queen & Bowie's chart-topping 1981 colla",
+      "full": "Epic synth-driven duet from the UK, reached #1 on charts worldwide. Iconic bassline & pressure-themed lyrics made it a stadium anthem.",
+      "question": "What was the top-selling album of 1981?",
+      "choices": [
+        "Never for Ever by Kate B",
+        "Ghost in the Machine by ",
+        "Dare by Human League",
+        "Tattoo You by The Rollin"
+      ],
+      "correct_index": 2,
+      "correction": "",
+      "release_year": 1981,
+      "bpm": 110.0,
+      "energy": "fast",
+      "category": "era",
+      "ts": 1786955783.000155
+    }
+  ],
+  "queen - radio ga ga": [
+    {
+      "headline": "Queen's synth-pop radio anthem",
+      "full": "Released in 1984, 'Radio Ga Ga' became Queen's biggest hit in years, featuring Freddie Mercury's iconic vocal layering and a minimalist synth-driven sound that dominated MTV.",
+      "question": "What Apple product launched in 1984?",
+      "choices": [
+        "Apple Watch",
+        "iPod",
+        "iPad",
+        "Macintosh"
+      ],
+      "correct_index": 3,
+      "correction": "",
+      "release_year": 1984,
+      "bpm": 120.0,
+      "energy": "fast",
+      "category": "era",
+      "ts": 1787248726.431257
+    },
+    {
+      "headline": "Queen's 1984 synth-pop anthem",
+      "full": "A synth-driven disco-pop track celebrating radio and mass media. Features iconic synth hook and became a massive hit across Europe and beyond.",
+      "question": "Who was Queen's legendary lead singer?",
+      "choices": [
+        "Robert Plant",
+        "Mick Jagger",
+        "Freddie Mercury",
+        "David Bowie"
+      ],
+      "correct_index": 2,
+      "correction": "",
+      "release_year": 1984,
+      "bpm": 120.0,
+      "energy": "fast",
+      "category": "real_name",
+      "ts": 1787248728.4810753
+    },
+    {
+      "headline": "Queen's 1984 synth-pop radio anthem",
+      "full": "Featured a groundbreaking music video with Freddie Mercury as a futuristic android, becoming iconic in early MTV era. Reached #16 on Billboard Hot 100.",
+      "question": "What country is Queen's frontman Freddie Mercury from?",
+      "choices": [
+        "Pakistan",
+        "Zanzibar",
+        "India",
+        "Sri Lanka"
+      ],
+      "correct_index": 1,
+      "correction": "",
+      "release_year": 1984,
+      "bpm": 119.0,
+      "energy": "fast",
+      "category": "geography",
+      "ts": 1787248730.3071668
+    }
   ]
 }
