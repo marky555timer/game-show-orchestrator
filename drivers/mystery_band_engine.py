@@ -198,6 +198,43 @@ def update(now):
         state.mystery_active = False
 
 
+def reveal_stage(now):
+    """"Who is this?" reveal timing (2026-09-16): purely derived from
+    state.mystery_started_at + fixed config durations, no new mutable state
+    -- same "engine exposes elapsed-time math, renderers just call it"
+    convention as e.g. drivers/wled_engine.py::_apply_intro()'s beat timing.
+    Both graphics/matrix_canvas.py (panel text/colors) and drivers/
+    wled_engine.py (marquee) call this so the two stay in lockstep without
+    duplicating the timing logic in either place.
+
+    Returns ("sparkle" | "solid" | "cascade" | "done", revealed_count):
+      sparkle -- panels 1+2 show a sparkly "Who is this?"; panels 3-6 blank.
+      solid   -- panels 1+2 settle to a solid "Is this:"; panels 3-6 still blank.
+      cascade -- panels 3-6 reveal one at a time, in button order (green/
+                 red/yellow/blue); revealed_count (1-3) is how many so far.
+      done    -- all 4 revealed (naturally, by finishing the cascade) OR the
+                 round is no longer live (graded early by a button/phone
+                 answer, or state.mystery_active has gone False entirely,
+                 e.g. the post-answer reveal-blink window) -- revealed_count
+                 is always 4 here, callers should render the normal fully-
+                 revealed answer panels (graphics/matrix_canvas.py::
+                 _draw_answer_choice_panels already handles selected/locked/
+                 graded looks unchanged)."""
+    if not is_teaser_live():
+        return "done", 4
+    elapsed = now - state.mystery_started_at
+    if elapsed < config.MYSTERY_SPARKLE_SECONDS:
+        return "sparkle", 0
+    elapsed -= config.MYSTERY_SPARKLE_SECONDS
+    if elapsed < config.MYSTERY_SOLID_SECONDS:
+        return "solid", 0
+    elapsed -= config.MYSTERY_SOLID_SECONDS
+    step = int(elapsed // config.MYSTERY_CASCADE_STEP_SECONDS) + 1
+    if step >= 4:
+        return "done", 4
+    return "cascade", step
+
+
 def is_teaser_live():
     """True only during the still-unresolved 10s window -- the window in
     which Btn2 should force the identify-band question in first."""
@@ -229,6 +266,38 @@ def enter_game_from_mystery():
     state.mystery_identify_question = None
     print("[MYSTERY BAND] Identify-band question served -- queue re-sorted by priority hierarchy.")
     return True
+
+
+def end_mystery_after_grade():
+    """Post-grade hook (inputs/gamepad.py::_maybe_advance_from_mystery_
+    grade(), called the instant ANY grading path -- physical panel button,
+    phone, or timeout -- finishes with the mystery round). Unlike
+    enter_game_from_mystery() above (the Btn2-during-teaser hook, which
+    deliberately (re)applies the identify question as a FRESH, unanswered
+    round with a restarted 30s clock), this must NOT touch state.mystery_
+    identify_question at all -- the round it belongs to has ALREADY been
+    graded (state.quiz_locked is already True by the time this runs).
+
+    Bug fixed here (2026-09-17, confirmed live): the shared code used to
+    route this same post-grade case through enter_game_from_mystery(),
+    whose "if not state.round_first_answer_at: apply_mystery_identify_
+    question(question)" guard is ALWAYS true for a physical-button-only
+    grade (state.round_first_answer_at is only ever set by a phone's own
+    answer submission, web/remote_server.py -- never by the panel
+    buttons) -- so re-applying reset quiz_locked back to False and
+    restarted the exact same "Who is this?" question from scratch with a
+    fresh timer, which read as "it just asks the same question again"
+    instead of letting graphics/matrix_canvas.py's normal post-grade
+    celebration/stats hold run and hand off to drivers/factoid_engine.py::
+    advance_to_next_queued_question() for a genuinely NEW question.
+
+    Just the bookkeeping enter_game_from_mystery() otherwise shares:
+    re-sorts the remaining cached queue by the Section 2 priority
+    hierarchy and ends the teaser."""
+    _sort_queue_by_priority()
+    state.mystery_active = False
+    state.mystery_resolved = False
+    state.mystery_identify_question = None
 
 
 def _sort_queue_by_priority():

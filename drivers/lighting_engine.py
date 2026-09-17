@@ -1,3 +1,4 @@
+import colorsys
 import math
 import random
 import time
@@ -14,10 +15,11 @@ from config import (
     WESTMINSTER_STROBE_INTERVAL_SECONDS, WESTMINSTER_UV_RAMP_SECONDS,
     SHOW_INTRO_DMX_FLASH_AT_SECONDS, SHOW_INTRO_DMX_FLASH_SECONDS,
     SHOW_INTRO_CHASE_PERIOD_SECONDS, SHOW_OUTRO_DMX_FADE_SECONDS,
+    MARQUEE_DJ_RAINBOW_SPEED,
 )
 from state import state
 from drivers.dmx_driver import dmx
-from drivers import light_prefs_engine
+from drivers import color_utils, light_prefs_engine
 
 _SPARKLE_THEME_INDEX = 3  # matches _dj_theme_frame's "Sparkle" pattern
 
@@ -31,13 +33,13 @@ def _dj_theme_frame(t, period, theme=None):
     theme drives brightness only and uses one color across all fixtures, so
     threading the color through here just meant repeating it 10 times.
 
-    `theme` defaults to state.dj_theme_index (the normal case); passing it
+    `theme` defaults to state.dmx_theme_index (the normal case); passing it
     explicitly lets a caller force a specific pattern without touching that
     state -- used by _render_attention_sparkle() to force the Sparkle
     pattern during the song-intro window regardless of the track's actual
     chosen theme."""
     if theme is None:
-        theme = state.dj_theme_index
+        theme = state.dmx_theme_index
     values = []
 
     if theme == 0:
@@ -179,16 +181,71 @@ def _dj_theme_frame(t, period, theme=None):
 
 
 def _current_color():
-    return DJ_COLOR_PALETTE[state.dj_color_index % len(DJ_COLOR_PALETTE)]
+    return DJ_COLOR_PALETTE[state.dmx_color_index % len(DJ_COLOR_PALETTE)]
+
+
+def _dmx_gradient_frame(t, base_color):
+    """Per-fixture (r, g, b) list, one entry per uplight (fixtures 2-11),
+    for state.dmx_gradient_mode when it isn't "off" -- called instead of
+    _current_color()'s single flat color. Only replaces per-fixture COLOR;
+    _dj_theme_frame()'s per-fixture dimmer/motion envelope is untouched, so
+    a gradient can run under any animated theme same as a solid color can.
+
+    "rainbow" ignores base_color and sweeps a full hue cycle across the
+    fixture line over time (same math/speed as wled_engine.py's own
+    rainbow chase pattern). "adjacent"/"complementary" blend smoothly from
+    base_color (fixture 2) to its hue-shifted counterpart (fixture 11, +30
+    deg / +180 deg via drivers/color_utils.hue_shift) -- a real left-to-
+    right gradient across the physical fixture line, not just a second flat
+    color."""
+    mode = state.dmx_gradient_mode
+    if mode == "rainbow":
+        colors = []
+        for i in range(_UPLIGHT_COUNT):
+            hue = (i / _UPLIGHT_COUNT + t * MARQUEE_DJ_RAINBOW_SPEED) % 1.0
+            r, g, b = colorsys.hsv_to_rgb(hue, 1.0, 1.0)
+            colors.append((r * 255, g * 255, b * 255))
+        return colors
+
+    degrees = 30 if mode == "adjacent" else 180  # "complementary"
+    r0, g0, b0 = base_color[0], base_color[1], base_color[2]
+    r1, g1, b1 = color_utils.hue_shift(r0, g0, b0, degrees)
+    colors = []
+    for i in range(_UPLIGHT_COUNT):
+        frac = i / (_UPLIGHT_COUNT - 1)
+        colors.append((
+            r0 + (r1 - r0) * frac,
+            g0 + (g1 - g0) * frac,
+            b0 + (b1 - b0) * frac,
+        ))
+    return colors
 
 
 def _render_dj_uplights(t, brightness=1.0):
-    if state.dj_theme_index == DJ_THEME_ALL_OFF_INDEX:
+    # Btn9 feature-select confirmation flash (inputs/gamepad.py::
+    # handle_feature_select) -- takes priority over the normal DJ pattern
+    # for its brief window, mirroring _render_grade_flash's shape but for
+    # a DJ-mode-only concern, so it's kept as its own state pair
+    # (dj_feature_flash_*) rather than reusing GAME-mode-scoped
+    # fixture_flash_mode/until.
+    if t < state.dj_feature_flash_until:
+        dmx.set_all_uplights(255, *state.dj_feature_flash_color)
+        return
+    if state.dmx_theme_index == DJ_THEME_ALL_OFF_INDEX:
         dmx.set_all_uplights(0, 0, 0, 0)
         return
     color = _current_color()
-    r, g, b = color
     frame = _dj_theme_frame(t, state.dj_tempo_period)
+    if state.dmx_gradient_mode != "off":
+        gradient_colors = _dmx_gradient_frame(t, color)
+        for i, dimmer in enumerate(frame):
+            r, g, b = gradient_colors[i]
+            # Gradient is inherently an RGB concept -- dedicated white/
+            # amber/uv emitters (config.DJColor) have no sensible gradient
+            # endpoint, so they're left off in gradient mode.
+            dmx.set_uplight(i + 2, int(dimmer * brightness), int(r), int(g), int(b))
+        return
+    r, g, b = color
     for i, dimmer in enumerate(frame):
         # White/amber/UV ride their own emitters (see config.DJColor) -- the
         # dimmer scales all of them together, so a "uv" look dims as a UV
@@ -261,12 +318,12 @@ def _pick_implied_look():
     energy = light_prefs_engine.get_energy_for(state.factoid_track_key)
 
     color_pool = ENERGY_COLOR_INDICES.get(energy) or range(len(DJ_COLOR_PALETTE))
-    color_choices = [i for i in color_pool if i != state.dj_color_index] or list(color_pool)
-    state.dj_color_index = random.choice(color_choices)
+    color_choices = [i for i in color_pool if i != state.dmx_color_index] or list(color_pool)
+    state.dmx_color_index = random.choice(color_choices)
 
     theme_pool = ENERGY_THEME_INDICES.get(energy) or range(DJ_THEME_COUNT)
-    theme_choices = [i for i in theme_pool if i != state.dj_theme_index] or list(theme_pool)
-    state.dj_theme_index = random.choice(theme_choices)
+    theme_choices = [i for i in theme_pool if i != state.dmx_theme_index] or list(theme_pool)
+    state.dmx_theme_index = random.choice(theme_choices)
 
 
 def _resolve_pending_look(now):

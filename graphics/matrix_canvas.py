@@ -21,7 +21,7 @@ from config import (
     QUIZ_TF_CORRECTION_HOLD_SECONDS,
     BRANDING_OVERLAY_INTERVAL_SECONDS, BRANDING_OVERLAY_DURATION_SECONDS,
     BRANDING_ASSEMBLY_DURATION_SECONDS, DJ_COLOR_PALETTE,
-    MYSTERY_QMARK_PHASE_SECONDS, MYSTERY_REVEAL_BLINK_PERIOD_SECONDS,
+    MYSTERY_REVEAL_BLINK_PERIOD_SECONDS,
     TEMPO_PERIOD_DEFAULT_SECONDS,
     SI_PLAYER_WIDTH, SI_PLAYER_HEIGHT, SI_PLAYER_Y_FROM_BOTTOM, SI_INVADER_SIZE,
     SI_ROW23_GAP_PX, PANEL_W, PANEL_H,
@@ -38,13 +38,14 @@ from drivers import power_monitor
 from drivers.dmx_driver import dmx
 from drivers import tunnel_engine
 from drivers import idle_cycle_engine
+from drivers import mystery_band_engine
 from graphics.text_render import (
     draw_marquee, wrap_two_lines, draw_bitmap_text, text_width, char_width,
     GLYPH_GAP, GLYPH_HEIGHT,
 )
 from graphics.animations import (
     render_panel_animation, deal_panel_animations,
-    anim_dancing_cat, anim_star_burst, anim_coin_pop, anim_question_mark,
+    anim_dancing_cat, anim_star_burst, anim_coin_pop,
     anim_bold_star, anim_bold_dollar, anim_arrow_down,
 )
 from graphics import overlay_panel
@@ -159,9 +160,18 @@ def _render_dj_mode(t):
         _top_cycle_start = t
         # New track -> deal a fresh hand of animations across panels 3-6.
         deal_panel_animations()
-        # New track -> force a DJ-mode uplighting color rotation, same
-        # palette Btn7 cycles through manually (drivers/lighting_engine.py).
-        state.dj_color_index = (state.dj_color_index + 1) % len(DJ_COLOR_PALETTE)
+        # New track -> force a DJ-mode uplighting color rotation across all
+        # three fixture types (DMX/marquee/outline), same palette Btn7
+        # cycles through manually per whichever is currently selected (see
+        # inputs/gamepad.py::handle_color_cycle) -- these three used to be
+        # one shared dj_color_index; rotating all three here preserves the
+        # existing "whole rig visibly shifts color on a new track" look
+        # rather than only shifting whichever fixture Btn7 last targeted.
+        # A saved per-song preference (drivers/light_prefs_engine.py::
+        # apply_prefs_for) can still override any of these afterward.
+        state.dmx_color_index = (state.dmx_color_index + 1) % len(DJ_COLOR_PALETTE)
+        state.marquee_color_index = (state.marquee_color_index + 1) % len(DJ_COLOR_PALETTE)
+        state.accent_color_index = (state.accent_color_index + 1) % len(DJ_COLOR_PALETTE)
 
     # Mystery Band teaser (Section 2, drivers/mystery_band_engine.py): while
     # the 10s window is still live, panels 1+2 hide the title behind "Who is
@@ -177,7 +187,7 @@ def _render_dj_mode(t):
     # being crammed into 32px -- except during the periodic branding
     # takeover below, which uses the combined surface as a single line.
     if mystery_live:
-        draw_marquee(matrix_surface, "mystery_teaser", "Who is this?", TOP_COMBINED, align="center")
+        _render_mystery_top(t)
     elif mystery_reveal:
         tx, ty, tw, th = TOP_COMBINED
         line1_rect = (tx, ty, tw, LINE_H)
@@ -251,17 +261,8 @@ def _render_dj_mode(t):
     # the DJ-mode tap-tempo period driving the DMX uplighting.
     anim_t = _advance_beat_clock(t)
 
-    if mystery_live and state.round_first_answer_at:
-        # Beta-Fix Feature Set item 2: once anyone has answered the
-        # teaser-answering window, panels 3-6 flip from the qmark/idle
-        # cycle to the actual answer options -- panels 1+2 keep showing
-        # "Who is this?" unchanged (see mystery_live branch above).
-        _draw_answer_choice_panels(
-            state.factoid_choices, state.factoid_correct_index,
-            state.quiz_selected_index, state.quiz_locked, anim_t,
-        )
-    elif mystery_live:
-        _render_mystery_qmark_cycle(anim_t)
+    if mystery_live:
+        _render_mystery_panels(t, anim_t)
     else:
         for pid in (3, 4, 5, 6):
             rect = PANELS[pid]
@@ -302,24 +303,52 @@ def _render_dj_mode(t):
     _draw_hot_track_flash(t)
 
 
-def _render_mystery_qmark_cycle(t):
-    """Section 2: loops, in MYSTERY_QMARK_PHASE_SECONDS-long steps, through
-    [question-mark on half the panels] -> [original animations] ->
-    [question-mark on ALL 4 panels] -> [original animations] -- for as long
-    as the Mystery Band teaser stays unresolved."""
-    phase_idx = int(t / MYSTERY_QMARK_PHASE_SECONDS) % 4
-    for i, pid in enumerate((3, 4, 5, 6)):
-        rect = PANELS[pid]
-        show_qmark = (phase_idx == 2) or (phase_idx == 0 and i % 2 == 0)
-        if show_qmark:
-            old_clip = matrix_surface.get_clip()
-            matrix_surface.set_clip(pygame.Rect(rect))
-            try:
-                anim_question_mark(matrix_surface, rect, t)
-            finally:
-                matrix_surface.set_clip(old_clip)
-        else:
-            render_panel_animation(matrix_surface, pid, rect, t)
+def _render_mystery_top(t):
+    """Panels 1+2 during the live "Who is this?" window (mystery_live,
+    2026-09-16 reveal-timing rewrite): sparkly "Who is this?" while nothing
+    on panels 3-6 has been revealed yet, settling to a solid "Is this:"
+    once the cascade there starts. Stage timing from drivers/
+    mystery_band_engine.py::reveal_stage(), shared with the marquee
+    (drivers/wled_engine.py::_apply_mystery_marquee) so both stay in
+    lockstep."""
+    stage, _ = mystery_band_engine.reveal_stage(t)
+    if stage == "sparkle":
+        # Lightweight flicker -- jitters invert on/off frame to frame,
+        # same "sparkle" idea as drivers/wled_engine.py's _twinkle() applied
+        # to text instead of raw pixels; reads fine at 7px glyph height
+        # without needing anything fancier.
+        draw_marquee(matrix_surface, "mystery_teaser", "Who is this?", TOP_COMBINED,
+                     align="center", invert=random.random() < 0.3)
+    else:
+        draw_marquee(matrix_surface, "mystery_is_this", "Is this:", TOP_COMBINED, align="center")
+
+
+def _render_mystery_panels(t, anim_t):
+    """Panels 3-6 during the live "Who is this?" window: blank through the
+    sparkle/solid beats above, then reveal one answer option at a time
+    (green/red/yellow/blue order, matching config.SIMON_HW_COLOR_ORDER) as
+    drivers/mystery_band_engine.py::reveal_stage()'s cascade advances.
+    Once all 4 are up -- naturally, by finishing the cascade, or because
+    the round stopped being live/ungraded for any other reason -- hands off
+    to the same _draw_answer_choice_panels() every other question type
+    already uses for its selected/locked/graded looks."""
+    stage, revealed = mystery_band_engine.reveal_stage(t)
+    if stage in ("sparkle", "solid"):
+        for pid in (3, 4, 5, 6):
+            draw_marquee(matrix_surface, f"mystery_blank_{pid}", "", PANELS[pid])
+    elif stage == "cascade":
+        choices = state.factoid_choices
+        for i, pid in enumerate((3, 4, 5, 6)):
+            key = f"mystery_reveal_{i}"
+            if i < revealed and i < len(choices):
+                draw_marquee(matrix_surface, key, choices[i], PANELS[pid])
+            else:
+                draw_marquee(matrix_surface, key, "", PANELS[pid])
+    else:  # "done" -- fully revealed (naturally, or the round's no longer live/ungraded)
+        _draw_answer_choice_panels(
+            state.factoid_choices, state.factoid_correct_index,
+            state.quiz_selected_index, state.quiz_locked, anim_t,
+        )
 
 
 # panel_id -> which two leaderboard ranks (0-indexed within the current
@@ -789,6 +818,24 @@ def _render_quiz_stats_or_return(t, elapsed, celebration_hold):
     print("[QUIZ] No more queued questions for this track -- auto-returning to DJ mode.")
 
 
+def _render_mystery_panel_win():
+    """Solo (no registered players) "Who is this?" answered correctly via
+    a physical panel button (2026-09-17, operator feedback: the normal win
+    celebration -- one of 4 panels pulsing -- didn't make it obvious to
+    the room WHAT was actually chosen). Puts the actual artist name front
+    and center on panels 1+2 instead of repeating the question, and blanks
+    panels 3-6 entirely -- drivers/wled_engine.py::update() mirrors this on
+    the marquee (its own state.mystery_panel_win_active check: movie-chase
+    on the title strip, blackout on panels 3-6) so nothing else competes
+    with it for the room's attention. Lasts through the normal celebration_
+    hold, same as any other win, then _render_quiz_stats_or_return() takes
+    over as usual."""
+    draw_marquee(matrix_surface, "mystery_panel_win_name", state.mystery_artist_display,
+                 TOP_COMBINED, align="center")
+    for pid in (3, 4, 5, 6):
+        draw_marquee(matrix_surface, f"mystery_panel_win_blank_{pid}", "", PANELS[pid])
+
+
 def _render_quiz_mode(t):
     # Quiz content is loaded once, up front, by the Btn6 gate in
     # inputs/gamepad.py -- no per-frame fetching happens here anymore.
@@ -818,6 +865,9 @@ def _render_quiz_mode(t):
         elapsed = t - state.quiz_graded_at
         if elapsed >= celebration_hold:
             _render_quiz_stats_or_return(t, elapsed, celebration_hold)
+            return
+        if state.mystery_panel_win_active:
+            _render_mystery_panel_win()
             return
 
     _ensure_quiz_content()
@@ -1406,6 +1456,19 @@ def _draw_unattended_final_warning(now):
                      PANELS[panel_id], align="center", scroll=False)
 
 
+def _render_setup_confirm(t):
+    """"START SHOW NOW?" confirm (2026-09-16, drivers/simon_engine.py::
+    _poll_setup_hardware(), green button during the Setup-page idle
+    countdown): panel3(green)="NO", panel4(red)="YES", panels 5/6 blank --
+    same panel3-first/panel4-second convention True/False questions already
+    use (_draw_answer_choice_panels, choices=["True","False"])."""
+    draw_marquee(matrix_surface, "setup_confirm_banner", "START SHOW NOW?", TOP_COMBINED, align="center")
+    draw_marquee(matrix_surface, "setup_confirm_no", "NO", PANELS[3], align="center")
+    draw_marquee(matrix_surface, "setup_confirm_yes", "YES", PANELS[4], align="center")
+    draw_marquee(matrix_surface, "setup_confirm_blank5", "", PANELS[5])
+    draw_marquee(matrix_surface, "setup_confirm_blank6", "", PANELS[6])
+
+
 def _render_show_phase(t):
     """Setup/Countdown share a static held screen (nothing dramatic should
     happen on the physical rig just because the operator is filling out
@@ -1421,18 +1484,30 @@ def _render_show_phase(t):
         # (a scheduled start the operator already armed) doesn't get any
         # of this; that idle clock only runs during "setup" (see
         # show_engine._update_unattended_autoplay()).
-        remaining = _unattended_remaining_seconds(t)
-        seconds_display = min(int(config.SHOW_UNATTENDED_AUTOPLAY_TIMEOUT_SECONDS) - 1, int(remaining))
-        # Solid, not flashing (2026-08-19: the blink read as "too much" on
-        # the physical rig) -- only the final-10s panels 3-6 warning below
-        # still flashes.
-        draw_marquee(matrix_surface, "show_setup_banner", f"AUTO :{seconds_display:02d}",
-                     TOP_COMBINED, align="center")
-        _draw_unattended_countdown_bar(remaining)
-        if remaining <= config.SHOW_UNATTENDED_FINAL_WARNING_SECONDS:
-            _draw_unattended_final_warning(t)
+        #
+        # Green/blue physical-button interactions (2026-09-16, drivers/
+        # simon_engine.py::_poll_setup_hardware()) take over this screen
+        # entirely while active -- checked ahead of the normal AUTO banner
+        # below, mutually exclusive with each other (blue only does
+        # anything while the confirm isn't already open).
+        if state.setup_confirm_active:
+            _render_setup_confirm(t)
+        elif t < state.gamepad_connect_feedback_until:
+            draw_marquee(matrix_surface, "gamepad_connect_feedback",
+                         state.gamepad_connect_feedback_text, TOP_COMBINED, align="center")
         else:
-            _draw_setup_status_chips()
+            remaining = _unattended_remaining_seconds(t)
+            seconds_display = min(int(config.SHOW_UNATTENDED_AUTOPLAY_TIMEOUT_SECONDS) - 1, int(remaining))
+            # Solid, not flashing (2026-08-19: the blink read as "too much" on
+            # the physical rig) -- only the final-10s panels 3-6 warning below
+            # still flashes.
+            draw_marquee(matrix_surface, "show_setup_banner", f"AUTO :{seconds_display:02d}",
+                         TOP_COMBINED, align="center")
+            _draw_unattended_countdown_bar(remaining)
+            if remaining <= config.SHOW_UNATTENDED_FINAL_WARNING_SECONDS:
+                _draw_unattended_final_warning(t)
+            else:
+                _draw_setup_status_chips()
     elif phase == "countdown":
         draw_marquee(matrix_surface, "show_setup_banner", config.SHOW_SETUP_LED_TEXT,
                      TOP_COMBINED, align="center")

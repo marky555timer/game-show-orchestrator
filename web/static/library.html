@@ -92,6 +92,20 @@
     width: 100%; padding: 8px 10px; border-radius: 8px; border: 1px solid #333;
     background: #202024; color: #f2f2f2; font-size: .9rem;
   }
+
+  /* Per-song DJ-look editor (2026-09-17) -- same swatch-picker pattern as
+     web/static/index.html's admin-panel DJ-look controls, scaled down for
+     the tag-edit modal's three DMX/Marquee/Outline mini sections. */
+  .light-prefs-subhead {
+    font-size: .72rem; text-transform: uppercase; letter-spacing: .05em;
+    color: #777; margin: 12px 0 4px;
+  }
+  .color-swatch-picker { display: flex; flex-wrap: wrap; gap: 5px; margin: 4px 0; }
+  .color-swatch-btn {
+    width: 22px; height: 22px; border-radius: 5px; border: 2px solid transparent;
+    cursor: pointer; padding: 0;
+  }
+  .color-swatch-btn.selected { border-color: #fff; box-shadow: 0 0 0 2px #000; }
   .toast {
     position: fixed; left: 50%; bottom: 16px; transform: translateX(-50%);
     background: #202024; border: 1px solid #333; border-radius: 8px;
@@ -121,7 +135,10 @@
         <div class="label">Cued &mdash; plays on the next transition</div>
         <div class="title" id="cued-title"></div>
       </div>
-      <button class="btn small" onclick="libUncue()">Clear</button>
+      <div class="row" style="flex-wrap:nowrap">
+        <button class="btn small primary" onclick="libPlayNext()">Play Next</button>
+        <button class="btn small" onclick="libUncue()">Clear</button>
+      </div>
     </div>
 
     <div style="margin-top:12px">
@@ -196,6 +213,26 @@
           <input type="number" id="tag-edit-energy" min="1" max="5" step="1">
         </label>
       </div>
+
+      <!-- Per-song DJ-look editor (2026-09-17): saved independently from
+           the metadata above -- separate storage engine (light_prefs.csv
+           via drivers/light_prefs_engine.py), separate save call
+           (/api/library/light-prefs) in saveTagEdit() below. Leaving any
+           of the three fixture types untouched here (never clicking a
+           swatch) means that fixture type just isn't saved for this
+           track -- it keeps resolving its look the normal way (a random/
+           energy-implied pick) rather than being forced to some default. -->
+      <div class="light-prefs-subhead">DMX Pattern &amp; Color</div>
+      <select id="tag-edit-dmx-theme"></select>
+      <div id="tag-edit-dmx-swatches" class="color-swatch-picker"></div>
+
+      <div class="light-prefs-subhead">Marquee Pattern &amp; Color</div>
+      <select id="tag-edit-marquee-theme"></select>
+      <div id="tag-edit-marquee-swatches" class="color-swatch-picker"></div>
+
+      <div class="light-prefs-subhead">Outline Color</div>
+      <div id="tag-edit-accent-swatches" class="color-swatch-picker"></div>
+
       <div class="row">
         <button class="btn" onclick="closeTagEdit()">Cancel</button>
         <button class="btn primary" style="width:auto" onclick="saveTagEdit()">Save</button>
@@ -386,6 +423,23 @@ async function libCue(index) {
 async function libUncue() {
   await api('/api/library/uncue', { method: 'POST' });
   showToast('Cue cleared.');
+  libRefresh();
+}
+
+async function libPlayNext() {
+  // Cueing (libCue() above) only marks a track to override the NEXT
+  // transition whenever it happens (Auto-DJ's own timer, or a manual
+  // next from anywhere) -- it doesn't trigger one. This button (2026-09-
+  // 18, operator feedback: too many trips over to the Remote page just to
+  // hit Next right after cueing) fires that transition immediately, right
+  // from here, reusing the exact same /api/transport/next the Remote
+  // page's own Next Track button calls.
+  const d = await api('/api/transport/next', { method: 'POST' });
+  if (d && d.ok) {
+    showToast('Playing next.');
+  } else {
+    showToast('Play Next failed.');
+  }
   libRefresh();
 }
 
@@ -590,6 +644,82 @@ function _populateTagEditSelects() {
     _libGenres.map(g => `<option value="${_escapeHtml(g)}">${_escapeHtml(g)}</option>`).join('');
 }
 
+// Per-song DJ-look editor (2026-09-17) -- separate storage engine from the
+// decade/genre/etc. metadata above (light_prefs.csv via drivers/
+// light_prefs_engine.py, not music_metadata.csv), so it's staged in its
+// own local object and saved via a second API call in saveTagEdit()
+// rather than folded into the `fields` dict that route uses. -1 means
+// "leave this fixture type alone" (light_prefs_engine.NO_LOOK) -- that
+// fixture keeps resolving its look the normal way instead of being forced.
+let LIB_DJ_LOOK_OPTIONS = null;
+let _tagEditLightPrefs = null;
+
+async function _loadDjLookOptions() {
+  const d = await api('/api/dj-look/options');
+  if (!d || !d.ok) return;
+  LIB_DJ_LOOK_OPTIONS = d;
+  _populateLightPrefsThemeSelect('tag-edit-dmx-theme', d.dmx_theme_names, 'dmx_theme_index');
+  _populateLightPrefsThemeSelect('tag-edit-marquee-theme', d.marquee_theme_names, 'marquee_theme_index');
+}
+
+function _populateLightPrefsThemeSelect(selectId, names, field) {
+  const sel = document.getElementById(selectId);
+  sel.innerHTML = '<option value="-1">&mdash; not saved (auto) &mdash;</option>' +
+    names.map((name, i) => `<option value="${i}">${_escapeHtml(name)}</option>`).join('');
+  sel.onchange = () => { _tagEditLightPrefs[field] = parseInt(sel.value, 10); };
+}
+
+// color field -> its paired theme field/select, for the auto-default
+// below. Outline has no theme <select> at all (drives off the DMX-theme-
+// to-effect mapping, config.ACCENT_THEME_TO_FX, not its own named pattern
+// list), hence the null selectId.
+const _LIGHT_PREFS_THEME_FIELD = {
+  dmx_color_index: { themeField: 'dmx_theme_index', selectId: 'tag-edit-dmx-theme' },
+  marquee_color_index: { themeField: 'marquee_theme_index', selectId: 'tag-edit-marquee-theme' },
+  accent_color_index: { themeField: 'accent_theme_index', selectId: null },
+};
+
+function tagEditPickColor(field, index) {
+  _tagEditLightPrefs[field] = index;
+  // drivers/light_prefs_engine.py::apply_prefs_for() only restores a
+  // fixture type when BOTH its color AND theme are saved (>= 0) --
+  // picking just a color here, with its paired theme dropdown left on
+  // "not saved," would otherwise silently never take effect during
+  // playback. Default the paired theme to 0 the moment a real color is
+  // chosen, unless a theme's already been explicitly set.
+  const pair = _LIGHT_PREFS_THEME_FIELD[field];
+  if (pair && index >= 0 && _tagEditLightPrefs[pair.themeField] < 0) {
+    _tagEditLightPrefs[pair.themeField] = 0;
+    if (pair.selectId) document.getElementById(pair.selectId).value = '0';
+  }
+  _renderLightPrefsColorSwatches(_LIGHT_PREFS_SWATCH_CONTAINERS[field], field);
+}
+
+const _LIGHT_PREFS_SWATCH_CONTAINERS = {
+  dmx_color_index: 'tag-edit-dmx-swatches',
+  marquee_color_index: 'tag-edit-marquee-swatches',
+  accent_color_index: 'tag-edit-accent-swatches',
+};
+
+function _renderLightPrefsColorSwatches(containerId, field) {
+  if (!LIB_DJ_LOOK_OPTIONS || !_tagEditLightPrefs) return;
+  const selected = _tagEditLightPrefs[field];
+  const noneBtn = `<button type="button" class="color-swatch-btn${selected === -1 ? ' selected' : ''}"
+    style="background:#333;color:#999;font-size:12px;line-height:18px" title="Not saved (auto)"
+    onclick="tagEditPickColor('${field}', -1)">&times;</button>`;
+  const swatches = LIB_DJ_LOOK_OPTIONS.colors.map(c => `
+    <button type="button" class="color-swatch-btn${c.index === selected ? ' selected' : ''}"
+      style="background:rgb(${c.r},${c.g},${c.b})" title="${_escapeHtml(c.name)}"
+      onclick="tagEditPickColor('${field}', ${c.index})"></button>`).join('');
+  document.getElementById(containerId).innerHTML = noneBtn + swatches;
+}
+
+function _renderAllLightPrefsSwatches() {
+  Object.entries(_LIGHT_PREFS_SWATCH_CONTAINERS).forEach(([field, containerId]) => {
+    _renderLightPrefsColorSwatches(containerId, field);
+  });
+}
+
 let _tagEditIndex = null;
 function openTagEdit(index) {
   const track = _libTracks[index];
@@ -603,6 +733,17 @@ function openTagEdit(index) {
   document.getElementById('tag-edit-decade').value = m.decade || '';
   document.getElementById('tag-edit-genre').value = m.genre || '';
   document.getElementById('tag-edit-energy').value = m.energy_rank || '';
+
+  const lp = track.light_prefs || {};
+  _tagEditLightPrefs = {
+    dmx_color_index: lp.dmx_color_index ?? -1, dmx_theme_index: lp.dmx_theme_index ?? -1,
+    marquee_color_index: lp.marquee_color_index ?? -1, marquee_theme_index: lp.marquee_theme_index ?? -1,
+    accent_color_index: lp.accent_color_index ?? -1, accent_theme_index: lp.accent_theme_index ?? -1,
+  };
+  document.getElementById('tag-edit-dmx-theme').value = String(_tagEditLightPrefs.dmx_theme_index);
+  document.getElementById('tag-edit-marquee-theme').value = String(_tagEditLightPrefs.marquee_theme_index);
+  _renderAllLightPrefsSwatches();
+
   document.getElementById('tag-edit-modal').classList.add('open');
 }
 
@@ -627,15 +768,34 @@ async function saveTagEdit() {
   if (genre) body.genre = genre;
   if (energyRaw) body.energy_rank = parseInt(energyRaw, 10);
 
-  const d = await api('/api/library/metadata', {
-    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body),
-  });
+  // Per-song DJ-look fields save through a SEPARATE route/storage engine
+  // (light_prefs_engine, not music_metadata_engine) -- only send fields
+  // the operator actually set (>= 0), matching /api/library/metadata's own
+  // "only send what changed" convention; leaving a fixture type untouched
+  // here means it's simply not included, not force-cleared to "off."
+  const lightPrefsBody = { filename: track.filename };
+  let hasLightPrefsChange = false;
+  if (_tagEditLightPrefs) {
+    for (const [field, value] of Object.entries(_tagEditLightPrefs)) {
+      if (value >= 0) { lightPrefsBody[field] = value; hasLightPrefsChange = true; }
+    }
+  }
+
+  const [metaResult, lightPrefsResult] = await Promise.all([
+    api('/api/library/metadata', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body),
+    }),
+    hasLightPrefsChange ? api('/api/library/light-prefs', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(lightPrefsBody),
+    }) : Promise.resolve(null),
+  ]);
   closeTagEdit();
-  if (d && d.ok) {
+  if (metaResult && metaResult.ok && (!hasLightPrefsChange || (lightPrefsResult && lightPrefsResult.ok))) {
     showToast('Tags saved.');
     libRefresh();
   } else {
-    showToast('Save failed: ' + (d && d.reason ? d.reason : 'unknown error'));
+    const reason = (metaResult && metaResult.reason) || (lightPrefsResult && lightPrefsResult.reason) || 'unknown error';
+    showToast('Save failed: ' + reason);
   }
 }
 
@@ -651,6 +811,7 @@ async function saveTagEdit() {
 })();
 
 libRefresh();
+_loadDjLookOptions();
 </script>
 </body>
 </html>

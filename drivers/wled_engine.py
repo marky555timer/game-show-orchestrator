@@ -47,6 +47,7 @@ for a realtime stream. The serial write below gets the same tolerance for
 the same reason.
 """
 import colorsys
+import json
 import math
 import random
 import socket
@@ -57,7 +58,7 @@ import serial
 import serial.tools.list_ports
 
 import config
-from drivers import serial_ports
+from drivers import color_utils, serial_ports
 from state import state
 
 _DDP_FLAGS_VERSION1_PUSH = 0x41
@@ -111,6 +112,13 @@ _last_serial_scan_time = 0.0
 _serial_connect_time = 0.0
 _last_serial_send_time = 0.0
 
+# MAC-based candidate verification (2026-09-15) -- see _find_esp32_port()'s
+# docstring. Runs off the main thread since it needs a blocking serial
+# round-trip; _mac_verify_result is only ever written by that background
+# thread and read here, a plain dict is fine under the GIL for this.
+_mac_verify_thread = None
+_mac_verify_result = {}  # device path -> True (confirmed marquee) / False (confirmed not)
+
 # Serial write hand-off to _serial_sender_loop's dedicated thread -- same
 # shape/reasoning as _ddp_lock/_ddp_send_ready/_ddp_pending above. See that
 # thread's docstring; this one exists for the exact same reason, just found
@@ -129,29 +137,86 @@ _serial_pending = None  # (serial.Serial instance, frame_bytes) tuple, or None o
 
 
 def _find_esp32_port():
-    """VID/PID auto-discovery, coordinated with led_bridge.py over
-    drivers/serial_ports.py since both boards can enumerate on the same
-    USB-UART chip (see that module's docstring for the full picture).
-    Skips any port already held by another module (not just led_bridge.py
-    by name) -- a third CH340-identity device (e.g. a USB relay board) can
-    now share config.ESP32_USB_SERIAL_VID_PIDS too and needs the same
-    protection.
+    """VID/PID auto-discovery among ports not already held by another
+    module (drivers/serial_ports.py) -- since drivers/accent_engine.py's
+    board now shares this same VID/PID pool too, a candidate is only
+    ever returned once positively verified as THIS board specifically,
+    by asking it for its WLED info and checking config.MARQUEE_WLED_MAC
+    (see _verify_candidate_mac below), the same approach
+    drivers/accent_engine.py uses for its own board.
 
-    If led_bridge.py has ever positively ruled out a port as its own
-    board, that's a direct answer -- take it immediately rather than
-    falling through to a plain VID/PID scan, which (with nothing held on
-    either port) could just as easily re-pick the wrong one by enumeration
-    order and bounce the two modules past each other indefinitely."""
-    rejected = serial_ports.rejected_port()
-    if rejected is not None:
-        for port in serial.tools.list_ports.comports():
-            if port.device == rejected:
-                return rejected
+    Replaced 2026-09-15: the previous version just took the first
+    unclaimed candidate, de-prioritizing whatever led_bridge.py had most
+    recently rejected -- reasonable when exactly two boards could ever
+    match, but with a third (accent) board also matching, that guess
+    could land on the real matrix board with nothing to ever catch the
+    mistake (_reconcile_with_led_bridge, which used to catch exactly
+    this, itself only worked for the two-board case and is disabled --
+    see its own docstring). Confirmed live: this exact failure took the
+    physical LED matrix down for several minutes before being caught.
+
+    Verification happens off the main thread since it's a blocking
+    serial round-trip; this function only ever returns a device once
+    its background check lands on True, kicking off a check for one
+    not-yet-verified candidate per call otherwise (throttled by the
+    caller's own _SERIAL_RESCAN_INTERVAL_S, so this is at most one new
+    background probe every few seconds, not a tight loop)."""
     for port in serial.tools.list_ports.comports():
-        if ((port.vid, port.pid) in config.ESP32_USB_SERIAL_VID_PIDS
-                and serial_ports.held_by(port.device) is None):
+        if (port.vid, port.pid) not in config.ESP32_USB_SERIAL_VID_PIDS:
+            continue
+        if serial_ports.held_by(port.device) is not None:
+            continue
+        result = _mac_verify_result.get(port.device)
+        if result is True:
             return port.device
+        if result is False:
+            continue
+        if _mac_verify_thread is None or not _mac_verify_thread.is_alive():
+            _start_mac_verify(port.device)
+        break  # only ever have one unverified candidate in flight at a time
     return None
+
+
+def _start_mac_verify(device):
+    global _mac_verify_thread
+    # Placeholder hold so led_bridge.py/accent_engine.py's own scans see
+    # this port as taken for the whole probe window, not just after the
+    # fact -- same fix drivers/accent_engine.py needed for the same
+    # reason (see that module's history).
+    serial_ports.hold(device, "wled_engine_verifying")
+    _mac_verify_thread = threading.Thread(target=_verify_candidate_mac, args=(device,), daemon=True)
+    _mac_verify_thread.start()
+
+
+def _verify_candidate_mac(device):
+    """Runs off the main thread -- opens `device` briefly, asks WLED for
+    its info ({"v":true}), and records in _mac_verify_result whether its
+    MAC matches config.MARQUEE_WLED_MAC. Always releases the placeholder
+    hold itself, whether matched or not; _try_connect_serial() re-holds
+    properly under "wled_engine" once _find_esp32_port() sees a True
+    result and returns this device."""
+    matched = False
+    try:
+        probe = serial.Serial(device, baudrate=_SERIAL_BAUD, timeout=0.5, dsrdtr=False, rtscts=False)
+        probe.dtr = False
+        probe.rts = False
+        time.sleep(0.3)
+        probe.reset_input_buffer()
+        probe.write(b'{"v":true}\n')
+        time.sleep(0.5)
+        data = probe.read(4096)
+        probe.close()
+        text = data.decode("utf-8", errors="replace").strip()
+        for line in text.splitlines():
+            line = line.strip()
+            if line.startswith("{"):
+                mac = json.loads(line).get("info", {}).get("mac")
+                matched = (mac == config.MARQUEE_WLED_MAC)
+                break
+    except Exception as e:
+        print(f"[WLED] MAC verify probe of {device} failed: {e}")
+    serial_ports.release(device)
+    _mac_verify_result[device] = matched
 
 
 def _try_connect_serial():
@@ -172,9 +237,10 @@ def _try_connect_serial():
         _serial_link.rts = False
         _serial_connect_time = time.monotonic()
         serial_ports.hold(device, "wled_engine")
-        print(f"[WLED] Connected over serial on {device}.")
+        print(f"[WLED] Connected over serial on {device} (confirmed by MAC).")
     except Exception as e:
         print(f"[WLED] Could not open {device}: {e}")
+        _mac_verify_result.pop(device, None)  # let a future scan re-verify rather than never trying this port again
 
 
 def _serial_ready():
@@ -182,32 +248,6 @@ def _serial_ready():
     past WLED's own boot window"."""
     return (_serial_link is not None
             and time.monotonic() - _serial_connect_time >= _SERIAL_BOOT_SETTLE_S)
-
-
-def _reconcile_with_led_bridge():
-    """led_bridge.py can positively verify its board (Display.ino writes
-    back a serial heartbeat); this module can't -- stock WLED has no
-    equivalent, so _find_esp32_port() above is always a guess whenever two
-    boards share a VID/PID. If led_bridge.py has since ruled out a
-    specific port, that's positive proof (only two boards match
-    config.ESP32_USB_SERIAL_VID_PIDS on this rig) that port is actually
-    this module's -- and if we're connected to a *different* one, we
-    guessed wrong and are squatting on led_bridge.py's own board. Drop it
-    immediately rather than waiting for the next scan interval, since
-    led_bridge.py just retries blindly and can't make progress while we're
-    holding what it actually needs."""
-    global _serial_link
-    rejected = serial_ports.rejected_port()
-    if rejected is None or _serial_link is None or _serial_link.port == rejected:
-        return
-    device = _serial_link.port
-    print(f"[WLED] {device} is led_bridge's board, not ours -- releasing it.")
-    try:
-        _serial_link.close()
-    except Exception:
-        pass
-    serial_ports.release(device)
-    _serial_link = None
 
 
 def current_transport():
@@ -382,7 +422,6 @@ def render():
     global _sequence, _ip, _last_serial_send_time, _ddp_pending, _serial_pending
 
     if config.WLED_SERIAL_ENABLED:
-        _reconcile_with_led_bridge()
         if _serial_link is None and time.monotonic() - _last_serial_scan_time >= _SERIAL_RESCAN_INTERVAL_S:
             _try_connect_serial()
 
@@ -441,17 +480,6 @@ def flash(r, g, b, duration=None):
     _flash_until = time.time() + (duration if duration is not None else config.MARQUEE_FLASH_SECONDS)
 
 
-def _hue_shift(r, g, b, degrees):
-    """Rotates an RGB color's hue by `degrees` (0-360), holding saturation
-    and value fixed -- used for color-complement (180 deg) and adjacent-hue
-    (small offsets) treatments, a much cleaner "opposite/neighbor color"
-    than naive RGB math (255-r etc.) gives."""
-    h, s, v = colorsys.rgb_to_hsv(r / 255, g / 255, b / 255)
-    h = (h + degrees / 360.0) % 1.0
-    r2, g2, b2 = colorsys.hsv_to_rgb(h, s, v)
-    return r2 * 255, g2 * 255, b2 * 255
-
-
 def _resolve_marquee_color(color):
     """The DJ_COLOR_PALETTE entries built around the DMX fixtures' dedicated
     White/Amber/UV emitters (config.py: "white lamp", "amber lamp", "uv")
@@ -470,15 +498,26 @@ def _resolve_marquee_color(color):
     return r, g, b
 
 
-def _twinkle(r, g, b):
+def _twinkle(r, g, b, pixels=None):
     """Per-pixel random brightness scaling, independently re-rolled every
     call -- looks like a sparkle regardless of physical wiring direction
     (unlike a moving chase, which needs a confirmed pixel order to look
     right; see config.py's note that panel3's loop direction isn't
-    confirmed yet)."""
-    for i in range(config.MARQUEE_TOTAL_LEDS):
+    confirmed yet). `pixels` defaults to the whole strip; pass a narrower
+    iterable (see _twinkle_segment() below) to sparkle just one segment."""
+    if pixels is None:
+        pixels = range(config.MARQUEE_TOTAL_LEDS)
+    for i in pixels:
         level = random.uniform(0.15, 1.0)
         set_pixel(i, r * level, g * level, b * level)
+
+
+def _twinkle_segment(name, r, g, b):
+    """_twinkle(), scoped to one config.MARQUEE_SEGMENTS entry -- used by
+    _apply_mystery_marquee()'s "Who is this?" sparkle stage, which only
+    wants the "title" segment sparkling while panels 3-6 stay dark."""
+    seg = config.MARQUEE_SEGMENTS[name]
+    _twinkle(r, g, b, pixels=range(seg["start"], seg["start"] + seg["count"]))
 
 
 def _apply_intro(now):
@@ -562,7 +601,7 @@ def _dj_pattern_complement_chase(now, r, g, b):
     """Pattern 4: a comet in the current color chases each segment's own
     loop, its fading tail blending into the color's complement (opposite
     hue) instead of just dimming to black."""
-    cr, cg, cb = _hue_shift(r, g, b, 180)
+    cr, cg, cb = color_utils.hue_shift(r, g, b, 180)
     tail = 7
     for seg in config.MARQUEE_SEGMENTS.values():
         count = seg["count"]
@@ -594,7 +633,7 @@ def _dj_pattern_bounce_comet(now, r, g, b):
     """Pattern 6: a comet sweeps back and forth (not looping) within each
     segment, current color at the head fading into an adjacent hue (a
     small +30 deg shift, not a full complement) at the tail."""
-    ar, ag, ab = _hue_shift(r, g, b, 30)
+    ar, ag, ab = color_utils.hue_shift(r, g, b, 30)
     t = (now % config.MARQUEE_DJ_BOUNCE_PERIOD_SECONDS) / config.MARQUEE_DJ_BOUNCE_PERIOD_SECONDS
     triangle = t * 2 if t < 0.5 else 2 - t * 2  # 0 -> 1 -> 0
     tail = 5
@@ -617,7 +656,7 @@ def _dj_pattern_confetti(now, r, g, b):
     a trailing confetti/glitter look. The only pattern that reads directly
     from/writes directly to _pixels instead of going through set_pixel()
     for every LED every frame, since the decay needs last frame's values."""
-    cr, cg, cb = _hue_shift(r, g, b, 180)
+    cr, cg, cb = color_utils.hue_shift(r, g, b, 180)
     for i in range(config.MARQUEE_TOTAL_LEDS):
         if random.random() < 0.06:
             pr, pg, pb = (cr, cg, cb) if random.random() < 0.5 else (r, g, b)
@@ -636,8 +675,18 @@ _DJ_PATTERNS = [
 
 
 def _apply_dj_dance(now):
-    r, g, b = _resolve_marquee_color(config.DJ_COLOR_PALETTE[state.dj_color_index])
-    pattern_fn = _DJ_PATTERNS[state.dj_theme_index % len(_DJ_PATTERNS)]
+    r, g, b = _resolve_marquee_color(config.DJ_COLOR_PALETTE[state.marquee_color_index])
+    gradient_mode = state.marquee_gradient_mode
+    if gradient_mode == "rainbow":
+        # No "color" to shift -- always the rainbow sweep regardless of
+        # marquee_theme_index, same override wled_engine's DMX/accent
+        # counterparts use for their own rainbow gradient mode.
+        _dj_pattern_rainbow_chase(now, r, g, b)
+        return
+    if gradient_mode in ("adjacent", "complementary"):
+        degrees = 30 if gradient_mode == "adjacent" else 180
+        r, g, b = color_utils.hue_shift(r, g, b, degrees)
+    pattern_fn = _DJ_PATTERNS[state.marquee_theme_index % len(_DJ_PATTERNS)]
     pattern_fn(now, r, g, b)
 
 
@@ -675,6 +724,36 @@ def _apply_game_chase(now):
 _SIMON_PANEL_SEGMENTS = ["panel3", "panel4", "panel5", "panel6"]
 
 
+def _blackout_lower_panels():
+    """Zeroes panels 3-6, leaving "title" untouched -- shared by
+    _apply_get_ready_marquee() and _apply_mystery_marquee() below, both of
+    which want the lower panels dark while the top strip keeps doing its
+    own thing (2026-09-16 operator feedback: the marquee should stay
+    top-panel-primary during these moments instead of running its usual
+    full multi-panel DJ-dance patterns everywhere)."""
+    for name in _SIMON_PANEL_SEGMENTS:
+        set_segment(name, 0, 0, 0)
+
+
+def _theater_chase_segment(name, now, r, g, b):
+    """Classic theater-marquee bulb chase (every SIMON_MARQUEE_CHASE_
+    SPACING'th pixel lit solid, the whole pattern shifting by one pixel
+    every SIMON_MARQUEE_CHASE_STEP_SECONDS), in the given color, confined
+    to one segment's own loop. Factored out of _apply_simon() below (which
+    uses this same pattern, fixed to white on the "title" segment) so
+    _apply_mystery_marquee() can reuse it per answer panel, each in that
+    panel's own button color, for the "Who is this?" reveal cascade."""
+    seg = config.MARQUEE_SEGMENTS[name]
+    count = seg["count"]
+    spacing = config.SIMON_MARQUEE_CHASE_SPACING
+    step = int(now / config.SIMON_MARQUEE_CHASE_STEP_SECONDS) % spacing
+    for offset in range(count):
+        if (offset - step) % spacing == 0:
+            set_pixel(_segment_pixel_index(seg, offset), r, g, b)
+        else:
+            set_pixel(_segment_pixel_index(seg, offset), 0, 0, 0)
+
+
 def _apply_simon(now):
     """Simon mini-game (drivers/simon_engine.py), any phase (intro,
     playback, input, or the loss sequence): panels 3-6 show a solid block
@@ -691,22 +770,21 @@ def _apply_simon(now):
     loop at once, the whole pattern shifting by one pixel every
     SIMON_MARQUEE_CHASE_STEP_SECONDS) -- but ONLY during "intro",
     "get_ready", and "score_review"; it's fully dark during "playback"/
-    "input"/"fail" (2026-09-14, operator feedback that it was distracting
-    during actual play). Confined to just "title" here regardless, since
-    panels 3-6 are doing their own thing."""
-    seg = config.MARQUEE_SEGMENTS["title"]
-    count = seg["count"]
-    if state.simon_phase in ("intro", "get_ready", "score_review"):
-        spacing = config.SIMON_MARQUEE_CHASE_SPACING
-        step = int(now / config.SIMON_MARQUEE_CHASE_STEP_SECONDS) % spacing
-        for offset in range(count):
-            if (offset - step) % spacing == 0:
-                set_pixel(_segment_pixel_index(seg, offset), 255, 255, 255)
-            else:
-                set_pixel(_segment_pixel_index(seg, offset), 0, 0, 0)
+    "input" (2026-08-14, operator feedback that it was distracting during
+    actual play), and during a JOYSTICK "fail" (which auto-restarts into a
+    fresh round, still mid-play). A HARDWARE "fail" gets it too though
+    (2026-09-17): that's the one that actually ends the game, paired with
+    drivers/simon_engine.py::press()'s new buzzer+applause+immediate-
+    music-restore on the same miss -- so the chase comes back on right
+    away instead of waiting for score_review, rather than sitting through
+    the whole loss sequence dark and silent. Confined to just "title" here
+    regardless, since panels 3-6 are doing their own thing."""
+    show_chase = (state.simon_phase in ("intro", "get_ready", "score_review")
+                  or (state.simon_phase == "fail" and state.simon_source == "hardware"))
+    if show_chase:
+        _theater_chase_segment("title", now, 255, 255, 255)
     else:
-        for offset in range(count):
-            set_pixel(_segment_pixel_index(seg, offset), 0, 0, 0)
+        set_segment("title", 0, 0, 0)
 
     for i, name in enumerate(_SIMON_PANEL_SEGMENTS):
         if state.simon_active_pad == i:
@@ -714,6 +792,65 @@ def _apply_simon(now):
             set_segment(name, r, g, b)
         else:
             set_segment(name, 0, 0, 0)
+
+
+def _in_get_ready_banner(now):
+    """True during the pre-song "GET READY" announcement-banner window
+    (drivers/announcement_engine.py sets these three fields for a
+    sweeper-only track transition) -- the exact same condition graphics/
+    matrix_canvas.py::_render_dj_mode already checks to show the "GET
+    READY" banner text itself, so the marquee and matrix agree on the
+    window."""
+    return (state.announcement_banner_from <= now < state.announcement_banner_until
+            and state.announcement_banner_text_override == "GET READY")
+
+
+def _apply_get_ready_marquee(now):
+    """Pre-song "GET READY" transition: keeps only the top ("title") strip
+    doing its normal DJ-dance pattern -- panels 3-6 blackout, so the room's
+    attention stays on the banner instead of four lower panels still
+    dancing through an unrelated pattern underneath it (2026-09-16 operator
+    feedback)."""
+    _apply_dj_dance(now)
+    _blackout_lower_panels()
+
+
+def _apply_mystery_marquee(now):
+    """"Who is this?" marquee choreography (2026-09-16): keeps the room's
+    attention on the top strip through the whole question -- sparkle "Who
+    is this?" -> solid "Is this:" -> panels 3-6 cascade in one at a time,
+    in button color, staying dark until their own turn -- then holds that
+    button-colored look (no DJ-dance patterns) all the way through grading
+    and the post-answer artist/title blink on panels 1+2 (graphics/
+    matrix_canvas.py's mystery_reveal branch). update() below only calls
+    this while state.mystery_active is True; the instant that goes False
+    (the blink window ending), update()'s own dispatch falls back to normal
+    _apply_dj_dance() on its own -- no explicit hand-off needed here.
+
+    Stage timing is owned by drivers/mystery_band_engine.py::reveal_stage(),
+    shared with graphics/matrix_canvas.py's panel text so both stay in
+    lockstep without duplicating the timing logic in either place."""
+    from drivers import mystery_band_engine
+    stage, revealed = mystery_band_engine.reveal_stage(now)
+    if stage == "sparkle":
+        _twinkle_segment("title", 255, 255, 255)
+        _blackout_lower_panels()
+    elif stage == "solid":
+        set_segment("title", 255, 255, 255)
+        _blackout_lower_panels()
+    elif stage == "cascade":
+        set_segment("title", 0, 0, 0)
+        for i, name in enumerate(_SIMON_PANEL_SEGMENTS):
+            if i < revealed:
+                r, g, b = config.SIMON_HW_COLOR_RGB[config.SIMON_HW_COLOR_ORDER[i]]
+                _theater_chase_segment(name, now, r, g, b)
+            else:
+                set_segment(name, 0, 0, 0)
+    else:  # "done" -- resolved (graded or timed out), still mystery_active (blink hold)
+        set_segment("title", 0, 0, 0)
+        for i, name in enumerate(_SIMON_PANEL_SEGMENTS):
+            r, g, b = config.SIMON_HW_COLOR_RGB[config.SIMON_HW_COLOR_ORDER[i]]
+            set_segment(name, r, g, b)
 
 
 def update(now):
@@ -742,8 +879,26 @@ def update(now):
             _twinkle(255, 180, 0)
         elif state.mode == state.MODE_SIMON:
             _apply_simon(now)
+        elif _in_get_ready_banner(now):
+            _apply_get_ready_marquee(now)
+        elif state.mystery_active:
+            _apply_mystery_marquee(now)
+        elif state.mystery_panel_win_active:
+            # Solo "Who is this?" answered correctly via a physical panel
+            # button (2026-09-17): mirrors graphics/matrix_canvas.py::
+            # _render_mystery_panel_win() -- by the time this flag is set,
+            # state.mode has already flipped to MODE_GAME and mystery_
+            # active has already cleared (inputs/gamepad.py::
+            # _maybe_advance_from_mystery_grade(), same frame as the grade
+            # itself), so this needs its own branch here rather than
+            # folding into _apply_mystery_marquee() above, which never
+            # actually runs for this case.
+            _theater_chase_segment("title", now, 255, 255, 255)
+            _blackout_lower_panels()
         elif state.mode == state.MODE_DJ and not state.price_game_active:
             _apply_dj_dance(now)
+            if state.blank_lower_marquees:
+                _blackout_lower_panels()
         else:
             _apply_game_chase(now)
     render()

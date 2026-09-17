@@ -6,7 +6,9 @@ from state import state
 from drivers import simon_hardware
 from drivers import midi_driver
 from drivers import relay_engine
-from audio.audio_engine import simon_sounds, simon_intro_sound, play_processed_sound
+from audio.audio_engine import (
+    simon_sounds, simon_intro_sound, play_processed_sound, raw_buzzer, pick_random_applause,
+)
 
 # ==========================================
 # MILTON BRADLEY "SIMON" MINI-GAME
@@ -15,9 +17,11 @@ from audio.audio_engine import simon_sounds, simon_intro_sound, play_processed_s
 #   - enter_simon(): DJ-mode secret combo (config.SIMON_ENTRY_BUTTONS,
 #     inputs/gamepad.py) -- unchanged "Easter egg" shape, starts playback
 #     immediately, and still auto-restarts a fresh round after a miss.
-#   - enter_simon_hardware(): any of the 4 physical arcade buttons
-#     (config.SIMON_HW_BUTTON_PINS, polled by poll_hardware() below) --
-#     runs the "It's Simon!" intro first (see _update_intro()), and a miss
+#   - enter_simon_hardware(): the green physical arcade button specifically
+#     (config.SIMON_HW_BUTTON_PINS, polled by poll_hardware() below --
+#     2026-09-17: a single, unambiguous entry point; red is a manual
+#     "next song" instead, see poll_hardware()) -- runs the "It's Simon!"
+#     intro first (see _update_intro()), and a miss
 #     ends the game/returns to DJ mode instead of auto-restarting, matching
 #     a real cabinet's "game over, press a button to play again" shape.
 # state.simon_source records which path is live so update()'s "fail" phase
@@ -213,6 +217,18 @@ def press(pad, hold=False):
         else:
             play_processed_sound(simon_sounds[expected], volume=config.SIMON_SOUND_VOLUME)
         print(f"[SIMON] Miss on step {state.simon_input_index} -- round {state.simon_round} over")
+        if state.simon_source == "hardware":
+            # The hardware path is the one that actually ENDS the game
+            # (joystick misses just auto-restart into a fresh round 1) --
+            # 2026-09-17 operator feedback: it felt "lonely" sitting through
+            # the fail-flash + score-review hold in near silence before
+            # _update_score_review() finally un-ducked the music at the
+            # very end. Chains the same wrong-answer buzzer the trivia
+            # rounds use straight into a round of applause, and brings the
+            # DJ deck back up right now instead of waiting.
+            play_processed_sound(raw_buzzer, volume=config.SIMON_SOUND_VOLUME)
+            play_processed_sound(pick_random_applause(), volume=config.SIMON_SOUND_VOLUME)
+            _restore_music()
         return
 
     if hold:
@@ -425,15 +441,55 @@ def update(now):
         _update_score_review(now)
 
 
+def _poll_setup_hardware(pressed_colors, now):
+    """show_phase == "setup" button dispatch (2026-09-16, poll_hardware()
+    below): green opens a "START SHOW NOW?" confirm (rendered by graphics/
+    matrix_canvas.py::_render_setup_confirm) -- panel4/red then confirms,
+    anything else cancels back to the normal AUTO countdown (via
+    show_engine.mark_operator_interaction(), the same "reset the idle
+    clock" hook any operator action already uses). Blue, independent of the
+    confirm, kicks off a Bluetooth gamepad reconnect -- see config.py's
+    Setup-countdown comment for the full timing story.
+
+    Lazy imports: drivers.show_engine and drivers.bluetooth_engine are only
+    ever needed here, and importing either at this module's top level risks
+    the same import-order cycle drivers/mystery_band_engine.py's own lazy
+    `from inputs import gamepad` already works around."""
+    from drivers import show_engine, bluetooth_engine
+    color = pressed_colors[0]
+
+    if not state.setup_confirm_active:
+        if color == "green":
+            state.setup_confirm_active = True
+        elif color == "blue":
+            state.gamepad_connect_feedback_text = "CONNECTING..."
+            state.gamepad_connect_feedback_until = now + config.GAMEPAD_CONNECT_PENDING_MAX_SECONDS
+            bluetooth_engine.reconnect_paired_devices_async()
+        return
+
+    state.setup_confirm_active = False
+    if color == "red":
+        show_engine.trigger_unattended_autoplay_now()
+    else:
+        show_engine.mark_operator_interaction()
+
+
 def poll_hardware(now):
     """Per-frame poll, called unconditionally from inputs/gamepad.py::
-    process_events() regardless of mode -- the physical arcade buttons need
-    to work both as the "enter Simon" trigger from DJ mode and as live
-    player input once any Simon game (joystick- or hardware-sourced) is in
-    its "input" phase. Edge-triggered off simon_hardware.read_buttons()'s
-    level snapshot (a color must go False->True for a press, True->False
-    for a release, between polls) so holding a button down can't fire a
-    repeated press or a double entry."""
+    process_events() regardless of mode -- the physical arcade buttons work
+    as: live player input once any Simon game is in its "input" phase; the
+    Setup-countdown confirm/gamepad-reconnect shortcuts (_poll_setup_
+    hardware() above, 2026-09-16); a general answer-select-and-score input
+    for ANY live trivia round (2026-09-16, drivers/live_round_engine.py::
+    is_round_active()) -- checked ahead of Simon-entry specifically so a
+    button press can never accidentally launch Simon instead of scoring,
+    for as long as a round (mystery band included) is live and ungraded;
+    and finally, from DJ mode with nothing else active, green enters Simon
+    and red is a manual "next song" (2026-09-17: green is now the single,
+    unambiguous entry point -- it used to be any of the 4). Edge-triggered off
+    simon_hardware.read_buttons()'s level snapshot (a color must go
+    False->True for a press, True->False for a release, between polls) so
+    holding a button down can't fire a repeated press or a double entry."""
     global _prev_hw_buttons
     buttons = simon_hardware.read_buttons()
     if not buttons:
@@ -453,11 +509,31 @@ def poll_hardware(now):
             press(config.SIMON_HW_COLOR_ORDER.index(pressed_colors[0]), hold=True)
         return
 
-    # Entry: any button, from DJ mode, only during a live show and only
-    # when nothing else is already taking over DJ-mode rendering/lighting
-    # (Price Game intro, Westminster, or the post-win applause sequence can
-    # all be active while state.mode is still MODE_DJ).
+    if state.show_phase == "setup":
+        _poll_setup_hardware(pressed_colors, now)
+        return
+
+    # Lazy imports: same import-order-cycle reasoning as _poll_setup_
+    # hardware()'s own lazy imports above.
+    from drivers import live_round_engine
+    if live_round_engine.is_round_active():
+        from inputs import gamepad
+        gamepad.select_and_grade_quiz_answer(config.SIMON_HW_COLOR_ORDER.index(pressed_colors[0]))
+        return
+
+    # Entry (green only, 2026-09-17 -- a single, unambiguous point of
+    # entry instead of any of the 4) / next-song (red), from DJ mode, only
+    # during a live show and only when nothing else is already taking over
+    # DJ-mode rendering/lighting (Price Game intro, Westminster, or the
+    # post-win applause sequence can all be active while state.mode is
+    # still MODE_DJ).
     if (state.mode == state.MODE_DJ and state.show_phase == "live"
             and not state.intermission_active and not state.price_game_active
             and not state.westminster_active and not state.win_sequence_active):
-        enter_simon_hardware()
+        if "green" in pressed_colors:
+            enter_simon_hardware()
+        elif "red" in pressed_colors:
+            # Lazy import: same import-order-cycle reasoning as the other
+            # lazy imports above.
+            from drivers import deck_orchestrator
+            deck_orchestrator.trigger_track_move("next")

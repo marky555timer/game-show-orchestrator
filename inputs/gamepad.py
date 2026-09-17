@@ -16,6 +16,7 @@ from config import (
 )
 from drivers.dmx_driver import dmx
 from drivers import wled_engine
+from drivers import accent_engine
 # SI_ENTRY_BUTTONS/SI_EXIT_BUTTONS/SHUTDOWN_COMBO_BUTTONS/
 # SHUTDOWN_COMBO_HOLD_SECONDS/FORCE_PRICE_GAME_COMBO_BUTTONS/
 # FORCE_PRICE_GAME_COMBO_HOLD_SECONDS no longer imported here (2026-08-20)
@@ -46,6 +47,7 @@ from graphics import overlay_panel
 from graphics import secondary_canvas
 from drivers import announcement_engine
 from drivers import hot_track_engine
+from drivers import relay_engine
 from audio.audio_engine import (
     play_processed_sound, raw_buzzer, raw_bigwin, raw_clear, raw_ding,
     raw_coin, raw_buzz_short, stop_previous_audio, reverb_enabled
@@ -196,6 +198,39 @@ def select_quiz_answer(index):
     if state.sfx_enabled:
         play_processed_sound(raw_ding)
 
+def select_and_grade_quiz_answer(index):
+    """Physical arcade-button hook (drivers/simon_engine.py::poll_hardware(),
+    any live/ungraded round -- 2026-09-16): a single button press both arms
+    AND grades the answer in one shot, unlike the joystick's two-step
+    select_quiz_answer()/grade_quiz_selection() (game_select_N then
+    game_grade).
+
+    Bounds-checked here (not left to select_quiz_answer()'s own silent
+    no-op) because there are only 4 physical buttons but as few as 2 live
+    choices (True/False): an out-of-range press (yellow/blue on a T/F
+    question) must be a total no-op, not fall through to grading whatever
+    selection happened to already be armed (a prior valid press this same
+    round) or, worse, force-ending a multiplayer round on nothing but a
+    mis-press."""
+    if state.quiz_locked or not state.factoid_choices or index >= len(state.factoid_choices):
+        return
+    # Solo (no registered players) "Who is this?" answered correctly right
+    # here at the panel (2026-09-17): flag it BEFORE grading so graphics/
+    # matrix_canvas.py::_render_mystery_panel_win()/drivers/wled_engine.py
+    # can put the actual artist name + a movie-marquee chase front and
+    # center for the win celebration instead of the normal one-of-four-
+    # panels flash, which didn't make it obvious what was actually chosen.
+    # Checked here (not state.quiz_players, since a registered multiplayer
+    # round already shows "CORRECT: <names>" clearly enough on its own).
+    is_solo_mystery_win = (state.factoid_category == "identify_band"
+                            and not state.quiz_players
+                            and index == state.factoid_correct_index)
+    select_quiz_answer(index)
+    grade_quiz_selection()
+    if is_solo_mystery_win:
+        state.mystery_panel_win_active = True
+
+
 _grade_lock = threading.Lock()
 
 
@@ -282,11 +317,15 @@ def _maybe_advance_from_mystery_grade():
     """Once the initial "Who is this?" teaser question is graded,
     immediately continue into the extended question queue instead of
     leaving the room waiting for the operator to manually force Game Mode
-    (2026-08-10). Mirrors exactly what Btn6-during-the-teaser already does
-    (mystery_band_engine.enter_game_from_mystery() + the state.mode flip in
-    handle_quiz_gate_button()) -- this just does it automatically the
-    instant grading happens via any path (auto-grade, timeout, or an
-    explicit Grade press), not only a dedicated Btn6-during-teaser press.
+    (2026-08-10). Calls mystery_band_engine.end_mystery_after_grade() --
+    NOT enter_game_from_mystery() (that one's for Btn6-during-the-teaser,
+    BEFORE grading, where re-applying the identify question as a fresh
+    round is correct) -- since this fires AFTER grading already happened;
+    re-applying the same question here was a confirmed bug (2026-09-17,
+    see end_mystery_after_grade()'s docstring). This just does the
+    post-grade advance automatically the instant grading happens via any
+    path (auto-grade, timeout, or an explicit Grade press/panel button),
+    not only a dedicated Btn6-during-teaser press.
 
     Skipped once a winner's been declared this game (2026-08-11) -- the
     game is over and headed into intermission, so there's nothing to
@@ -294,7 +333,7 @@ def _maybe_advance_from_mystery_grade():
     if state.game_winner_player_id or state.intermission_active:
         return
     if state.mode != state.MODE_GAME and state.mystery_active:
-        mystery_band_engine.enter_game_from_mystery()
+        mystery_band_engine.end_mystery_after_grade()
         state.mode = state.MODE_GAME
         print("[MYSTERY BAND] Auto-advancing to GAME_MODE after teaser grade -- "
               "continuing with extended questions, no operator action needed.")
@@ -422,7 +461,12 @@ def trigger_big_win():
     state.set_message("CORRECT ANSWER! BIG WIN!", 2.0)
     print("[ACTION] BIG WIN")
     if state.sfx_enabled:
-        play_processed_sound(raw_bigwin)
+        # Swapped for the doorbell (2026-09-18, operator request) -- rings
+        # the physical solenoid USB_RELAY_BIG_WIN_RING_COUNT times rapidly
+        # instead of playing bigwin.wav. Left commented (not deleted) in
+        # case the sound effect is wanted back later.
+        # play_processed_sound(raw_bigwin)
+        relay_engine.ring(config.USB_RELAY_POINT_CHANNEL, config.USB_RELAY_BIG_WIN_RING_COUNT)
         dmx.pulse_channel(RELAY1_CHANNEL, 255, RELAY_PULSE_SECONDS)
         wled_engine.flash(255, 255, 255)
 
@@ -798,11 +842,47 @@ def handle_tempo_tap():
     light_prefs_engine.mark_dirty()
     print(f"[ACTION] Btn5 TEMPO TAP -> period {state.dj_tempo_period:.2f}s")
 
+def handle_feature_select():
+    """Btn9 in DJ mode (2026-09-17): steps state.dj_selected_feature through
+    config.DJ_FEATURE_ORDER, picking which fixture type Btn7 (color) and
+    Btn8 (theme) below currently apply to -- these three used to share one
+    look unconditionally; this is what makes them independently
+    addressable. Confirms the new selection with a brief red flash on that
+    fixture's own output: DMX uses its own self-expiring state pair
+    (rendered in drivers/lighting_engine.py::_render_dj_uplights, same
+    shape as the GAME-mode grade flash but DJ-mode-scoped), marquee reuses
+    its existing wled_engine.flash(), outline uses the new accent_engine.
+    flash() added alongside it. Not itself a saved preference -- doesn't
+    call light_prefs_engine.mark_dirty()."""
+    order = config.DJ_FEATURE_ORDER
+    idx = order.index(state.dj_selected_feature) if state.dj_selected_feature in order else 0
+    state.dj_selected_feature = order[(idx + 1) % len(order)]
+    if state.dj_selected_feature == "dmx":
+        state.dj_feature_flash_color = (255, 0, 0)
+        state.dj_feature_flash_until = time.time() + config.DJ_FEATURE_FLASH_SECONDS
+    elif state.dj_selected_feature == "marquee":
+        wled_engine.flash(255, 0, 0)
+    else:
+        accent_engine.flash(255, 0, 0)
+    print(f"[ACTION] Btn9 FEATURE SELECT -> {state.dj_selected_feature}")
+
 def handle_color_cycle():
-    """Btn7 in DJ mode: cycles the main uplighting theme color."""
-    state.dj_color_index = (state.dj_color_index + 1) % len(DJ_COLOR_PALETTE)
+    """Btn7 in DJ mode: cycles the uplighting color for whichever fixture
+    type is currently selected (state.dj_selected_feature, Btn9 above) --
+    DMX, marquee, and outline each keep their own independent color index
+    since 2026-09-17, no longer one shared value."""
+    feature = state.dj_selected_feature
+    if feature == "dmx":
+        state.dmx_color_index = (state.dmx_color_index + 1) % len(DJ_COLOR_PALETTE)
+        result = state.dmx_color_index
+    elif feature == "marquee":
+        state.marquee_color_index = (state.marquee_color_index + 1) % len(DJ_COLOR_PALETTE)
+        result = state.marquee_color_index
+    else:
+        state.accent_color_index = (state.accent_color_index + 1) % len(DJ_COLOR_PALETTE)
+        result = state.accent_color_index
     light_prefs_engine.mark_dirty()
-    print(f"[ACTION] Btn7 COLOR -> index {state.dj_color_index}")
+    print(f"[ACTION] Btn7 COLOR ({feature}) -> index {result}")
 
 def toggle_last_announcement_swear():
     """Btn3 press in DJ mode: flips the swear tag on whichever announcement
@@ -821,15 +901,28 @@ def toggle_last_announcement_swear():
     print(f"[ACTION] Btn3 SWEAR TOGGLE -- {filename!r} swear={is_swear}")
 
 def handle_theme_cycle():
-    """Btn8 in DJ mode: cycles the DJ_THEME_COUNT animated uplighting
-    themes. Deliberately excludes DJ_THEME_ALL_OFF_INDEX -- landing on a
-    dark stop while cycling through patterns live reads as an error, not a
-    lighting choice. ALL LIGHTS OFF is still reachable as a deliberate
-    direct selection from the admin panel (web/remote_server.py's
-    /api/dmx/scene), just never something you can cycle into by accident."""
-    state.dj_theme_index = (state.dj_theme_index + 1) % DJ_THEME_COUNT
+    """Btn8 in DJ mode: cycles the animation pattern for whichever fixture
+    type is currently selected (state.dj_selected_feature, Btn9 above),
+    each against its own count/modulus (DMX: DJ_THEME_COUNT; marquee:
+    config.MARQUEE_THEME_NAMES; outline: config.ACCENT_THEME_TO_FX) rather
+    than one shared range. DMX deliberately excludes DJ_THEME_ALL_OFF_INDEX
+    -- landing on a dark stop while cycling through patterns live reads as
+    an error, not a lighting choice. ALL LIGHTS OFF is still reachable as a
+    deliberate direct selection from the admin panel's DMX pattern
+    dropdown, just never something you can cycle into by accident.
+    Marquee/outline have no equivalent "off" entry to exclude."""
+    feature = state.dj_selected_feature
+    if feature == "dmx":
+        state.dmx_theme_index = (state.dmx_theme_index + 1) % DJ_THEME_COUNT
+        result = state.dmx_theme_index
+    elif feature == "marquee":
+        state.marquee_theme_index = (state.marquee_theme_index + 1) % len(config.MARQUEE_THEME_NAMES)
+        result = state.marquee_theme_index
+    else:
+        state.accent_theme_index = (state.accent_theme_index + 1) % len(config.ACCENT_THEME_TO_FX)
+        result = state.accent_theme_index
     light_prefs_engine.mark_dirty()
-    print(f"[ACTION] Btn8 THEME -> theme {state.dj_theme_index}")
+    print(f"[ACTION] Btn8 THEME ({feature}) -> theme {result}")
 
 # ------------------------------------------------------------
 # SECTION 4: AUTO-DJ TOGGLE
@@ -856,6 +949,7 @@ ACTION_HANDLERS = {
     "dj_force_price_game": handle_quiz_gate_button,
     "dj_color_cycle": handle_color_cycle,
     "dj_theme_cycle": handle_theme_cycle,
+    "dj_feature_select": handle_feature_select,
     "game_select_1": lambda: select_quiz_answer(0),
     "game_select_2": lambda: select_quiz_answer(1),
     "game_select_3": lambda: select_quiz_answer(2),
@@ -885,6 +979,7 @@ _ACTION_DEBOUNCE = {
     "dj_tempo_tap": BUTTON_DEBOUNCE_SECONDS,
     "dj_color_cycle": BUTTON_DEBOUNCE_SECONDS,
     "dj_theme_cycle": BUTTON_DEBOUNCE_SECONDS,
+    "dj_feature_select": BUTTON_DEBOUNCE_SECONDS,
     "game_clear": BUTTON_DEBOUNCE_SECONDS,
     "game_grade": BUTTON_DEBOUNCE_SECONDS,
     "game_exit_1": BUTTON_DEBOUNCE_SECONDS,

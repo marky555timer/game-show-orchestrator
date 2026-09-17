@@ -243,9 +243,21 @@ def _pick_game_music():
     deck_orchestrator.py::_pick_announcement()), for the same reason:
     plain random re-selection can resurface the same track well before
     every other one has had a turn on a small pool. Returns None if the
-    folder is empty."""
+    folder is empty (after excluding simon.wav, see below).
+
+    config.GAME_MUSIC_DIR also holds simon.wav -- the Milton Bradley
+    "Simon" hardware-entry intro jingle (config.SIMON_INTRO_SOUND_PATH),
+    NOT a Price Game bed track -- so a plain glob of the whole folder
+    could deal it out as this round's Price Game music (2026-09-17,
+    confirmed live: Price Game accidentally played Simon's own intro).
+    Filtered out by filename here rather than moving the file to a
+    different folder, since "any *.wav dropped in this folder becomes a
+    Price Game bed track with no code change" is the folder's whole
+    point (config.py's own GAME_MUSIC_DIR comment) -- simon.wav is the
+    one deliberate, name-identifiable exception to that."""
     global _game_music_deck, _last_game_music_played
-    paths = glob.glob(os.path.join(config.GAME_MUSIC_DIR, "*.wav"))
+    paths = [p for p in glob.glob(os.path.join(config.GAME_MUSIC_DIR, "*.wav"))
+             if "simon" not in os.path.basename(p).lower()]
     if not paths:
         return None
 

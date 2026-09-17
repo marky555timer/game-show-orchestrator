@@ -1,17 +1,23 @@
 """drivers/relay_engine.py
-LCUS-8 USB relay board (8-channel, CH340 USB-serial) -- drives brief relay
-pulses for live show events. First user: relay 8 closes for 0.25s whenever
-a Simon round is cleared (see drivers/simon_engine.py::press()'s round-clear
-block, config.USB_RELAY_POINT_CHANNEL/USB_RELAY_PULSE_SECONDS). Relay 8
-drives a physical electromagnetic doorbell -- a one-shot relay timer wired
-in front of the doorbell coil itself caps how long the coil is actually
-energized, so USB_RELAY_PULSE_SECONDS only needs to reliably trigger that
-hardware timer; it is NOT what protects the coil from damage (see
-config.py's comment on USB_RELAY_POINT_CHANNEL).
+USB relay board (4-channel, CH340 USB-serial) -- drives brief relay pulses
+for live show events. First user: relay 1 closes for 0.25s whenever a Simon
+round is cleared (see drivers/simon_engine.py::press()'s round-clear block,
+config.USB_RELAY_POINT_CHANNEL/USB_RELAY_PULSE_SECONDS). Relay 1 is meant
+to drive a physical electromagnetic doorbell -- NOT wired up yet as of
+2026-09-18 (only the relay's own coil click is audible for now); once it
+is, a one-shot relay timer wired in front of the doorbell coil itself caps
+how long the coil is actually energized, so USB_RELAY_PULSE_SECONDS only
+needs to reliably trigger that hardware timer; it is NOT what protects the
+coil from damage (see config.py's comment on USB_RELAY_POINT_CHANNEL).
 
-Protocol: the standard LCUS-1/LCUS-2/LCUS-8 4-byte command frame, shared by
+This board was originally assumed to be an 8-channel LCUS-8 -- corrected
+2026-09-18, it's actually a 4-channel board (config.USB_RELAY_CHANNEL_
+COUNT). Channels 5-8 don't exist; the original point-channel assignment of
+8 was invalid on the real hardware and has been moved to channel 1.
+
+Protocol: the standard LCUS-1/LCUS-2/LCUS-4 4-byte command frame, shared by
 this whole family of clone boards, at config.USB_RELAY_SERIAL_BAUD (9600):
-    [0xA0, channel(1-8), state(0x00 off / 0x01 on), checksum]
+    [0xA0, channel(1-4), state(0x00 off / 0x01 on), checksum]
     checksum = (0xA0 + channel + state) & 0xFF
 Confirmed live 2026-09-14 (relay 2 audibly clicked on/off on command) --
 this board's firmware does NOT echo the command frame back, unlike some
@@ -60,6 +66,7 @@ _lock = threading.Lock()
 _link = None  # serial.Serial once connected+identity-confirmed, else None
 _port = None
 _pulse_off_at = {}  # {channel: time.monotonic() deadline to switch it back off}
+_ring_state = {}  # {channel: dict} -- see ring()/poll() below
 _reconnect_thread = None
 _stop_requested = False
 
@@ -128,7 +135,7 @@ def _reconnect_loop():
                         _link = link
                         _port = device
                     serial_ports.hold(device, "relay_engine")
-                    print(f"[RELAY] Confirmed LCUS-8 relay board on {device}.")
+                    print(f"[RELAY] Confirmed 4-channel relay board on {device}.")
                     break
         time.sleep(_RECONNECT_INTERVAL_S)
 
@@ -195,18 +202,64 @@ def pulse_point_relay():
     pulse(config.USB_RELAY_POINT_CHANNEL, config.USB_RELAY_PULSE_SECONDS)
 
 
+def ring(channel, times, on_duration=None, off_duration=None):
+    """Rings `channel` on/off `times` times in rapid succession -- e.g. the
+    doorbell "BIG WIN" celebration (inputs/gamepad.py::trigger_big_win(),
+    config.USB_RELAY_BIG_WIN_RING_COUNT). Fires the first strike immediately,
+    then steps itself forward one on/off transition per poll() call (main.py's
+    per-frame loop) -- same non-blocking shape pulse()/poll() already use,
+    never sleeps or blocks the main thread waiting out the full sequence.
+    Replaces any ring/pulse already in progress on this channel."""
+    if on_duration is None:
+        on_duration = config.USB_RELAY_RING_ON_SECONDS
+    if off_duration is None:
+        off_duration = config.USB_RELAY_RING_OFF_SECONDS
+    if times <= 0:
+        return
+    _pulse_off_at.pop(channel, None)
+    _send(channel, 0x01)
+    _ring_state[channel] = {
+        "remaining": times - 1,  # this first strike already fired
+        "on": True,
+        "next_at": time.monotonic() + on_duration,
+        "on_duration": on_duration,
+        "off_duration": off_duration,
+    }
+
+
 def poll():
     """Per-frame poll (main.py's loop): switches off any channel whose
-    pulse() duration has elapsed. Cheap no-op with nothing pending --
-    does NOT touch discovery/reconnect, that's the background thread's job
-    (see module docstring)."""
-    if not _pulse_off_at:
-        return
+    pulse() duration has elapsed, and steps any in-progress ring()
+    sequence forward by one on/off transition. Cheap no-op with nothing
+    pending -- does NOT touch discovery/reconnect, that's the background
+    thread's job (see module docstring)."""
     now = time.monotonic()
-    done = [ch for ch, off_at in _pulse_off_at.items() if now >= off_at]
-    for ch in done:
-        _send(ch, 0x00)
-        del _pulse_off_at[ch]
+
+    if _pulse_off_at:
+        done = [ch for ch, off_at in _pulse_off_at.items() if now >= off_at]
+        for ch in done:
+            _send(ch, 0x00)
+            del _pulse_off_at[ch]
+
+    if _ring_state:
+        finished = []
+        for ch, st in _ring_state.items():
+            if now < st["next_at"]:
+                continue
+            if st["on"]:
+                _send(ch, 0x00)
+                if st["remaining"] <= 0:
+                    finished.append(ch)
+                    continue
+                st["on"] = False
+                st["next_at"] = now + st["off_duration"]
+            else:
+                _send(ch, 0x01)
+                st["remaining"] -= 1
+                st["on"] = True
+                st["next_at"] = now + st["on_duration"]
+        for ch in finished:
+            del _ring_state[ch]
 
 
 def cleanup():

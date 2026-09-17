@@ -54,6 +54,8 @@ ACTIONS = [
      "kind": "button", "modes": ["DJ"], "default": 9},
     {"id": "dj_theme_cycle", "label": "Theme Cycle", "section": "Lighting",
      "kind": "button", "modes": ["DJ"], "default": 10},
+    {"id": "dj_feature_select", "label": "Feature Select (DMX/Marquee/Outline)", "section": "Lighting",
+     "kind": "button", "modes": ["DJ"], "default": 7},
 
     # --- Trivia & Quiz ---
     {"id": "dj_trivia_pull", "label": "Trivia Pull", "section": "Trivia & Quiz",

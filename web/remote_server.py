@@ -45,6 +45,8 @@ from drivers import factoid_engine
 from drivers import joystick_bindings
 from drivers import simon_hardware
 from drivers import accent_engine
+from drivers import light_prefs_engine
+from drivers import relay_engine
 from graphics.animations import deal_panel_animations
 from web.net_info import get_lan_ip, get_play_url
 
@@ -130,9 +132,16 @@ if app is not None:
     class VolumeDelta(BaseModel):
         delta: int = 5
 
-    class DmxScene(BaseModel):
-        theme_index: int | None = None
+    class DjLookSet(BaseModel):
         color_index: int | None = None
+        theme_index: int | None = None
+        gradient_mode: str | None = None
+
+    class BoolSet(BaseModel):
+        enabled: bool
+
+    class AccentSpeedSet(BaseModel):
+        speed: int
 
     class IdleThemeSet(BaseModel):
         theme: str
@@ -152,6 +161,9 @@ if app is not None:
 
     class SimonHwLedTest(BaseModel):
         color: str
+
+    class AccentMovieChase(BaseModel):
+        all_panels: bool
 
     class WinScoreSet(BaseModel):
         score: int
@@ -717,6 +729,24 @@ if app is not None:
         entry["complete"] = music_metadata_engine.is_complete(entry)
         return entry
 
+    def _serialize_light_prefs(track_key):
+        # Separate from _serialize_metadata()/music_metadata_engine on
+        # purpose -- per-song DJ-look choices (light_prefs.csv) and show-
+        # curation tags (music_metadata.csv) are genuinely different
+        # storage engines, kept as sibling keys in the API response rather
+        # than merged into one blob. -1 (light_prefs_engine.NO_LOOK) means
+        # "nothing saved for this fixture type on this track."
+        prefs = light_prefs_engine.get_prefs_for(track_key) or {}
+        no_look = light_prefs_engine.NO_LOOK
+        return {
+            "dmx_color_index": prefs.get("dmx_color_index", no_look),
+            "dmx_theme_index": prefs.get("dmx_theme_index", no_look),
+            "marquee_color_index": prefs.get("marquee_color_index", no_look),
+            "marquee_theme_index": prefs.get("marquee_theme_index", no_look),
+            "accent_color_index": prefs.get("accent_color_index", no_look),
+            "accent_theme_index": prefs.get("accent_theme_index", no_look),
+        }
+
     @app.get("/api/library/tracks")
     def library_tracks(q: str = ""):
         """Library tab track list -- optional `q` does a case-insensitive
@@ -746,6 +776,7 @@ if app is not None:
                 "artist": artist,
                 "duration": t["duration"],
                 "metadata": _serialize_metadata(track_key),
+                "light_prefs": _serialize_light_prefs(track_key),
             })
         out.sort(key=lambda t: (t["artist"].lower(), t["title"].lower()))
         return {
@@ -793,6 +824,49 @@ if app is not None:
 
         music_metadata_engine.save_metadata_for(track_key, **fields)
         return {"ok": True, "metadata": _serialize_metadata(track_key)}
+
+    class LightPrefsSet(BaseModel):
+        filename: str
+        dmx_color_index: int | None = None
+        dmx_theme_index: int | None = None
+        marquee_color_index: int | None = None
+        marquee_theme_index: int | None = None
+        accent_color_index: int | None = None
+        accent_theme_index: int | None = None
+
+    @app.post("/api/library/light-prefs")
+    def library_light_prefs_set(body: LightPrefsSet):
+        """Per-song DMX/marquee/outline color+pattern editor (2026-09-17) --
+        same "only send what changed" partial-merge convention as
+        /api/library/metadata above, but writes through light_prefs_engine
+        (a separate storage engine/CSV from music_metadata_engine) via
+        save_fixture_look_for(). Editing a song that isn't currently
+        playing only touches light_prefs.csv -- it takes effect next time
+        that track is confidently identified (drivers/light_prefs_engine.py
+        ::apply_prefs_for()), no special-casing needed here."""
+        path = _safe_music_path(body.filename)
+        if path is None or not os.path.isfile(path):
+            return {"ok": False, "reason": "file not found"}
+        track = next((t for t in music_library.all_tracks() if t["path"] == path), None)
+        if track is None:
+            return {"ok": False, "reason": "file not found in library"}
+        track_key = sanitize_track_key(track["title"], track["artist"])
+
+        fields = {}
+        for name in ("dmx_color_index", "dmx_theme_index",
+                     "marquee_color_index", "marquee_theme_index",
+                     "accent_color_index", "accent_theme_index"):
+            value = getattr(body, name)
+            if value is None:
+                continue
+            if "color_index" in name and not (0 <= value < len(config.DJ_COLOR_PALETTE)):
+                return {"ok": False, "reason": f"{name} out of range"}
+            fields[name] = value
+        if not fields:
+            return {"ok": False, "reason": "nothing to update"}
+
+        light_prefs_engine.save_fixture_look(track_key, **fields)
+        return {"ok": True, "light_prefs": _serialize_light_prefs(track_key)}
 
     @app.post("/api/library/tag")
     def library_tag_start():
@@ -1077,13 +1151,91 @@ if app is not None:
         set_dj_volume(body.volume)
         return {"ok": True, "music_volume": state.music_volume}
 
-    @app.post("/api/dmx/scene")
-    def dmx_scene(body: DmxScene):
-        if body.theme_index is not None:
-            state.dj_theme_index = max(0, min(config.DJ_THEME_COUNT, body.theme_index))
+    # Per-fixture-type DJ look control (2026-09-17) -- replaces the old
+    # single /api/dmx/scene, which drove DMX/marquee/outline identically
+    # off one shared color_index/theme_index pair. "feature" is one of
+    # config.DJ_FEATURE_ORDER ("dmx"/"marquee"/"outline"), matching the new
+    # joypad Btn9 (inputs/gamepad.py::handle_feature_select). One
+    # parameterized route rather than three near-identical ones, mirroring
+    # this codebase's general preference for shared dispatch tables
+    # (ACTION_HANDLERS, ACTIONS) over copy-pasted per-surface code.
+    _DJ_FEATURE_STATE_PREFIX = {"dmx": "dmx", "marquee": "marquee", "outline": "accent"}
+    _DJ_FEATURE_THEME_COUNT = {
+        "dmx": lambda: config.DJ_THEME_COUNT,
+        "marquee": lambda: len(config.MARQUEE_THEME_NAMES),
+        "outline": lambda: len(config.ACCENT_THEME_TO_FX),
+    }
+
+    @app.post("/api/dj-look/{feature}")
+    def dj_look_set(feature: str, body: DjLookSet):
+        if feature not in _DJ_FEATURE_STATE_PREFIX:
+            return {"ok": False, "error": f"unknown feature {feature!r}"}
+        prefix = _DJ_FEATURE_STATE_PREFIX[feature]
         if body.color_index is not None:
-            state.dj_color_index = max(0, min(len(config.DJ_COLOR_PALETTE) - 1, body.color_index))
-        return {"ok": True, "theme_index": state.dj_theme_index, "color_index": state.dj_color_index}
+            setattr(state, f"{prefix}_color_index",
+                    max(0, min(len(config.DJ_COLOR_PALETTE) - 1, body.color_index)))
+        if body.theme_index is not None:
+            theme_count = _DJ_FEATURE_THEME_COUNT[feature]()
+            setattr(state, f"{prefix}_theme_index", max(0, min(theme_count - 1, body.theme_index)))
+        if body.gradient_mode is not None and body.gradient_mode in config.GRADIENT_MODES:
+            setattr(state, f"{prefix}_gradient_mode", body.gradient_mode)
+        light_prefs_engine.mark_dirty()
+        return {
+            "ok": True,
+            "color_index": getattr(state, f"{prefix}_color_index"),
+            "theme_index": getattr(state, f"{prefix}_theme_index"),
+            "gradient_mode": getattr(state, f"{prefix}_gradient_mode"),
+        }
+
+    @app.get("/api/dj-look/status")
+    def dj_look_status():
+        # Sync source for the admin panel's swatch pickers/dropdowns/
+        # checkboxes/speed slider on page load and poll -- no equivalent
+        # readback existed for the old shared dj_color_index/dj_theme_index.
+        return {
+            "ok": True,
+            "selected_feature": state.dj_selected_feature,
+            "dmx": {"color_index": state.dmx_color_index, "theme_index": state.dmx_theme_index,
+                    "gradient_mode": state.dmx_gradient_mode},
+            "marquee": {"color_index": state.marquee_color_index, "theme_index": state.marquee_theme_index,
+                        "gradient_mode": state.marquee_gradient_mode},
+            "outline": {"color_index": state.accent_color_index, "theme_index": state.accent_theme_index,
+                        "gradient_mode": state.accent_gradient_mode},
+            "blank_lower_marquees": state.blank_lower_marquees,
+            "accent_speed": state.accent_speed,
+            "accent_sound_enabled": state.accent_sound_enabled,
+        }
+
+    @app.get("/api/dj-look/options")
+    def dj_look_options():
+        # Single source the admin panel's swatch pickers/dropdowns populate
+        # from at load time, rather than hardcoding config.py's lists into
+        # index.html (the same "keep in sync by hand" gap the old theme-
+        # slider/color-slider comments used to warn about).
+        return {
+            "ok": True,
+            "colors": [{"index": i, "name": c.name, "r": c[0], "g": c[1], "b": c[2]}
+                       for i, c in enumerate(config.DJ_COLOR_PALETTE)],
+            "dmx_theme_names": config.DJ_THEME_NAMES,
+            "marquee_theme_names": config.MARQUEE_THEME_NAMES,
+            "gradient_modes": list(config.GRADIENT_MODES),
+            "feature_order": list(config.DJ_FEATURE_ORDER),
+        }
+
+    @app.post("/api/marquee/blank-lower/set")
+    def marquee_blank_lower_set(body: BoolSet):
+        state.blank_lower_marquees = body.enabled
+        return {"ok": True, "blank_lower_marquees": state.blank_lower_marquees}
+
+    @app.post("/api/accent/sound/set")
+    def accent_sound_set(body: BoolSet):
+        state.accent_sound_enabled = body.enabled
+        return {"ok": True, "accent_sound_enabled": state.accent_sound_enabled}
+
+    @app.post("/api/accent/speed/set")
+    def accent_speed_set(body: AccentSpeedSet):
+        state.accent_speed = max(0, min(255, body.speed))
+        return {"ok": True, "accent_speed": state.accent_speed}
 
     # Relay hardware bring-up/test (2026-08-23): fires the same one-shot
     # pulse_channel() the live BIG WIN trigger uses, but standalone -- lets
@@ -1106,6 +1258,37 @@ if app is not None:
     def dmx_relay3_test():
         print("[WEB REMOTE] Test Relay 3 requested via web remote.")
         dmx.pulse_channel(config.RELAY3_CHANNEL, 255, config.RELAY_PULSE_SECONDS)
+        return {"ok": True}
+
+    # USB relay board test (2026-09-18) -- a SEPARATE physical board from
+    # the 3-channel DMX relay block above (drivers/relay_engine.py, its own
+    # CH340 USB-serial link, not part of the DMX universe). 4 channels only
+    # (config.USB_RELAY_CHANNEL_COUNT) -- corrected from an earlier 8-channel
+    # LCUS-8 assumption that never matched the real hardware. Fires
+    # relay_engine.pulse() directly, same "verify a channel without needing
+    # to play out a full round" reasoning as the DMX relay test above.
+    @app.post("/api/usb-relay/test-1")
+    def usb_relay_test_1():
+        print("[WEB REMOTE] Test USB Relay 1 requested via web remote.")
+        relay_engine.pulse(1)
+        return {"ok": True}
+
+    @app.post("/api/usb-relay/test-2")
+    def usb_relay_test_2():
+        print("[WEB REMOTE] Test USB Relay 2 requested via web remote.")
+        relay_engine.pulse(2)
+        return {"ok": True}
+
+    @app.post("/api/usb-relay/test-3")
+    def usb_relay_test_3():
+        print("[WEB REMOTE] Test USB Relay 3 requested via web remote.")
+        relay_engine.pulse(3)
+        return {"ok": True}
+
+    @app.post("/api/usb-relay/test-4")
+    def usb_relay_test_4():
+        print("[WEB REMOTE] Test USB Relay 4 requested via web remote.")
+        relay_engine.pulse(4)
         return {"ok": True}
 
     @app.post("/api/dmx/raw-set")
@@ -1162,6 +1345,24 @@ if app is not None:
     def accent_next_effect():
         fx = accent_engine.next_effect()
         return {"ok": fx is not None, "effect": fx}
+
+    # Per-song theme sync + movie-chase artist testing (2026-09-15):
+    # accent_engine.sync_to_show_state() runs automatically every frame
+    # from main.py, following the current DJ color/theme (or Price Game
+    # white-out) with no operator action needed -- these two routes are
+    # only for manually forcing the "movie marquee" Theater Chase effect
+    # to evaluate it directly, per the operator's own request to see the
+    # system's visual capabilities before deciding how it fits into the
+    # normal rotation. resume-auto hands control back to the per-song sync.
+    @app.post("/api/accent/movie-chase")
+    def accent_movie_chase(body: AccentMovieChase):
+        ok = accent_engine.set_movie_chase(all_panels=body.all_panels)
+        return {"ok": ok}
+
+    @app.post("/api/accent/resume-auto")
+    def accent_resume_auto():
+        accent_engine.resume_auto_sync()
+        return {"ok": True}
 
     # ------------------------------------------
     # JOY ASSIGN (2026-08-20): drivers/joystick_bindings.py backs all of

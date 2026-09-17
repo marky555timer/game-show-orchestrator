@@ -370,13 +370,16 @@ RELAY3_CHANNEL = 179
 RELAY_PULSE_SECONDS = 0.25
 
 # ==========================================
-# USB RELAY BOARD (LCUS-8, drivers/relay_engine.py, added 2026-09-14)
+# USB RELAY BOARD (4-channel, drivers/relay_engine.py, added 2026-09-14,
+# corrected to 4 channels 2026-09-18)
 # ==========================================
-# Separate physical board from the 3-channel DMX relay block above --
-# an 8-channel LCUS-8 USB relay module, addressed directly over its own
-# serial link (NOT part of the 176-channel DMX universe). Protocol is the
-# standard LCUS 4-byte command frame: [0xA0, channel(1-8), state, checksum],
-# 9600 baud -- see drivers/relay_engine.py's module docstring.
+# Separate physical board from the 3-channel DMX relay block above -- a
+# 4-channel USB relay module, addressed directly over its own serial link
+# (NOT part of the 176-channel DMX universe). Protocol is the standard LCUS
+# 4-byte command frame: [0xA0, channel(1-4), state, checksum], 9600 baud --
+# see drivers/relay_engine.py's module docstring. Originally built assuming
+# an 8-channel LCUS-8 board (hence the "point channel" living at 8) -- the
+# real board only has 4 channels, channels 5-8 don't exist, corrected below.
 #
 # This board's CH340 USB-UART chip enumerates under the SAME VID/PID as
 # some ESP32 clones already listed in ESP32_USB_SERIAL_VID_PIDS above.
@@ -388,24 +391,45 @@ RELAY_PULSE_SECONDS = 0.25
 # still-pending accent board) ever joins. led_bridge.py/wled_engine.py's
 # own port scans were fixed the same day this board was added
 # (serial_ports.held_by(port) is None, not a hardcoded other-module name)
-# so they can't fight over this board's port either way.
+# so they can't fight over this board's port either way. Was undetected for
+# a while (2026-09-18) because it was plugged into a dead port on the old
+# USB hub -- moved to a new overcurrent-protected 4-port hub, enumerates
+# fine now.
 USB_RELAY_VID_PID = (0x1A86, 0x7523)
 USB_RELAY_SERIAL_BAUD = 9600
-# Which LCUS-8 channel does the brief "point scored" pulse -- currently:
-# Simon round cleared (drivers/simon_engine.py::press()'s round-clear
-# block). NOT gated on state.sfx_enabled -- it's a physical scoring signal
-# to external hardware, not an SFX accent.
+USB_RELAY_CHANNEL_COUNT = 4
+# Which channel gets the brief "point scored" pulse -- currently: Simon
+# round cleared (drivers/simon_engine.py::press()'s round-clear block). NOT
+# gated on state.sfx_enabled -- it's a physical scoring signal to external
+# hardware, not an SFX accent.
 #
-# Channel 8 (2026-09-14: moved off channel 2) drives a physical
-# electromagnetic doorbell -- there's a one-shot relay timer wired in
-# front of the doorbell coil itself that caps how long the coil actually
-# gets energized regardless of how long this software pulse holds the
-# LCUS-8 channel closed, so USB_RELAY_PULSE_SECONDS below only needs to be
-# long enough to reliably trigger that hardware timer, not sized to the
-# coil's safe duration -- this software pulse is NOT what's protecting
-# the coil from damage.
-USB_RELAY_POINT_CHANNEL = 8
+# Channel 1 (2026-09-18: moved off channel 8, which doesn't exist on this
+# 4-channel board) is meant to drive a physical electromagnetic doorbell --
+# NOT wired up yet as of this correction, so this pulse only clicks the
+# relay's own internal coil for now, nothing audible downstream. Once the
+# doorbell is physically wired to channel 1, the same "one-shot relay timer
+# in front of the coil caps the actual energized time" design intent from
+# the original board still applies -- USB_RELAY_PULSE_SECONDS below only
+# needs to reliably trigger that hardware timer, not be sized to the coil's
+# safe duration; the software pulse is NOT what protects the coil.
+USB_RELAY_POINT_CHANNEL = 1
 USB_RELAY_PULSE_SECONDS = 0.25
+
+# "BIG WIN" doorbell celebration (2026-09-18): inputs/gamepad.py::
+# trigger_big_win() rings the doorbell USB_RELAY_BIG_WIN_RING_COUNT times
+# in rapid succession (drivers/relay_engine.py::ring()) instead of playing
+# the normal bigwin.wav SFX -- that play_processed_sound() call is
+# commented out, not deleted, in case it's wanted again later.
+# 120ms on/off cycle (2026-09-18 operator feedback: the original 250ms-on/
+# 200ms-off felt too slow) -- 60ms each way, split evenly. Noticeably
+# shorter than the single-ring USB_RELAY_PULSE_SECONDS (250ms) already
+# proven to reliably trigger the one-shot hardware timer, so confirm by
+# ear/feel that every one of the 8 strikes is actually landing at this
+# speed, not just some of them -- tune the split (doesn't have to stay
+# 50/50) if the solenoid can't fully reset between strikes this fast.
+USB_RELAY_BIG_WIN_RING_COUNT = 8
+USB_RELAY_RING_ON_SECONDS = 0.06
+USB_RELAY_RING_OFF_SECONDS = 0.06
 
 # ==========================================
 # MARQUEE LIGHTS (2026-08-23, drivers/wled_engine.py)
@@ -452,6 +476,16 @@ WLED_SERIAL_ENABLED = True
 # empirically with a chase effect before relying on it).
 WLED_HOST = "wled-2bb8e8.local"
 WLED_DDP_PORT = 4048
+# This board's factory MAC (lowercase, no colons, matching WLED's own
+# JSON format -- same as config.ACCENT_WLED_MAC's format) -- derived
+# from WLED_HOST's mDNS hostname and confirmed against `ip neigh`/lsusb
+# output for this board's IP. Used by drivers/wled_engine.py to
+# positively verify a candidate USB-serial port is actually this board
+# before connecting (2026-09-15), rather than the old reject-based
+# elimination, which only worked for exactly two indistinguishable
+# candidates and broke once the accent board (also CP2102) existed --
+# see drivers/wled_engine.py's _reconcile_with_led_bridge history.
+MARQUEE_WLED_MAC = "b0a7322bb8e8"
 MARQUEE_TOTAL_LEDS = 102
 # "reverse": physical loop-travel direction isn't confirmed yet (only the
 # top-right start corner is) -- flip per-segment here if a chase effect
@@ -472,7 +506,7 @@ MARQUEE_SEGMENTS = {
     "panel6": {"start": 84, "count": 18, "reverse": False},  # panel 6 outline
 }
 
-# --- Third ESP32/WLED board: "outlines" accent strip -- ON HOLD 2026-09-14 ---
+# --- Third ESP32/WLED board: "outlines" accent strip (rebuilt 2026-09-15) ---
 # A separate, third board from the marquee/outline ESP32 above
 # (WLED_HOST/MARQUEE_* -- USB-serial + DDP, raw pixel push for
 # frame-accurate chase effects). Drives a 120-lamp strip, controlled by
@@ -480,31 +514,31 @@ MARQUEE_SEGMENTS = {
 # timing needed for this effect).
 #
 # The originally-purchased board (a WeGoIOT "ESP32 WLED" DOM-WLE-18P
-# commercial controller) turned out to be a dead end for wired control:
-# its exposed "IO33/GND" terminal looked like a UART pin but is actually
-# WLED's plain pushbutton input (GPIO33 = Button 0, confirmed via WLED's
-# own docs), and its "INPUT/UART" USB-C jack never enumerated as a USB
-# device at all -- not a cable/power/hub problem (ruled out one at a
-# time: known-good data cable confirmed with an iPhone, independent
-# barrel-jack power confirmed present, still nothing) -- and its manual
-# never documents a wired-PC connection method at all. Conclusion: this
-# specific product is WiFi/app-control-only. Decision (2026-09-14): user
-# refuses to manage a second WiFi access point, so instead of accepting
-# WiFi control, replacing this board entirely with a plain ESP32 DevKit
-# V1 flashed with stock WLED -- i.e. built the same way as the marquee
-# board above, which has never had any of these problems since it's a
-# generic devkit with real UART0 exposed over USB, not a sandboxed
-# commercial product. New board on order; work paused until it arrives.
+# commercial controller) was a dead end for wired control -- its
+# exposed "IO33/GND" terminal turned out to be WLED's plain pushbutton
+# input, not a UART, and its "INPUT/UART" USB-C jack never enumerated
+# as a USB device at all despite ruling out cable/power/hub one at a
+# time. Replaced with a blank ESP32 DevKit V1, flashed 2026-09-15 with
+# stock WLED v16.0.1 via esptool (bootloader_esp32_8m.bin @0x1000 +
+# partitions_c3_4m.bin @0x8000, both from install.wled.me/bin/boot/,
+# app @0x10000 from the GitHub release -- confirmed booting and
+# answering WLED's JSON API over serial before going into the rig).
 #
-# When wiring the replacement: prefer a board whose USB-UART chip is
-# NOT Silicon Labs CP2102 (the marquee and matrix boards both already
-# are) -- picking a CH340/CH9102 clone instead lets drivers/
-# accent_engine.py identify its port directly by VID/PID, with none of
-# the heartbeat/elimination guessing drivers/serial_ports.py needs for
-# the marquee-vs-matrix pair. Watch out for USB relay boards/other
-# accessories on the same rig also using CH340 -- confirm identity by
-# probing with WLED's JSON API (send {"v":true}, expect a JSON reply),
-# not by VID/PID alone, before wiring any code to a specific port.
+# This replacement board enumerates on the same Silicon Labs CP2102
+# chip as the matrix and marquee boards (VID/PID identical, even the
+# same blank embedded serial number "0001") -- the "prefer a different
+# chip" advice from the original purchase didn't pan out. Since
+# drivers/serial_ports.py's heartbeat-elimination only ever handled
+# TWO indistinguishable candidates (confirmed: it briefly caused a
+# 5s main-loop stall bouncing between three when this board's USB
+# first showed up unidentified, 2026-09-14 log), drivers/
+# accent_engine.py instead identifies its own port positively by
+# asking each unclaimed CP2102 candidate for its WLED info ({"v":true}
+# over serial) and checking the "mac" field against ACCENT_WLED_MAC
+# below -- burned into this specific chip at manufacture, so it can't
+# collide with the matrix or marquee board no matter which USB port or
+# enumeration order they land on.
+ACCENT_WLED_MAC = "704bca4ef5cc"  # this board's factory MAC (from esptool chip_id / WLED's own /json/info), lowercase no colons to match WLED's own JSON format
 ACCENT_SERIAL_BAUD = 115200
 ACCENT_EFFECT_CYCLE_SECONDS = 3.0
 # Built-in WLED effect IDs (not user-defined presets -- these ship with
@@ -513,6 +547,84 @@ ACCENT_EFFECT_CYCLE_SECONDS = 3.0
 # versions; picked for visually obvious changes (solid/breathe/rainbow/
 # chase/fireworks), not for the specific IDs mattering.
 ACCENT_TEST_EFFECTS = [0, 2, 9, 38, 66]
+
+# --- Accent strip per-song theme sync (2026-09-15) ---
+# Maps each of the 13 DMX DJ_THEME_* patterns (drivers/lighting_engine.py::
+# _dj_theme_frame -- see that function for what each index actually looks
+# like) onto the closest built-in WLED effect ID, so the accent strip's
+# motion "reads" like part of the same show even though the DMX side is
+# bespoke Python animation and this side is WLED's own effect engine --
+# there's no way to get byte-identical motion between two totally
+# different rendering systems, so these are deliberate aesthetic matches,
+# not literal ports. IDs below are from this board's actual /json/eff list
+# (WLED 16.0.1, confirmed live against the marquee board's own list, same
+# WLED codebase) -- re-verify against that list if WLED is ever upgraded,
+# since effect IDs occasionally shift between releases.
+ACCENT_THEME_TO_FX = {
+    0: 2,     # Breathe (unison pulse) -> Breathe -- exact
+    1: 28,    # Chase (wraps around) -> Chase -- exact
+    2: 1,     # Alternate even/odd on beat -> Blink -- closest simple approximation, not exact
+    3: 20,    # Sparkle (per-fixture independent phase) -> Sparkle -- exact
+    4: 60,    # Bidirectional converging chase -> Scanner Dual
+    5: 17,    # Random twinkle strobe -> Twinkle
+    6: 15,    # Wave gradient (continuous traveling sine) -> Running
+    7: 100,   # Heartbeat (double "lub-dub" pulse) -> Heartbeat -- exact
+    8: 40,    # Bounce (ping-pong, reflects at ends) -> Scanner
+    9: 77,    # Comet (bright head + decaying trail) -> Meteor Smooth
+    10: 23,   # Beat flash (single sharp flash + decay) -> Strobe
+    11: 52,   # Paired chase (adjacent pairs sweep) -> Running Dual
+    12: 0,    # Solid -> Solid -- exact
+}
+
+# Approximate RGB stand-ins for DJ_COLOR_PALETTE's three dedicated-emitter
+# looks (white lamp/amber lamp/uv) -- those store r=g=b=0 with the real
+# intensity on a separate white/amber/uv attribute (see the DJColor class
+# above), which only makes sense for the DMX fixtures' actual White/Amber/
+# UV emitters. The accent strip is plain RGB, so sending those colors
+# as-is would mean literal black -- these substitute the closest visible
+# color instead. UV in particular can only ever be approximated this way;
+# RGB LEDs cannot produce real ultraviolet light.
+ACCENT_DEDICATED_EMITTER_RGB = {
+    "white lamp": (255, 255, 255),
+    "amber lamp": (255, 140, 0),
+    "uv":         (120, 0, 255),
+}
+
+# WLED's built-in "Theater Chase" effect -- the "movie marquee" bulb-chase
+# look from drivers/wled_engine.py's _apply_simon() top-strip pattern
+# (every SIMON_MARQUEE_CHASE_SPACING'th pixel lit, shifting over time),
+# now offered as a selectable accent-strip option too, per user request
+# 2026-09-15 ("I like that effect, I want it to be part of the theme
+# rotation"). Plain (13) uses whatever color is currently set, matching
+# the Simon pattern's actual look; Rainbow (14) cycles hue instead --
+# kept as a named alternative in case that variant is ever wanted.
+ACCENT_FX_THEATER = 13
+ACCENT_FX_THEATER_RAINBOW = 14
+
+# WLED's built-in rainbow-cycle effect, used for accent_sound_enabled's
+# sibling gradient control (state.accent_gradient_mode == "rainbow") --
+# accent is effect-driven, not raw-pixel like the marquee, so "rainbow"
+# here means selecting this built-in effect rather than hand-computing
+# per-pixel hues. Same ID already referenced as the 3rd entry of
+# ACCENT_TEST_EFFECTS's bring-up cycle; named separately here since that
+# list is a test-cycle order, not meant as a lookup table for this.
+ACCENT_FX_RAINBOW = 9
+
+# Total LED count on the accent strip, per the user's own spec (a "120
+# lamp strip") -- NOT yet cross-verified against this board's actual
+# saved WLED LED-count setting (it wasn't reachable over WiFi to check
+# at the time this was written; confirm via its /json/info "leds.count"
+# if anything here seems off in practice).
+ACCENT_TOTAL_LEDS = 120
+
+# Segment split for the "top panel only" vs "all panels" movie-chase
+# variants -- GUESS pending confirmation of the accent strip's actual
+# physical wiring layout (unlike the marquee, whose MARQUEE_SEGMENTS were
+# measured against the real build). Defaulting to the same 30-LED "title"
+# span the marquee uses for its own top-panel section, purely because
+# it's the only known reference point on this rig -- confirm/adjust
+# against the real strip's physical layout before trusting this.
+ACCENT_TOP_SEGMENT_LED_COUNT = 30
 
 # Marquee light-show timing (drivers/wled_engine.py::update()). v1 scope is
 # deliberately a simplified subset of the DMX rig's full state machine
@@ -525,11 +637,10 @@ ACCENT_TEST_EFFECTS = [0, 2, 9, 38, 66]
 MARQUEE_FLASH_SECONDS = 0.25
 MARQUEE_DJ_BREATHE_PERIOD_SECONDS = 4.0
 
-# DJ-mode "dance" patterns: state.dj_theme_index (already used to pick one
-# of the DMX rig's 13 uplight themes) also selects one of these, purely by
-# `dj_theme_index % len(patterns)` -- so cycling DJ themes from the
-# existing controls changes the marquee's character too, no separate
-# control needed. See drivers/wled_engine.py's _DJ_PATTERNS list.
+# DJ-mode "dance" patterns, selected by state.marquee_theme_index (its own
+# independent index since the 2026-09-17 per-fixture-type decoupling --
+# see DJ_FEATURE_ORDER/MARQUEE_THEME_NAMES above). See drivers/
+# wled_engine.py's _DJ_PATTERNS list.
 MARQUEE_DJ_WAVE_LENGTH_LEDS = 12     # traveling brightness wave's wavelength, in pixels
 MARQUEE_DJ_WAVE_SPEED_SECONDS = 3.0  # seconds for the wave to shift one full wavelength
 MARQUEE_DJ_CHASE_LAP_SECONDS = 2.0   # seconds per full lap, complement-trail comet pattern
@@ -835,6 +946,52 @@ DJ_COLOR_PALETTE = [
     DJColor("uv",         uv=255),
 ]
 
+# --- Per-fixture-type DJ look decoupling (2026-09-17) ---
+# DMX, marquee, and outline/accent used to share one color_index/theme_index
+# pair (whatever Btn7/Btn8 set applied to all three identically). Now each
+# picks independently -- state.dmx_*/marquee_*/accent_* -- and Btn9 (new,
+# see inputs/gamepad.py::handle_feature_select) selects which one Btn7/Btn8
+# currently target.
+DJ_FEATURE_ORDER = ("dmx", "marquee", "outline")
+# Mirrors DMX_GRADE_FLASH_SECONDS/MARQUEE_FLASH_SECONDS's role, just for the
+# new Btn9 "you just selected this feature" confirmation flash.
+DJ_FEATURE_FLASH_SECONDS = 0.25
+
+# Gradient is a control separate from the solid-color swatch picker (not
+# extra DJ_COLOR_PALETTE entries) -- "adjacent"/"complementary" reuse
+# drivers/color_utils.py::hue_shift() against whatever solid color is also
+# selected; "rainbow" ignores the selected color entirely on every surface.
+GRADIENT_MODES = ("off", "rainbow", "adjacent", "complementary")
+
+# Human-readable names for the admin panel's DMX-pattern dropdown, index-
+# aligned with drivers/lighting_engine.py::_dj_theme_frame's theme==N
+# branches (0-12; index 13, DJ_THEME_ALL_OFF_INDEX, is deliberately not a
+# cycle entry -- see that constant's own comment -- so it's not named here
+# either, the admin panel offers it as a separate explicit action).
+DJ_THEME_NAMES = [
+    "Unison Breathe", "Chase Sweep", "Alternate", "Sparkle",
+    "Converging Chase", "Twinkle Strobe", "Wave Gradient", "Heartbeat",
+    "Bounce", "Comet", "Beat Flash", "Paired Chase", "Solid",
+]
+
+# Same idea for the marquee's admin-panel dropdown, index-aligned with
+# drivers/wled_engine.py::_DJ_PATTERNS.
+MARQUEE_THEME_NAMES = [
+    "Breathe", "Wave", "Twinkle Base", "Call & Response",
+    "Complement Chase", "Rainbow Chase", "Bounce Comet", "Confetti",
+]
+
+# WLED built-in effect ID for the outline/accent board's "sound" checkbox
+# (state.accent_sound_enabled) -- confirmed live 2026-09-17 against this
+# board's own /json/eff (WLED 16.0.1, fxcount 220, AudioReactive usermod
+# compiled in per that session's work getting analog mic input configured).
+# GEQ is the classic bar-graph audio-reactive look; other audio-reactive IDs
+# on this same board/build if a different one is ever wanted: 137 Freqwave,
+# 138 Freqmatrix, 141 Freqpixels, 155 Freqmap, 158 Gravfreq, 198 PS GEQ 2D.
+# Re-verify against /json/eff if this board's WLED version ever changes --
+# same caveat ACCENT_THEME_TO_FX's own header comment already carries.
+ACCENT_AUDIOREACTIVE_FX_ID = 139  # "GEQ"
+
 # Game-mode chase pace (seconds per step across fixtures 2-11).
 CHASE_PACE_MID_SECONDS = 0.12
 CHASE_PACE_FAST_SECONDS = 0.05
@@ -1107,21 +1264,47 @@ PRICE_GAME_QUESTION_TIMEOUT_SECONDS = 8.0
 # DJ MODE "MYSTERY BAND" TEASER
 # ==========================================
 # On a new track by an artist not yet asked about this session, panels 1+2
-# hide the title behind a "Who is this?" teaser and panels 3-6 loop a
-# question-mark/original-animation cycle for MYSTERY_REVEAL_TIMEOUT_SECONDS.
-# If Game Mode isn't entered in that window, the title reveals with a slow
-# invert-color blink for MYSTERY_REVEAL_BLINK_SECONDS before standard DJ
-# mode resumes. See drivers/mystery_band_engine.py.
+# hide the title behind a "Who is this?" teaser -- staged per
+# drivers/mystery_band_engine.py::reveal_stage() and the MYSTERY_SPARKLE_/
+# MYSTERY_SOLID_/MYSTERY_CASCADE_STEP_SECONDS constants below -- for
+# MYSTERY_REVEAL_TIMEOUT_SECONDS. If Game Mode isn't entered in that
+# window, the title reveals with a slow invert-color blink for
+# MYSTERY_REVEAL_BLINK_SECONDS before standard DJ mode resumes. See
+# drivers/mystery_band_engine.py.
 MYSTERY_REVEAL_TIMEOUT_SECONDS = 15.0
-MYSTERY_QMARK_PHASE_SECONDS = 1.5
 MYSTERY_REVEAL_BLINK_SECONDS = 3.0
 MYSTERY_REVEAL_BLINK_PERIOD_SECONDS = 0.8
+
+# "Who is this?" reveal timing rewrite (2026-09-16): rather than the flat
+# qmark-cycle above, panels 3-6 now cascade in one option at a time, in
+# button order (config.SIMON_HW_COLOR_ORDER), while panels 1+2 step through
+# a sparkle "Who is this?" -> solid "Is this:" beat first -- see
+# drivers/mystery_band_engine.py::reveal_stage(). Purely additive to the
+# timing above: MYSTERY_REVEAL_TIMEOUT_SECONDS is still the total unanswered
+# budget: SPARKLE + SOLID + 3 * CASCADE_STEP (~6.1s) is spent revealing the
+# 4th and final option, leaving most of the remaining 15s for people to
+# actually answer, same total window as before this reveal was staged.
+MYSTERY_SPARKLE_SECONDS = 1.5       # "Who is this?" sparkle
+MYSTERY_SOLID_SECONDS = 1.0         # "Is this:" beat, nothing revealed yet
+MYSTERY_CASCADE_STEP_SECONDS = 1.2  # time between each option's reveal
 
 # Question-priority hierarchy for the questions queued after the forced
 # "identify this band" question, once Game Mode is entered from a live
 # Mystery Band window. Categories not listed here (e.g. career-stat,
 # song-meaning) sort after all of these, in their original queue order.
 MYSTERY_CATEGORY_PRIORITY = {"geography": 0, "date": 1, "true_false": 2, "real_name": 3}
+
+# Solo (no registered players) "score for fun at the panel" mode
+# (2026-09-17, operator feedback): drivers/factoid_engine.py::
+# advance_to_next_queued_question() skips any queued question whose
+# category is in this set when nobody's registered -- someone standing
+# right up against an 18px matrix panel has a much more limited view than
+# a phone screen, so open-ended categories like "song_meaning" ("what is
+# this song about?") read as too long/hard to size up at a glance. Left in
+# the queue rather than discarded, so a player joining mid-track still
+# gets the full, unfiltered multiplayer queue (that's "fine" there per the
+# same feedback -- phones have room for the longer text).
+PANEL_SOLO_EXCLUDED_CATEGORIES = {"song_meaning"}
 
 # ==========================================
 # PRICE GAME MODE: BACKGROUND MUSIC + MIDI FADER DUCK
@@ -1705,6 +1888,22 @@ SHOW_UNATTENDED_FINAL_WARNING_SECONDS = 10.0
 # outro fanfare, since this wasn't a real hosted show, just a fast fade
 # back to the blank Setup screen.
 SHOW_UNATTENDED_RESET_FADE_SECONDS = 2.0
+
+# Setup-countdown physical-button interactions (2026-09-16): green opens a
+# "START SHOW NOW?" confirm (panel3/green=No, panel4/red=Yes -- see
+# drivers/simon_engine.py::_poll_setup_hardware()); blue kicks off a
+# Bluetooth gamepad reconnect (drivers/bluetooth_engine.py::
+# reconnect_paired_devices_async()) and holds its CONNECTING/SUCCESS/NO
+# GAMEPAD feedback on panels 1+2 for this long once it resolves.
+GAMEPAD_CONNECT_FEEDBACK_HOLD_SECONDS = 3.0
+# Safety ceiling for the "CONNECTING..." message shown the instant blue is
+# pressed, before the background reconnect attempt (which can itself take
+# up to _LIST_TIMEOUT_S + _CONNECT_TIMEOUT_S per paired device, drivers/
+# bluetooth_engine.py) has resolved -- so a wedged/never-returning attempt
+# can't leave "CONNECTING..." on the panels forever. reconnect_paired_
+# devices_async() overwrites this with a fresh GAMEPAD_CONNECT_FEEDBACK_
+# HOLD_SECONDS window the moment it actually finishes, whichever comes first.
+GAMEPAD_CONNECT_PENDING_MAX_SECONDS = 15.0
 
 # ==========================================
 # BITMAP PIXEL FONT ENGINE (5x7 Grid)

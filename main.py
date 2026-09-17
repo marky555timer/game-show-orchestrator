@@ -164,7 +164,14 @@ def main():
         wled_engine.update(time.time())
         _stage_t8 = time.perf_counter()
 
-        _stage_total = _stage_t8 - _stage_t0
+        # 5. Sync the accent (outline) strip's WLED effect/color to the
+        # current DJ theme/color (or Price Game white-out) -- see
+        # drivers/accent_engine.py::sync_to_show_state(). Cheap no-op
+        # unless the target look actually changed since last frame.
+        accent_engine.sync_to_show_state()
+        _stage_t9 = time.perf_counter()
+
+        _stage_total = _stage_t9 - _stage_t0
         if _stage_total >= MAIN_LOOP_STALL_WARN_SECONDS:
             _stages = [
                 ("clock.tick", _stage_t1 - _stage_t0),
@@ -175,6 +182,7 @@ def main():
                 ("update_matrix_canvas", _stage_t6 - _stage_t5),
                 ("render_led_grid", _stage_t7 - _stage_t6),
                 ("wled_engine.render", _stage_t8 - _stage_t7),
+                ("accent_engine.sync_to_show_state", _stage_t9 - _stage_t8),
             ]
             _worst_name, _worst_s = max(_stages, key=lambda s: s[1])
             print(f"[LOOP STALL] frame took {_stage_total * 1000:.0f}ms (budget 25ms) -- "

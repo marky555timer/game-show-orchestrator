@@ -30,6 +30,12 @@ import config
 _RAW_INDEX_TO_BTN_LABEL = {
     0: "Btn1", 1: "Btn2", 2: "Btn3", 3: "Btn4",
     5: "Btn5", 6: "Btn6", 9: "Btn7", 10: "Btn8",
+    # Raw 7 (2026-09-17): one of the extra raw indices noted above (4/7/8)
+    # that exist on this controller but had no BtnN label before -- bound
+    # to the new DJ-mode feature-select action (see drivers/
+    # joystick_bindings.py's ACTIONS list and inputs/gamepad.py::
+    # handle_feature_select). Raw 4/8 stay unbound/unlabeled for now.
+    7: "Btn9",
 }
 
 
@@ -63,8 +69,10 @@ DJ MODE
   Btn6            FORCE PRICE GAME (always works -- one question drawn
                   instantly from the local price_game_bank.csv, no AI)
   Btn5+Btn6 HOLD  Decade-themed Price Game (AI-fetched, only if armed)
-  Btn7            Uplight Color Cycle
-  Btn8            Uplight Theme Cycle
+  Btn9            Select feature (DMX / Marquee / Outline) -- flashes red
+                  on the selected surface; Btn7/Btn8 below then apply to it
+  Btn7            Color Cycle (for whichever feature Btn9 has selected)
+  Btn8            Theme/Pattern Cycle (for whichever feature Btn9 has selected)
   D-Pad / Y-axis  Volume Up/Down (hold to repeat)
   X- axis         Next track
   X+ axis         Previous track (Back)

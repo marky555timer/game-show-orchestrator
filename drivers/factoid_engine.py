@@ -334,6 +334,7 @@ def _apply_active_question(data, source):
     state.quiz_selected_index = -1
     state.quiz_locked = False
     state.quiz_graded_at = 0.0
+    state.mystery_panel_win_active = False
     state.fixture1_mode = "off"  # Reset rule: new question -> Fixture 1 black
 
     # 30s round clock (drivers/live_round_engine.py), every question type
@@ -457,11 +458,25 @@ def advance_to_next_queued_question():
     """Multi-question game loop: pops the next pre-fetched question off the
     active track's runtime queue and makes it the active round question,
     staying in GAME_MODE. Returns False (caller should return to DJ_MODE) if
-    no more questions are queued for this track."""
+    no more questions are queued for this track.
+
+    Solo (no registered players, 2026-09-17): skips over any category in
+    config.PANEL_SOLO_EXCLUDED_CATEGORIES rather than popping index 0
+    unconditionally -- left in place (not discarded) in case a player
+    joins mid-track and the full multiplayer queue becomes relevant again.
+    Returns False if every remaining queued question is excluded."""
     if not state.track_question_queue:
         return False
     _maybe_promote_era_question(state.track_question_queue)
-    nxt = state.track_question_queue.pop(0)
+    queue = state.track_question_queue
+    if state.quiz_players:
+        nxt = queue.pop(0)
+    else:
+        idx = next((i for i, q in enumerate(queue)
+                    if q.get("category") not in config.PANEL_SOLO_EXCLUDED_CATEGORIES), None)
+        if idx is None:
+            return False
+        nxt = queue.pop(idx)
     _apply_active_question(nxt, "QUEUE/AUTO-ADVANCE")
     return True
 

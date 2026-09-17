@@ -14,37 +14,46 @@ import config
 from state import state
 
 
-def update(now):
-    if state.quiz_locked:
-        return
-    if state.price_game_active:
-        # Only actually guards the brief strobe/banner intro (state.mode is
-        # still MODE_DJ then, so `active` below is False anyway) -- once
-        # the price question itself is on screen, price_game_engine's
-        # _reset_intro() has already flipped this back to False, so Price
-        # Game questions fall through to the same shared round clock as
-        # every other question type below (2026-08-10 correction: they
-        # used to be fully exempted here, which left them with no
-        # automatic timeout at all -- see factoid_engine.py's
-        # _apply_active_question()).
-        return
+def is_round_active():
+    """True if there's a live, ungraded round right now. Shared with
+    drivers/simon_engine.py::poll_hardware() (2026-09-16: the physical
+    arcade buttons now score any live trivia round, not just Simon) so both
+    call sites use exactly the same definition of "active" -- see update()
+    below for what this guards there.
 
-    # "Active" = a question is loaded and not yet graded. Deliberately NOT
-    # gated on state.mystery_active/mystery_resolved (2026-08-10 fix): that
-    # pair drives an entirely independent ~10-13s "Who is this?" reveal-
-    # blink animation on panels 1+2 (MYSTERY_REVEAL_TIMEOUT_SECONDS +
-    # MYSTERY_REVEAL_BLINK_SECONDS) that predates client-side answering and
-    # was never meant to gate whether a round can still be graded. Because
-    # it used to, a mystery round would silently stop being monitored by
-    # this engine (and stop showing as "active" to clients) after ~10-13s
-    # -- long before the real 30/40s answer deadline -- even though nobody
-    # had answered yet, which is exactly what let a correct-but-still-
-    # pending answer go ungraded. state.quiz_locked/factoid_choices alone
-    # already correctly track "is there a live, ungraded round" for every
-    # question type (mystery included, since _apply_active_question() is
-    # the shared chokepoint that resets both).
-    active = bool(state.factoid_choices) and not state.quiz_locked
-    if not active:
+    Excludes the Price Game intro (state.price_game_active): only actually
+    guards the brief strobe/banner intro (state.mode is still MODE_DJ then,
+    so factoid_choices is empty anyway) -- once the price question itself
+    is on screen, price_game_engine's _reset_intro() has already flipped
+    this back to False, so Price Game questions fall through to the same
+    "active" definition as every other question type (2026-08-10
+    correction: they used to be fully exempted here, which left them with
+    no automatic timeout at all -- see factoid_engine.py's
+    _apply_active_question()).
+
+    Deliberately NOT gated on state.mystery_active/mystery_resolved
+    (2026-08-10 fix): that pair drives an entirely independent ~10-13s
+    "Who is this?" reveal-blink animation on panels 1+2
+    (MYSTERY_REVEAL_TIMEOUT_SECONDS + MYSTERY_REVEAL_BLINK_SECONDS) that
+    predates client-side answering and was never meant to gate whether a
+    round can still be graded. Because it used to, a mystery round would
+    silently stop being monitored by this engine (and stop showing as
+    "active" to clients) after ~10-13s -- long before the real 30/40s
+    answer deadline -- even though nobody had answered yet, which is
+    exactly what let a correct-but-still-pending answer go ungraded.
+    state.quiz_locked/factoid_choices alone already correctly track "is
+    there a live, ungraded round" for every question type (mystery
+    included, since _apply_active_question() is the shared chokepoint that
+    resets both)."""
+    if state.quiz_locked:
+        return False
+    if state.price_game_active:
+        return False
+    return bool(state.factoid_choices)
+
+
+def update(now):
+    if not is_round_active():
         return
 
     # Lazy import: inputs.gamepad imports this module at its own top level

@@ -132,9 +132,34 @@ class State:
         self.fixture_flash_mode = ""   # "" | "win" | "loss"
         self.fixture_flash_until = 0.0
 
-        # --- DJ-mode uplighting (fixtures 2-11) ---
-        self.dj_theme_index = 0
-        self.dj_color_index = 0
+        # --- DJ-mode per-fixture-type look (2026-09-17) -- DMX uplighting,
+        # marquee, and the outline/accent strip used to share one
+        # dj_color_index/dj_theme_index pair; now each picks independently.
+        # Tempo stays one shared clock (nothing asked to split BPM per
+        # fixture) -- only color/theme/gradient decoupled. See
+        # inputs/gamepad.py::handle_feature_select (Btn9) for how
+        # dj_selected_feature picks which of the three Btn7/Btn8 apply to.
+        self.dmx_color_index = 0
+        self.dmx_theme_index = 0
+        self.dmx_gradient_mode = "off"  # config.GRADIENT_MODES
+
+        self.marquee_color_index = 0
+        self.marquee_theme_index = 0
+        self.marquee_gradient_mode = "off"
+        self.blank_lower_marquees = True  # panels 3-6 dark during normal DJ-mode dancing
+
+        self.accent_color_index = 0
+        self.accent_theme_index = 0
+        self.accent_gradient_mode = "off"
+        self.accent_speed = 128  # WLED per-segment "sx" (0-255)
+        self.accent_sound_enabled = False  # True = let WLED's own AudioReactive effect run
+
+        self.dj_selected_feature = "dmx"  # "dmx" | "marquee" | "outline"
+        # DMX-side confirm flash for Btn9 (marquee/outline get their own
+        # self-contained flash() calls on their respective drivers instead).
+        self.dj_feature_flash_color = None
+        self.dj_feature_flash_until = 0.0
+
         self.tempo_tap_times = []
         self.dj_tempo_period = 0.6
         self.tempo_flash_at = 0.0
@@ -240,6 +265,18 @@ class State:
         self.mystery_artist_display = ""    # original-case artist name, for the identify question
         self.mystery_identify_question = None  # prebuilt "who is this" question dict, or None
         self.mystery_reveal_until = 0.0     # reveal-blink window end (set once resolved)
+        # True for the rest of the win-celebration hold once a solo (no
+        # registered players) "Who is this?" round is answered CORRECTLY
+        # via a physical panel button (inputs/gamepad.py::
+        # select_and_grade_quiz_answer(), 2026-09-17) -- graphics/
+        # matrix_canvas.py::_render_mystery_panel_win() and drivers/
+        # wled_engine.py's matching check both key off this to put the
+        # actual artist name + a movie-marquee chase front and center
+        # instead of the normal one-of-four-panels win flash, which didn't
+        # make it obvious what was actually chosen. Reset by drivers/
+        # factoid_engine.py::_apply_active_question() the moment ANY new
+        # question loads.
+        self.mystery_panel_win_active = False
 
         # --- Auto-DJ (Section 4): track-length auto-advance ---
         self.auto_dj_enabled = config.AUTODJ_ENABLED_BY_DEFAULT
@@ -482,6 +519,22 @@ class State:
         # had actually hosted it.
         self.show_unattended_autoplay = False
         self.show_unattended_autoplay_started_at = 0.0
+
+        # --- Setup-countdown physical-button interactions (2026-09-16) ---
+        # Green, while show_phase == "setup" and this is False, opens a
+        # "START SHOW NOW?" confirm (drivers/simon_engine.py::
+        # _poll_setup_hardware(), rendered by graphics/matrix_canvas.py::
+        # _render_setup_confirm()); panel4/red confirms, anything else
+        # cancels back to the normal AUTO countdown.
+        self.setup_confirm_active = False
+        # Blue, same "setup" window: kicks off a Bluetooth gamepad reconnect
+        # (drivers/bluetooth_engine.py::reconnect_paired_devices_async()).
+        # text is shown on panels 1+2 in place of the AUTO countdown banner
+        # until `until` (wall-clock epoch) passes -- CONNECTING... the
+        # instant blue is pressed, then SUCCESS/NO GAMEPAD once the
+        # background reconnect attempt resolves.
+        self.gamepad_connect_feedback_text = ""
+        self.gamepad_connect_feedback_until = 0.0
 
         # --- Music-matching filters (Setup page checkboxes) -- wires the
         # music_metadata_engine tags (previously unwired, "Phase 3") into

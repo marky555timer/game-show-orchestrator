@@ -163,6 +163,21 @@
     background: #222; color: #777;
   }
   .simon-hw-sw.pressed { background: #2e7d32; color: #fff; }
+
+  /* DJ-look color swatch picker (2026-09-17) -- one per fixture type
+     (DMX/marquee/outline), ported from play.html's avatar-swatch-btn
+     pattern but a plain color square instead of an avatar face. */
+  .color-swatch-picker { display: flex; flex-wrap: wrap; gap: 6px; margin: 6px 0; }
+  .color-swatch-btn {
+    width: 26px; height: 26px; border-radius: 6px; border: 2px solid transparent;
+    cursor: pointer; padding: 0;
+  }
+  .color-swatch-btn.selected { border-color: #fff; box-shadow: 0 0 0 2px #000; }
+
+  /* Gradient-mode selector -- a small button row next to each swatch
+     picker, deliberately separate control rather than extra swatches. */
+  .gradient-mode-picker { display: flex; flex-wrap: wrap; gap: 6px; margin: 6px 0; }
+  .gradient-mode-picker .btn.small { padding: 4px 10px; font-size: .75rem; }
 </style>
 </head>
 <body>
@@ -326,22 +341,42 @@
     <details class="advanced-group" id="advanced-panel" ontoggle="simonHwOnAdvancedToggle()">
       <summary>Advanced / Show Configuration</summary>
 
-      <div class="subhead">DMX Scene Override</div>
-      <div class="row">
-        <!-- max must track config.DJ_THEME_COUNT (13 patterns, 0-12) plus
-             DJ_THEME_ALL_OFF_INDEX itself (13) -- this page is static HTML,
-             not templated, so it can't read the Python constant directly. -->
-        <label style="flex:1">Theme
-          <input type="range" id="theme-slider" min="0" max="13" value="0" onchange="dmxScene({theme_index: this.value})">
-        </label>
-      </div>
-      <div class="row" style="margin-top:6px">
-        <!-- max must track len(config.DJ_COLOR_PALETTE) - 1 (10 colors, 0-9),
-             same static-HTML caveat as above. -->
-        <label style="flex:1">Color
-          <input type="range" id="color-slider" min="0" max="9" value="0" onchange="dmxScene({color_index: this.value})">
-        </label>
-      </div>
+      <!-- DJ-look controls (2026-09-17): DMX/marquee/outline each pick
+           their own color/pattern/gradient independently -- replaces the
+           old single "DMX Scene Override" sliders, which drove all three
+           identically off one shared value. Options (color names/RGB,
+           pattern names, gradient modes) are fetched once from
+           /api/dj-look/options rather than hardcoded here, and current
+           selections sync from /api/dj-look/status while this panel is
+           open (djLookPoll(), same cadence as simonHwPoll/accentPoll). -->
+      <div class="subhead">DMX Uplighting</div>
+      <label style="font-size:.85rem;font-weight:700">Pattern
+        <select id="dmx-theme-select" onchange="pickDjTheme('dmx', this.value)"></select>
+      </label>
+      <div id="dmx-color-swatches" class="color-swatch-picker"></div>
+      <div id="dmx-gradient-picker" class="gradient-mode-picker"></div>
+
+      <div class="subhead">Marquee (Panel-Edge Lights)</div>
+      <label style="font-size:.85rem;font-weight:700">Pattern
+        <select id="marquee-theme-select" onchange="pickDjTheme('marquee', this.value)"></select>
+      </label>
+      <div id="marquee-color-swatches" class="color-swatch-picker"></div>
+      <div id="marquee-gradient-picker" class="gradient-mode-picker"></div>
+      <label style="display:flex;align-items:center;gap:6px;font-size:.85rem;font-weight:700;margin-top:6px">
+        <input type="checkbox" id="marquee-blank-lower-checkbox" checked onchange="marqueeBlankLowerToggle()">
+        Blank lower marquees (panels 3-6) during normal DJ dancing
+      </label>
+
+      <div class="subhead">Outline Strip (Accent)</div>
+      <div id="outline-color-swatches" class="color-swatch-picker"></div>
+      <div id="outline-gradient-picker" class="gradient-mode-picker"></div>
+      <label style="display:block;font-size:.85rem;font-weight:700;margin-top:6px">Speed
+        <input type="range" id="accent-speed-slider" min="0" max="255" value="128" onchange="accentSpeedSet(this.value)">
+      </label>
+      <label style="display:flex;align-items:center;gap:6px;font-size:.85rem;font-weight:700;margin-top:6px">
+        <input type="checkbox" id="accent-sound-checkbox" onchange="accentSoundToggle()">
+        Sound-reactive (let the strip's own AudioReactive effect run)
+      </label>
 
       <div class="subhead">Idle Animation Theme</div>
       <div class="row">
@@ -380,6 +415,14 @@
         <button class="btn" onclick="relayTest(3)">Test Relay 3</button>
       </div>
 
+      <div class="subhead">USB Relay Test (4-channel board)</div>
+      <div class="row">
+        <button class="btn" onclick="usbRelayTest(1)">Test Relay 1</button>
+        <button class="btn" onclick="usbRelayTest(2)">Test Relay 2</button>
+        <button class="btn" onclick="usbRelayTest(3)">Test Relay 3</button>
+        <button class="btn" onclick="usbRelayTest(4)">Test Relay 4</button>
+      </div>
+
       <div class="subhead">Raw DMX Injection</div>
       <div class="row" style="align-items:center;gap:8px">
         <label style="font-weight:700;font-size:.85rem">Ch:</label>
@@ -414,6 +457,14 @@
       <div class="row" style="gap:8px;align-items:center">
         <button class="btn" onclick="accentNextEffect()">Next Effect</button>
         <span id="accent-current-effect" style="font-size:.85rem;color:#999"></span>
+      </div>
+      <div style="font-size:.75rem;color:#999;margin-top:8px">
+        Normally follows the current DJ color/theme automatically. These force the "movie marquee" chase for testing -- click Resume Auto Sync to hand control back.
+      </div>
+      <div class="row" style="gap:8px;margin-top:4px;flex-wrap:wrap">
+        <button class="btn" onclick="accentMovieChase(false)">Movie Chase (Top)</button>
+        <button class="btn" onclick="accentMovieChase(true)">Movie Chase (All)</button>
+        <button class="btn" onclick="accentResumeAuto()">Resume Auto Sync</button>
       </div>
     </details>
 
@@ -596,9 +647,104 @@ async function refreshHostPreview() {
   document.getElementById('hp-answer').textContent = d.correct_answer || '—';
 }
 
-function dmxScene(body) {
-  api('/api/dmx/scene', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(body) });
+// ------------------------------------------
+// DJ-LOOK CONTROLS (2026-09-17): per-fixture-type (DMX/marquee/outline)
+// color/pattern/gradient pickers -- see the markup comment above the
+// "DMX Uplighting" subhead for the shape. DJ_LOOK_OPTIONS is fetched once
+// (colors/pattern names/gradient modes rarely change); current selections
+// sync continuously via djLookPoll() while the Advanced panel is open.
+// ------------------------------------------
+let DJ_LOOK_OPTIONS = null;
+let _accentSpeedLoaded = false;  // same "load once, don't fight a live drag" convention as _volumeLoaded
+
+async function djLookLoadOptions() {
+  const d = await api('/api/dj-look/options');
+  if (!d || !d.ok) return;
+  DJ_LOOK_OPTIONS = d;
+  populateThemeSelect('dmx-theme-select', d.dmx_theme_names);
+  populateThemeSelect('marquee-theme-select', d.marquee_theme_names);
 }
+
+function populateThemeSelect(selectId, names) {
+  document.getElementById(selectId).innerHTML =
+    names.map((name, i) => `<option value="${i}">${_escapeHtml(name)}</option>`).join('');
+}
+
+function renderColorSwatchPicker(containerId, feature, selectedIndex) {
+  if (!DJ_LOOK_OPTIONS) return;
+  document.getElementById(containerId).innerHTML = DJ_LOOK_OPTIONS.colors.map(c => `
+    <button type="button" class="color-swatch-btn${c.index === selectedIndex ? ' selected' : ''}"
+      style="background:rgb(${c.r},${c.g},${c.b})" title="${_escapeHtml(c.name)}"
+      onclick="pickDjColor('${feature}', ${c.index})"></button>`).join('');
+}
+
+function pickDjColor(feature, colorIndex) {
+  api(`/api/dj-look/${feature}`, {
+    method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({color_index: colorIndex}),
+  }).then(djLookPoll);
+}
+
+function pickDjTheme(feature, themeIndex) {
+  api(`/api/dj-look/${feature}`, {
+    method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({theme_index: parseInt(themeIndex, 10)}),
+  }).then(djLookPoll);
+}
+
+function renderGradientPicker(containerId, feature, selectedMode) {
+  if (!DJ_LOOK_OPTIONS) return;
+  document.getElementById(containerId).innerHTML = DJ_LOOK_OPTIONS.gradient_modes.map(m => `
+    <button type="button" class="btn small${m === selectedMode ? ' primary' : ''}"
+      onclick="pickDjGradient('${feature}', '${m}')">${_escapeHtml(m)}</button>`).join('');
+}
+
+function pickDjGradient(feature, mode) {
+  api(`/api/dj-look/${feature}`, {
+    method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({gradient_mode: mode}),
+  }).then(djLookPoll);
+}
+
+function djLookPoll() {
+  api('/api/dj-look/status').then(d => {
+    if (!d || !d.ok || !DJ_LOOK_OPTIONS) return;
+    document.getElementById('dmx-theme-select').value = d.dmx.theme_index;
+    renderColorSwatchPicker('dmx-color-swatches', 'dmx', d.dmx.color_index);
+    renderGradientPicker('dmx-gradient-picker', 'dmx', d.dmx.gradient_mode);
+
+    document.getElementById('marquee-theme-select').value = d.marquee.theme_index;
+    renderColorSwatchPicker('marquee-color-swatches', 'marquee', d.marquee.color_index);
+    renderGradientPicker('marquee-gradient-picker', 'marquee', d.marquee.gradient_mode);
+    document.getElementById('marquee-blank-lower-checkbox').checked = !!d.blank_lower_marquees;
+
+    renderColorSwatchPicker('outline-color-swatches', 'outline', d.outline.color_index);
+    renderGradientPicker('outline-gradient-picker', 'outline', d.outline.gradient_mode);
+    document.getElementById('accent-sound-checkbox').checked = !!d.accent_sound_enabled;
+    if (!_accentSpeedLoaded) {
+      document.getElementById('accent-speed-slider').value = d.accent_speed;
+      _accentSpeedLoaded = true;
+    }
+  });
+}
+
+function marqueeBlankLowerToggle() {
+  const enabled = document.getElementById('marquee-blank-lower-checkbox').checked;
+  api('/api/marquee/blank-lower/set', {
+    method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({enabled}),
+  });
+}
+
+function accentSoundToggle() {
+  const enabled = document.getElementById('accent-sound-checkbox').checked;
+  api('/api/accent/sound/set', {
+    method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({enabled}),
+  });
+}
+
+function accentSpeedSet(value) {
+  api('/api/accent/speed/set', {
+    method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({speed: parseInt(value, 10)}),
+  });
+}
+
 function idleTheme(theme) {
   // Takes effect on the very next rendered frame -- the server re-deals
   // panels 3-6 synchronously inside this request, not on the next track.
@@ -670,6 +816,10 @@ function relayTest(num) {
   api(`/api/dmx/relay${num}-test`, { method: 'POST' }).then(() => showToast(`Relay ${num} pulsed.`));
 }
 
+function usbRelayTest(num) {
+  api(`/api/usb-relay/test-${num}`, { method: 'POST' }).then(() => showToast(`USB Relay ${num} pulsed.`));
+}
+
 function rawDmxSend() {
   const channel = parseInt(document.getElementById('raw-dmx-channel').value, 10);
   const value = parseInt(document.getElementById('raw-dmx-value').value, 10);
@@ -717,13 +867,23 @@ function accentPoll() {
   });
 }
 
+function accentMovieChase(allPanels) {
+  api('/api/accent/movie-chase', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({all_panels: allPanels}) })
+    .then(data => { if (!data.ok) showToast('Outline strip unavailable.'); });
+}
+
+function accentResumeAuto() {
+  api('/api/accent/resume-auto', { method: 'POST' }).then(() => showToast('Accent strip: resumed auto sync.'));
+}
+
 function simonHwOnAdvancedToggle() {
   const panel = document.getElementById('advanced-panel');
   if (panel.open) {
     if (!_simonHwPollTimer) {
       simonHwPoll();
       accentPoll();
-      _simonHwPollTimer = setInterval(() => { simonHwPoll(); accentPoll(); }, 300);
+      djLookPoll();
+      _simonHwPollTimer = setInterval(() => { simonHwPoll(); accentPoll(); djLookPoll(); }, 300);
     }
   } else if (_simonHwPollTimer) {
     clearInterval(_simonHwPollTimer);
@@ -963,6 +1123,7 @@ function refreshAll() {
   refreshGamepadStatus();
 }
 refreshAll();
+djLookLoadOptions();
 setInterval(refreshAll, 1500);
 </script>
 </body>

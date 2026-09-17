@@ -140,6 +140,20 @@ def _update_unattended_autoplay(now):
         _enter_unattended_autoplay(now)
 
 
+def trigger_unattended_autoplay_now():
+    """Public wrapper for _enter_unattended_autoplay() (2026-09-16): the
+    physical rig's green-button "START SHOW NOW?" confirm (drivers/
+    simon_engine.py::_poll_setup_hardware()) needs to skip straight to
+    unattended autoplay the instant the operator confirms Yes, rather than
+    waiting out the rest of config.SHOW_UNATTENDED_AUTOPLAY_TIMEOUT_SECONDS.
+    Same "default options" show start as the idle timeout itself -- no-op
+    if show_phase has somehow already left "setup" by the time this fires
+    (e.g. a stale double-press)."""
+    if state.show_phase != "setup":
+        return
+    _enter_unattended_autoplay(time.time())
+
+
 def _enter_unattended_autoplay(now):
     """SHOW_UNATTENDED_AUTOPLAY_TIMEOUT_SECONDS of untouched Setup-page
     idle time: starts the show like "Start Game" would (same fresh-night
