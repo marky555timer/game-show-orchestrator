@@ -670,12 +670,30 @@ function populateThemeSelect(selectId, names) {
     names.map((name, i) => `<option value="${i}">${_escapeHtml(name)}</option>`).join('');
 }
 
+// Swatch/gradient buttons are built ONCE per container (guarded by
+// dataset.rendered) and thereafter only have a class toggled on the
+// existing elements -- NOT rebuilt via innerHTML on every poll tick.
+// Rebuilding tore down and recreated every button ~3x/sec (djLookPoll's
+// 300ms cadence while the Advanced panel is open); if a poll landed
+// between a click's mousedown and mouseup, the button under the cursor
+// had already been replaced by the time the click would fire, so it
+// silently never registered -- the "stubborn dropdowns/checkboxes"
+// symptom reported 2026-09-17. Selecting a swatch is instant/atomic so
+// this couldn't cause the same failure, but it was still needlessly
+// destroying elements the user might be about to click.
 function renderColorSwatchPicker(containerId, feature, selectedIndex) {
   if (!DJ_LOOK_OPTIONS) return;
-  document.getElementById(containerId).innerHTML = DJ_LOOK_OPTIONS.colors.map(c => `
-    <button type="button" class="color-swatch-btn${c.index === selectedIndex ? ' selected' : ''}"
-      style="background:rgb(${c.r},${c.g},${c.b})" title="${_escapeHtml(c.name)}"
-      onclick="pickDjColor('${feature}', ${c.index})"></button>`).join('');
+  const box = document.getElementById(containerId);
+  if (box.dataset.rendered !== feature) {
+    box.innerHTML = DJ_LOOK_OPTIONS.colors.map(c => `
+      <button type="button" class="color-swatch-btn" data-color-index="${c.index}"
+        style="background:rgb(${c.r},${c.g},${c.b})" title="${_escapeHtml(c.name)}"
+        onclick="pickDjColor('${feature}', ${c.index})"></button>`).join('');
+    box.dataset.rendered = feature;
+  }
+  box.querySelectorAll('.color-swatch-btn').forEach(btn => {
+    btn.classList.toggle('selected', Number(btn.dataset.colorIndex) === selectedIndex);
+  });
 }
 
 function pickDjColor(feature, colorIndex) {
@@ -692,9 +710,16 @@ function pickDjTheme(feature, themeIndex) {
 
 function renderGradientPicker(containerId, feature, selectedMode) {
   if (!DJ_LOOK_OPTIONS) return;
-  document.getElementById(containerId).innerHTML = DJ_LOOK_OPTIONS.gradient_modes.map(m => `
-    <button type="button" class="btn small${m === selectedMode ? ' primary' : ''}"
-      onclick="pickDjGradient('${feature}', '${m}')">${_escapeHtml(m)}</button>`).join('');
+  const box = document.getElementById(containerId);
+  if (box.dataset.rendered !== feature) {
+    box.innerHTML = DJ_LOOK_OPTIONS.gradient_modes.map(m => `
+      <button type="button" class="btn small" data-mode="${m}"
+        onclick="pickDjGradient('${feature}', '${m}')">${_escapeHtml(m)}</button>`).join('');
+    box.dataset.rendered = feature;
+  }
+  box.querySelectorAll('button').forEach(btn => {
+    btn.classList.toggle('primary', btn.dataset.mode === selectedMode);
+  });
 }
 
 function pickDjGradient(feature, mode) {
@@ -703,21 +728,38 @@ function pickDjGradient(feature, mode) {
   }).then(djLookPoll);
 }
 
+// Skips overwriting a <select>/checkbox the user currently has focus on
+// (mid-click, dropdown open, etc.) -- same "don't fight the operator's own
+// in-progress interaction" reasoning as _volumeLoaded/_brandingLoaded
+// elsewhere on this page, just via a focus check instead of a load-once
+// flag, since these DO need to keep syncing afterward (to reflect the
+// physical joypad's Btn7/Btn8/Btn9).
+function _setSelectIfNotFocused(id, value) {
+  const el = document.getElementById(id);
+  if (document.activeElement === el) return;
+  el.value = value;
+}
+function _setCheckedIfNotFocused(id, checked) {
+  const el = document.getElementById(id);
+  if (document.activeElement === el) return;
+  el.checked = !!checked;
+}
+
 function djLookPoll() {
   api('/api/dj-look/status').then(d => {
     if (!d || !d.ok || !DJ_LOOK_OPTIONS) return;
-    document.getElementById('dmx-theme-select').value = d.dmx.theme_index;
+    _setSelectIfNotFocused('dmx-theme-select', d.dmx.theme_index);
     renderColorSwatchPicker('dmx-color-swatches', 'dmx', d.dmx.color_index);
     renderGradientPicker('dmx-gradient-picker', 'dmx', d.dmx.gradient_mode);
 
-    document.getElementById('marquee-theme-select').value = d.marquee.theme_index;
+    _setSelectIfNotFocused('marquee-theme-select', d.marquee.theme_index);
     renderColorSwatchPicker('marquee-color-swatches', 'marquee', d.marquee.color_index);
     renderGradientPicker('marquee-gradient-picker', 'marquee', d.marquee.gradient_mode);
-    document.getElementById('marquee-blank-lower-checkbox').checked = !!d.blank_lower_marquees;
+    _setCheckedIfNotFocused('marquee-blank-lower-checkbox', d.blank_lower_marquees);
 
     renderColorSwatchPicker('outline-color-swatches', 'outline', d.outline.color_index);
     renderGradientPicker('outline-gradient-picker', 'outline', d.outline.gradient_mode);
-    document.getElementById('accent-sound-checkbox').checked = !!d.accent_sound_enabled;
+    _setCheckedIfNotFocused('accent-sound-checkbox', d.accent_sound_enabled);
     if (!_accentSpeedLoaded) {
       document.getElementById('accent-speed-slider').value = d.accent_speed;
       _accentSpeedLoaded = true;
