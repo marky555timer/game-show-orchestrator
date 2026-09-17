@@ -310,6 +310,12 @@ def _apply_active_question(data, source):
 
     state.factoid_question = data.get("question", "")
     state.factoid_choices = list(data.get("choices", []))
+    # Drives the per-option cascade build-up every Game Mode question gets
+    # (2026-09-18) -- see question_reveal_count() below. Set here, the one
+    # shared chokepoint for every question source, so it covers all of
+    # them (Btn6 pop, auto-advance, mystery identify, Price Game, offline
+    # fallback) without each needing its own reset.
+    state.factoid_question_started_at = time.time()
     state.factoid_correct_index = data.get("correct_index", -1)
     state.factoid_correction = data.get("correction", "")
     # Category of the CURRENTLY active question -- lets grading logic
@@ -383,6 +389,24 @@ def _apply_active_question(data, source):
         artist_key = track_key.split(" - ", 1)[0].strip()
         if artist_key:
             state.asked_artists.add(artist_key)
+
+
+def question_reveal_count(now):
+    """How many of state.factoid_choices should be visible yet, for the
+    compressed per-option cascade build-up every Game Mode question gets
+    (2026-09-18, graphics/matrix_canvas.py::_render_quiz_mode(),
+    drivers/wled_engine.py::_apply_question_marquee()) -- distinct from
+    the once-per-song Mystery Band teaser's own longer sparkle/solid/
+    cascade sequence (drivers/mystery_band_engine.py::reveal_stage()),
+    which has its own timing/state and is untouched by this. No sparkle/
+    solid pre-roll here: a normal question's own text already displays
+    immediately, there's no "Who is this?" suspense to build first."""
+    started = state.factoid_question_started_at
+    total = len(state.factoid_choices)
+    if started <= 0:
+        return total
+    elapsed = now - started
+    return max(0, min(total, int(elapsed / config.QUESTION_CASCADE_STEP_SECONDS)))
 
 
 def load_forced_fallback_question(source_label="FORCED_FALLBACK"):

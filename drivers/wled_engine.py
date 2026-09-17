@@ -58,7 +58,7 @@ import serial
 import serial.tools.list_ports
 
 import config
-from drivers import color_utils, serial_ports
+from drivers import color_utils, live_round_engine, serial_ports
 from state import state
 
 _DDP_FLAGS_VERSION1_PUSH = 0x41
@@ -668,9 +668,21 @@ def _dj_pattern_confetti(now, r, g, b):
             _pixels[off + 2] = int(_pixels[off + 2] * 0.85)
 
 
+def _dj_pattern_movie_chase(now, r, g, b):
+    """Pattern 8: classic theater-marquee bulb chase (every
+    SIMON_MARQUEE_CHASE_SPACING'th pixel lit, shifting over time) across
+    every segment at once, in the current DJ color -- the same
+    _theater_chase_segment() primitive already used for Simon's top-strip
+    pattern and the mystery-reveal cascade, now selectable directly as its
+    own DJ-mode theme (2026-09-18 request)."""
+    for name in config.MARQUEE_SEGMENTS:
+        _theater_chase_segment(name, now, r, g, b)
+
+
 _DJ_PATTERNS = [
     _dj_pattern_breathe, _dj_pattern_wave, _dj_pattern_twinkle_base, _dj_pattern_call_response,
     _dj_pattern_complement_chase, _dj_pattern_rainbow_chase, _dj_pattern_bounce_comet, _dj_pattern_confetti,
+    _dj_pattern_movie_chase,
 ]
 
 
@@ -853,6 +865,39 @@ def _apply_mystery_marquee(now):
             set_segment(name, r, g, b)
 
 
+def _apply_question_marquee(now):
+    """Per-option cascade for every Game Mode question (2026-09-18) -- same
+    presentation shape as the Mystery Band teaser's own marquee
+    choreography above (_apply_mystery_marquee's "cascade"/"done" stages),
+    minus its sparkle/solid pre-roll (a normal question's own matrix text
+    already displays immediately, there's no "Who is this?" suspense to
+    build first) and driven by drivers/factoid_engine.py::
+    question_reveal_count()'s much shorter timing instead of
+    mystery_band_engine.py's own longer sequence. update() below only
+    calls this while drivers/live_round_engine.py::is_round_active() is
+    True; the instant a round is graded that goes False and the dispatch
+    below falls back to _apply_game_chase() on its own -- no explicit
+    hand-off needed here, same as the mystery branch's own comment notes."""
+    from drivers import factoid_engine
+    choices = state.factoid_choices
+    revealed = factoid_engine.question_reveal_count(now)
+    set_segment("title", 0, 0, 0)
+    if revealed < len(choices):
+        for i, name in enumerate(_SIMON_PANEL_SEGMENTS):
+            if i < revealed:
+                r, g, b = config.SIMON_HW_COLOR_RGB[config.SIMON_HW_COLOR_ORDER[i]]
+                _theater_chase_segment(name, now, r, g, b)
+            else:
+                set_segment(name, 0, 0, 0)
+    else:
+        for i, name in enumerate(_SIMON_PANEL_SEGMENTS):
+            if i < len(choices):
+                r, g, b = config.SIMON_HW_COLOR_RGB[config.SIMON_HW_COLOR_ORDER[i]]
+                set_segment(name, r, g, b)
+            else:
+                set_segment(name, 0, 0, 0)
+
+
 def update(now):
     """Per-frame effects dispatch, called once per frame from main.py right
     before render(). Mirrors drivers/lighting_engine.py's show-phase
@@ -899,6 +944,16 @@ def update(now):
             _apply_dj_dance(now)
             if state.blank_lower_marquees:
                 _blackout_lower_panels()
+        elif live_round_engine.is_round_active():
+            # Ordinary Game Mode question, still live/unlocked -- same
+            # condition that already gates whether the panel buttons
+            # themselves do anything (drivers/simon_engine.py::
+            # poll_hardware()) and whether their LEDs light up (inputs/
+            # gamepad.py::_sync_panel_leds()). Placed after the
+            # state.mystery_active check above so the mystery teaser's own
+            # choreography keeps taking priority during that window (this
+            # condition is also true then, but never reached).
+            _apply_question_marquee(now)
         else:
             _apply_game_chase(now)
     render()

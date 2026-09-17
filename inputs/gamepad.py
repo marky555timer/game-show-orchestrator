@@ -36,6 +36,7 @@ from drivers import mystery_band_engine
 from drivers import auto_dj_engine
 from drivers import space_invaders_engine
 from drivers import simon_engine
+from drivers import simon_hardware
 from drivers import westminster_engine
 from drivers import idle_cycle_engine
 from drivers import live_round_engine
@@ -1329,6 +1330,42 @@ def _process_space_invaders_movement():
         space_invaders_engine.move_player(direction, dt)
 
 # ------------------------------------------
+# PANEL LEDS FOR LIVE MULTIPLE-CHOICE QUESTIONS (2026-09-18)
+# ------------------------------------------
+_panel_leds_on = False
+
+
+def _sync_panel_leds():
+    """Per-frame poll: lights all 4 panel LEDs together whenever a
+    multiple-choice question is currently answerable via those same 4
+    buttons, dark otherwise. Reuses drivers/live_round_engine.py::
+    is_round_active() -- the exact same condition that already gates
+    whether pressing one of these buttons does anything (drivers/
+    simon_engine.py::poll_hardware()), so this doesn't invent new state,
+    it just makes the LEDs agree with what the buttons already do --
+    covers ordinary GAME_MODE questions and the Mystery Band teaser
+    (still MODE_DJ) alike, correctly excludes Price Game.
+
+    Skips entirely during MODE_SIMON -- drivers/simon_engine.py already
+    owns these same LEDs for the mini-game's own pulse/hold sequences,
+    and Simon never populates state.factoid_choices, so the two are
+    naturally mutually exclusive; this just stays out of the way rather
+    than racing simon_engine.py's own set_led()/pulse_led() calls.
+
+    Edge-triggered (_panel_leds_on tracks the last state actually sent)
+    so this doesn't spam redundant GPIO writes every frame -- same "cheap
+    no-op unless changed" convention used elsewhere in this app (e.g.
+    drivers/wled_engine.py's own sync_to_show_state())."""
+    global _panel_leds_on
+    if state.mode == state.MODE_SIMON:
+        return
+    should_be_on = live_round_engine.is_round_active()
+    if should_be_on != _panel_leds_on:
+        simon_hardware.set_all_leds(should_be_on)
+        _panel_leds_on = should_be_on
+
+
+# ------------------------------------------
 # EVENT DISPATCHER
 # ------------------------------------------
 def process_events():
@@ -1353,6 +1390,7 @@ def process_events():
     westminster_engine.update(time.time())
     idle_cycle_engine.update(time.time())
     live_round_engine.update(time.time())
+    _sync_panel_leds()
     win_sequence_engine.update(time.time())
     light_prefs_engine.update(time.time())
     show_engine.update(time.time())

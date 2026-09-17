@@ -1008,6 +1008,7 @@ DJ_THEME_NAMES = [
 MARQUEE_THEME_NAMES = [
     "Breathe", "Wave", "Twinkle Base", "Call & Response",
     "Complement Chase", "Rainbow Chase", "Bounce Comet", "Confetti",
+    "Movie Chase",
 ]
 
 # WLED built-in effect ID for the outline/accent board's "sound" checkbox
@@ -1316,6 +1317,20 @@ MYSTERY_REVEAL_BLINK_PERIOD_SECONDS = 0.8
 MYSTERY_SPARKLE_SECONDS = 1.5       # "Who is this?" sparkle
 MYSTERY_SOLID_SECONDS = 1.0         # "Is this:" beat, nothing revealed yet
 MYSTERY_CASCADE_STEP_SECONDS = 1.2  # time between each option's reveal
+
+# Same per-option cascade build-up (matrix: options appear one at a time;
+# marquee: theater-chase in that panel's own button color -- see
+# drivers/factoid_engine.py::question_reveal_count(), graphics/
+# matrix_canvas.py::_render_quiz_mode(), drivers/wled_engine.py::
+# _apply_question_marquee()), now applied to EVERY Game Mode question
+# (2026-09-18), not just the once-per-song mystery teaser above. No
+# sparkle/solid pre-roll here -- a normal question's own text already
+# displays immediately, there's no "Who is this?" suspense to build
+# first -- and the per-option step is deliberately much shorter than
+# MYSTERY_CASCADE_STEP_SECONDS (1.2s) since this now happens far more
+# often than once per song: 4 options fully revealed in ~1.4s total
+# instead of the mystery reveal's ~7.3s.
+QUESTION_CASCADE_STEP_SECONDS = 0.35
 
 # Question-priority hierarchy for the questions queued after the forced
 # "identify this band" question, once Game Mode is entered from a live

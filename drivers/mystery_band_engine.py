@@ -193,6 +193,23 @@ def update(now):
         state.mystery_resolved = True
         state.mystery_reveal_until = now + config.MYSTERY_REVEAL_BLINK_SECONDS
         print(f"[MYSTERY BAND] Reveal timeout -- showing {state.mystery_artist_display!r}.")
+        # 2026-09-18 fix: this branch used to leave quiz_locked False, so
+        # drivers/live_round_engine.py::is_round_active() kept reporting the
+        # round as live for the ~25s gap until ITS OWN separate 40s deadline
+        # (MYSTERY_QUESTION_TIMEOUT_SECONDS) finally forced a grade -- even
+        # though the panels already visually show the answer the instant
+        # THIS timeout fires. A panel press in that gap (e.g. red, whose
+        # real job is "next song" -- drivers/simon_engine.py::poll_hardware())
+        # got captured by is_round_active() and misrouted into re-grading
+        # the already-revealed question. Closing the round here, symmetric
+        # with the "everyone answered" branch above (which relies on
+        # quiz_locked already being True), fixes both that misrouting and
+        # the fairness gap where phone players could keep answering using
+        # what they just saw revealed on screen. Reuses the exact same
+        # forced-grade call drivers/live_round_engine.py's own 40s deadline
+        # already makes -- no new grading logic, just triggered promptly.
+        from inputs import gamepad  # local import -- gamepad.py imports this module, avoid a cycle
+        gamepad.grade_quiz_selection(forced=True)
 
     if state.mystery_resolved and now >= state.mystery_reveal_until:
         state.mystery_active = False

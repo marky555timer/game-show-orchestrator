@@ -112,6 +112,19 @@ def set_led(color, on):
     GPIO.output(pin, GPIO.HIGH if on else GPIO.LOW)
 
 
+def set_all_leds(on):
+    """All 4 LEDs at once, via set_led() per color -- added 2026-09-18 so
+    the panel LEDs can light up together whenever a multiple-choice
+    question is live (inputs/gamepad.py::_sync_panel_leds(), gated on
+    drivers/live_round_engine.py::is_round_active()), independent of
+    drivers/simon_engine.py's own per-color pulse/hold calls during the
+    Simon mini-game itself. set_led() already no-ops safely per color if
+    the hardware isn't available/initialized, so no separate guard needed
+    here."""
+    for color in config.SIMON_HW_COLOR_ORDER:
+        set_led(color, on)
+
+
 def _turn_off_led(color):
     if not _AVAILABLE:
         return

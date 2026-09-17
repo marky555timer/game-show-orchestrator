@@ -51,6 +51,13 @@ class State:
         self.factoid_question = ""
         self.factoid_choices = []          # list of 4 answer strings
         self.factoid_correct_index = -1    # index into factoid_choices
+        # When the CURRENT factoid_choices became active (time.time()) --
+        # drives the compressed per-option cascade build-up every Game
+        # Mode question gets (2026-09-18, graphics/matrix_canvas.py +
+        # drivers/wled_engine.py, via drivers/factoid_engine.py::
+        # question_reveal_count()). Distinct from the Mystery Band
+        # teaser's own state.mystery_started_at/longer reveal sequence.
+        self.factoid_question_started_at = 0.0
 
         # True/False-only: the actual correct fact, populated whenever the
         # statement's correct answer is "False" so the reveal phase can show

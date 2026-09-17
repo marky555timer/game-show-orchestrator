@@ -30,7 +30,7 @@ from config import (
 import config
 from state import state
 from drivers.deck_orchestrator import get_now_playing as get_rekordbox_track
-from drivers.factoid_engine import build_mock_question, advance_to_next_queued_question
+from drivers.factoid_engine import build_mock_question, advance_to_next_queued_question, question_reveal_count
 from drivers.branding_engine import get_current_text
 from drivers.announcement_engine import get_text_for as get_announcement_text_for
 from drivers import led_bridge
@@ -337,18 +337,29 @@ def _render_mystery_panels(t, anim_t):
         for pid in (3, 4, 5, 6):
             draw_marquee(matrix_surface, f"mystery_blank_{pid}", "", PANELS[pid])
     elif stage == "cascade":
-        choices = state.factoid_choices
-        for i, pid in enumerate((3, 4, 5, 6)):
-            key = f"mystery_reveal_{i}"
-            if i < revealed and i < len(choices):
-                draw_marquee(matrix_surface, key, choices[i], PANELS[pid])
-            else:
-                draw_marquee(matrix_surface, key, "", PANELS[pid])
+        _draw_answer_choice_cascade(state.factoid_choices, revealed)
     else:  # "done" -- fully revealed (naturally, or the round's no longer live/ungraded)
         _draw_answer_choice_panels(
             state.factoid_choices, state.factoid_correct_index,
             state.quiz_selected_index, state.quiz_locked, anim_t,
         )
+
+
+def _draw_answer_choice_cascade(choices, revealed):
+    """Panels 3-6 progressive reveal: shows choices[i] for i < revealed,
+    blank otherwise -- shared by the Mystery Band teaser's own longer
+    cascade (_render_mystery_panels above) and every other Game Mode
+    question's compressed cascade (_render_quiz_mode below, 2026-09-18),
+    so both draw identically. Matrix hardware is monochrome red, so this
+    can't show each option's own button color the way the marquee's
+    theater-chase does (drivers/wled_engine.py::_apply_question_marquee())
+    -- the color-coding half of this presentation style is marquee-only."""
+    for i, pid in enumerate((3, 4, 5, 6)):
+        key = f"answer_cascade_{i}"
+        if i < revealed and i < len(choices):
+            draw_marquee(matrix_surface, key, choices[i], PANELS[pid])
+        else:
+            draw_marquee(matrix_surface, key, "", PANELS[pid])
 
 
 # panel_id -> which two leaderboard ranks (0-indexed within the current
@@ -940,7 +951,19 @@ def _render_quiz_mode(t):
             text = ",".join(groups[pid]) if groups[pid] else "--"
             draw_marquee(matrix_surface, f"quiz_wins_{pid}", text, PANELS[pid], align="center")
     else:
-        _draw_answer_choice_panels(choices, correct, sel, locked, t)
+        # Compressed per-option cascade (2026-09-18) -- same presentation
+        # style the Mystery Band teaser already uses (_render_mystery_panels
+        # above, via the shared _draw_answer_choice_cascade() helper), now
+        # applied to every Game Mode question, not just the once-per-song
+        # mystery reveal. Only while the round is still live and unlocked --
+        # a locked/graded round always shows the full selected/correct/wrong
+        # look immediately, never a cascade (nothing to build suspense
+        # toward once it's already been answered).
+        revealed = None if locked else question_reveal_count(t)
+        if revealed is not None and revealed < len(choices):
+            _draw_answer_choice_cascade(choices, revealed)
+        else:
+            _draw_answer_choice_panels(choices, correct, sel, locked, t)
 
 
 def _is_price_question():
