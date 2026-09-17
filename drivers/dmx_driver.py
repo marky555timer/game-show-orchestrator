@@ -19,6 +19,7 @@ led_bridge.py already gives the LED panel, rather than requiring the DMX
 box to already be present and enumerated at the exact moment this module
 first imports.
 """
+import threading
 import time
 
 import serial
@@ -35,6 +36,14 @@ from config import DMX_FIXTURE_CHANNELS, DMX_NUM_FIXTURES
 # joined the USB chain.
 _ENTTEC_VID_PID = (0x0403, 0x6001)
 _RECONNECT_INTERVAL_S = 3.0
+# How long blackout() (also called from main.py's shutdown teardown)
+# waits for the async sender thread (see EnttecDMXPro._sender_loop) to
+# pick up the final all-off packet before giving up and returning anyway
+# -- a bounded wait, not indefinite, since the process exits shortly after
+# either way and a wedged device shouldn't hang shutdown forever. Long
+# enough that the sender thread (normally picks up within microseconds)
+# has real room to work under load, short enough it's not user-visible.
+_BLACKOUT_FLUSH_TIMEOUT_S = 1.0
 
 
 def _find_enttec_port():
@@ -57,6 +66,24 @@ class EnttecDMXPro:
         self.serial = None
         self._last_reconnect_attempt = 0.0
         self._pulse_off_at = {}  # {channel: time.monotonic() deadline to zero it}
+        # Guards self.serial/self.active/self.port -- read/written from
+        # both the main thread (maybe_reconnect()/render()) and the
+        # dedicated sender thread below (2026-09-18); no lock was needed
+        # before since everything ran on the single main thread.
+        self._state_lock = threading.Lock()
+        # Serial write hand-off to _sender_loop's dedicated thread -- same
+        # shape as drivers/accent_engine.py's own _send_lock/_send_ready/
+        # _send_pending (see that module's _sender_loop docstring for the
+        # full "why this exists" writeup). Short version here: render()
+        # used to write synchronously on whatever thread called it, which
+        # for DMX was always the main show loop (polled once per frame) --
+        # a stuck write there froze the *entire* show (matrix, DMX,
+        # gamepad input), the same bug class already found and fixed in
+        # wled_engine.py and accent_engine.py, hardened here proactively.
+        self._send_lock = threading.Lock()
+        self._send_ready = threading.Event()
+        self._send_pending = None  # (serial.Serial instance, frame_bytes) tuple, or None once consumed
+        threading.Thread(target=self._sender_loop, daemon=True, name="dmx-serial-sender").start()
         self._try_connect()
 
     def _try_connect(self):
@@ -65,9 +92,11 @@ class EnttecDMXPro:
         if device is None:
             return
         try:
-            self.serial = serial.Serial(device, baudrate=57600, timeout=1)
-            self.port = device
-            self.active = True
+            link = serial.Serial(device, baudrate=57600, timeout=1)
+            with self._state_lock:
+                self.serial = link
+                self.port = device
+                self.active = True
             print(f"[DMX PRO] Successfully connected on {device}!")
             self.blackout()
         except Exception as e:
@@ -172,8 +201,10 @@ class EnttecDMXPro:
             del self._pulse_off_at[ch]
 
     def render(self):
-        if not self.active:
-            return
+        with self._state_lock:
+            if not self.active:
+                return
+            link = self.serial
         data_len = len(self.dmx_data)
         header = bytearray([
             self.START_VAL,
@@ -181,28 +212,82 @@ class EnttecDMXPro:
             data_len & 0xFF,
             (data_len >> 8) & 0xFF
         ])
-        packet = header + self.dmx_data + bytearray([self.END_VAL])
+        packet = bytes(header + self.dmx_data + bytearray([self.END_VAL]))
+        # Hand off to _sender_loop's dedicated thread rather than writing
+        # here directly -- see that method's docstring for why. Bind the
+        # frame to THIS specific link instance so a write that's still
+        # stuck blocking when a reconnect later replaces self.serial can't
+        # be confused with the new connection (same pattern drivers/
+        # wled_engine.py's/accent_engine.py's own serial senders use).
+        with self._send_lock:
+            self._send_pending = (link, packet)
+        self._send_ready.set()
+
+    def _fail_send_link(self, link, error):
+        """Shared teardown for a serial link that just failed a write,
+        called from _sender_loop's own thread. Guards against clobbering
+        a *different*, newer connection: _try_connect() runs on the main
+        thread and could in principle reconnect while a stale write from
+        the old link is still unwinding here -- only clear self.serial if
+        it's still pointing at the exact object that just failed. Device
+        dropped (unplugged, USB hiccup, power loss) is the expected case
+        here -- maybe_reconnect() (polled every frame from
+        lighting_engine.update()) picks it back up once it's back, same
+        tolerance this driver already had before the write moved here."""
+        print(f"[DMX ERROR] Write failed ({error}) -- will keep retrying reconnect.")
         try:
-            self.serial.write(packet)
-        except Exception as e:
-            # Device dropped (unplugged, USB hiccup, power loss) -- don't
-            # let an unhandled SerialException here take the whole app
-            # down (main.py's loop has no top-level try/except). Drop the
-            # connection and let maybe_reconnect() pick it back up once
-            # it's back, same tolerance led_bridge.py already has for its
-            # own write failures.
-            print(f"[DMX ERROR] Write failed ({e}) -- will keep retrying reconnect.")
+            link.close()
+        except Exception:
+            pass
+        with self._state_lock:
+            if self.serial is link:
+                self.serial = None
+                self.port = None
+                self.active = False
+
+    def _sender_loop(self):
+        """Runs forever on its own daemon thread, started once in
+        __init__. Moves the actual blocking serial write off whatever
+        thread calls render() -- previously that was always the main show
+        loop (render() is polled once per frame from drivers/
+        lighting_engine.py::update()), so a stuck write here froze the
+        *entire* show (matrix, DMX, gamepad input), not just one request
+        -- the same class of bug already found and fixed in drivers/
+        wled_engine.py and drivers/accent_engine.py, applied here
+        proactively rather than waiting for it to actually wedge a live
+        show first."""
+        while True:
+            self._send_ready.wait()
+            with self._send_lock:
+                pending = self._send_pending
+                self._send_pending = None
+                self._send_ready.clear()
+            if pending is None:
+                continue
+            link, frame = pending
             try:
-                self.serial.close()
-            except Exception:
-                pass
-            self.serial = None
-            self.port = None
-            self.active = False
+                link.write(frame)
+            except Exception as e:
+                self._fail_send_link(link, e)
 
     def blackout(self):
         self.dmx_data = bytearray(self.num_channels + 1)
         self.render()
+        # render() above is now async (handed off to _sender_loop) --
+        # blackout() is called both during normal operation (fixture
+        # reset on connect) and from main.py's shutdown teardown, where
+        # the process exits shortly after. Wait briefly (bounded, see
+        # _BLACKOUT_FLUSH_TIMEOUT_S) for the sender thread to at least
+        # pick up the packet before returning, so a graceful shutdown
+        # still makes a real attempt to actually dark the room instead of
+        # the packet possibly never getting picked up before the process
+        # exits.
+        deadline = time.monotonic() + _BLACKOUT_FLUSH_TIMEOUT_S
+        while time.monotonic() < deadline:
+            with self._send_lock:
+                if self._send_pending is None:
+                    return
+            time.sleep(0.01)
 
 # Instantiate global DMX interface
 dmx = EnttecDMXPro()
