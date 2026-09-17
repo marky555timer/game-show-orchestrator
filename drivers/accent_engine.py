@@ -48,6 +48,14 @@ _effect_index = 0
 _scan_thread = None
 _stop_scanning = threading.Event()
 
+# Serial write hand-off to _sender_loop's dedicated thread (2026-09-18) --
+# see that function's docstring for why _send() can't write inline on
+# whatever thread calls it. Same shape as drivers/wled_engine.py's own
+# _serial_lock/_serial_send_ready/_serial_pending.
+_send_lock = threading.Lock()
+_send_ready = threading.Event()
+_send_pending = None  # (serial.Serial instance, frame_bytes) tuple, or None once consumed
+
 _PROBE_SETTLE_S = 0.3
 _PROBE_REPLY_WAIT_S = 0.5
 _RESCAN_INTERVAL_S = 5.0
@@ -264,17 +272,89 @@ def resume_auto_sync():
 
 
 def _send(payload):
-    global _link
+    """Hands the JSON payload off to _sender_loop's dedicated thread rather
+    than writing here directly -- see that function's docstring for why.
+    Binds the frame to whichever specific link instance is current right
+    now (read under _lock, same convention every other _link access in
+    this module uses), so a write that's still stuck blocking when a
+    reconnect later replaces _link can't be confused with the new
+    connection -- same pattern drivers/wled_engine.py's own serial sender
+    already uses."""
+    global _send_pending
     with _lock:
-        if _link is None:
-            return
-        try:
-            _link.write((json.dumps(payload) + "\n").encode("utf-8"))
-        except (OSError, serial.SerialException) as e:
-            print(f"[ACCENT] Write failed, dropping link: {e}")
-            serial_ports.release(_link.port)
-            _link.close()
+        link = _link
+    if link is None:
+        return
+    frame = (json.dumps(payload) + "\n").encode("utf-8")
+    with _send_lock:
+        _send_pending = (link, frame)
+    _send_ready.set()
+
+
+def _fail_send_link(link, error):
+    """Shared teardown for a serial link that just failed a write, called
+    from _sender_loop's own thread -- mirrors drivers/wled_engine.py's own
+    _fail_serial_link(). Guards against clobbering a *different*, newer
+    connection: _try_find_and_claim() runs on the scan thread and could in
+    principle reconnect while a stale write from the old link is still
+    unwinding here (e.g. it was blocked for a while before finally
+    raising) -- only clear the shared _link if it's still pointing at the
+    exact object that just failed."""
+    global _link
+    print(f"[ACCENT] Write failed, dropping link: {error}")
+    device = link.port
+    try:
+        link.close()
+    except Exception:
+        pass
+    serial_ports.release(device)
+    with _lock:
+        if _link is link:
             _link = None
+
+
+def _sender_loop():
+    """Runs forever on its own daemon thread, started once at import (only
+    if pyserial is actually available -- see the guarded start call below).
+    Moves the actual blocking serial write off whatever thread calls
+    _send() -- critically, that includes FastAPI's request-handling
+    threadpool (web/remote_server.py's /api/accent/* routes call _send()
+    directly, as does the per-song sync from the main show loop) as well
+    as the main loop's own per-frame sync_to_show_state() call.
+
+    Added 2026-09-18 after a live report of the admin/player web panels
+    going intermittently unresponsive during gameplay while the show
+    itself kept running -- startup.log showed this board's serial
+    connection reconnecting unusually often around the same time. Without
+    a dedicated sender thread, a write that blocks in the kernel USB-
+    serial driver (confirmed possible on this exact class of link --
+    drivers/wled_engine.py's own history documents two full-minute
+    main-loop freezes from precisely this gap before it got the same fix
+    applied here) ties up whichever thread called _send() indefinitely;
+    enough FastAPI worker threads stuck that way starves the whole web
+    server even though uvicorn itself is still running. Fire-and-forget
+    UDP-style tolerance isn't available here (this is a reliable serial
+    link, not UDP), but the same "a dropped/delayed frame just gets
+    superseded by the next one" reasoning still applies -- nothing here
+    needs an ack."""
+    global _send_pending
+    while True:
+        _send_ready.wait()
+        with _send_lock:
+            pending = _send_pending
+            _send_pending = None
+            _send_ready.clear()
+        if pending is None:
+            continue
+        link, frame = pending
+        try:
+            link.write(frame)
+        except (OSError, serial.SerialException) as e:
+            _fail_send_link(link, e)
+
+
+if _AVAILABLE:
+    threading.Thread(target=_sender_loop, daemon=True, name="accent-serial-sender").start()
 
 
 def _scan_loop():
