@@ -904,8 +904,9 @@ def handle_theme_cycle():
     """Btn8 in DJ mode: cycles the animation pattern for whichever fixture
     type is currently selected (state.dj_selected_feature, Btn9 above),
     each against its own count/modulus (DMX: DJ_THEME_COUNT; marquee:
-    config.MARQUEE_THEME_NAMES; outline: config.ACCENT_THEME_TO_FX) rather
-    than one shared range. DMX deliberately excludes DJ_THEME_ALL_OFF_INDEX
+    config.MARQUEE_THEME_NAMES; outline: config.ACCENT_EFFECT_NAMES, WLED's
+    full default effect catalog since 2026-09-18) rather than one shared
+    range. DMX deliberately excludes DJ_THEME_ALL_OFF_INDEX
     -- landing on a dark stop while cycling through patterns live reads as
     an error, not a lighting choice. ALL LIGHTS OFF is still reachable as a
     deliberate direct selection from the admin panel's DMX pattern
@@ -919,7 +920,7 @@ def handle_theme_cycle():
         state.marquee_theme_index = (state.marquee_theme_index + 1) % len(config.MARQUEE_THEME_NAMES)
         result = state.marquee_theme_index
     else:
-        state.accent_theme_index = (state.accent_theme_index + 1) % len(config.ACCENT_THEME_TO_FX)
+        state.accent_theme_index = (state.accent_theme_index + 1) % len(config.ACCENT_EFFECT_NAMES)
         result = state.accent_theme_index
     light_prefs_engine.mark_dirty()
     print(f"[ACTION] Btn8 THEME ({feature}) -> theme {result}")

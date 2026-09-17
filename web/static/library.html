@@ -230,7 +230,8 @@
       <select id="tag-edit-marquee-theme"></select>
       <div id="tag-edit-marquee-swatches" class="color-swatch-picker"></div>
 
-      <div class="light-prefs-subhead">Outline Color</div>
+      <div class="light-prefs-subhead">Outline Effect &amp; Color</div>
+      <select id="tag-edit-accent-theme"></select>
       <div id="tag-edit-accent-swatches" class="color-swatch-picker"></div>
 
       <div class="row">
@@ -660,6 +661,7 @@ async function _loadDjLookOptions() {
   LIB_DJ_LOOK_OPTIONS = d;
   _populateLightPrefsThemeSelect('tag-edit-dmx-theme', d.dmx_theme_names, 'dmx_theme_index');
   _populateLightPrefsThemeSelect('tag-edit-marquee-theme', d.marquee_theme_names, 'marquee_theme_index');
+  _populateLightPrefsThemeSelect('tag-edit-accent-theme', d.outline_theme_names, 'accent_theme_index');
 }
 
 function _populateLightPrefsThemeSelect(selectId, names, field) {
@@ -670,13 +672,12 @@ function _populateLightPrefsThemeSelect(selectId, names, field) {
 }
 
 // color field -> its paired theme field/select, for the auto-default
-// below. Outline has no theme <select> at all (drives off the DMX-theme-
-// to-effect mapping, config.ACCENT_THEME_TO_FX, not its own named pattern
-// list), hence the null selectId.
+// below. Outline's select picks directly from WLED's full effect catalog
+// (config.ACCENT_EFFECT_NAMES) since 2026-09-18, same shape as DMX/marquee.
 const _LIGHT_PREFS_THEME_FIELD = {
   dmx_color_index: { themeField: 'dmx_theme_index', selectId: 'tag-edit-dmx-theme' },
   marquee_color_index: { themeField: 'marquee_theme_index', selectId: 'tag-edit-marquee-theme' },
-  accent_color_index: { themeField: 'accent_theme_index', selectId: null },
+  accent_color_index: { themeField: 'accent_theme_index', selectId: 'tag-edit-accent-theme' },
 };
 
 function tagEditPickColor(field, index) {
@@ -742,6 +743,7 @@ function openTagEdit(index) {
   };
   document.getElementById('tag-edit-dmx-theme').value = String(_tagEditLightPrefs.dmx_theme_index);
   document.getElementById('tag-edit-marquee-theme').value = String(_tagEditLightPrefs.marquee_theme_index);
+  document.getElementById('tag-edit-accent-theme').value = String(_tagEditLightPrefs.accent_theme_index);
   _renderAllLightPrefsSwatches();
 
   document.getElementById('tag-edit-modal').classList.add('open');

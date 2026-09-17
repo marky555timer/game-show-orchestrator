@@ -163,10 +163,14 @@ def _target_look():
         # game-chase white pattern -- covers Price Game's white-lights
         # window and Quiz/other non-DJ modes with the same simple white
         # solid look, rather than inventing a second white-trigger rule.
-        return (config.ACCENT_THEME_TO_FX[12], 255, 255, 255, state.accent_speed)  # Solid, white
+        return (config.ACCENT_FX_SOLID, 255, 255, 255, state.accent_speed)  # Solid, white
     if state.accent_sound_enabled:
         return (config.ACCENT_AUDIOREACTIVE_FX_ID, None, None, None, None)
-    fx = config.ACCENT_THEME_TO_FX.get(state.accent_theme_index, config.ACCENT_THEME_TO_FX[12])
+    # state.accent_theme_index is a direct WLED effect ID (index into
+    # config.ACCENT_EFFECT_NAMES) since 2026-09-18 -- no longer routed
+    # through a curated subset mapping, see that list's header comment.
+    fx = (state.accent_theme_index if 0 <= state.accent_theme_index < len(config.ACCENT_EFFECT_NAMES)
+          else config.ACCENT_FX_SOLID)
     r, g, b = _resolve_dj_color()
     gradient_mode = state.accent_gradient_mode
     if gradient_mode == "rainbow":
@@ -216,7 +220,7 @@ def flash(r, g, b, duration=None):
         return
     _flash_color = (r, g, b)
     _flash_until = time.time() + (duration if duration is not None else config.DJ_FEATURE_FLASH_SECONDS)
-    _send({"seg": {"fx": config.ACCENT_THEME_TO_FX[12], "col": [[r, g, b]]}})
+    _send({"seg": {"fx": config.ACCENT_FX_SOLID, "col": [[r, g, b]]}})
     _last_sent_look = None  # force a real resend once the flash expires, rather than trusting a stale comparison
 
 
@@ -245,7 +249,7 @@ def set_movie_chase(all_panels):
             {"id": 0, "start": 0, "stop": top,
              "fx": config.ACCENT_FX_THEATER, "col": [[255, 255, 255]]},
             {"id": 1, "start": top, "stop": config.ACCENT_TOTAL_LEDS,
-             "fx": config.ACCENT_THEME_TO_FX[12], "on": False},
+             "fx": config.ACCENT_FX_SOLID, "on": False},
         ]})
     _last_sent_look = None  # force sync_to_show_state() to re-send once resumed, rather than trusting a stale comparison
     return True

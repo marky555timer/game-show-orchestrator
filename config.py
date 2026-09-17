@@ -548,33 +548,62 @@ ACCENT_EFFECT_CYCLE_SECONDS = 3.0
 # chase/fireworks), not for the specific IDs mattering.
 ACCENT_TEST_EFFECTS = [0, 2, 9, 38, 66]
 
-# --- Accent strip per-song theme sync (2026-09-15) ---
-# Maps each of the 13 DMX DJ_THEME_* patterns (drivers/lighting_engine.py::
-# _dj_theme_frame -- see that function for what each index actually looks
-# like) onto the closest built-in WLED effect ID, so the accent strip's
-# motion "reads" like part of the same show even though the DMX side is
-# bespoke Python animation and this side is WLED's own effect engine --
-# there's no way to get byte-identical motion between two totally
-# different rendering systems, so these are deliberate aesthetic matches,
-# not literal ports. IDs below are from this board's actual /json/eff list
-# (WLED 16.0.1, confirmed live against the marquee board's own list, same
-# WLED codebase) -- re-verify against that list if WLED is ever upgraded,
-# since effect IDs occasionally shift between releases.
-ACCENT_THEME_TO_FX = {
-    0: 2,     # Breathe (unison pulse) -> Breathe -- exact
-    1: 28,    # Chase (wraps around) -> Chase -- exact
-    2: 1,     # Alternate even/odd on beat -> Blink -- closest simple approximation, not exact
-    3: 20,    # Sparkle (per-fixture independent phase) -> Sparkle -- exact
-    4: 60,    # Bidirectional converging chase -> Scanner Dual
-    5: 17,    # Random twinkle strobe -> Twinkle
-    6: 15,    # Wave gradient (continuous traveling sine) -> Running
-    7: 100,   # Heartbeat (double "lub-dub" pulse) -> Heartbeat -- exact
-    8: 40,    # Bounce (ping-pong, reflects at ends) -> Scanner
-    9: 77,    # Comet (bright head + decaying trail) -> Meteor Smooth
-    10: 23,   # Beat flash (single sharp flash + decay) -> Strobe
-    11: 52,   # Paired chase (adjacent pairs sweep) -> Running Dual
-    12: 0,    # Solid -> Solid -- exact
-}
+# --- Accent strip effect selection (2026-09-15, replaced 2026-09-18) ---
+# Used to be a 13-entry curated mapping onto the closest-looking WLED
+# effect per DMX DJ_THEME_* pattern, aesthetically pairing the accent
+# strip's motion with the DMX rig's bespoke Python animations. Replaced at
+# the user's request with direct selection from WLED's FULL default effect
+# catalog instead -- state.accent_theme_index is now literally a WLED
+# effect ID (index into this list), not an index into a curated subset.
+# The curated aesthetic-pairing idea may come back later as a way to trim
+# this list down to a shorter "recommended" set (see git history for the
+# original 13-entry mapping if that's revisited), but for now it's every
+# effect WLED ships, per the user's explicit "let's go with what's default
+# in WLED."
+#
+# Verified live 2026-09-18 against this board's own GET /json/eff (WLED
+# 16.0.1, "Niji" build, fxcount 220) -- index-aligned with the board's own
+# effect IDs, NOT guessed from generic WLED docs (this build's effect list
+# includes the newer "PS " particle-system effects and doesn't necessarily
+# match every WLED release 1:1). Re-verify against /json/eff if this
+# board's firmware is ever upgraded, since IDs can shift between releases.
+ACCENT_EFFECT_NAMES = [
+    "Solid", "Blink", "Breathe", "Wipe", "Wipe Random", "Random Colors", "Sweep", "Dynamic",
+    "Colorloop", "Rainbow", "Scan", "Scan Dual", "Fade", "Theater", "Theater Rainbow", "Running",
+    "Saw", "Twinkle", "Dissolve", "Dissolve Rnd", "Sparkle", "Sparkle Dark", "Sparkle+", "Strobe",
+    "Strobe Rainbow", "Strobe Mega", "Blink Rainbow", "Android", "Chase", "Chase Random",
+    "Chase Rainbow", "Chase Flash", "Chase Flash Rnd", "Rainbow Runner", "Colorful",
+    "Traffic Light", "Sweep Random", "Chase 2", "Aurora", "Stream", "Scanner", "Lighthouse",
+    "Fireworks", "Rain", "Tetrix", "Fire Flicker", "Gradient", "Loading", "Rolling Balls",
+    "Fairy", "Two Dots", "Fairytwinkle", "Running Dual", "Image", "Chase 3", "Tri Wipe",
+    "Tri Fade", "Lightning", "ICU", "Multi Comet", "Scanner Dual", "Stream 2", "Oscillate",
+    "Pride 2015", "Juggle", "Palette", "Fire 2012", "Colorwaves", "Bpm", "Fill Noise",
+    "Noise 1", "Noise 2", "Noise 3", "Noise 4", "Colortwinkles", "Lake", "Meteor",
+    "Copy Segment", "Railway", "Ripple", "Twinklefox", "Twinklecat", "Halloween Eyes",
+    "Solid Pattern", "Solid Pattern Tri", "Spots", "Spots Fade", "Glitter", "Candle",
+    "Fireworks Starburst", "Fireworks 1D", "Bouncing Balls", "Sinelon", "Sinelon Dual",
+    "Sinelon Rainbow", "Popcorn", "Drip", "Plasma", "Percent", "Ripple Rainbow", "Heartbeat",
+    "Pacifica", "Candle Multi", "Solid Glitter", "Sunrise", "Phased", "Twinkleup", "Noise Pal",
+    "Sine", "Phased Noise", "Flow", "Chunchun", "Dancing Shadows", "Washing Machine",
+    "Rotozoomer", "Blends", "TV Simulator", "Dynamic Smooth", "Spaceships", "Crazy Bees",
+    "Ghost Rider", "Blobs", "Scrolling Text", "Drift Rose", "Distortion Waves", "Soap",
+    "Octopus", "Waving Cell", "Pixels", "Pixelwave", "Juggles", "Matripix", "Gravimeter",
+    "Plasmoid", "Puddles", "Midnoise", "Noisemeter", "Freqwave", "Freqmatrix", "GEQ",
+    "Waterfall", "Freqpixels", "RSVD", "Noisefire", "Puddlepeak", "Noisemove", "Noise2D",
+    "Perlin Move", "Ripple Peak", "Firenoise", "Squared Swirl", "PacMan", "DNA", "Matrix",
+    "Metaballs", "Freqmap", "Gravcenter", "Gravcentric", "Gravfreq", "DJ Light", "Funky Plank",
+    "Shimmer", "Pulser", "Blurz", "Drift", "Waverly", "Sun Radiation", "Colored Bursts",
+    "Julia", "RSVD", "RSVD", "RSVD", "Game Of Life", "Tartan", "Polar Lights", "Swirl",
+    "Lissajous", "Frizzles", "Plasma Ball", "Flow Stripe", "Hiphotic", "Sindots", "DNA Spiral",
+    "Black Hole", "Wavesins", "Rocktaves", "Akemi", "PS Volcano", "PS Fire", "PS Fireworks",
+    "PS Vortex", "PS Fuzzy Noise", "PS Ballpit", "PS Box", "PS Attractor", "PS Impact",
+    "PS Waterfall", "PS Spray", "PS GEQ 2D", "PS GEQ Nova", "PS Ghost Rider", "PS Blobs",
+    "PS DripDrop", "PS Pinball", "PS Dancing Shadows", "PS Fireworks 1D", "PS Sparkler",
+    "PS Hourglass", "PS Spray 1D", "PS 1D Balance", "PS Chase", "PS Starburst", "PS GEQ 1D",
+    "PS Fire 1D", "PS Sonic Stream", "PS Sonic Boom", "PS Springy", "PS Galaxy",
+    "Color Clouds", "Slow Transition",
+]
+ACCENT_FX_SOLID = 0  # "Solid" -- used for the white/Price-Game look and flash() confirmations
 
 # Approximate RGB stand-ins for DJ_COLOR_PALETTE's three dedicated-emitter
 # looks (white lamp/amber lamp/uv) -- those store r=g=b=0 with the real
@@ -989,7 +1018,7 @@ MARQUEE_THEME_NAMES = [
 # on this same board/build if a different one is ever wanted: 137 Freqwave,
 # 138 Freqmatrix, 141 Freqpixels, 155 Freqmap, 158 Gravfreq, 198 PS GEQ 2D.
 # Re-verify against /json/eff if this board's WLED version ever changes --
-# same caveat ACCENT_THEME_TO_FX's own header comment already carries.
+# same caveat ACCENT_EFFECT_NAMES's own header comment already carries.
 ACCENT_AUDIOREACTIVE_FX_ID = 139  # "GEQ"
 
 # Game-mode chase pace (seconds per step across fixtures 2-11).

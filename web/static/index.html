@@ -382,6 +382,13 @@
       </label>
 
       <div class="dj-look-subhead">Outline Strip (Accent)</div>
+      <!-- Full WLED default effect catalog (config.ACCENT_EFFECT_NAMES,
+           220 entries as of 2026-09-18, verified live against the board's
+           own /json/eff) -- deliberately not curated/trimmed down, per
+           request ("let's go with what's default in WLED"). -->
+      <label style="font-size:.85rem;font-weight:700">Effect
+        <select id="outline-theme-select" onchange="pickDjTheme('outline', this.value)"></select>
+      </label>
       <div id="outline-color-swatches" class="color-swatch-picker"></div>
       <div id="outline-gradient-picker" class="gradient-mode-picker"></div>
       <label style="display:block;font-size:.85rem;font-weight:700;margin-top:6px">Speed
@@ -677,6 +684,7 @@ async function djLookLoadOptions() {
   DJ_LOOK_OPTIONS = d;
   populateThemeSelect('dmx-theme-select', d.dmx_theme_names);
   populateThemeSelect('marquee-theme-select', d.marquee_theme_names);
+  populateThemeSelect('outline-theme-select', d.outline_theme_names);
 }
 
 function populateThemeSelect(selectId, names) {
@@ -771,6 +779,7 @@ function djLookPoll() {
     renderGradientPicker('marquee-gradient-picker', 'marquee', d.marquee.gradient_mode);
     _setCheckedIfNotFocused('marquee-blank-lower-checkbox', d.blank_lower_marquees);
 
+    _setSelectIfNotFocused('outline-theme-select', d.outline.theme_index);
     renderColorSwatchPicker('outline-color-swatches', 'outline', d.outline.color_index);
     renderGradientPicker('outline-gradient-picker', 'outline', d.outline.gradient_mode);
     _setCheckedIfNotFocused('accent-sound-checkbox', d.accent_sound_enabled);

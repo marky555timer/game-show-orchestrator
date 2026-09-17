@@ -1163,7 +1163,7 @@ if app is not None:
     _DJ_FEATURE_THEME_COUNT = {
         "dmx": lambda: config.DJ_THEME_COUNT,
         "marquee": lambda: len(config.MARQUEE_THEME_NAMES),
-        "outline": lambda: len(config.ACCENT_THEME_TO_FX),
+        "outline": lambda: len(config.ACCENT_EFFECT_NAMES),
     }
 
     @app.post("/api/dj-look/{feature}")
@@ -1218,6 +1218,7 @@ if app is not None:
                        for i, c in enumerate(config.DJ_COLOR_PALETTE)],
             "dmx_theme_names": config.DJ_THEME_NAMES,
             "marquee_theme_names": config.MARQUEE_THEME_NAMES,
+            "outline_theme_names": config.ACCENT_EFFECT_NAMES,
             "gradient_modes": list(config.GRADIENT_MODES),
             "feature_order": list(config.DJ_FEATURE_ORDER),
         }

@@ -383,7 +383,7 @@ def apply_prefs_for(track_key):
     accent_theme = prefs.get("accent_theme_index", NO_LOOK)
     if accent_color >= 0 and accent_theme >= 0:
         state.accent_color_index = accent_color % len(config.DJ_COLOR_PALETTE)
-        state.accent_theme_index = accent_theme % len(config.ACCENT_THEME_TO_FX)
+        state.accent_theme_index = accent_theme % len(config.ACCENT_EFFECT_NAMES)
         restored_any = True
         print(f"[LIGHT PREFS] Restored accent for {track_key!r}: "
               f"color={state.accent_color_index}, theme={state.accent_theme_index}")
