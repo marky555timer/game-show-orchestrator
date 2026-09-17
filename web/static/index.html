@@ -164,6 +164,20 @@
   }
   .simon-hw-sw.pressed { background: #2e7d32; color: #fff; }
 
+  /* DJ-look section headers (DMX Uplighting / Marquee / Outline) get extra
+     breathing room and a divider line -- these three are dense (dropdown +
+     swatches + gradient buttons + checkboxes each) and sat too close
+     together under the plain .subhead spacing, per 2026-09-17 feedback. */
+  .dj-look-subhead {
+    font-size: .75rem; text-transform: uppercase; letter-spacing: .05em; color: #999;
+    margin: 26px 0 10px; padding-top: 18px; border-top: 1px solid #2a2a2e; font-weight: 700;
+  }
+  /* First of the three has nothing above it to divide from -- no border/
+     top padding needed (set via style="" on that one element instead of a
+     :first-of-type selector, since that pseudo-class matches by tag name
+     among ALL sibling divs, not just this class -- too fragile here given
+     how many other <div>s share this parent). */
+
   /* DJ-look color swatch picker (2026-09-17) -- one per fixture type
      (DMX/marquee/outline), ported from play.html's avatar-swatch-btn
      pattern but a plain color square instead of an avatar face. */
@@ -349,14 +363,14 @@
            /api/dj-look/options rather than hardcoded here, and current
            selections sync from /api/dj-look/status while this panel is
            open (djLookPoll(), same cadence as simonHwPoll/accentPoll). -->
-      <div class="subhead">DMX Uplighting</div>
+      <div class="dj-look-subhead" style="margin-top:6px;padding-top:0;border-top:none">DMX Uplighting</div>
       <label style="font-size:.85rem;font-weight:700">Pattern
         <select id="dmx-theme-select" onchange="pickDjTheme('dmx', this.value)"></select>
       </label>
       <div id="dmx-color-swatches" class="color-swatch-picker"></div>
       <div id="dmx-gradient-picker" class="gradient-mode-picker"></div>
 
-      <div class="subhead">Marquee (Panel-Edge Lights)</div>
+      <div class="dj-look-subhead">Marquee (Panel-Edge Lights)</div>
       <label style="font-size:.85rem;font-weight:700">Pattern
         <select id="marquee-theme-select" onchange="pickDjTheme('marquee', this.value)"></select>
       </label>
@@ -367,7 +381,7 @@
         Blank lower marquees (panels 3-6) during normal DJ dancing
       </label>
 
-      <div class="subhead">Outline Strip (Accent)</div>
+      <div class="dj-look-subhead">Outline Strip (Accent)</div>
       <div id="outline-color-swatches" class="color-swatch-picker"></div>
       <div id="outline-gradient-picker" class="gradient-mode-picker"></div>
       <label style="display:block;font-size:.85rem;font-weight:700;margin-top:6px">Speed
