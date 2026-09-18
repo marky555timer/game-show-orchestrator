@@ -100,7 +100,7 @@ def _dedupe_distractors(correct, wrong):
     fallback string where one is available; if the fallback pool is
     exhausted the slot is dropped entirely (shrinking the returned list)
     rather than risk a duplicate -- matrix_canvas.py already renders any
-    option index beyond len(choices) as a blank "----" panel, and
+    option index beyond len(choices) as a blank panel, and
     select_quiz_answer() already refuses to select it."""
     seen = {correct.strip().lower()}
     fallback_pool = list(_FALLBACK_DISTRACTOR_POOL)
@@ -411,22 +411,23 @@ def question_reveal_count(now):
 
 def load_forced_fallback_question(source_label="FORCED_FALLBACK"):
     """Bypasses the AI fetch and pre-fetch queue entirely: grabs a random
-    question from fallback_questions.json (or the built-in mock question if
-    that file is unavailable/empty) and applies it straight to state as the
-    active round question. Used by the Btn2 empty-cache timeout tripwire and
-    the Btn0 emergency override so the show is never left without a playable
-    question."""
+    question from fallback_questions.json and applies it straight to state
+    as the active round question. Used by the Btn2 empty-cache timeout
+    tripwire and the AI-exhausted fallback so the show still has a
+    playable question when the AI path can't provide one.
+
+    Returns the applied question dict, or None if fallback_questions.json
+    itself is unavailable/empty too -- callers MUST check this and NOT
+    enter Game Mode in that case. Used to silently fabricate a fake "test
+    mode" question here instead (2026-09-18 fix) -- see graphics/
+    matrix_canvas.py::_ensure_quiz_content()'s docstring for the confirmed
+    live incident this class of fallback caused, and its own parallel fix.
+    When nothing's available, follow the same pattern inputs/gamepad.py::
+    _process_quiz_gate()'s own timeout tripwire already uses: notify
+    (buzz/message) and stay in the current mode, never show fake content."""
     fallback = _load_fallback_question()
     if not fallback:
-        mock = build_mock_question()
-        fallback = {
-            "headline": "offline trivia",
-            "full": "",
-            "question": mock["question"],
-            "choices": mock["choices"],
-            "correct_index": mock["correct_index"],
-            "ts": time.time(),
-        }
+        return None
     _apply_active_question(fallback, source_label)
     return fallback
 
@@ -1313,6 +1314,8 @@ def _load_fallback_question():
         with open(config.FALLBACK_QUESTIONS_PATH, "r", encoding="utf-8") as f:
             entries = json.load(f)
         if not entries:
+            print(f"[FACTOID] fallback_questions.json at {config.FALLBACK_QUESTIONS_PATH} "
+                  f"parsed but contains no entries.")
             return None
         entry = random.choice(entries)
         return {

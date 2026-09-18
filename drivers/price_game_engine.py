@@ -122,9 +122,18 @@ def start_price_game_from_bank():
 
     question = price_bank_engine.draw_price_question(state.track_release_year)
     if question is None:
+        # 2026-09-18: load_forced_fallback_question() no longer fabricates
+        # fake content when fallback_questions.json is also unavailable --
+        # it returns None, and we must NOT enter Game Mode in that case
+        # (see that function's docstring for why). Genuinely nothing to
+        # show here -- stay in DJ mode rather than a placeholder question.
+        if factoid_engine.load_forced_fallback_question("PRICE_GAME_BANK_EMPTY") is None:
+            print("[PRICE GAME] Local question bank is empty/unreadable, and the offline "
+                  "fallback bank is also unavailable -- staying in DJ_MODE.")
+            state.set_message("NO QUESTION READY -- TRY AGAIN", 1.5)
+            return
         print("[PRICE GAME] Local question bank is empty/unreadable -- "
               "forcing a generic offline question instead of a silent no-op.")
-        factoid_engine.load_forced_fallback_question("PRICE_GAME_BANK_EMPTY")
         state.mode = state.MODE_GAME
         return
 
@@ -264,8 +273,18 @@ def update(now):
             result = _fetch_results.pop(key, None)
 
         if result == "FAILED":
+            # 2026-09-18: None means even the offline fallback bank is
+            # unavailable -- don't enter Game Mode with nothing to show,
+            # just cleanly end the price game attempt and stay in DJ mode
+            # (see factoid_engine.py::load_forced_fallback_question()'s
+            # docstring for why).
+            if factoid_engine.load_forced_fallback_question("PRICE_GAME_FETCH_FAILED") is None:
+                print("[PRICE GAME ERROR] Fetch failed, and the offline fallback bank is also "
+                      "unavailable -- staying in DJ_MODE.")
+                state.set_message("NO QUESTION READY -- TRY AGAIN", 1.5)
+                _reset_intro()
+                return
             print("[PRICE GAME] Forcing local fallback question after a failed fetch.")
-            factoid_engine.load_forced_fallback_question("PRICE_GAME_FETCH_FAILED")
             state.mode = state.MODE_GAME
             _reset_intro()
             return
@@ -277,9 +296,18 @@ def update(now):
             return
 
         if elapsed >= config.PRICE_GAME_QUESTION_TIMEOUT_SECONDS:
+            # 2026-09-18: same None-means-offline-bank-is-also-empty guard as
+            # the "FAILED" branch above -- don't enter Game Mode with nothing
+            # to show.
+            if factoid_engine.load_forced_fallback_question("PRICE_GAME_TIMEOUT_FALLBACK") is None:
+                print(f"[PRICE GAME ERROR] Question fetch still not ready after "
+                      f"{config.PRICE_GAME_QUESTION_TIMEOUT_SECONDS}s, and the offline fallback bank "
+                      f"is also unavailable -- staying in DJ_MODE.")
+                state.set_message("NO QUESTION READY -- TRY AGAIN", 1.5)
+                _reset_intro()
+                return
             print(f"[PRICE GAME] Question fetch still not ready after "
                   f"{config.PRICE_GAME_QUESTION_TIMEOUT_SECONDS}s -- forcing local fallback.")
-            factoid_engine.load_forced_fallback_question("PRICE_GAME_TIMEOUT_FALLBACK")
             state.mode = state.MODE_GAME
             _reset_intro()
 

@@ -766,6 +766,42 @@ def _theater_chase_segment(name, now, r, g, b):
             set_pixel(_segment_pixel_index(seg, offset), 0, 0, 0)
 
 
+def _steady_panel_color(color_name):
+    """A panel color's RGB, scaled down per config.SIMON_HW_COLOR_RGB_
+    STEADY_SCALE (2026-09-18, operator feedback that steady/selected
+    yellow was still too bright even after its earlier amber hue-shift).
+    Only for solid/steady blocks -- mid-chase-animation calls
+    (_theater_chase_segment) stay at full brightness since those already
+    read fine, not being a static block."""
+    r, g, b = config.SIMON_HW_COLOR_RGB[color_name]
+    scale = config.SIMON_HW_COLOR_RGB_STEADY_SCALE.get(color_name, 1.0)
+    return r * scale, g * scale, b * scale
+
+
+# Blue (last-revealed) panel reveal flourish (2026-09-18): once the other
+# 3 panels have gone steady, panel index 3 ("blue" in config.SIMON_HW_
+# COLOR_ORDER) keeps running its cascade-chase animation this much longer
+# before settling to the same dimmed, pulsing steady look as the rest.
+_BLUE_PANEL_EXTRA_CHASE_SECONDS = 3.0
+
+
+def _double_pulse_level(now, period=3.0, floor=2 / 3):
+    """Steady `floor` brightness level with two brief, softly-faded pulses
+    to full brightness near the end of each `period`-second cycle -- "poof
+    poof" (2026-09-18). Pure function of `now`, no internal state, same
+    sine-multiplier idiom as _dj_pattern_breathe() above, just with two
+    narrow raised-cosine bumps instead of one wide sine wave."""
+    phase = now % period
+    pulse_width = 0.25  # seconds each bump takes to rise from floor to full and back
+    bump = 0.0
+    for center in (period - 0.6, period - 0.3):
+        d = abs(phase - center)
+        d = min(d, period - d)  # wrap around the cycle boundary
+        if d < pulse_width:
+            bump = max(bump, 0.5 * (1 + math.cos(math.pi * d / pulse_width)))
+    return floor + (1 - floor) * bump
+
+
 def _apply_simon(now):
     """Simon mini-game (drivers/simon_engine.py), any phase (intro,
     playback, input, or the loss sequence): panels 3-6 show a solid block
@@ -800,7 +836,7 @@ def _apply_simon(now):
 
     for i, name in enumerate(_SIMON_PANEL_SEGMENTS):
         if state.simon_active_pad == i:
-            r, g, b = config.SIMON_HW_COLOR_RGB[config.SIMON_HW_COLOR_ORDER[i]]
+            r, g, b = _steady_panel_color(config.SIMON_HW_COLOR_ORDER[i])
             set_segment(name, r, g, b)
         else:
             set_segment(name, 0, 0, 0)
@@ -860,9 +896,22 @@ def _apply_mystery_marquee(now):
                 set_segment(name, 0, 0, 0)
     else:  # "done" -- resolved (graded or timed out), still mystery_active (blink hold)
         set_segment("title", 0, 0, 0)
+        # Blue (panel index 3, the last one to cascade in) keeps chasing
+        # _BLUE_PANEL_EXTRA_CHASE_SECONDS past its own natural reveal
+        # instant -- computed directly rather than read from `stage`/
+        # `revealed` above, since those already say "done" the moment
+        # this branch is reached even if grading happened early.
+        reveal_complete_at = (state.mystery_started_at + config.MYSTERY_SPARKLE_SECONDS
+                               + config.MYSTERY_SOLID_SECONDS + 4 * config.MYSTERY_CASCADE_STEP_SECONDS)
+        blue_still_chasing = now < reveal_complete_at + _BLUE_PANEL_EXTRA_CHASE_SECONDS
+        level = _double_pulse_level(now)
         for i, name in enumerate(_SIMON_PANEL_SEGMENTS):
-            r, g, b = config.SIMON_HW_COLOR_RGB[config.SIMON_HW_COLOR_ORDER[i]]
-            set_segment(name, r, g, b)
+            if i == 3 and blue_still_chasing:
+                r, g, b = config.SIMON_HW_COLOR_RGB[config.SIMON_HW_COLOR_ORDER[i]]
+                _theater_chase_segment(name, now, r, g, b)
+            else:
+                r, g, b = _steady_panel_color(config.SIMON_HW_COLOR_ORDER[i])
+                set_segment(name, r * level, g * level, b * level)
 
 
 def _apply_question_marquee(now):
@@ -890,12 +939,45 @@ def _apply_question_marquee(now):
             else:
                 set_segment(name, 0, 0, 0)
     else:
+        # Blue (panel index 3, the last one to cascade in) keeps chasing
+        # _BLUE_PANEL_EXTRA_CHASE_SECONDS past its own natural reveal
+        # instant -- same treatment as _apply_mystery_marquee's "done"
+        # branch above. Only ever relevant for a full 4-choice question:
+        # for True/False, i == 3 always fails the i < len(choices) check
+        # below and stays dark, same as Task #16's dash/LED fix.
+        reveal_complete_at = state.factoid_question_started_at + 4 * config.QUESTION_CASCADE_STEP_SECONDS
+        blue_still_chasing = now < reveal_complete_at + _BLUE_PANEL_EXTRA_CHASE_SECONDS
+        level = _double_pulse_level(now)
         for i, name in enumerate(_SIMON_PANEL_SEGMENTS):
-            if i < len(choices):
-                r, g, b = config.SIMON_HW_COLOR_RGB[config.SIMON_HW_COLOR_ORDER[i]]
-                set_segment(name, r, g, b)
-            else:
+            if i >= len(choices):
                 set_segment(name, 0, 0, 0)
+            elif i == 3 and blue_still_chasing:
+                r, g, b = config.SIMON_HW_COLOR_RGB[config.SIMON_HW_COLOR_ORDER[i]]
+                _theater_chase_segment(name, now, r, g, b)
+            else:
+                r, g, b = _steady_panel_color(config.SIMON_HW_COLOR_ORDER[i])
+                set_segment(name, r * level, g * level, b * level)
+
+
+def _apply_wrong_answer_marquee(now):
+    """Wrong single-player grade (2026-09-18 redesign): blinks the correct
+    answer's own panel segment on/off at 1Hz in its button color, other 3
+    panels dark, for config.QUIZ_WRONG_ANSWER_HOLD_SECONDS -- same on/off
+    cadence (elapsed seconds since state.quiz_graded_at, even second =
+    on) as graphics/matrix_canvas.py::_draw_correct_answer_flash_text()
+    uses for that same answer's matrix text, so panel text and marquee
+    light blink in lockstep. Multiplayer grades never reach this (see
+    this function's dispatch condition in update() below) -- multiplayer
+    already has its own "who got it right" display with no single
+    correct-answer panel to call out."""
+    correct = state.factoid_correct_index
+    on = (now - state.quiz_graded_at) % 2.0 < 1.0
+    for i, name in enumerate(_SIMON_PANEL_SEGMENTS):
+        if i == correct and on:
+            r, g, b = _steady_panel_color(config.SIMON_HW_COLOR_ORDER[i])
+            set_segment(name, r, g, b)
+        else:
+            set_segment(name, 0, 0, 0)
 
 
 def update(now):
@@ -954,6 +1036,15 @@ def update(now):
             # choreography keeps taking priority during that window (this
             # condition is also true then, but never reached).
             _apply_question_marquee(now)
+        elif (state.mode == state.MODE_GAME and state.quiz_locked and not state.quiz_players
+              and state.factoid_choices
+              and state.quiz_selected_index != state.factoid_correct_index
+              and now - state.quiz_graded_at < config.QUIZ_WRONG_ANSWER_HOLD_SECONDS):
+            # Single-player wrong grade (2026-09-18): call out the correct
+            # answer's panel with a 1Hz blink instead of falling through to
+            # the generic white game chase below -- see graphics/
+            # matrix_canvas.py's matching matrix-text redesign for why.
+            _apply_wrong_answer_marquee(now)
         else:
             _apply_game_chase(now)
     render()

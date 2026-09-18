@@ -325,7 +325,20 @@ QUIZ_STATS_HOLD_SECONDS = GAME_SCORECARD_HOLD_SECONDS - QUIZ_CELEBRATION_HOLD_SE
 # complete even one scroll pass, so the old shared 2.5s was cutting it off
 # before the room could read it. Only the correction reveal gets the longer
 # hold -- the stats page afterward keeps its normal QUIZ_STATS_HOLD_SECONDS.
+# 2026-09-18: this flat guess is superseded by graphics/text_render.py::
+# scroll_pass_duration(), which times the hold to the actual correction
+# text's real scroll-pass length (plus a 2s read buffer) instead -- kept
+# here only as the function's own fallback default (see its call site in
+# graphics/matrix_canvas.py::_render_quiz_mode()).
 QUIZ_TF_CORRECTION_HOLD_SECONDS = 8.0
+
+# Non-T/F wrong-answer hold (2026-09-18): long enough for the correct
+# answer's flashing-text/marquee-blink reveal (one second on, one second
+# off, repeating) to run its course before the game auto-advances to the
+# next question. Only applies to a genuinely wrong single-player grade --
+# a correct answer, a True/False correction (its own scroll-based hold
+# above), and multiplayer results all use their own hold logic.
+QUIZ_WRONG_ANSWER_HOLD_SECONDS = 5.0
 
 # ==========================================
 # GAMEPAD BUTTON DEBOUNCE (Btns 5-8)
@@ -849,6 +862,14 @@ SIMON_HW_COLOR_RGB = {
     # dedicated amber emitter (a color the operator confirmed looks good live).
     "yellow": (255, 140, 20),
     "blue": (0, 0, 255),
+}
+# Scales a color's brightness when shown as a static/steady/selection block
+# (as opposed to mid-chase-animation, where colors already read fine since
+# they're not a solid block). Yellow specifically still reads too bright as
+# a steady color even after the amber shift above (2026-09-18 operator
+# feedback) -- default 1.0 (unscaled) for any color not listed here.
+SIMON_HW_COLOR_RGB_STEADY_SCALE = {
+    "yellow": 0.5,
 }
 # "It's Simon!" intro jingle -- plays once while the top-panel banner/white
 # chase and the panel3-6/physical-LED green-red-yellow-blue rotation run;

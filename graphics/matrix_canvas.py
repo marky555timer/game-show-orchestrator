@@ -18,7 +18,7 @@ from config import (
     STATUS_PANEL_HOLD_SECONDS, TOP_SHOW_FACTOID_PAGE,
     TEMPO_FLASH_DECAY_SECONDS, HOT_TRACK_FLASH_PHASE_SECONDS,
     QUIZ_CELEBRATION_HOLD_SECONDS, QUIZ_STATS_HOLD_SECONDS,
-    QUIZ_TF_CORRECTION_HOLD_SECONDS,
+    QUIZ_TF_CORRECTION_HOLD_SECONDS, QUIZ_WRONG_ANSWER_HOLD_SECONDS,
     BRANDING_OVERLAY_INTERVAL_SECONDS, BRANDING_OVERLAY_DURATION_SECONDS,
     BRANDING_ASSEMBLY_DURATION_SECONDS, DJ_COLOR_PALETTE,
     MYSTERY_REVEAL_BLINK_PERIOD_SECONDS,
@@ -41,7 +41,7 @@ from drivers import idle_cycle_engine
 from drivers import mystery_band_engine
 from graphics.text_render import (
     draw_marquee, wrap_two_lines, draw_bitmap_text, text_width, char_width,
-    GLYPH_GAP, GLYPH_HEIGHT,
+    scroll_pass_duration, GLYPH_GAP, GLYPH_HEIGHT,
 )
 from graphics.animations import (
     render_panel_animation, deal_panel_animations,
@@ -713,21 +713,31 @@ def _draw_countdown_bar(rect):
 
 
 def _ensure_quiz_content():
-    """If no real AI-sourced question is loaded (no confident track ID yet,
-    AI disabled, network down, etc.), auto-load a local placeholder so the
-    select -> grade -> DMX/sound flow can still be tested end to end. Gets
-    replaced the instant a real factoid arrives (see factoid_engine)."""
+    """Guards against rendering MODE_GAME with nothing actually loaded.
+
+    2026-09-18 fix -- this used to fabricate a fake "test mode" question
+    here (build_mock_question()) whenever state.factoid_question was found
+    empty at render time, so "the select -> grade -> DMX/sound flow could
+    still be tested end to end." Confirmed live via startup.log
+    ("[QUIZ] No AI question loaded yet -- auto-loaded a TEST question...")
+    that this can fire with ZERO operator interaction during an actual
+    show: a Mystery Band reveal auto-advanced into Game Mode
+    (inputs/gamepad.py::_maybe_advance_from_mystery_grade()) expecting a
+    follow-up question about the same artist to already be queued, but it
+    hadn't finished prefetching yet, leaving factoid_question briefly
+    empty right as this function's per-frame check ran -- and the room
+    saw "option a/b/c/d" instead of a real question until the operator
+    pressed a panel button to grade it away.
+
+    Never fabricate content during a live show. If there's genuinely
+    nothing loaded, fall back to the exact same "nothing to show, return
+    to DJ mode" path used when a track's real question queue is
+    legitimately exhausted (_render_quiz_stats_or_return()) -- a missed
+    follow-up question just means the room quietly gets DJ mode back for
+    a beat, never a fake question."""
     if state.factoid_question:
         return
-    mock = build_mock_question()
-    state.factoid_question = mock["question"]
-    state.factoid_choices = mock["choices"]
-    state.factoid_correct_index = mock["correct_index"]
-    state.factoid_correction = ""
-    state.quiz_is_test = True
-    state.quiz_selected_index = -1
-    state.quiz_locked = False
-    print("[QUIZ] No AI question loaded yet -- auto-loaded a TEST question so the answer flow can be exercised.")
+    _return_to_dj_mode("[QUIZ] No question loaded at render time -- returning to DJ mode instead of showing a placeholder.")
 
 
 def _draw_selected_panel(rect, key, text, scroll=True):
@@ -749,6 +759,24 @@ def _draw_winning_flash(rect, key, text, t, scroll=True):
     intensity = 0.35 + saw * 0.65
     color = tuple(int(c * intensity) for c in RED_FULL)
     draw_marquee(matrix_surface, key, text, rect, color=color, invert=True, scroll=scroll)
+
+
+def _draw_correct_answer_flash_text(rect, key, text, t, scroll=True):
+    """The correct-answer reveal after a WRONG pick (2026-09-18 redesign,
+    replacing the old dim inverted block): steady 1Hz on/off blink of the
+    answer text itself -- not inverted, so it reads as "here's the
+    correct answer" rather than "this is selected" (the wrong pick right
+    next to it stays a solid inverted block, so the two stay visually
+    distinct). Blinks for as long as this branch keeps getting called
+    (_render_quiz_mode's celebration_hold controls that window -- see its
+    wrong-answer case), one full second on, one full second off, matching
+    drivers/wled_engine.py's marquee blink for the same answer's panel so
+    text and light blink in lockstep."""
+    elapsed = t - state.quiz_graded_at
+    if int(elapsed) % 2 == 0:
+        draw_marquee(matrix_surface, key, text, rect, color=RED_FULL, scroll=scroll)
+    else:
+        draw_marquee(matrix_surface, key, "", rect, align="center")
 
 
 def _draw_demo_winner_hint(rect, key, text, t, scroll=True):
@@ -805,8 +833,17 @@ def _render_quiz_stats_or_return(t, elapsed, celebration_hold):
         print("[QUIZ] Auto-advancing to next pre-fetched question for this track -- staying in GAME_MODE.")
         return
 
-    # Reset rule: Fixture 1 -> black (lighting_engine.py also forces this
-    # every frame in DJ mode; this just makes the intent explicit here).
+    _return_to_dj_mode("[QUIZ] No more queued questions for this track -- auto-returning to DJ mode.")
+
+
+def _return_to_dj_mode(log_message):
+    """Shared "nothing to show, go back to DJ mode" cleanup -- used both
+    when a track's real question queue is genuinely exhausted (above) and
+    by _ensure_quiz_content() when it finds no real question loaded at all
+    (2026-09-18 fix -- see that function's own docstring for why it no
+    longer fabricates a placeholder question instead). Reset rule:
+    Fixture 1 -> black (lighting_engine.py also forces this every frame in
+    DJ mode; this just makes the intent explicit here)."""
     state.mode = state.MODE_DJ
     state.fixture1_mode = "off"
     state.quiz_locked = False
@@ -826,7 +863,7 @@ def _render_quiz_stats_or_return(t, elapsed, celebration_hold):
     state.factoid_question = ""
     state.round_deadline_at = 0.0
     state.set_message("MODE: DJ", 1.5)
-    print("[QUIZ] No more queued questions for this track -- auto-returning to DJ mode.")
+    print(log_message)
 
 
 def _render_mystery_panel_win():
@@ -862,6 +899,7 @@ def _render_quiz_mode(t):
     choices = state.factoid_choices
     correct = state.factoid_correct_index
     locked = state.quiz_locked
+    sel = state.quiz_selected_index
     is_true_false = choices == ["True", "False"]
     show_correction = locked and is_true_false and correct == 1 and state.factoid_correction
     if state.round_timed_out:
@@ -869,8 +907,29 @@ def _render_quiz_mode(t):
         # then correct-answer-only reveal, distinct (longer) hold than the
         # normal win/loss celebration.
         celebration_hold = config.TIMESUP_HOLD_SECONDS
+    elif show_correction:
+        # 2026-09-18: timed to the correction text's own real scroll-pass
+        # length (plus a 2s read buffer) instead of a flat guess -- a short
+        # correction no longer holds the room needlessly long, and a long
+        # one is never cut off mid-scroll. TOP_COMBINED's width is a fixed
+        # constant, so this is safe to compute ahead of the later
+        # `tx, ty, tw, th = TOP_COMBINED` unpack below.
+        _, _, correction_tw, _ = TOP_COMBINED
+        correction_line1, correction_line2 = wrap_two_lines(
+            f"FALSE -- {state.factoid_correction}", correction_tw)
+        celebration_hold = max(
+            scroll_pass_duration(correction_line1, correction_tw),
+            scroll_pass_duration(correction_line2, correction_tw),
+        ) + 2.0
+    elif locked and not state.quiz_players and sel != correct:
+        # Single-player wrong answer (2026-09-18 redesign): held open long
+        # enough for the correct answer's flashing-text/marquee-blink
+        # reveal to finish its course. Multiplayer results (state.
+        # quiz_players) use their own "who got it right" display instead
+        # and keep the normal short hold.
+        celebration_hold = QUIZ_WRONG_ANSWER_HOLD_SECONDS
     else:
-        celebration_hold = QUIZ_TF_CORRECTION_HOLD_SECONDS if show_correction else QUIZ_CELEBRATION_HOLD_SECONDS
+        celebration_hold = QUIZ_CELEBRATION_HOLD_SECONDS
 
     if state.quiz_locked:
         elapsed = t - state.quiz_graded_at
@@ -882,9 +941,17 @@ def _render_quiz_mode(t):
             return
 
     _ensure_quiz_content()
+    if state.mode != state.MODE_GAME:
+        # _ensure_quiz_content() just bailed to DJ mode (nothing was
+        # actually loaded) -- choices/locked/etc. above were snapshotted
+        # before that call and are now stale (state.factoid_choices was
+        # just cleared too), so stop here rather than rendering quiz
+        # content for a mode we're no longer in. Next frame's top-level
+        # dispatch (_render_matrix_canvas_content()) picks up _render_dj_mode()
+        # on its own -- no further action needed here.
+        return
 
     tx, ty, tw, th = TOP_COMBINED
-    sel = state.quiz_selected_index
     is_correct_grade = locked and sel == correct
 
     # Multiplayer "who got it right" -- once graded, replaces the question/
@@ -1038,7 +1105,9 @@ def _draw_answer_choice_panels(choices, correct, sel, locked, t):
         key = f"quiz_choice_{i}"
 
         if i >= len(choices):
-            draw_marquee(matrix_surface, key, "----", rect, align="center")
+            # True/False (and any other <4-choice question) leaves these
+            # panels genuinely blank rather than showing filler dashes.
+            draw_marquee(matrix_surface, key, "", rect, align="center")
             continue
 
         text = choices[i]
@@ -1069,8 +1138,10 @@ def _draw_answer_choice_panels(choices, correct, sel, locked, t):
             # to stay visually distinct from the winning flash).
             draw_marquee(matrix_surface, key, text, rect, color=RED_FULL, invert=True, scroll=scroll)
         elif locked and i == correct:
-            # Reveal the correct answer dimly so the room learns it.
-            draw_marquee(matrix_surface, key, text, rect, color=RED_DIM, invert=True, scroll=scroll)
+            # Reveal the correct answer as blinking (non-inverted) text --
+            # the wrong pick (above) stays a solid inverted block so the
+            # two read as clearly different things.
+            _draw_correct_answer_flash_text(rect, key, text, t, scroll=scroll)
         elif not locked and i == sel:
             _draw_selected_panel(rect, key, text, scroll=scroll)
         elif not locked and i == correct and state.quiz_is_test:

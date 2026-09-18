@@ -573,8 +573,19 @@ def handle_normal_trivia_button():
         # this track -- skip the QUIZ_GATE_EMPTY_CACHE_TIMEOUT_SECONDS wait
         # entirely and go straight to the offline fallback question.
         title, artist = _current_dj_track()
-        load_exhausted_fallback_question(title, artist)
         state.quiz_gate_status = "idle"
+        # 2026-09-18: load_exhausted_fallback_question() no longer
+        # fabricates fake content when even fallback_questions.json is
+        # unavailable -- it returns None instead, and we must NOT enter
+        # Game Mode in that case (see factoid_engine.py::
+        # load_forced_fallback_question()'s docstring for why). Same
+        # "notify, stay put" shape as _process_quiz_gate()'s own timeout
+        # tripwire below.
+        if load_exhausted_fallback_question(title, artist) is None:
+            print(f"[BUTTON ERROR] Btn2 -> '{key}' AI_EXHAUSTED, but the offline fallback bank is also "
+                  f"unavailable -- staying in DJ_MODE rather than showing a placeholder question.")
+            state.set_message("NO QUESTION READY -- TRY AGAIN", 1.5)
+            return
         state.mode = state.MODE_GAME
         state.set_message("QUIZ MODE (OFFLINE)", 1.2)
         print(f"[BUTTON] Btn2 -> '{key}' AI_EXHAUSTED -> offline fallback -> GAME_MODE")
@@ -697,8 +708,15 @@ def _process_quiz_gate():
         # The track went AI_EXHAUSTED while we were waiting -- don't sit out
         # the full timeout window, fall back offline right away.
         title, artist = _current_dj_track()
-        load_exhausted_fallback_question(title, artist)
         state.quiz_gate_status = "idle"
+        # See the matching comment on the other load_exhausted_fallback_
+        # question() call site above -- None means even the offline bank
+        # is unavailable, don't enter Game Mode with nothing to show.
+        if load_exhausted_fallback_question(title, artist) is None:
+            print(f"[BUTTON ERROR] Btn2 wait -> '{state.quiz_gate_key}' went AI_EXHAUSTED, but the offline "
+                  f"fallback bank is also unavailable -- staying in DJ_MODE.")
+            state.set_message("NO QUESTION READY -- TRY AGAIN", 1.5)
+            return
         state.mode = state.MODE_GAME
         state.set_message("QUIZ MODE (OFFLINE)", 1.2)
         print(f"[BUTTON] Btn2 wait -> '{state.quiz_gate_key}' went AI_EXHAUSTED -> offline fallback -> GAME_MODE")
@@ -1332,19 +1350,26 @@ def _process_space_invaders_movement():
 # ------------------------------------------
 # PANEL LEDS FOR LIVE MULTIPLE-CHOICE QUESTIONS (2026-09-18)
 # ------------------------------------------
-_panel_leds_on = False
+_panel_led_state = (False, False, False, False)
 
 
 def _sync_panel_leds():
-    """Per-frame poll: lights all 4 panel LEDs together whenever a
-    multiple-choice question is currently answerable via those same 4
-    buttons, dark otherwise. Reuses drivers/live_round_engine.py::
-    is_round_active() -- the exact same condition that already gates
-    whether pressing one of these buttons does anything (drivers/
-    simon_engine.py::poll_hardware()), so this doesn't invent new state,
-    it just makes the LEDs agree with what the buttons already do --
-    covers ordinary GAME_MODE questions and the Mystery Band teaser
-    (still MODE_DJ) alike, correctly excludes Price Game.
+    """Per-frame poll: lights exactly as many panel LEDs as there are real
+    choices for the currently-answerable question, dark otherwise. Reuses
+    drivers/live_round_engine.py::is_round_active() -- the exact same
+    condition that already gates whether pressing one of these buttons
+    does anything (drivers/simon_engine.py::poll_hardware()), so this
+    doesn't invent new state, it just makes the LEDs agree with what the
+    buttons already do -- covers ordinary GAME_MODE questions and the
+    Mystery Band teaser (still MODE_DJ) alike, correctly excludes Price
+    Game.
+
+    Per-choice-count (2026-09-18 fix): a True/False question only
+    populates state.factoid_choices[0:2] ("True"/"False") -- lighting all
+    4 LEDs made yellow/blue look answerable when those buttons are
+    inactive. Zips config.SIMON_HW_COLOR_ORDER against len(factoid_choices)
+    directly rather than special-casing True/False, so it's correct for
+    any future <4-choice question type too.
 
     Skips entirely during MODE_SIMON -- drivers/simon_engine.py already
     owns these same LEDs for the mini-game's own pulse/hold sequences,
@@ -1352,17 +1377,19 @@ def _sync_panel_leds():
     naturally mutually exclusive; this just stays out of the way rather
     than racing simon_engine.py's own set_led()/pulse_led() calls.
 
-    Edge-triggered (_panel_leds_on tracks the last state actually sent)
-    so this doesn't spam redundant GPIO writes every frame -- same "cheap
-    no-op unless changed" convention used elsewhere in this app (e.g.
-    drivers/wled_engine.py's own sync_to_show_state())."""
-    global _panel_leds_on
+    Edge-triggered (_panel_led_state tracks the last per-color state
+    actually sent) so this doesn't spam redundant GPIO writes every frame
+    -- same "cheap no-op unless changed" convention used elsewhere in this
+    app (e.g. drivers/wled_engine.py's own sync_to_show_state())."""
+    global _panel_led_state
     if state.mode == state.MODE_SIMON:
         return
-    should_be_on = live_round_engine.is_round_active()
-    if should_be_on != _panel_leds_on:
-        simon_hardware.set_all_leds(should_be_on)
-        _panel_leds_on = should_be_on
+    choice_count = len(state.factoid_choices) if live_round_engine.is_round_active() else 0
+    desired = tuple(i < choice_count for i in range(len(config.SIMON_HW_COLOR_ORDER)))
+    if desired != _panel_led_state:
+        for color, on in zip(config.SIMON_HW_COLOR_ORDER, desired):
+            simon_hardware.set_led(color, on)
+        _panel_led_state = desired
 
 
 # ------------------------------------------

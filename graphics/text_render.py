@@ -92,6 +92,24 @@ def get_scroll_offset(key, text, box_width, speed=None, pause=None):
         return scroll_distance
 
 
+def scroll_pass_duration(text, box_width, speed=None, pause=None):
+    """How long ONE full pause->scroll->pause cycle of get_scroll_offset()
+    takes for this text/box_width -- i.e. how long a caller must hold a
+    display for the room to read the entire text once, start to finish,
+    rather than guessing a flat duration that might cut a long line off
+    mid-scroll or hold a short one open far longer than necessary. Returns
+    0 if the text already fits without scrolling (matches get_scroll_
+    offset's own "no scroll needed" case)."""
+    speed = speed or SCROLL_SPEED_PX_PER_SEC
+    pause = SCROLL_PAUSE_SECONDS if pause is None else pause
+    tw = text_width(text)
+    if tw <= box_width:
+        return 0
+    scroll_distance = tw - box_width + TRAIL_GAP
+    scroll_time = scroll_distance / speed
+    return pause * 2 + scroll_time
+
+
 def draw_marquee(surface, key, text, rect, color=RED_FULL, invert=False, align="left",
                  scroll=True):
     """Draws one line of text clipped/scrolled to fit `rect` = (x, y, w, h).
