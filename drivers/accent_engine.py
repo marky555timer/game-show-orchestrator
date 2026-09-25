@@ -128,6 +128,13 @@ _manual_override = None  # None (auto-sync) or "top"/"all" while a manual movie-
 _last_sent_look = None  # (fx, r, g, b, sx) tuple last actually sent, so sync_to_show_state() only sends on real change
 _pending_override = None  # (due_time, payload) preset color override waiting on its preset to load -- see _send_preset()
 _preset_segments_active = False  # True once the board may be split into several segments -- see _with_segment_reset()
+_last_sent_bri = None  # top-level brightness last actually sent -- tracked independently of _last_sent_look (see
+# sync_to_show_state()) since brightness is a single global dial that applies uniformly whether the board is
+# currently showing a raw effect or a preset, unlike fx/col/sx which differ per look.
+_last_sent_preset_speed = None  # sx last applied to a preset's segments -- tracked separately since the
+# ("preset", id, color_index) look tuple doesn't include speed (a raw look's sx lives in the tuple itself and so
+# is already covered by the normal look-changed check), so a live speed nudge while a preset stays selected needs
+# its own comparison.
 
 # Btn9 feature-select confirmation flash (inputs/gamepad.py::
 # handle_feature_select) and any future win/loss-style trigger -- mirrors
@@ -225,8 +232,16 @@ def sync_to_show_state():
     Does nothing while a manual movie-chase test (set_movie_chase()) is
     active, or while a flash() confirmation is still showing; resume_auto_
     sync() (or another set_movie_chase() call) clears the former, the
-    latter clears on its own once _flash_until passes."""
-    global _last_sent_look, _pending_override
+    latter clears on its own once _flash_until passes.
+
+    Brightness (state.accent_brightness) is checked independently of the
+    look, on every call -- so nudging the live brightness slider takes
+    effect on the very next frame even if nothing else about the look
+    changed. A look change also forces a brightness resend (see
+    _last_sent_bri reset below): loading a WLED preset applies that
+    preset's own saved brightness, silently overriding whatever the
+    operator last set, so the override has to be reasserted right after."""
+    global _last_sent_look, _pending_override, _last_sent_bri, _last_sent_preset_speed
     now = time.time()
     if now < _flash_until:
         return
@@ -236,22 +251,39 @@ def sync_to_show_state():
         _send(_pending_override[1])
         _pending_override = None
     look = _target_look()
-    if look == _last_sent_look:
-        return
-    _pending_override = None  # a look change supersedes any not-yet-sent override for the old one
-    if look[0] == "preset":
-        _send_preset(look[1], look[2])
+    if look != _last_sent_look:
+        _pending_override = None  # a look change supersedes any not-yet-sent override for the old one
+        if look[0] == "preset":
+            _send_preset(look[1], look[2])
+        else:
+            fx, r, g, b, sx, r2, g2, b2 = look
+            if r is None:  # accent_sound_enabled sentinel -- select the effect once, nothing else
+                seg = {"fx": fx}
+            elif r2 is None:
+                seg = {"fx": fx, "col": [[r, g, b]], "sx": sx}
+            else:
+                seg = {"fx": fx, "col": [[r, g, b], [r2, g2, b2]], "sx": sx}
+            _send({"seg": _with_segment_reset(seg)})
         _last_sent_look = look
-        return
-    fx, r, g, b, sx, r2, g2, b2 = look
-    if r is None:  # accent_sound_enabled sentinel -- select the effect once, nothing else
-        seg = {"fx": fx}
-    elif r2 is None:
-        seg = {"fx": fx, "col": [[r, g, b]], "sx": sx}
-    else:
-        seg = {"fx": fx, "col": [[r, g, b], [r2, g2, b2]], "sx": sx}
-    _send({"seg": _with_segment_reset(seg)})
-    _last_sent_look = look
+        _last_sent_bri = None  # force the brightness check below to resend -- see docstring
+    elif look[0] == "preset":
+        # Preset unchanged since last frame -- a color-override change would have shown up as a different
+        # look tuple above (color_index is part of it) and already been handled, so this only needs to catch
+        # a live speed nudge, sent straight away (no ACCENT_PRESET_OVERRIDE_DELAY_SECONDS wait -- that delay
+        # exists only for the color overlay racing a fresh preset *load*, not for tweaking an already-settled
+        # one). Narrow edge case: nudging speed within that same delay window of a fresh preset load can let
+        # the still-pending initial-load payload (captured at the old speed) land after this one and silently
+        # revert the board to the stale value -- self-corrects on the next speed touch, not worth the extra
+        # bookkeeping to close.
+        sx = max(0, min(255, state.accent_speed))
+        if sx != _last_sent_preset_speed:
+            targets = sorted({0, *(config.ACCENT_PRESET_OVERRIDE_TARGETS.get(look[1]) or [])})
+            _send({"seg": [{"id": sid, "sx": sx} for sid in targets]})
+            _last_sent_preset_speed = sx
+    bri = max(0, min(255, state.accent_brightness))
+    if bri != _last_sent_bri:
+        _send({"bri": bri})
+        _last_sent_bri = bri
 
 
 def _with_segment_reset(seg):
@@ -271,23 +303,37 @@ def _with_segment_reset(seg):
 
 def _send_preset(preset_id, color_index):
     """Loads one of the board's own saved WLED presets (config.
-    ACCENT_PRESETS), optionally recoloring its config.
+    ACCENT_PRESETS), applying the current state.accent_speed to its known
+    segments and optionally recoloring its config.
     ACCENT_PRESET_OVERRIDE_TARGETS segments to a DJ_COLOR_PALETTE entry.
     WLED applies "ps" asynchronously and drops the rest of that request, so
-    the override can't ride along in the same payload -- it's queued in
-    _pending_override for sync_to_show_state() to send once
-    config.ACCENT_PRESET_OVERRIDE_DELAY_SECONDS have passed (and _send()'s
-    single pending slot means it couldn't just be a second back-to-back
-    _send() either; the second would overwrite the first)."""
-    global _pending_override, _preset_segments_active
+    neither can ride along in the same payload -- both are queued in
+    _pending_override, combined into one follow-up request, for
+    sync_to_show_state() to send once config.
+    ACCENT_PRESET_OVERRIDE_DELAY_SECONDS have passed (and _send()'s single
+    pending slot means it couldn't just be two back-to-back _send() calls
+    either; the second would overwrite the first).
+
+    Segment 0 always exists on every preset (it's the strip's base
+    segment); ACCENT_PRESET_OVERRIDE_TARGETS' segments are added on top for
+    presets that have them (Fire1/Fire2's 1-3). Presets with segments
+    outside that set (e.g. Neon lust's un-catalogued extra zones) only get
+    the speed applied to the segments this module actually knows about --
+    see config.ACCENT_PRESET_OVERRIDE_TARGETS' header comment."""
+    global _pending_override, _preset_segments_active, _last_sent_preset_speed
     _send({"ps": preset_id})
     _preset_segments_active = True
+    sx = max(0, min(255, state.accent_speed))
     targets = config.ACCENT_PRESET_OVERRIDE_TARGETS.get(preset_id)
-    if color_index < 0 or not targets:
-        return
-    r, g, b = _palette_rgb(color_index)
-    _pending_override = (time.time() + config.ACCENT_PRESET_OVERRIDE_DELAY_SECONDS,
-                         {"seg": [{"id": sid, "col": [[r, g, b]]} for sid in targets]})
+    speed_targets = sorted({0, *(targets or [])})
+    seg_payload = [{"id": sid, "sx": sx} for sid in speed_targets]
+    if color_index >= 0 and targets:
+        r, g, b = _palette_rgb(color_index)
+        for entry in seg_payload:
+            if entry["id"] in targets:
+                entry["col"] = [[r, g, b]]
+    _pending_override = (time.time() + config.ACCENT_PRESET_OVERRIDE_DELAY_SECONDS, {"seg": seg_payload})
+    _last_sent_preset_speed = sx
 
 
 def flash(r, g, b, duration=None):

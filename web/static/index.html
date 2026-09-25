@@ -400,7 +400,14 @@
       </label>
       <div id="outline-preset-color-swatches" class="color-swatch-picker" style="display:none"></div>
       <label style="display:block;font-size:.85rem;font-weight:700;margin-top:6px">Speed
-        <input type="range" id="accent-speed-slider" min="0" max="255" value="128" onchange="accentSpeedSet(this.value)">
+        <input type="range" id="accent-speed-slider" min="0" max="255" value="128" oninput="accentSpeedSet(this.value)">
+      </label>
+      <!-- Master brightness (2026-09-25) -- top-level WLED "bri", applies
+           whether the board is currently showing a raw effect or a preset
+           (accent_engine.py::sync_to_show_state() pushes it independently
+           of the look). Live-only, not saved per song. -->
+      <label style="display:block;font-size:.85rem;font-weight:700;margin-top:6px">Brightness
+        <input type="range" id="accent-brightness-slider" min="0" max="255" value="180" oninput="accentBrightnessSet(this.value)">
       </label>
       <label style="display:flex;align-items:center;gap:6px;font-size:.85rem;font-weight:700;margin-top:6px">
         <input type="checkbox" id="accent-sound-checkbox" onchange="accentSoundToggle()">
@@ -700,6 +707,7 @@ async function refreshHostPreview() {
 // ------------------------------------------
 let DJ_LOOK_OPTIONS = null;
 let _accentSpeedLoaded = false;  // same "load once, don't fight a live drag" convention as _volumeLoaded
+let _accentBrightnessLoaded = false;  // same convention, for the brightness slider
 
 async function djLookLoadOptions() {
   const d = await api('/api/dj-look/options');
@@ -852,6 +860,10 @@ function djLookPoll() {
       document.getElementById('accent-speed-slider').value = d.accent_speed;
       _accentSpeedLoaded = true;
     }
+    if (!_accentBrightnessLoaded) {
+      document.getElementById('accent-brightness-slider').value = d.accent_brightness;
+      _accentBrightnessLoaded = true;
+    }
   });
 }
 
@@ -879,6 +891,12 @@ function accentOrchestratorToggle() {
 function accentSpeedSet(value) {
   api('/api/accent/speed/set', {
     method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({speed: parseInt(value, 10)}),
+  });
+}
+
+function accentBrightnessSet(value) {
+  api('/api/accent/brightness/set', {
+    method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({brightness: parseInt(value, 10)}),
   });
 }
 

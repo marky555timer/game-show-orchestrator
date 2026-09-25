@@ -158,7 +158,10 @@ class State:
         self.accent_color_index = 0
         self.accent_theme_index = 0
         self.accent_gradient_mode = "off"
-        self.accent_speed = 128  # WLED per-segment "sx" (0-255)
+        self.accent_speed = 128  # WLED per-segment "sx" (0-255) -- applies to both the raw effect and, since
+        # 2026-09-25, a preset's known segments (drivers/accent_engine.py::_send_preset())
+        self.accent_brightness = 180  # WLED top-level "bri" (0-255) -- live-only master dimmer, not saved per
+        # song (same as accent_speed/accent_sound_enabled); applies uniformly whether raw or preset
         self.accent_sound_enabled = False  # True = let WLED's own AudioReactive effect run
         self.accent_preset_id = -1  # WLED saved-preset id (config.ACCENT_PRESETS), -1 = none, use the raw effect/color above
         self.accent_preset_color_index = -1  # DJ_COLOR_PALETTE override for the preset's segments, -1 = preset's own colors

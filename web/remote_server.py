@@ -143,6 +143,9 @@ if app is not None:
     class AccentSpeedSet(BaseModel):
         speed: int
 
+    class AccentBrightnessSet(BaseModel):
+        brightness: int
+
     class AccentPresetSet(BaseModel):
         preset_id: int
         color_index: int | None = None
@@ -1221,6 +1224,7 @@ if app is not None:
                         "gradient_mode": state.accent_gradient_mode},
             "blank_lower_marquees": state.blank_lower_marquees,
             "accent_speed": state.accent_speed,
+            "accent_brightness": state.accent_brightness,
             "accent_sound_enabled": state.accent_sound_enabled,
             "accent_orchestrator_enabled": state.accent_orchestrator_enabled,
             "accent_preset_id": state.accent_preset_id,
@@ -1292,6 +1296,15 @@ if app is not None:
     def accent_speed_set(body: AccentSpeedSet):
         state.accent_speed = max(0, min(255, body.speed))
         return {"ok": True, "accent_speed": state.accent_speed}
+
+    # Live master-brightness dimmer (2026-09-25) -- same live-only,
+    # not-saved-per-song convention as accent_speed above; applies whether
+    # the board is currently showing a raw effect or a preset (see
+    # accent_engine.py::sync_to_show_state()'s independent brightness check).
+    @app.post("/api/accent/brightness/set")
+    def accent_brightness_set(body: AccentBrightnessSet):
+        state.accent_brightness = max(0, min(255, body.brightness))
+        return {"ok": True, "accent_brightness": state.accent_brightness}
 
     # Relay hardware bring-up/test (2026-08-23): fires the same one-shot
     # pulse_channel() the live BIG WIN trigger uses, but standalone -- lets
