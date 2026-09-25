@@ -194,8 +194,20 @@ def _verify_candidate_mac(device):
     MAC matches config.MARQUEE_WLED_MAC. Always releases the placeholder
     hold itself, whether matched or not; _try_connect_serial() re-holds
     properly under "wled_engine" once _find_esp32_port() sees a True
-    result and returns this device."""
+    result and returns this device.
+
+    2026-09-21 fix: a probe that raises (serial hiccup, or a truncated/
+    malformed read racing another module's own probe of the same port --
+    confirmed live, "Unterminated string" JSON errors during a cold-boot
+    port scramble) used to fall through to `_mac_verify_result[device] =
+    False`, PERMANENTLY ruling the port out for the rest of the session --
+    even if it's genuinely this board and the failure was just bad timing.
+    Only a probe that actually completes and parses a reply now records a
+    result at all; anything inconclusive leaves the port unrecorded so a
+    later rescan gets a fresh attempt instead of a false-permanent
+    rejection."""
     matched = False
+    probed_ok = False
     try:
         probe = serial.Serial(device, baudrate=_SERIAL_BAUD, timeout=0.5, dsrdtr=False, rtscts=False)
         probe.dtr = False
@@ -212,11 +224,15 @@ def _verify_candidate_mac(device):
             if line.startswith("{"):
                 mac = json.loads(line).get("info", {}).get("mac")
                 matched = (mac == config.MARQUEE_WLED_MAC)
+                probed_ok = True
                 break
     except Exception as e:
         print(f"[WLED] MAC verify probe of {device} failed: {e}")
     serial_ports.release(device)
-    _mac_verify_result[device] = matched
+    if probed_ok:
+        _mac_verify_result[device] = matched
+    else:
+        _mac_verify_result.pop(device, None)
 
 
 def _try_connect_serial():
@@ -235,6 +251,9 @@ def _try_connect_serial():
         # port stays open.
         _serial_link.dtr = False
         _serial_link.rts = False
+        # Also doubles as the proactive-reconnect clock's reference point
+        # (_PROACTIVE_RECONNECT_INTERVAL_S below) -- each fresh connection
+        # gets its own full interval before that timer fires again.
         _serial_connect_time = time.monotonic()
         serial_ports.hold(device, "wled_engine")
         print(f"[WLED] Connected over serial on {device} (confirmed by MAC).")
@@ -317,15 +336,24 @@ threading.Thread(target=_ddp_sender_loop, daemon=True, name="wled-ddp-sender").s
 
 
 def _fail_serial_link(link, error):
-    """Shared teardown for a serial link that just failed a write, called
-    from _serial_sender_loop's own thread. Guards against clobbering a
+    """Shared teardown for a serial link that just failed a write (or hit
+    its proactive periodic reconnect below), called from
+    _serial_sender_loop's own thread. Guards against clobbering a
     *different*, newer connection: _try_connect_serial() runs on the main
     thread and could in principle reconnect while a stale write from the
     old link is still unwinding here (e.g. it was blocked for a while
     before finally raising) -- only clear the shared _serial_link if it's
-    still pointing at the exact object that just failed."""
+    still pointing at the exact object that just failed.
+
+    Closing and re-opening the port (which _try_connect_serial() does on
+    its own next pass, same as any other reconnect) is what actually
+    recovers a wedged board here -- opening a pyserial port on this
+    hardware resets the ESP32 via the RTS-wired auto-reset circuit (see
+    _try_connect_serial()'s own dtr/rts comment), the same effect a manual
+    power cycle has, just triggered from code instead of a hand on the
+    plug."""
     global _serial_link
-    print(f"[WLED] Serial write failed ({error}); falling back to WiFi DDP.")
+    print(f"[WLED] Serial link failed ({error}); falling back to WiFi DDP.")
     device = link.port
     try:
         link.close()
@@ -336,10 +364,64 @@ def _fail_serial_link(link, error):
         _serial_link = None
 
 
+# Proactive periodic reconnect (2026-09-20, confirmed live: this rig's
+# marquee ESP32 crashed/reset entirely independently of the Pi -- its own
+# WLED firmware came back up sitting on its default boot-preset color
+# ("live" stuck false, exactly the symptom this module's own docstring
+# already describes from the 2026-09-02 debug-firmware incident) while
+# this module kept blindly streaming valid, changing Adalight frames into
+# a UART nothing was reading correctly anymore. link.write() succeeding
+# only proves the OS handed bytes to the port -- it says nothing about
+# whether the ESP32 on the other end is actually parsing them, and unlike
+# led_bridge.py's link to our own Display.ino firmware, there was no
+# proof-of-life check at all here once the initial connection was made.
+#
+# An earlier version of this fix tried to actively verify liveness with
+# WLED's own '{"v":true}' JSON query (the same one _verify_candidate_mac()
+# already sends at connect time), repeated periodically. Live-tested and
+# reverted the same night: it reported "not live" 100% of the time, even
+# seconds after a fresh reconnect with a confirmed-healthy board (verified
+# by eye) still streaming continuously -- consistent with WLED's serial
+# handler simply not answering JSON commands while it's busy consuming the
+# realtime Adalight stream, which would make that technique unable to ever
+# see a healthy reply regardless of actual board state. Chasing that
+# further would mean guessing at WLED firmware internals with no way to
+# verify against the real hardware except by repeatedly disrupting a live
+# rig, so this takes a dumber but verifiably-safe approach instead: since
+# a full reconnect is already known to reset the chip (the same effect a
+# manual power cycle had), just do that on a fixed timer regardless of any
+# health signal -- no detection to get wrong, and a real wedge can never
+# persist longer than one interval before self-healing. Costs a brief
+# (~_SERIAL_BOOT_SETTLE_S) visible reset blip every interval even when
+# nothing was wrong, which is the accepted tradeoff (2026-09-20, operator
+# choice) for guaranteed bounded recovery during unattended operation.
+#
+# Interval dropped from an initial 10 minutes to 90 seconds the same night
+# (2026-09-20), confirmed live: the board wedged again on its own only
+# ~7 minutes into a completely fresh process, well before the original
+# 10-minute timer would ever have fired -- the real-world wedge frequency
+# is clearly higher than first assumed, so bounding recovery to 10 minutes
+# wasn't actually satisfying "must never freeze" in practice. 90s keeps any
+# future wedge to a brief, easy-to-miss blip instead of a multi-minute
+# outage someone has to notice and report.
+# TEMPORARY DIAGNOSTIC (2026-09-21): bumped from 90.0 to effectively "off"
+# to find out whether the board actually still wedges on its own, or
+# whether every visible reset blip so far has just been this timer firing
+# on schedule regardless of need. Revert to 90.0 once that's answered --
+# this removes the bounded-recovery guarantee for as long as it's this
+# high, so don't leave it here for a real unattended show.
+_PROACTIVE_RECONNECT_INTERVAL_S = 999999.0
+
+
 def _serial_sender_loop():
     """Runs forever on its own daemon thread, started once at import -- same
     pattern as _ddp_sender_loop above, just for the serial write instead of
-    the UDP send. See _serial_pending's declaration for why this exists."""
+    the UDP send. See _serial_pending's declaration for why this exists.
+    Also runs the proactive periodic reconnect (_PROACTIVE_RECONNECT_
+    INTERVAL_S above) on this same thread -- it needs the same exclusive
+    access to `link` that frame writes already have here, so piggybacking
+    on this loop avoids a second thread contending for the same serial
+    connection."""
     global _serial_pending
     while True:
         _serial_send_ready.wait()
@@ -354,6 +436,9 @@ def _serial_sender_loop():
             link.write(frame)
         except Exception as e:
             _fail_serial_link(link, e)
+            continue
+        if time.monotonic() - _serial_connect_time >= _PROACTIVE_RECONNECT_INTERVAL_S:
+            _fail_serial_link(link, f"proactive reconnect ({_PROACTIVE_RECONNECT_INTERVAL_S:.0f}s interval)")
 
 
 threading.Thread(target=_serial_sender_loop, daemon=True, name="wled-serial-sender").start()
@@ -778,11 +863,13 @@ def _steady_panel_color(color_name):
     return r * scale, g * scale, b * scale
 
 
-# Blue (last-revealed) panel reveal flourish (2026-09-18): once the other
-# 3 panels have gone steady, panel index 3 ("blue" in config.SIMON_HW_
-# COLOR_ORDER) keeps running its cascade-chase animation this much longer
-# before settling to the same dimmed, pulsing steady look as the rest.
-_BLUE_PANEL_EXTRA_CHASE_SECONDS = 3.0
+# Final-reveal hold (2026-09-18, redesigned 2026-09-18): once every choice
+# has cascaded in, ALL revealed panels keep chasing together for this long
+# before settling in unison to the dimmed, pulsing steady look. Earlier
+# version singled out just the last-revealed ("blue") panel to keep
+# chasing solo for 3s while the rest had already gone steady -- that read
+# as blue being flagged as the answer, and held far too long besides.
+_FINAL_REVEAL_HOLD_SECONDS = 1.0
 
 
 def _double_pulse_level(now, period=3.0, floor=2 / 3):
@@ -896,17 +983,17 @@ def _apply_mystery_marquee(now):
                 set_segment(name, 0, 0, 0)
     else:  # "done" -- resolved (graded or timed out), still mystery_active (blink hold)
         set_segment("title", 0, 0, 0)
-        # Blue (panel index 3, the last one to cascade in) keeps chasing
-        # _BLUE_PANEL_EXTRA_CHASE_SECONDS past its own natural reveal
-        # instant -- computed directly rather than read from `stage`/
-        # `revealed` above, since those already say "done" the moment
-        # this branch is reached even if grading happened early.
+        # All 4 panels finish their cascade together and keep chasing in
+        # unison for _FINAL_REVEAL_HOLD_SECONDS -- computed directly rather
+        # than read from `stage`/`revealed` above, since those already say
+        # "done" the moment this branch is reached even if grading
+        # happened early.
         reveal_complete_at = (state.mystery_started_at + config.MYSTERY_SPARKLE_SECONDS
                                + config.MYSTERY_SOLID_SECONDS + 4 * config.MYSTERY_CASCADE_STEP_SECONDS)
-        blue_still_chasing = now < reveal_complete_at + _BLUE_PANEL_EXTRA_CHASE_SECONDS
+        still_chasing = now < reveal_complete_at + _FINAL_REVEAL_HOLD_SECONDS
         level = _double_pulse_level(now)
         for i, name in enumerate(_SIMON_PANEL_SEGMENTS):
-            if i == 3 and blue_still_chasing:
+            if still_chasing:
                 r, g, b = config.SIMON_HW_COLOR_RGB[config.SIMON_HW_COLOR_ORDER[i]]
                 _theater_chase_segment(name, now, r, g, b)
             else:
@@ -939,19 +1026,18 @@ def _apply_question_marquee(now):
             else:
                 set_segment(name, 0, 0, 0)
     else:
-        # Blue (panel index 3, the last one to cascade in) keeps chasing
-        # _BLUE_PANEL_EXTRA_CHASE_SECONDS past its own natural reveal
-        # instant -- same treatment as _apply_mystery_marquee's "done"
-        # branch above. Only ever relevant for a full 4-choice question:
-        # for True/False, i == 3 always fails the i < len(choices) check
-        # below and stays dark, same as Task #16's dash/LED fix.
-        reveal_complete_at = state.factoid_question_started_at + 4 * config.QUESTION_CASCADE_STEP_SECONDS
-        blue_still_chasing = now < reveal_complete_at + _BLUE_PANEL_EXTRA_CHASE_SECONDS
+        # All revealed panels finish their cascade together and keep
+        # chasing in unison for _FINAL_REVEAL_HOLD_SECONDS -- same
+        # treatment as _apply_mystery_marquee's "done" branch above.
+        # Uses len(choices) (not a hardcoded 4) so True/False's 2-choice
+        # timing lines up with question_reveal_count()'s own math.
+        reveal_complete_at = state.factoid_question_started_at + len(choices) * config.QUESTION_CASCADE_STEP_SECONDS
+        still_chasing = now < reveal_complete_at + _FINAL_REVEAL_HOLD_SECONDS
         level = _double_pulse_level(now)
         for i, name in enumerate(_SIMON_PANEL_SEGMENTS):
             if i >= len(choices):
                 set_segment(name, 0, 0, 0)
-            elif i == 3 and blue_still_chasing:
+            elif still_chasing:
                 r, g, b = config.SIMON_HW_COLOR_RGB[config.SIMON_HW_COLOR_ORDER[i]]
                 _theater_chase_segment(name, now, r, g, b)
             else:
@@ -980,6 +1066,58 @@ def _apply_wrong_answer_marquee(now):
             set_segment(name, 0, 0, 0)
 
 
+_last_marquee_branch = None
+
+
+def _log_marquee_branch_transition(now):
+    """TEMPORARY DIAGNOSTIC (2026-09-24): logs which branch of update()'s
+    dispatch below actually fires, on transition only, to catch a reported
+    bug -- panels 5/6 render blank text (correct for a 2-choice question)
+    but their marquee segments stay lit as if still showing a 4-choice
+    question. Mirrors the exact same condition order as the real dispatch
+    below, purely for observation -- remove once the mechanism is
+    confirmed and fixed."""
+    global _last_marquee_branch
+    if time.time() < _flash_until:
+        branch = "flash"
+    elif state.show_phase in ("setup", "countdown", "dark"):
+        branch = f"show_phase={state.show_phase}"
+    elif state.show_phase == "intro":
+        branch = "intro"
+    elif state.show_phase == "outro":
+        branch = "outro"
+    elif state.westminster_active:
+        branch = "westminster"
+    elif state.mode == state.MODE_SIMON:
+        branch = "simon"
+    elif _in_get_ready_banner(now):
+        branch = "get_ready"
+    elif state.mystery_active:
+        branch = "mystery"
+    elif (state.mode == state.MODE_GAME and state.quiz_locked and not state.quiz_players
+          and state.factoid_choices
+          and (state.quiz_selected_index == state.factoid_correct_index or state.round_timed_out)):
+        branch = "correct_celebration"
+    elif state.mode == state.MODE_DJ and not state.price_game_active:
+        branch = "dj_dance"
+    elif live_round_engine.is_round_active():
+        branch = "question_marquee"
+    elif (state.mode == state.MODE_GAME and state.quiz_locked and not state.quiz_players
+          and state.factoid_choices
+          and state.quiz_selected_index != state.factoid_correct_index
+          and now - state.quiz_graded_at < config.QUIZ_WRONG_ANSWER_HOLD_SECONDS):
+        branch = "wrong_answer"
+    else:
+        branch = "game_chase"
+
+    if branch != _last_marquee_branch:
+        print(f"[WLED DEBUG] marquee branch: {_last_marquee_branch} -> {branch} "
+              f"(mode={state.mode!r}, mystery_active={state.mystery_active}, "
+              f"choices={len(state.factoid_choices)}, quiz_locked={state.quiz_locked}, "
+              f"round_active={live_round_engine.is_round_active()})")
+        _last_marquee_branch = branch
+
+
 def update(now):
     """Per-frame effects dispatch, called once per frame from main.py right
     before render(). Mirrors drivers/lighting_engine.py's show-phase
@@ -992,6 +1130,7 @@ def update(now):
     is what makes the marquee snap to the game chase the INSTANT Price
     Game starts -- see config.py's MARQUEE_GAME_* comment for why mode
     alone left a ~3.5s lag."""
+    _log_marquee_branch_transition(now)
     if time.time() < _flash_until:
         fill(*_flash_color)
     else:
@@ -1010,18 +1149,27 @@ def update(now):
             _apply_get_ready_marquee(now)
         elif state.mystery_active:
             _apply_mystery_marquee(now)
-        elif state.mystery_panel_win_active:
-            # Solo "Who is this?" answered correctly via a physical panel
-            # button (2026-09-17): mirrors graphics/matrix_canvas.py::
-            # _render_mystery_panel_win() -- by the time this flag is set,
-            # state.mode has already flipped to MODE_GAME and mystery_
-            # active has already cleared (inputs/gamepad.py::
-            # _maybe_advance_from_mystery_grade(), same frame as the grade
-            # itself), so this needs its own branch here rather than
-            # folding into _apply_mystery_marquee() above, which never
-            # actually runs for this case.
+        elif (state.mode == state.MODE_GAME and state.quiz_locked and not state.quiz_players
+              and state.factoid_choices
+              and (state.quiz_selected_index == state.factoid_correct_index or state.round_timed_out)):
+            # Follow-up question graded CORRECT (any path -- panel button,
+            # joystick, or a timeout that happened to land on the right
+            # pick) or ended via TIMEOUT at all, right or wrong (2026-09-18,
+            # generalized from a panel-button-correct-only flag): top strip
+            # chases white with the correct answer's own text (graphics/
+            # matrix_canvas.py's matching redesign). Panels 3-6 (2026-09-18
+            # redesign): the correct answer's own segment stays lit,
+            # chasing in ITS OWN button color instead of going dark with
+            # the rest, so the room can see which square it was, not just
+            # read the bare text up top; the other three go dark.
             _theater_chase_segment("title", now, 255, 255, 255)
-            _blackout_lower_panels()
+            correct = state.factoid_correct_index
+            for i, name in enumerate(_SIMON_PANEL_SEGMENTS):
+                if i == correct:
+                    r, g, b = config.SIMON_HW_COLOR_RGB[config.SIMON_HW_COLOR_ORDER[i]]
+                    _theater_chase_segment(name, now, r, g, b)
+                else:
+                    set_segment(name, 0, 0, 0)
         elif state.mode == state.MODE_DJ and not state.price_game_active:
             _apply_dj_dance(now)
             if state.blank_lower_marquees:

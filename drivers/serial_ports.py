@@ -18,16 +18,28 @@ can never do better than a guess on its own.
 
 That's why this module has a `hold`/`release` pair (soft, mutual "don't
 open what the other one already has") plus a one-way `reject`/
-`rejected_port` signal that only led_bridge.py ever writes to:  once it's
+`rejected_ports` signal that only led_bridge.py ever writes to: once it's
 opened a port and proven -- by timeout, see led_bridge._NEVER_READY_TIMEOUT_S
--- that it's NOT Display.ino, that's positive proof (given only two boards
-on config.ESP32_USB_SERIAL_VID_PIDS exist on this rig) that the port must
-be the marquee board, and wled_engine.py treats it that way: taking it
-over even if that means dropping a port it had only ever guessed at.
+-- that it's NOT Display.ino, led_bridge.py de-prioritizes it on future
+scans so it doesn't keep re-trying a port it already knows is wrong.
+
+2026-09-21 fix: `reject`/`rejected_ports` used to be a single overwritable
+slot ("the one most-recently-rejected port"), not a set -- reasonable when
+only two boards could ever share config.ESP32_USB_SERIAL_VID_PIDS (this
+module's original two-board design, see history above), but with a third
+CP2102 board (accent) now on the rig, each new rejection made the module
+"forget" the previous one, and led_bridge.py's own candidate scan (which
+only ever de-prioritizes, never permanently excludes, a rejected port)
+would immediately re-try it -- confirmed live as an endless two-port
+ping-pong (led_bridge rejects port A, tries port B, rejects port B
+-- forgetting A was ever rejected -- tries A again, forever) that never
+gave a third, genuinely-unheld candidate a chance. A real set fixes that:
+every port led_bridge has ever ruled out this session stays de-prioritized
+rather than just the last one.
 """
 
-_holders = {}  # device path -> owner name ("led_bridge"/"wled_engine"), currently open
-_rejected_by_led_bridge = None  # device path led_bridge has proven isn't its board, or None
+_holders = {}  # device path -> owner name ("led_bridge"/"wled_engine"/"accent_engine"), currently open
+_rejected_by_led_bridge = set()  # device paths led_bridge has proven aren't its board
 
 
 def hold(device, owner):
@@ -46,9 +58,8 @@ def held_by(device):
 def reject(device):
     """Called only by led_bridge.py when a connection it opened never
     heartbeats -- see module docstring."""
-    global _rejected_by_led_bridge
-    _rejected_by_led_bridge = device
+    _rejected_by_led_bridge.add(device)
 
 
-def rejected_port():
+def rejected_ports():
     return _rejected_by_led_bridge

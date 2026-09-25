@@ -160,6 +160,7 @@ class State:
         self.accent_gradient_mode = "off"
         self.accent_speed = 128  # WLED per-segment "sx" (0-255)
         self.accent_sound_enabled = False  # True = let WLED's own AudioReactive effect run
+        self.accent_orchestrator_enabled = True  # False = stop sending any commands to the outline board (design presets live in WLED's own app while the show keeps running)
 
         self.dj_selected_feature = "dmx"  # "dmx" | "marquee" | "outline"
         # DMX-side confirm flash for Btn9 (marquee/outline get their own
@@ -272,18 +273,6 @@ class State:
         self.mystery_artist_display = ""    # original-case artist name, for the identify question
         self.mystery_identify_question = None  # prebuilt "who is this" question dict, or None
         self.mystery_reveal_until = 0.0     # reveal-blink window end (set once resolved)
-        # True for the rest of the win-celebration hold once a solo (no
-        # registered players) "Who is this?" round is answered CORRECTLY
-        # via a physical panel button (inputs/gamepad.py::
-        # select_and_grade_quiz_answer(), 2026-09-17) -- graphics/
-        # matrix_canvas.py::_render_mystery_panel_win() and drivers/
-        # wled_engine.py's matching check both key off this to put the
-        # actual artist name + a movie-marquee chase front and center
-        # instead of the normal one-of-four-panels win flash, which didn't
-        # make it obvious what was actually chosen. Reset by drivers/
-        # factoid_engine.py::_apply_active_question() the moment ANY new
-        # question loads.
-        self.mystery_panel_win_active = False
 
         # --- Auto-DJ (Section 4): track-length auto-advance ---
         self.auto_dj_enabled = config.AUTODJ_ENABLED_BY_DEFAULT
@@ -363,6 +352,17 @@ class State:
         self.round_timed_out = False
         self.round_first_answer_at = 0.0
         self.round_winner_initials = []
+        # Manual backup skip (2026-09-18, drivers/simon_engine.py::
+        # poll_hardware()): set True by ANY panel button press while a
+        # graded round is just sitting in its post-grade wait (celebration
+        # hold, correction-text hold, or the stats page) with nothing else
+        # live to score -- graphics/matrix_canvas.py::_render_quiz_mode()
+        # consumes it the very next frame to jump straight past whatever's
+        # left of that wait, in case it's running long (e.g. a True/False
+        # question whose correct answer is False but never got a
+        # correction string back, holding on a bare "FALSE" with nothing
+        # explaining why for the full celebration_hold duration).
+        self.quiz_skip_wait_requested = False
         # player_id of whoever earned the mystery-question first-correct
         # bonus this round ("" most of the time -- only set on the
         # identify_band question, cleared every _grade_multiplayer_round()).
@@ -518,6 +518,19 @@ class State:
         # never computes elapsed time against the Unix epoch. Reset to 0.0
         # any time an operator (physical rig or web remote) does something,
         # or the moment show_phase leaves "setup".
+        #
+        # time.monotonic(), NOT time.time() (2026-09-21 fix): this clock
+        # starts ticking the instant the app launches into Setup, which on a
+        # cold boot is exactly the window a Pi with no RTC battery can still
+        # be running a wrong pre-NTP-sync wall clock. A time.time() step
+        # when NTP corrects it mid-countdown made this fire instantly --
+        # confirmed live, the on-screen "AUTO :NN" countdown never actually
+        # reached zero before the show started. time.monotonic() only ever
+        # advances at real-time pace regardless of wall-clock adjustments,
+        # so it can't be fooled by that jump. graphics/matrix_canvas.py's
+        # _unattended_remaining_seconds() (the on-screen countdown) must use
+        # the same clock or the display and the actual fire condition drift
+        # apart again.
         self.last_operator_interaction_at = 0.0
         # True once SHOW_UNATTENDED_AUTOPLAY_TIMEOUT_SECONDS of Setup-page
         # inactivity auto-started the show -- lets the host tell a real
@@ -596,6 +609,20 @@ class State:
         # (an OS-initiated shutdown is already in progress in that case --
         # the app just needs to exit cleanly, not request a second one).
         self.poweroff_after_exit = False
+        # Admin "RESTART PI" (2026-09-21) -- same idea as poweroff_after_exit
+        # above but `sudo reboot` instead, so the Pi comes back on its own
+        # instead of staying off. Needs its own passwordless sudoers entry
+        # (see pi_deploy/README.md) since the existing one only covers the
+        # exact `/sbin/shutdown -h now` invocation.
+        self.reboot_after_exit = False
+        # "RESTART APP" (2026-09-21, replaces the old unconditional
+        # "SHUTDOWN APP" button on the web remote) -- tells main.py's
+        # teardown block to relaunch itself (os.execv) after the ordinary
+        # app teardown above finishes, instead of just exiting. Lets an
+        # operator recover from a stuck/misbehaving app (e.g. the audio
+        # mixer wedged at boot, see project history) without needing
+        # physical/SSH access to the Pi.
+        self.restart_app_after_exit = False
 
     def set_status(self, msg, duration=2.0):
         self.status_msg = msg

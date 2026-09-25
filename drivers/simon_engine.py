@@ -521,6 +521,21 @@ def poll_hardware(now):
         gamepad.select_and_grade_quiz_answer(config.SIMON_HW_COLOR_ORDER.index(pressed_colors[0]))
         return
 
+    # Backup skip (2026-09-18): a graded round just sitting in its
+    # post-grade wait (celebration hold, correction-text hold, or the
+    # stats page -- is_round_active() above is already False by now, so
+    # this can't collide with scoring a live answer) can occasionally run
+    # far longer than expected, e.g. a True/False question whose correct
+    # answer is False but never got a correction string back from the AI
+    # holds on a bare "FALSE" for the full celebration_hold duration with
+    # nothing explaining why, and no way to move on short of waiting it
+    # out. ANY panel button here flags graphics/matrix_canvas.py::
+    # _render_quiz_mode() to jump straight past whatever's left of the
+    # wait on the very next frame, same as if the hold had simply elapsed.
+    if state.mode == state.MODE_GAME and state.quiz_locked:
+        state.quiz_skip_wait_requested = True
+        return
+
     # Entry (green only, 2026-09-17 -- a single, unambiguous point of
     # entry instead of any of the 4) / next-song (red), from DJ mode, only
     # during a live show and only when nothing else is already taking over

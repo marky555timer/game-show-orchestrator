@@ -1204,6 +1204,7 @@ if app is not None:
             "blank_lower_marquees": state.blank_lower_marquees,
             "accent_speed": state.accent_speed,
             "accent_sound_enabled": state.accent_sound_enabled,
+            "accent_orchestrator_enabled": state.accent_orchestrator_enabled,
         }
 
     @app.get("/api/dj-look/options")
@@ -1232,6 +1233,19 @@ if app is not None:
     def accent_sound_set(body: BoolSet):
         state.accent_sound_enabled = body.enabled
         return {"ok": True, "accent_sound_enabled": state.accent_sound_enabled}
+
+    # Outline-strip "disconnect" toggle (2026-09-25): lets the operator
+    # stop the show from sending the outline board anything at all (auto
+    # per-song sync, grading flash, manual bring-up buttons) while the rest
+    # of the show keeps running -- see accent_engine.set_orchestrator_
+    # enabled()'s docstring for why this goes through a dedicated setter
+    # rather than writing state.accent_orchestrator_enabled directly.
+    # Point is to free the board up for live preset design straight from
+    # WLED's own app while music plays, without this app fighting for it.
+    @app.post("/api/accent/orchestrator/set")
+    def accent_orchestrator_set(body: BoolSet):
+        accent_engine.set_orchestrator_enabled(body.enabled)
+        return {"ok": True, "orchestrator_enabled": state.accent_orchestrator_enabled}
 
     @app.post("/api/accent/speed/set")
     def accent_speed_set(body: AccentSpeedSet):
@@ -1340,7 +1354,8 @@ if app is not None:
     @app.get("/api/accent/status")
     def accent_status():
         return {"ok": True, "available": accent_engine.available(),
-                "current_effect": accent_engine.current_effect()}
+                "current_effect": accent_engine.current_effect(),
+                "orchestrator_enabled": state.accent_orchestrator_enabled}
 
     @app.post("/api/accent/next-effect")
     def accent_next_effect():
@@ -1806,6 +1821,30 @@ if app is not None:
         state.shutdown_reason = "ADMIN POWEROFF (web remote)"
         state.shutdown_requested = True
         state.poweroff_after_exit = True
+        return {"ok": True}
+
+    @app.post("/api/system/reboot")
+    def system_reboot():
+        # Same shape as poweroff above (`sudo reboot` instead of `shutdown
+        # -h now`, its own separate passwordless sudoers entry -- see
+        # pi_deploy/README.md), so the Pi comes back up on its own.
+        print("[WEB REMOTE] RESTART PI (admin) requested via web remote.")
+        state.shutdown_reason = "ADMIN REBOOT (web remote)"
+        state.shutdown_requested = True
+        state.reboot_after_exit = True
+        return {"ok": True}
+
+    @app.post("/api/system/restart-app")
+    def system_restart_app():
+        # Same graceful teardown/main-thread-flag pattern as SHUTDOWN APP,
+        # but main.py's teardown block re-execs itself afterward (see
+        # state.restart_app_after_exit's own comment) instead of leaving the
+        # process exited -- recovers a stuck/misbehaving app without needing
+        # physical/SSH access to the Pi.
+        print("[WEB REMOTE] RESTART APP (admin) requested via web remote.")
+        state.shutdown_reason = "ADMIN RESTART APP (web remote)"
+        state.shutdown_requested = True
+        state.restart_app_after_exit = True
         return {"ok": True}
 
     @app.post("/api/system/reconnect-gamepad")

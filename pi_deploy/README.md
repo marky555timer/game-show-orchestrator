@@ -26,26 +26,33 @@ lives directly in the Pi's own `config.py`, not tracked separately here.
 Audio (`audio/music/`) is gitignored and lives on the device only --
 transfer it separately (tar over ssh, or a USB drive), not via git.
 
-## Admin "SHUT DOWN PI" (real poweroff, not just the app)
+## Admin "SHUT DOWN PI" / "RESTART PI" (real poweroff/reboot, not just the app)
 
-The web remote's existing "SHUTDOWN APP" button only exits the Python
-process -- the Pi stays powered and logged in. The separate "SHUT DOWN PI"
-button under Application > Administrator (`/api/system/poweroff`) runs the
-same graceful app teardown and then has `main.py` shell out to
-`sudo shutdown -h now`. That requires a one-time passwordless sudoers
-entry on the Pi, since the app runs as `mark` under the desktop autostart
+The web remote's "RESTART APP" button (Application section, top-level --
+2026-09-21, replaces the old unconditional "SHUTDOWN APP") just exits and
+relaunches the Python process (`os.execv`, see main.py's teardown block) --
+no sudoers needed. The two buttons under Application > Administrator go
+further and touch the Pi itself:
+
+- "SHUT DOWN PI" (`/api/system/poweroff`) -- `sudo shutdown -h now`
+- "RESTART PI" (`/api/system/reboot`) -- `sudo reboot`
+
+Both run the same graceful app teardown first, then `main.py` shells out to
+the command above. Each needs its own one-time passwordless sudoers entry
+on the Pi, since the app runs as `mark` under the desktop autostart
 session, not root:
 
 ```
 sudo visudo -f /etc/sudoers.d/game-show-orchestrator
 ```
-add the single line:
+add both lines:
 ```
 mark ALL=(root) NOPASSWD: /sbin/shutdown -h now
+mark ALL=(root) NOPASSWD: /sbin/reboot
 ```
-Without this, the button's teardown still runs (cache save, DMX blackout)
-but the final poweroff step fails and just logs a line to startup.log
-instead of powering off.
+Without the matching line, that button's teardown still runs (cache save,
+DMX blackout) but the final poweroff/reboot step fails and just logs a
+line to startup.log instead of actually powering off/rebooting.
 
 ## Exterior shutdown/power button (GPIO3, no custom wiring code needed)
 

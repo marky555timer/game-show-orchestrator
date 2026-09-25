@@ -398,6 +398,10 @@
         <input type="checkbox" id="accent-sound-checkbox" onchange="accentSoundToggle()">
         Sound-reactive (let the strip's own AudioReactive effect run)
       </label>
+      <label style="display:flex;align-items:center;gap:6px;font-size:.85rem;font-weight:700;margin-top:6px">
+        <input type="checkbox" id="accent-orchestrator-checkbox" checked onchange="accentOrchestratorToggle()">
+        Show controls outline strip (uncheck to design presets live in WLED's own app)
+      </label>
 
       <div class="subhead">Idle Animation Theme</div>
       <div class="row">
@@ -491,10 +495,11 @@
 
     <section>
       <h2>Application</h2>
-      <button class="btn danger" onclick="openShutdownModal()">SHUTDOWN APP</button>
+      <button class="btn danger" onclick="openRestartAppModal()">RESTART APP</button>
 
       <div class="subhead">Administrator</div>
       <button class="btn danger" onclick="openPoweroffModal()">SHUT DOWN PI</button>
+      <button class="btn danger" onclick="openRebootModal()">RESTART PI</button>
     </section>
 
   </div>
@@ -509,12 +514,12 @@
     </div>
   </div>
 
-  <div class="modal-backdrop" id="shutdown-modal">
+  <div class="modal-backdrop" id="restart-app-modal">
     <div class="modal-box">
-      <p>Shut down the Game Show Orchestrator app on the host machine? This ends the show and can only be undone by relaunching it there.</p>
+      <p>Restart the Game Show Orchestrator app? This briefly interrupts the show (DMX blackout, audio stop) and relaunches automatically -- expect it back within a few seconds.</p>
       <div class="row">
-        <button class="btn" onclick="closeShutdownModal()">Cancel</button>
-        <button class="btn danger" style="width:auto" onclick="confirmShutdown()">Shutdown</button>
+        <button class="btn" onclick="closeRestartAppModal()">Cancel</button>
+        <button class="btn danger" style="width:auto" onclick="confirmRestartApp()">Restart App</button>
       </div>
     </div>
   </div>
@@ -525,6 +530,16 @@
       <div class="row">
         <button class="btn" onclick="closePoweroffModal()">Cancel</button>
         <button class="btn danger" style="width:auto" onclick="confirmPoweroff()">Power Off Pi</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-backdrop" id="reboot-modal">
+    <div class="modal-box">
+      <p>Reboot the Raspberry Pi itself, not just this app? Everything stops and the whole Pi restarts on its own -- DMX, LEDs, audio, this web remote, all of it comes back up automatically after. Expect a minute or two of downtime.</p>
+      <div class="row">
+        <button class="btn" onclick="closeRebootModal()">Cancel</button>
+        <button class="btn danger" style="width:auto" onclick="confirmReboot()">Restart Pi</button>
       </div>
     </div>
   </div>
@@ -783,6 +798,7 @@ function djLookPoll() {
     renderColorSwatchPicker('outline-color-swatches', 'outline', d.outline.color_index);
     renderGradientPicker('outline-gradient-picker', 'outline', d.outline.gradient_mode);
     _setCheckedIfNotFocused('accent-sound-checkbox', d.accent_sound_enabled);
+    _setCheckedIfNotFocused('accent-orchestrator-checkbox', d.accent_orchestrator_enabled);
     if (!_accentSpeedLoaded) {
       document.getElementById('accent-speed-slider').value = d.accent_speed;
       _accentSpeedLoaded = true;
@@ -800,6 +816,13 @@ function marqueeBlankLowerToggle() {
 function accentSoundToggle() {
   const enabled = document.getElementById('accent-sound-checkbox').checked;
   api('/api/accent/sound/set', {
+    method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({enabled}),
+  });
+}
+
+function accentOrchestratorToggle() {
+  const enabled = document.getElementById('accent-orchestrator-checkbox').checked;
+  api('/api/accent/orchestrator/set', {
     method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({enabled}),
   });
 }
@@ -990,12 +1013,12 @@ async function reconnectGamepad() {
   }
 }
 
-function openShutdownModal() { document.getElementById('shutdown-modal').classList.add('open'); }
-function closeShutdownModal() { document.getElementById('shutdown-modal').classList.remove('open'); }
-function confirmShutdown() {
-  closeShutdownModal();
-  api('/api/system/shutdown', { method: 'POST' });
-  showToast('Shutting down the app...');
+function openRestartAppModal() { document.getElementById('restart-app-modal').classList.add('open'); }
+function closeRestartAppModal() { document.getElementById('restart-app-modal').classList.remove('open'); }
+function confirmRestartApp() {
+  closeRestartAppModal();
+  api('/api/system/restart-app', { method: 'POST' });
+  showToast('Restarting the app...');
 }
 
 function openPoweroffModal() { document.getElementById('poweroff-modal').classList.add('open'); }
@@ -1004,6 +1027,14 @@ function confirmPoweroff() {
   closePoweroffModal();
   api('/api/system/poweroff', { method: 'POST' });
   showToast('Powering off the Pi...');
+}
+
+function openRebootModal() { document.getElementById('reboot-modal').classList.add('open'); }
+function closeRebootModal() { document.getElementById('reboot-modal').classList.remove('open'); }
+function confirmReboot() {
+  closeRebootModal();
+  api('/api/system/reboot', { method: 'POST' });
+  showToast('Restarting the Pi...');
 }
 
 // ------------------------------------------

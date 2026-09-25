@@ -357,7 +357,7 @@ def _draw_answer_choice_cascade(choices, revealed):
     for i, pid in enumerate((3, 4, 5, 6)):
         key = f"answer_cascade_{i}"
         if i < revealed and i < len(choices):
-            draw_marquee(matrix_surface, key, choices[i], PANELS[pid])
+            draw_marquee(matrix_surface, key, choices[i], PANELS[pid], align=_answer_text_align(choices[i]))
         else:
             draw_marquee(matrix_surface, key, "", PANELS[pid])
 
@@ -740,11 +740,22 @@ def _ensure_quiz_content():
     _return_to_dj_mode("[QUIZ] No question loaded at render time -- returning to DJ mode instead of showing a placeholder.")
 
 
+def _answer_text_align(text):
+    """Numeric answers (Price Game prices like "$1,234"/"1234", release-year
+    choices like "1985", etc., 2026-09-18) read better centered in their
+    32px box than left-justified the way a word answer does -- word
+    answers keep the normal left alignment (also draw_marquee's own
+    default, so this only ever changes behavior for the numeric case)."""
+    bare = text.replace("$", "").replace(",", "").strip()
+    return "center" if bare and bare.isdigit() else "left"
+
+
 def _draw_selected_panel(rect, key, text, scroll=True):
     """Selected-but-ungraded answer: dim red fill, black text. The matrix
     hardware is red-only, so "armed" is signalled by a dim (rather than
     bright) fill instead of a distinct hue."""
-    draw_marquee(matrix_surface, key, text, rect, color=RED_DIM, invert=True, scroll=scroll)
+    draw_marquee(matrix_surface, key, text, rect, color=RED_DIM, invert=True, scroll=scroll,
+                 align=_answer_text_align(text))
 
 
 def _draw_winning_flash(rect, key, text, t, scroll=True):
@@ -758,7 +769,8 @@ def _draw_winning_flash(rect, key, text, t, scroll=True):
     saw = 1.0 - cycle_phase
     intensity = 0.35 + saw * 0.65
     color = tuple(int(c * intensity) for c in RED_FULL)
-    draw_marquee(matrix_surface, key, text, rect, color=color, invert=True, scroll=scroll)
+    draw_marquee(matrix_surface, key, text, rect, color=color, invert=True, scroll=scroll,
+                 align=_answer_text_align(text))
 
 
 def _draw_correct_answer_flash_text(rect, key, text, t, scroll=True):
@@ -774,7 +786,8 @@ def _draw_correct_answer_flash_text(rect, key, text, t, scroll=True):
     text and light blink in lockstep."""
     elapsed = t - state.quiz_graded_at
     if int(elapsed) % 2 == 0:
-        draw_marquee(matrix_surface, key, text, rect, color=RED_FULL, scroll=scroll)
+        draw_marquee(matrix_surface, key, text, rect, color=RED_FULL, scroll=scroll,
+                     align=_answer_text_align(text))
     else:
         draw_marquee(matrix_surface, key, "", rect, align="center")
 
@@ -787,41 +800,51 @@ def _draw_demo_winner_hint(rect, key, text, t, scroll=True):
     x0, y0, w, h = rect
     if int(t * 2.5) % 2 == 0:
         pygame.draw.rect(matrix_surface, RED_FULL, (x0, y0, w, h), 1)
-    draw_marquee(matrix_surface, key, text, rect, scroll=scroll)
+    draw_marquee(matrix_surface, key, text, rect, scroll=scroll, align=_answer_text_align(text))
 
 
 def _render_quiz_stats_or_return(t, elapsed, celebration_hold):
-    """Called once the win/loss celebration window has elapsed. Shows a
-    "SCORE: X/Y" stats page on panels 1+2 for QUIZ_STATS_HOLD_SECONDS
+    """Called once the win/loss celebration window has elapsed. Used to
+    show a "SCORE: X/Y" / "TRY AGAIN!" (or multiplayer "NICE ROUND!"
+    scoreboard) stats page on panels 1+2 for QUIZ_STATS_HOLD_SECONDS first
+    -- DISABLED for now (2026-09-18, see the commented-out block below):
+    that stats page only ever drew on panels 1+2, but the surface-wide
+    matrix_surface.fill(BLACK) at the top of _render_matrix_canvas_content()
+    still clears panels 3-6 every frame regardless, so once this stats
+    step took over from _render_solo_win_panel() (whose own window is just
+    `celebration_hold` long), the correct-answer square's MATRIX text went
+    blank while drivers/wled_engine.py's marquee kept right on chasing that
+    same square in its own color -- an all-chase, no-text square that
+    looked broken. Skipping straight to the advance-or-return step below
+    keeps the answer square's chase+text alive for the whole post-grade
+    window instead.
     (`celebration_hold` is whichever hold duration actually applied --
     QUIZ_CELEBRATION_HOLD_SECONDS normally, or the longer
-    QUIZ_TF_CORRECTION_HOLD_SECONDS after a wrong True/False answer -- so the
-    stats page always gets its normal viewing time regardless of which one
-    just ran), then either auto-advances to the next pre-fetched question
-    for this track (staying in GAME_MODE) or returns to DJ mode if none
-    remain."""
-    stats_elapsed = elapsed - celebration_hold
-    if stats_elapsed < QUIZ_STATS_HOLD_SECONDS:
-        tx, ty, tw, th = TOP_COMBINED
-        line1_rect = (tx, ty, tw, LINE_H)
-        line2_rect = (tx, ty + LINE_H, tw, LINE_H)
-
-        if state.quiz_players:
-            # Multiplayer "NICE ROUND" scoreboard -- every signed-up
-            # player's running score, not just this round's results (see
-            # web/remote_server.py's /api/player/join for how players get
-            # into state.quiz_players).
-            correct_count = sum(1 for r in state.quiz_last_round_results if r["correct"])
-            board = "  ".join(f"{p['initials']}:{p['score']}" for p in state.quiz_players.values())
-            draw_marquee(matrix_surface, "quiz_stats1", "NICE ROUND!", line1_rect, align="center")
-            draw_marquee(matrix_surface, "quiz_stats2", board or "NO SCORES YET", line2_rect)
-        else:
-            score_line = f"SCORE: {state.quiz_score_correct}/{state.quiz_score_total}"
-            was_correct = state.quiz_selected_index == state.factoid_correct_index
-            draw_marquee(matrix_surface, "quiz_stats1", score_line, line1_rect, align="center")
-            draw_marquee(matrix_surface, "quiz_stats2",
-                         "NICE ROUND!" if was_correct else "TRY AGAIN!", line2_rect, align="center")
-        return
+    QUIZ_TF_CORRECTION_HOLD_SECONDS after a wrong True/False answer.) Then
+    either auto-advances to the next pre-fetched question for this track
+    (staying in GAME_MODE) or returns to DJ mode if none remain."""
+    # stats_elapsed = elapsed - celebration_hold
+    # if stats_elapsed < QUIZ_STATS_HOLD_SECONDS:
+    #     tx, ty, tw, th = TOP_COMBINED
+    #     line1_rect = (tx, ty, tw, LINE_H)
+    #     line2_rect = (tx, ty + LINE_H, tw, LINE_H)
+    #
+    #     if state.quiz_players:
+    #         # Multiplayer "NICE ROUND" scoreboard -- every signed-up
+    #         # player's running score, not just this round's results (see
+    #         # web/remote_server.py's /api/player/join for how players get
+    #         # into state.quiz_players).
+    #         correct_count = sum(1 for r in state.quiz_last_round_results if r["correct"])
+    #         board = "  ".join(f"{p['initials']}:{p['score']}" for p in state.quiz_players.values())
+    #         draw_marquee(matrix_surface, "quiz_stats1", "NICE ROUND!", line1_rect, align="center")
+    #         draw_marquee(matrix_surface, "quiz_stats2", board or "NO SCORES YET", line2_rect)
+    #     else:
+    #         score_line = f"SCORE: {state.quiz_score_correct}/{state.quiz_score_total}"
+    #         was_correct = state.quiz_selected_index == state.factoid_correct_index
+    #         draw_marquee(matrix_surface, "quiz_stats1", score_line, line1_rect, align="center")
+    #         draw_marquee(matrix_surface, "quiz_stats2",
+    #                      "NICE ROUND!" if was_correct else "TRY AGAIN!", line2_rect, align="center")
+    #     return
 
     # Price Game (Btn6, drivers/price_bank_engine.py) is a one-off bonus
     # round, never a segue into this track's normal trivia queue -- skip
@@ -866,22 +889,48 @@ def _return_to_dj_mode(log_message):
     print(log_message)
 
 
-def _render_mystery_panel_win():
-    """Solo (no registered players) "Who is this?" answered correctly via
-    a physical panel button (2026-09-17, operator feedback: the normal win
-    celebration -- one of 4 panels pulsing -- didn't make it obvious to
-    the room WHAT was actually chosen). Puts the actual artist name front
-    and center on panels 1+2 instead of repeating the question, and blanks
-    panels 3-6 entirely -- drivers/wled_engine.py::update() mirrors this on
-    the marquee (its own state.mystery_panel_win_active check: movie-chase
-    on the title strip, blackout on panels 3-6) so nothing else competes
-    with it for the room's attention. Lasts through the normal celebration_
-    hold, same as any other win, then _render_quiz_stats_or_return() takes
-    over as usual."""
-    draw_marquee(matrix_surface, "mystery_panel_win_name", state.mystery_artist_display,
+def _render_solo_win_panel():
+    """Solo (no registered players) round graded CORRECT or ended via
+    TIMEOUT (2026-09-17, operator feedback: the normal win celebration --
+    one of 4 panels pulsing -- didn't make it obvious to the room WHAT was
+    actually chosen; generalized from a panel-button-correct-only trigger
+    to every correct grade or timeout, right or wrong, 2026-09-18). Puts
+    the correct answer's own text front and center on panels 1+2 instead of
+    repeating the question (or, for a timeout, "TIMES UP!"). Panels 3-6:
+    the correct answer's own square stays in place showing its answer text
+    (2026-09-18 redesign -- drivers/wled_engine.py::update()'s matching
+    condition runs that same panel's marquee segment as a chase in its own
+    button color instead of blacking it out, so the room can see WHICH
+    square it was, not just the bare text up top); the other three go dark.
+    Lasts through the normal celebration_hold, same as any other win, then
+    _render_quiz_stats_or_return() takes over as usual.
+
+    Guard (2026-09-20, confirmed live crash): state.factoid_choices/
+    state.factoid_correct_index can go stale between _render_quiz_mode()'s
+    own snapshot and this call -- e.g. the Mystery Band post-grade handoff
+    (inputs/gamepad.py::_maybe_advance_from_mystery_grade() ->
+    end_mystery_after_grade()) leaves quiz_locked/round_timed_out set
+    without guaranteeing factoid_choices still has a valid entry at
+    factoid_correct_index. That produced an uncaught IndexError that took
+    the whole show down mid-run. Falls back to the same "nothing to show"
+    recovery _ensure_quiz_content() already uses instead of crashing."""
+    choices = state.factoid_choices
+    correct = state.factoid_correct_index
+    if not choices or not (0 <= correct < len(choices)):
+        _return_to_dj_mode(
+            "[QUIZ] _render_solo_win_panel: factoid_choices/factoid_correct_index "
+            "out of sync (stale post-grade state) -- returning to DJ mode instead of crashing.")
+        return
+    correct_text = choices[correct]
+    draw_marquee(matrix_surface, "solo_panel_win_name", correct_text,
                  TOP_COMBINED, align="center")
+    correct_pid = 3 + correct
     for pid in (3, 4, 5, 6):
-        draw_marquee(matrix_surface, f"mystery_panel_win_blank_{pid}", "", PANELS[pid])
+        if pid == correct_pid:
+            draw_marquee(matrix_surface, f"solo_panel_win_correct_{pid}", correct_text, PANELS[pid],
+                         align=_answer_text_align(correct_text))
+        else:
+            draw_marquee(matrix_surface, f"solo_panel_win_blank_{pid}", "", PANELS[pid])
 
 
 def _render_quiz_mode(t):
@@ -933,11 +982,39 @@ def _render_quiz_mode(t):
 
     if state.quiz_locked:
         elapsed = t - state.quiz_graded_at
+        if state.quiz_skip_wait_requested:
+            # Manual backup skip (2026-09-18, drivers/simon_engine.py::
+            # poll_hardware()): a panel press during ANY post-grade wait --
+            # celebration hold, correction-text hold, or the stats page --
+            # jumps straight past whatever's left of it. Added after a
+            # True/False question whose correct answer was False but never
+            # got a correction string back held on a bare "FALSE" for the
+            # celebration_hold branch's full duration with nothing
+            # explaining why, and no way for the operator to move on short
+            # of waiting it out. Forcing elapsed comfortably past BOTH the
+            # celebration hold and the stats-page hold below skips directly
+            # to _render_quiz_stats_or_return()'s advance-or-return step,
+            # exactly what the auto-advance would have done anyway.
+            state.quiz_skip_wait_requested = False
+            elapsed = celebration_hold + QUIZ_STATS_HOLD_SECONDS + 1.0
         if elapsed >= celebration_hold:
             _render_quiz_stats_or_return(t, elapsed, celebration_hold)
             return
-        if state.mystery_panel_win_active:
-            _render_mystery_panel_win()
+        if not state.quiz_players and (sel == correct or state.round_timed_out):
+            # Follow-up question graded CORRECT (any path -- panel button,
+            # joystick, or a timeout that happened to land on the right
+            # pick) or ended via TIMEOUT at all, right or wrong (2026-09-18,
+            # generalized from a panel-button-correct-only flag): skip the
+            # normal "TIMES UP!" + question / correction-text top display
+            # below entirely and go straight to the same clear-the-lower-
+            # panels, chase-the-top-strip reveal the Mystery Band identify
+            # question's own win already uses -- puts the correct answer's
+            # own text front and center instead of a timeout leaving the
+            # room to read "TIMES UP!" with no answer up top, or a
+            # wordy correction explanation crowding out a plain win.
+            # Multiplayer keeps its own "CORRECT: <names>"/timeout display
+            # instead (excluded here via `not state.quiz_players`).
+            _render_solo_win_panel()
             return
 
     _ensure_quiz_content()
@@ -999,7 +1076,7 @@ def _render_quiz_mode(t):
             key = f"quiz_choice_{i}"
             if i == correct and i < len(choices):
                 draw_marquee(matrix_surface, key, reveal_choices[i], rect, color=RED_DIM, invert=True,
-                            scroll=not _is_price_question())
+                            scroll=not _is_price_question(), align=_answer_text_align(reveal_choices[i]))
             else:
                 draw_marquee(matrix_surface, key, "", rect)
     elif locked and state.quiz_players and state.round_winner_initials:
@@ -1121,7 +1198,7 @@ def _draw_answer_choice_panels(choices, correct, sel, locked, t):
             if i == correct:
                 _draw_winning_flash(rect, key, text, t, scroll=scroll)
             else:
-                draw_marquee(matrix_surface, key, text, rect, scroll=scroll)
+                draw_marquee(matrix_surface, key, text, rect, scroll=scroll, align=_answer_text_align(text))
             continue
 
         if locked and is_correct_grade and i == sel:
@@ -1136,12 +1213,20 @@ def _draw_answer_choice_panels(choices, correct, sel, locked, t):
         elif locked and i == sel:
             # Wrong answer selected -- steady bright red (not pulsing,
             # to stay visually distinct from the winning flash).
-            draw_marquee(matrix_surface, key, text, rect, color=RED_FULL, invert=True, scroll=scroll)
+            draw_marquee(matrix_surface, key, text, rect, color=RED_FULL, invert=True, scroll=scroll,
+                         align=_answer_text_align(text))
         elif locked and i == correct:
             # Reveal the correct answer as blinking (non-inverted) text --
             # the wrong pick (above) stays a solid inverted block so the
             # two read as clearly different things.
             _draw_correct_answer_flash_text(rect, key, text, t, scroll=scroll)
+        elif locked:
+            # Wrong-answer grade, and this panel is neither the pick nor
+            # the correct answer -- blank it entirely (2026-09-18) so only
+            # the reversed wrong pick and the blinking correct answer draw
+            # the eye, instead of leaving these two just sitting there in
+            # plain text looking like live, undecided options.
+            draw_marquee(matrix_surface, key, "", rect, align="center")
         elif not locked and i == sel:
             _draw_selected_panel(rect, key, text, scroll=scroll)
         elif not locked and i == correct and state.quiz_is_test:
@@ -1149,7 +1234,7 @@ def _draw_answer_choice_panels(choices, correct, sel, locked, t):
             # helpful for demoing the flow) to hint the winning square.
             _draw_demo_winner_hint(rect, key, text, t, scroll=scroll)
         else:
-            draw_marquee(matrix_surface, key, text, rect, scroll=scroll)
+            draw_marquee(matrix_surface, key, text, rect, scroll=scroll, align=_answer_text_align(text))
 
 
 def _si_gap_split(x, y, w, h):
@@ -1493,15 +1578,21 @@ def _draw_setup_status_chips():
 _SHOW_WILL_START_WORDS = {3: "Show", 4: "will", 5: "start", 6: "now"}
 
 
-def _unattended_remaining_seconds(now):
+def _unattended_remaining_seconds():
     """Seconds left before drivers/show_engine.py's unattended-autoplay
     fallback fires, or the full timeout if the idle clock hasn't actually
     started ticking yet this instant (0.0 sentinel -- see
     state.last_operator_interaction_at, lazily initialized on the first
-    frame show_phase == "setup" is observed)."""
+    frame show_phase == "setup" is observed).
+
+    Takes no `now` argument (unlike most of this module's per-frame
+    renders) -- must use time.monotonic() to match
+    state.last_operator_interaction_at exactly (see that field's own
+    comment for why time.time() isn't safe here), not whatever wall-clock
+    `t` the caller's render pass happens to be using."""
     if state.last_operator_interaction_at == 0.0:
         return config.SHOW_UNATTENDED_AUTOPLAY_TIMEOUT_SECONDS
-    elapsed = now - state.last_operator_interaction_at
+    elapsed = time.monotonic() - state.last_operator_interaction_at
     return max(0.0, config.SHOW_UNATTENDED_AUTOPLAY_TIMEOUT_SECONDS - elapsed)
 
 
@@ -1590,7 +1681,7 @@ def _render_show_phase(t):
             draw_marquee(matrix_surface, "gamepad_connect_feedback",
                          state.gamepad_connect_feedback_text, TOP_COMBINED, align="center")
         else:
-            remaining = _unattended_remaining_seconds(t)
+            remaining = _unattended_remaining_seconds()
             seconds_display = min(int(config.SHOW_UNATTENDED_AUTOPLAY_TIMEOUT_SECONDS) - 1, int(remaining))
             # Solid, not flashing (2026-08-19: the blink read as "too much" on
             # the physical rig) -- only the final-10s panels 3-6 warning below

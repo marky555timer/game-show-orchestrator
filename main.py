@@ -8,10 +8,19 @@ import os
 # pygame.midi.init(), so this has to come before even that.
 os.environ["SDL_JOYSTICK_ALLOW_BACKGROUND_EVENTS"] = "1"
 
+# Sound-effects engine (2026-09-20): imported first, before anything else
+# below (including drivers.midi_driver's pygame.midi.init() a few lines
+# down) -- its import starts a daemon thread that immediately begins
+# looping the startup sound effect on its own separate amplifier, so it's
+# already playing before pygame/the DJ mixer/the LED display window exist.
+# See drivers/sfx_engine.py's module docstring.
+from drivers import sfx_engine  # noqa: F401 (imported for its startup side effect)
+
 import signal
 import subprocess
 import sys
 import time
+import traceback
 import pygame
 from config import MAIN_LOOP_STALL_WARN_SECONDS
 from state import state
@@ -136,40 +145,56 @@ def main():
         clock.tick(40)
         _stage_t1 = time.perf_counter()
 
-        # 1. Process Inputs & Game Logic
-        running = process_events()
-        _stage_t2 = time.perf_counter()
-        qr_popup.pump()
-        _stage_t3 = time.perf_counter()
-        power_monitor.poll(time.time())
-        relay_engine.poll()
-        _stage_t4 = time.perf_counter()
+        # 1-5. Per-frame input/game-logic/render work, wrapped in a
+        # catch-all (2026-09-20, added after an uncaught IndexError deep in
+        # update_matrix_canvas() took the entire show down mid-run with no
+        # recovery short of a manual SSH restart): any of these stages can
+        # in principle throw on a future bug the same way -- state races
+        # between drivers are exactly the kind of thing that slips past
+        # testing but shows up live. Logging and skipping the frame beats
+        # crashing the whole rig every time; `running` keeps its previous
+        # value if process_events() itself is what threw, so the loop (and
+        # the ability to quit) isn't stuck either way.
+        try:
+            # 1. Process Inputs & Game Logic
+            running = process_events()
+            _stage_t2 = time.perf_counter()
+            qr_popup.pump()
+            _stage_t3 = time.perf_counter()
+            power_monitor.poll(time.time())
+            relay_engine.poll()
+            _stage_t4 = time.perf_counter()
 
-        # 2. Render the full 176-channel DMX frame (DJ uplighting themes,
-        # game-mode chase, Fixture 1 win/loss/reset)
-        lighting_engine.update(time.time())
-        _stage_t5 = time.perf_counter()
+            # 2. Render the full 176-channel DMX frame (DJ uplighting themes,
+            # game-mode chase, Fixture 1 win/loss/reset)
+            lighting_engine.update(time.time())
+            _stage_t5 = time.perf_counter()
 
-        # 3. Render Canvas & LED Grid
-        update_matrix_canvas()
-        _stage_t6 = time.perf_counter()
-        render_led_grid()
-        _stage_t7 = time.perf_counter()
+            # 3. Render Canvas & LED Grid
+            update_matrix_canvas()
+            _stage_t6 = time.perf_counter()
+            render_led_grid()
+            _stage_t7 = time.perf_counter()
 
-        # 4. Compute + push the current frame to the panel-outline WLED
-        # strip (see drivers/wled_engine.py) -- same "fire and forget every
-        # frame" shape as dmx.render() above, just over UDP/DDP instead of
-        # serial.
-        wled_engine.maybe_reresolve()
-        wled_engine.update(time.time())
-        _stage_t8 = time.perf_counter()
+            # 4. Compute + push the current frame to the panel-outline WLED
+            # strip (see drivers/wled_engine.py) -- same "fire and forget every
+            # frame" shape as dmx.render() above, just over UDP/DDP instead of
+            # serial.
+            wled_engine.maybe_reresolve()
+            wled_engine.update(time.time())
+            _stage_t8 = time.perf_counter()
 
-        # 5. Sync the accent (outline) strip's WLED effect/color to the
-        # current DJ theme/color (or Price Game white-out) -- see
-        # drivers/accent_engine.py::sync_to_show_state(). Cheap no-op
-        # unless the target look actually changed since last frame.
-        accent_engine.sync_to_show_state()
-        _stage_t9 = time.perf_counter()
+            # 5. Sync the accent (outline) strip's WLED effect/color to the
+            # current DJ theme/color (or Price Game white-out) -- see
+            # drivers/accent_engine.py::sync_to_show_state(). Cheap no-op
+            # unless the target look actually changed since last frame.
+            accent_engine.sync_to_show_state()
+            _stage_t9 = time.perf_counter()
+        except Exception:
+            print(f"[MAIN LOOP] Unhandled exception in frame body -- logging and "
+                  f"skipping this frame instead of crashing the whole show:\n"
+                  f"{traceback.format_exc()}")
+            continue
 
         _stage_total = _stage_t9 - _stage_t0
         if _stage_total >= MAIN_LOOP_STALL_WARN_SECONDS:
@@ -205,6 +230,7 @@ def main():
     simon_hardware.cleanup()
     accent_engine.cleanup()
     relay_engine.cleanup()
+    sfx_engine.cleanup()
     pygame.quit()
 
     if state.poweroff_after_exit:
@@ -224,6 +250,34 @@ def main():
                       f"is the passwordless sudoers entry set up? See pi_deploy/README.md.")
         else:
             print("[SHUTDOWN] Admin poweroff requested, but this isn't Linux -- skipping.")
+    elif state.reboot_after_exit:
+        # Admin-requested Pi reboot (web remote "RESTART PI") -- same shape
+        # as poweroff above but `sudo reboot`, and its own separate
+        # passwordless sudoers entry (see pi_deploy/README.md).
+        if sys.platform.startswith("linux"):
+            print("[SHUTDOWN] Admin reboot requested -- rebooting the Pi now.")
+            try:
+                subprocess.run(["sudo", "reboot"], timeout=10)
+            except Exception as e:
+                print(f"[SHUTDOWN] Could not reboot the Pi ({e}) -- "
+                      f"is the passwordless sudoers entry set up? See pi_deploy/README.md.")
+        else:
+            print("[SHUTDOWN] Admin reboot requested, but this isn't Linux -- skipping.")
+    elif state.restart_app_after_exit:
+        # Admin-requested app relaunch (web remote "RESTART APP") -- re-exec
+        # this same process in place rather than spawning start.sh fresh:
+        # os.execv() keeps the current process's already-inherited env vars
+        # (SDL_VIDEODRIVER=wayland etc, exported by pi_deploy/start.sh
+        # before its own `exec` launched this process) and open file
+        # descriptors (stdout/stderr already redirected to startup.log), so
+        # no separate relaunch logic has to duplicate start.sh's setup. Only
+        # returns on failure -- falls through to the ordinary sys.exit()
+        # below if so, rather than leaving the rig fully down.
+        print("[SHUTDOWN] Admin app restart requested -- relaunching now.")
+        try:
+            os.execv(sys.executable, [sys.executable, "-u", os.path.abspath(__file__)])
+        except Exception as e:
+            print(f"[SHUTDOWN] Could not relaunch the app ({e}) -- exiting instead.")
 
     sys.exit()
 

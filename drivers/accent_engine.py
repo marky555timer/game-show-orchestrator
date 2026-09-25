@@ -149,14 +149,16 @@ def _resolve_dj_color():
 
 
 def _target_look():
-    """Returns the (fx, r, g, b, sx) this board should currently be
-    showing, mirroring drivers/wled_engine.py::update()'s own show-phase
-    dispatch so the accent strip reads as part of the same show rather
-    than an independently-run afterthought. Simplified relative to that
-    dispatch (no show-phase/Simon/Westminster branches yet -- see this
+    """Returns the (fx, r, g, b, sx, r2, g2, b2) this board should
+    currently be showing, mirroring drivers/wled_engine.py::update()'s own
+    show-phase dispatch so the accent strip reads as part of the same show
+    rather than an independently-run afterthought. Simplified relative to
+    that dispatch (no show-phase/Simon/Westminster branches yet -- see this
     function's call site for why) since the immediate ask (2026-09-15) was
     per-song DJ color/theme matching plus the Price Game white-out
-    specifically.
+    specifically. r2/g2/b2 are a secondary color (WLED's col[1] slot,
+    e.g. Sparkle+'s accent color) -- None for every look that doesn't need
+    one, which is most of them.
 
     When state.accent_sound_enabled is True, r/g/b come back None as a
     sentinel -- WLED's own AudioReactive effect (config.
@@ -166,14 +168,30 @@ def _target_look():
     this board's analog-input hardware actually being wired up (2026-09-17
     session, GPIO36) -- until then this selects the effect but it has no
     live signal to react to."""
+    if (state.mode == state.MODE_GAME and state.quiz_locked and not state.quiz_players
+            and state.factoid_choices):
+        # Follow-up-question grading result (2026-09-20 request): briefly
+        # overrides the plain white "non-DJ" look below with a distinct
+        # right/wrong cue on the outline strip, same grading windows
+        # drivers/wled_engine.py's marquee and graphics/matrix_canvas.py's
+        # panel text already resolve a grade in, so all three surfaces
+        # read as one moment rather than three independently-timed ones.
+        elapsed = time.time() - state.quiz_graded_at
+        correct = (state.quiz_selected_index == state.factoid_correct_index or state.round_timed_out)
+        if correct and elapsed < config.QUIZ_CELEBRATION_HOLD_SECONDS:
+            # Sparkle+: green base (col[0]) with white sparkle dots
+            # (col[1]).
+            return (config.ACCENT_FX_SPARKLE_PLUS, 0, 200, 0, state.accent_speed, 255, 255, 255)
+        if not correct and elapsed < config.QUIZ_WRONG_ANSWER_HOLD_SECONDS:
+            return (config.ACCENT_FX_BLINK, 255, 0, 0, state.accent_speed, None, None, None)  # solid blinking red
     if state.mode != state.MODE_DJ or state.price_game_active:
         # Same condition drivers/wled_engine.py::update() uses for its own
         # game-chase white pattern -- covers Price Game's white-lights
         # window and Quiz/other non-DJ modes with the same simple white
         # solid look, rather than inventing a second white-trigger rule.
-        return (config.ACCENT_FX_SOLID, 255, 255, 255, state.accent_speed)  # Solid, white
+        return (config.ACCENT_FX_SOLID, 255, 255, 255, state.accent_speed, None, None, None)  # Solid, white
     if state.accent_sound_enabled:
-        return (config.ACCENT_AUDIOREACTIVE_FX_ID, None, None, None, None)
+        return (config.ACCENT_AUDIOREACTIVE_FX_ID, None, None, None, None, None, None, None)
     # state.accent_theme_index is a direct WLED effect ID (index into
     # config.ACCENT_EFFECT_NAMES) since 2026-09-18 -- no longer routed
     # through a curated subset mapping, see that list's header comment.
@@ -186,7 +204,7 @@ def _target_look():
     elif gradient_mode in ("adjacent", "complementary"):
         degrees = 30 if gradient_mode == "adjacent" else 180
         r, g, b = color_utils.hue_shift(r, g, b, degrees)
-    return (fx, r, g, b, state.accent_speed)
+    return (fx, r, g, b, state.accent_speed, None, None, None)
 
 
 def sync_to_show_state():
@@ -206,11 +224,13 @@ def sync_to_show_state():
     look = _target_look()
     if look == _last_sent_look:
         return
-    fx, r, g, b, sx = look
+    fx, r, g, b, sx, r2, g2, b2 = look
     if r is None:  # accent_sound_enabled sentinel -- select the effect once, nothing else
         _send({"seg": {"fx": fx}})
-    else:
+    elif r2 is None:
         _send({"seg": {"fx": fx, "col": [[r, g, b]], "sx": sx}})
+    else:
+        _send({"seg": {"fx": fx, "col": [[r, g, b], [r2, g2, b2]], "sx": sx}})
     _last_sent_look = look
 
 
@@ -271,6 +291,28 @@ def resume_auto_sync():
     _manual_override = None
 
 
+def set_orchestrator_enabled(enabled):
+    """Remote-panel "disconnect" toggle (2026-09-25): lets the operator
+    stop this show from sending the outline board *anything* -- auto-sync,
+    grading flash, and the manual bring-up buttons alike, all funneled
+    through _send()'s own check of state.accent_orchestrator_enabled --
+    while the rest of the show keeps running normally, so presets can be
+    designed live against music directly in WLED's own app without this
+    module fighting the operator over it.
+
+    Re-enabling resets _last_sent_look to force sync_to_show_state() to
+    resend the current target look on the very next frame rather than
+    trusting a comparison against whatever was last computed while
+    disabled -- the board's actual state may have drifted from that in
+    the meantime (that's the whole point of the toggle), so a stale match
+    there would otherwise leave the board showing whatever the operator
+    left it on instead of snapping back under show control."""
+    global _last_sent_look
+    state.accent_orchestrator_enabled = enabled
+    if enabled:
+        _last_sent_look = None
+
+
 def _send(payload):
     """Hands the JSON payload off to _sender_loop's dedicated thread rather
     than writing here directly -- see that function's docstring for why.
@@ -279,8 +321,19 @@ def _send(payload):
     this module uses), so a write that's still stuck blocking when a
     reconnect later replaces _link can't be confused with the new
     connection -- same pattern drivers/wled_engine.py's own serial sender
-    already uses."""
+    already uses.
+
+    Single choke point for every outbound write this module makes
+    (auto-sync, grading flash, and the manual bring-up buttons alike) --
+    state.accent_orchestrator_enabled being False short-circuits all of
+    them here rather than needing a guard at each call site, so the
+    "disconnect" toggle in the remote panel actually means nothing further
+    reaches the board, letting the operator drive it directly from WLED's
+    own app (e.g. to design presets live against music) without this show
+    fighting them over it."""
     global _send_pending
+    if not state.accent_orchestrator_enabled:
+        return
     with _lock:
         link = _link
     if link is None:

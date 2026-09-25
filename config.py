@@ -89,16 +89,29 @@ MIDI_PORT_NAME = "Python_PMC_Port"
 # sync if the caption is ever changed.
 CANVAS_WINDOW_TITLE = "6-Panel Game Show Matrix Simulator"
 
-# USB-UART bridge chips used on the ESP32 DevKit V1 boards/clones this rig
-# uses (Silicon Labs CP2102, and the two common CH340/CH9102 variants) --
-# shared by drivers/led_bridge.py (matrix panel ESP32) and
-# drivers/wled_engine.py (marquee WLED ESP32) since both auto-discover
-# their board by USB VID/PID rather than a fixed port path (same reasoning
-# as MIDI_PORT_NAME's comment above). Both boards can enumerate with the
-# same VID/PID, so the two modules coordinate over drivers/serial_ports.py
-# (see that module's docstring) instead of each independently grabbing
-# "the first matching port" and racing/colliding.
-ESP32_USB_SERIAL_VID_PIDS = {(0x10C4, 0xEA60), (0x1A86, 0x7523), (0x1A86, 0x55D4)}
+# USB-UART bridge chip used on the ESP32 DevKit V1 boards/clones this rig
+# uses (Silicon Labs CP2102) -- shared by drivers/led_bridge.py (matrix
+# panel ESP32), drivers/wled_engine.py (marquee WLED ESP32), and
+# drivers/accent_engine.py (outline WLED ESP32) since all three
+# auto-discover their board by USB VID/PID rather than a fixed port path
+# (same reasoning as MIDI_PORT_NAME's comment above). All three boards can
+# enumerate with the same VID/PID, so the modules coordinate over
+# drivers/serial_ports.py (see that module's docstring) instead of each
+# independently grabbing "the first matching port" and racing/colliding.
+#
+# 2026-09-21 fix: this used to also include the USB relay board's CH340
+# VID/PIDs (config.USB_RELAY_VID_PID, a completely different chip family)
+# -- relay_engine.py has always matched against its own dedicated
+# USB_RELAY_VID_PID constant, never this set, so including CH340 here
+# never actually helped identify the relay board; it only let
+# led_bridge.py/wled_engine.py/accent_engine.py mistake the relay's own
+# port for a candidate ESP32, wasting a full connect+6s-heartbeat-timeout
+# cycle on it every rescan and confirmed live as part of an endless
+# matrix-panel reconnect loop after a cold boot shuffled port indices
+# (drivers/led_bridge.py logging "No heartbeat from /dev/ttyUSBn" against
+# what was actually the relay's port). CH340 boards on this rig now only
+# ever need to match config.USB_RELAY_VID_PID.
+ESP32_USB_SERIAL_VID_PIDS = {(0x10C4, 0xEA60)}
 
 # ==========================================
 # PHYSICAL PANEL LAYOUT
@@ -651,6 +664,18 @@ ACCENT_FX_THEATER_RAINBOW = 14
 # ACCENT_TEST_EFFECTS's bring-up cycle; named separately here since that
 # list is a test-cycle order, not meant as a lookup table for this.
 ACCENT_FX_RAINBOW = 9
+
+# Follow-up-question grading feedback on the outline strip (2026-09-20
+# request): the plain white "non-DJ" look (ACCENT_FX_SOLID above) holds
+# through the question itself, but a panel-button grade now briefly
+# overrides it with a distinct right/wrong cue -- "Blink" (col[0] only) for
+# a wrong answer, "Sparkle+" (col[0] base + col[1] secondary, see
+# drivers/accent_engine.py::_target_look()) for a right one, matching the
+# same QUIZ_CELEBRATION_HOLD_SECONDS/QUIZ_WRONG_ANSWER_HOLD_SECONDS windows
+# drivers/wled_engine.py's marquee and graphics/matrix_canvas.py's panel
+# text already resolve a grade in.
+ACCENT_FX_BLINK = 1
+ACCENT_FX_SPARKLE_PLUS = 22
 
 # Total LED count on the accent strip, per the user's own spec (a "120
 # lamp strip") -- NOT yet cross-verified against this board's actual
@@ -1831,6 +1856,42 @@ WESTMINSTER_AUDIO_RESTORE_SECONDS = 0.5
 # samples (Hour1.wav, Hour2.wav, ...) and audio_engine.pick_random_chime()
 # picks one at random each time the chime fires.
 HOUR_CLOCK_BELL_DIR = resource_path("audio", "HourClockBell")
+
+# ==========================================
+# STANDALONE SOUND-EFFECTS ENGINE (2026-09-20) -- plays short .wav clips
+# through a SEPARATE physical amplifier from the DJ music path. See
+# drivers/sfx_engine.py's module docstring for why this can't just reuse
+# pygame.mixer (audio/audio_engine.py's SFX chokepoint).
+# ==========================================
+# "USB Audio Device" (C-Media USB DAC) -- confirmed present but otherwise
+# unused for output via `aplay -l` on the show Pi 2026-09-20.
+#
+# Addressed by ALSA card NAME ("Device", the id ALSA assigns this chip --
+# see /proc/asound/cards), NOT numeric index. 2026-09-21 cold boot proved
+# indices aren't stable: the USB DAC and the HiFiBerry HAT swapped slots
+# (USB went from card 3 to card 2, HiFiBerry took card 3), so this
+# constant's old hardcoded `3` pointed the SFX engine's EXCLUSIVE plughw
+# open at the HiFiBerry HAT instead -- the startup clip played out of the
+# wrong amp AND, because that grabbed the same card pygame.mixer's main
+# audio needs at the exact moment main.py starts, PipeWire's stream to the
+# HiFiBerry got stuck in "init" for the entire session (main show audio
+# silent throughout, confirmed live via `wpctl status`). Card names come
+# from the kernel driver/udev, not boot-time USB enumeration order, so
+# they don't drift the way indices do -- re-run `aplay -l` (or `cat
+# /proc/asound/cards`) on the Pi and update this only if the card's own
+# name ever changes (e.g. the USB DAC gets physically swapped for a
+# different model).
+#
+# drivers/sfx_engine.py targets this via plain `plughw` (exclusive access,
+# confirmed working 2026-09-20) rather than ALSA's `dmix` -- dmix would let
+# two clips overlap/mix instead of the second failing with "Device or
+# resource busy", but this system has no ~/.asoundrc defining a named dmix
+# PCM, and `dmix:CARD=n,DEV=n`/`dmix:n,n` shorthand isn't accepted without
+# one (confirmed live). Not worth adding that system config for a single
+# sequential startup-sound loop, which never overlaps itself -- revisit if
+# a future SFX trigger genuinely needs to play concurrently with another.
+SFX_ALSA_CARD_NAME = "Device"
+SFX_STARTUP_SOUND = resource_path("audio", "sound_effects", "startup.wav")
 
 # ==========================================
 # TRIVIA NIGHT SHOW FLOW (2026-08-13): Setup -> Countdown -> scripted open

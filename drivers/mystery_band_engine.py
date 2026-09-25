@@ -208,6 +208,18 @@ def update(now):
         # what they just saw revealed on screen. Reuses the exact same
         # forced-grade call drivers/live_round_engine.py's own 40s deadline
         # already makes -- no new grading logic, just triggered promptly.
+        #
+        # state.round_timed_out = True (2026-09-18 fix): this reveal timeout
+        # (15s) always fires well before live_round_engine.py's own 40s
+        # round_deadline_at watchdog ever gets a chance to -- grade_quiz_
+        # selection() below locks the round immediately, so is_round_active()
+        # goes False and that watchdog never runs at all for this question.
+        # Without setting the flag here too, inputs/gamepad.py's wrong-answer
+        # buzzer suppression (keyed off state.round_timed_out, since a timed-
+        # out round's own visual never blames a specific wrong pick) never
+        # saw this as a timeout and buzzed anyway on every unanswered "Is
+        # this:" teaser -- confirmed live on the mystery/identify question.
+        state.round_timed_out = True
         from inputs import gamepad  # local import -- gamepad.py imports this module, avoid a cycle
         gamepad.grade_quiz_selection(forced=True)
 

@@ -340,7 +340,6 @@ def _apply_active_question(data, source):
     state.quiz_selected_index = -1
     state.quiz_locked = False
     state.quiz_graded_at = 0.0
-    state.mystery_panel_win_active = False
     state.fixture1_mode = "off"  # Reset rule: new question -> Fixture 1 black
 
     # 30s round clock (drivers/live_round_engine.py), every question type

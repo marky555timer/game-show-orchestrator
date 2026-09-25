@@ -123,22 +123,26 @@ _last_ready_state = None  # None=unknown yet, else bool -- for transition-only l
 def _find_esp32_port():
     """VID/PID auto-discovery, skipping whatever any other module holds
     (see drivers/serial_ports.py) -- not just wled_engine.py by name, since
-    a third CH340-identity device (e.g. a USB relay board) can now share
-    config.ESP32_USB_SERIAL_VID_PIDS too and needs the same protection.
-    Also de-prioritizes -- but doesn't permanently ban -- a port this
-    module has itself previously rejected (_check_never_ready): without
-    that, once wled_engine.py stops competing for the other candidate
-    (e.g. config.WLED_SERIAL_ENABLED is off), nothing forces this scan off
-    "the first matching port" anymore, and it would just keep re-picking
-    the same wrong board on every rescan forever instead of ever trying
-    the other one. Falls back to a self-rejected candidate only if it's
-    the sole match left, so a stale or mistaken rejection can't
-    permanently strand this module with no port at all."""
-    rejected = serial_ports.rejected_port()
+    accent_engine.py's board shares config.ESP32_USB_SERIAL_VID_PIDS too and
+    needs the same protection. Also de-prioritizes -- but doesn't
+    permanently ban -- every port this module has itself previously
+    rejected (_check_never_ready): without that, once wled_engine.py/
+    accent_engine.py stop competing for the other candidates (e.g.
+    config.WLED_SERIAL_ENABLED is off), nothing forces this scan off "the
+    first matching port" anymore, and it would just keep re-picking a
+    known-wrong board on every rescan forever instead of ever trying
+    another one. Falls back to a rejected candidate only if no
+    never-rejected one is available, so a stale or mistaken rejection
+    can't permanently strand this module with no port at all (2026-09-21:
+    tracks ALL rejected ports, not just the most recent -- see
+    serial_ports.py's own history note for why a single-slot version
+    ping-ponged between exactly two wrong ports once a third candidate
+    existed)."""
+    rejected = serial_ports.rejected_ports()
     candidates = [port.device for port in serial.tools.list_ports.comports()
                   if (port.vid, port.pid) in config.ESP32_USB_SERIAL_VID_PIDS
                   and serial_ports.held_by(port.device) is None]
-    non_rejected = [d for d in candidates if d != rejected]
+    non_rejected = [d for d in candidates if d not in rejected]
     if non_rejected:
         return non_rejected[0]
     return candidates[0] if candidates else None

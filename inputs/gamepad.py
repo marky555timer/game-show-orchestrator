@@ -102,20 +102,16 @@ init_joysticks()
 # GAME SHOW ANSWER-SELECTION HANDLERS
 # ------------------------------------------
 def trigger_loss(play_sfx=True):
-    """`play_sfx=False`: used whenever a round times out with nobody having
-    actually interacted with it. Two call sites: (2026-08-12)
-    _grade_multiplayer_round(), for the mystery question specifically, when
-    literally nobody answered (state.round_first_answer_at == 0) -- by
-    ~40s in, the visual teaser has long since resolved and the matrix is
-    back to normal idle content, so an unprompted buzzer with no on-screen
-    context read as a random, confusing noise. (2026-08-13)
-    _do_grade_quiz_selection()'s solo path, for ANY question timing out
-    with the operator never having armed a selection at all
-    (state.quiz_selected_index < 0) -- an untouched app left running as a
-    plain jukebox (no players joined, operator never presses a button)
-    would otherwise buzz on every single song's mystery-question timeout,
-    forever, with nobody around to have caused or expect it. Still does
-    the DMX/message bookkeeping either way, just skips the audible SFX."""
+    """`play_sfx=False`: used whenever a round is graded a loss because it
+    timed out (state.round_timed_out), rather than via a real Grade-button
+    press (2026-09-18, generalized from two narrower timeout-only cases --
+    see both call sites' own comments for that history). A timed-out
+    round's own visual (graphics/matrix_canvas.py's "TIMES UP!" + bare
+    correct-answer reveal) never blames a specific wrong pick the way a
+    real loss does, so an audible buzzer over it read as a mismatch between
+    what's on screen and what's heard, even when someone HAD armed a
+    (wrong) selection before time ran out. Still does the DMX/message
+    bookkeeping either way, just skips the audible SFX."""
     stop_previous_audio()
     state.active_option = None
     state.set_message("WRONG ANSWER! (LOSS BUZZER)", 1.5)
@@ -215,21 +211,8 @@ def select_and_grade_quiz_answer(index):
     mis-press."""
     if state.quiz_locked or not state.factoid_choices or index >= len(state.factoid_choices):
         return
-    # Solo (no registered players) "Who is this?" answered correctly right
-    # here at the panel (2026-09-17): flag it BEFORE grading so graphics/
-    # matrix_canvas.py::_render_mystery_panel_win()/drivers/wled_engine.py
-    # can put the actual artist name + a movie-marquee chase front and
-    # center for the win celebration instead of the normal one-of-four-
-    # panels flash, which didn't make it obvious what was actually chosen.
-    # Checked here (not state.quiz_players, since a registered multiplayer
-    # round already shows "CORRECT: <names>" clearly enough on its own).
-    is_solo_mystery_win = (state.factoid_category == "identify_band"
-                            and not state.quiz_players
-                            and index == state.factoid_correct_index)
     select_quiz_answer(index)
     grade_quiz_selection()
-    if is_solo_mystery_win:
-        state.mystery_panel_win_active = True
 
 
 _grade_lock = threading.Lock()
@@ -282,16 +265,22 @@ def _do_grade_quiz_selection():
         _maybe_advance_from_mystery_grade()
         return
 
-    # Jukebox mode (2026-08-13): a totally untouched app still auto-arms a
-    # mystery question on every new song (drivers/mystery_band_engine.py),
-    # and with nobody signed up as a player, that question can only ever
-    # grade through this solo path -- so on a cold start where the operator
-    # never once presses a button, this is the ONLY grading that happens,
-    # over and over, one per song. No selection ever armed means nobody
-    # interacted with THIS round at all; the loss buzzer below is skipped
-    # for exactly that case so the app can just sit there running as a
-    # plain jukebox without buzzing at nobody.
-    silent_timeout = state.round_timed_out and state.quiz_selected_index < 0
+    # Any 30s-timeout loss is silent (2026-09-18, generalized from the
+    # narrower "nobody ever selected anything" case below): a timed-out
+    # round's own visual (graphics/matrix_canvas.py's "TIMES UP!" + bare
+    # correct-answer reveal, never a specific wrong-pick callout) never
+    # blames a particular choice the way a real Grade-button loss does, so
+    # buzzing the wrong-answer sound over it reads as a mismatch between
+    # what's on screen and what's heard -- even if an answer HAD been
+    # armed before time ran out. Originally added narrower, for Jukebox
+    # mode (2026-08-13): a totally untouched app still auto-arms a mystery
+    # question on every new song (drivers/mystery_band_engine.py), and with
+    # nobody signed up as a player, that question can only ever grade
+    # through this solo path -- so on a cold start where the operator never
+    # once presses a button, this is the ONLY grading that happens, over
+    # and over, one per song, and needs to stay silent so the app can just
+    # sit there running as a plain jukebox without buzzing at nobody.
+    silent_timeout = state.round_timed_out
 
     state.quiz_graded_at = time.time()
     letter = "ABCD"[state.quiz_selected_index]
@@ -414,16 +403,22 @@ def _grade_multiplayer_round():
     if correct_count > 0 or operator_correct:
         trigger_big_win()
     else:
-        # Silent mystery-question timeout (2026-08-12): if this is the
-        # identify_band question, it timed out (not graded because
-        # everyone answered), and literally nobody ever answered at all,
-        # the visual teaser resolved and the matrix reverted to idle
+        # Any 30s-timeout loss is silent (2026-09-18, generalized from the
+        # identify_band-only, nobody-ever-answered case below -- same
+        # change as _do_grade_quiz_selection()'s solo path): a timed-out
+        # round's own visual (graphics/matrix_canvas.py's "TIMES UP!" +
+        # bare correct-answer reveal) never blames a specific wrong pick
+        # the way a real Grade-button loss does, so buzzing the
+        # wrong-answer sound over it reads as a mismatch between what's on
+        # screen and what's heard -- even if someone DID lock in a wrong
+        # answer before time ran out. Originally added narrower (2026-08-12):
+        # if this is the identify_band question, it timed out (not graded
+        # because everyone answered), and literally nobody ever answered at
+        # all, the visual teaser resolved and the matrix reverted to idle
         # content long before this ~40s deadline hit -- an unprompted
-        # buzzer at that point has no on-screen context and just reads as
-        # a random noise. Skip the SFX for that specific case only; a real
-        # wrong answer (or a timeout where SOMEONE at least tried) still buzzes.
-        silent_timeout = (state.factoid_category == "identify_band"
-                           and state.round_timed_out and not state.round_first_answer_at)
+        # buzzer at that point has no on-screen context and just read as
+        # random noise.
+        silent_timeout = state.round_timed_out
         trigger_loss(play_sfx=not silent_timeout)
 
 def abort_game_mode_early():
@@ -1352,6 +1347,14 @@ def _process_space_invaders_movement():
 # ------------------------------------------
 _panel_led_state = (False, False, False, False)
 
+# Post-grade correct-answer LED flash (2026-09-18, operator ask: "reinforce
+# a physical experience with the buttons"): on/off half-period for the
+# rapid flash on the correct answer's own physical arcade button once a
+# round is graded -- noticeably faster than the 1Hz blink the matrix text/
+# marquee segment already use for the same reveal, since this is a single
+# monochrome LED with no color/chase to lean on instead.
+_CORRECT_LED_FLASH_PERIOD_SECONDS = 0.15
+
 
 def _sync_panel_leds():
     """Per-frame poll: lights exactly as many panel LEDs as there are real
@@ -1371,6 +1374,17 @@ def _sync_panel_leds():
     directly rather than special-casing True/False, so it's correct for
     any future <4-choice question type too.
 
+    Once graded (2026-09-18): rather than just going dark like every other
+    LED, the correct answer's own button LED rapidly flashes for as long as
+    the round stays locked -- the same physical reinforcement the matrix
+    text/marquee chase already give that same answer, but right on the
+    button itself. Solo only (`not state.quiz_players`), matching every
+    other piece of this reveal (graphics/matrix_canvas.py::
+    _render_solo_win_panel(), drivers/wled_engine.py's matching marquee
+    condition) -- a registered multiplayer round already has its own
+    "CORRECT: <names>" callout instead. Bypasses the edge-triggered cache
+    below since it needs to toggle every frame, not just on a state change.
+
     Skips entirely during MODE_SIMON -- drivers/simon_engine.py already
     owns these same LEDs for the mini-game's own pulse/hold sequences,
     and Simon never populates state.factoid_choices, so the two are
@@ -1383,6 +1397,13 @@ def _sync_panel_leds():
     app (e.g. drivers/wled_engine.py's own sync_to_show_state())."""
     global _panel_led_state
     if state.mode == state.MODE_SIMON:
+        return
+    if (state.quiz_locked and not state.quiz_players and state.factoid_choices
+            and 0 <= state.factoid_correct_index < len(config.SIMON_HW_COLOR_ORDER)):
+        flash_on = int(time.time() / _CORRECT_LED_FLASH_PERIOD_SECONDS) % 2 == 0
+        for i, color in enumerate(config.SIMON_HW_COLOR_ORDER):
+            simon_hardware.set_led(color, flash_on and i == state.factoid_correct_index)
+        _panel_led_state = None  # force a resync once the round goes live again
         return
     choice_count = len(state.factoid_choices) if live_round_engine.is_round_active() else 0
     desired = tuple(i < choice_count for i in range(len(config.SIMON_HW_COLOR_ORDER)))

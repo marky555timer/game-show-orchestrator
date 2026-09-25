@@ -115,8 +115,13 @@ def mark_operator_interaction():
     operator (physical rig input or a web remote action) does something.
     Cheap no-op outside the "setup" phase (the clock isn't running then
     anyway, see _update_unattended_autoplay() below), so callers don't
-    need to check show_phase themselves before calling this."""
-    state.last_operator_interaction_at = time.time()
+    need to check show_phase themselves before calling this.
+
+    time.monotonic(), not time.time() -- see state.last_operator_
+    interaction_at's own comment for why (a wall-clock NTP step on a
+    cold-boot Pi made this idle clock fire instantly, well before the
+    on-screen countdown had actually finished)."""
+    state.last_operator_interaction_at = time.monotonic()
 
 
 def _update_unattended_autoplay(now):
@@ -125,7 +130,13 @@ def _update_unattended_autoplay(now):
     input or a web remote action) for
     config.SHOW_UNATTENDED_AUTOPLAY_TIMEOUT_SECONDS, starts the show
     itself via _enter_unattended_autoplay() -- so the room doesn't sit on
-    dead air if the host hasn't arrived yet."""
+    dead air if the host hasn't arrived yet.
+
+    `now` (wall-clock, time.time()) is only ever handed to
+    _enter_unattended_autoplay() below to seed show_phase_started_at, which
+    has to line up with every other phase's wall-clock timestamps -- the
+    idle-elapsed comparison itself uses its own time.monotonic() reading
+    (see state.last_operator_interaction_at's comment), not `now`."""
     if state.show_phase != "setup":
         # Not idle-timing outside Setup -- 0.0 sentinel so re-entering
         # Setup later (Stop Game, a finished outro, an aborted countdown,
@@ -133,10 +144,28 @@ def _update_unattended_autoplay(now):
         # instead of picking up a stale one.
         state.last_operator_interaction_at = 0.0
         return
-    if state.last_operator_interaction_at == 0.0:
-        state.last_operator_interaction_at = now
+    if state.setup_confirm_active:
+        # "START SHOW NOW?" confirm open (drivers/simon_engine.py::
+        # _poll_setup_hardware(), green button) -- pause the idle clock
+        # rather than letting it fire out from under the confirm screen.
+        # graphics/matrix_canvas.py::_render_setup_confirm() replaces the
+        # AUTO countdown banner entirely while this is active, so an
+        # operator who opened the confirm and hesitated had no visible
+        # timer left to warn them the show was about to auto-start anyway
+        # (2026-09-21 fix -- confirmed "occasional" because it only bites
+        # when the confirm is opened with the idle timeout already close to
+        # firing). Not resetting last_operator_interaction_at here: however
+        # the confirm resolves already handles the clock correctly on its
+        # own (red -> trigger_unattended_autoplay_now() fires immediately
+        # on purpose; anything else -> mark_operator_interaction() resets
+        # it fresh, drivers/simon_engine.py::_poll_setup_hardware()) --
+        # simply not evaluating the timeout while paused is enough.
         return
-    if now - state.last_operator_interaction_at >= config.SHOW_UNATTENDED_AUTOPLAY_TIMEOUT_SECONDS:
+    mono_now = time.monotonic()
+    if state.last_operator_interaction_at == 0.0:
+        state.last_operator_interaction_at = mono_now
+        return
+    if mono_now - state.last_operator_interaction_at >= config.SHOW_UNATTENDED_AUTOPLAY_TIMEOUT_SECONDS:
         _enter_unattended_autoplay(now)
 
 
