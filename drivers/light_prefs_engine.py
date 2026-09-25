@@ -38,6 +38,7 @@ _HEADER = ["track_key", "tempo_period", "color_index", "theme_index",
            "dmx_color_index", "dmx_theme_index",
            "marquee_color_index", "marquee_theme_index",
            "accent_color_index", "accent_theme_index",
+           "accent_preset_id", "accent_preset_color_index",
            "tempo_source", "energy", "updated_at"]
 
 # Valid values for the "energy" column -- drivers/factoid_engine.py fetches
@@ -100,6 +101,10 @@ class LightPrefsEngine:
                             "marquee_theme_index": _to_int(row.get("marquee_theme_index"), legacy_theme),
                             "accent_color_index": _to_int(row.get("accent_color_index"), legacy_color),
                             "accent_theme_index": _to_int(row.get("accent_theme_index"), legacy_theme),
+                            # 2026-09-25 columns -- no legacy fallback, a
+                            # row without them simply has no preset.
+                            "accent_preset_id": _to_int(row.get("accent_preset_id")),
+                            "accent_preset_color_index": _to_int(row.get("accent_preset_color_index")),
                             "tempo_source": (row.get("tempo_source") or "operator").strip(),
                             "energy": (row.get("energy") or "").strip(),
                         }
@@ -131,6 +136,8 @@ class LightPrefsEngine:
                         "marquee_theme_index": prefs.get("marquee_theme_index", NO_LOOK),
                         "accent_color_index": prefs.get("accent_color_index", NO_LOOK),
                         "accent_theme_index": prefs.get("accent_theme_index", NO_LOOK),
+                        "accent_preset_id": prefs.get("accent_preset_id", NO_LOOK),
+                        "accent_preset_color_index": prefs.get("accent_preset_color_index", NO_LOOK),
                         "tempo_source": prefs.get("tempo_source", "operator"),
                         "energy": prefs.get("energy", ""),
                         "updated_at": now_str,
@@ -168,6 +175,8 @@ class LightPrefsEngine:
                 "marquee_theme_index": NO_LOOK,
                 "accent_color_index": NO_LOOK,
                 "accent_theme_index": NO_LOOK,
+                "accent_preset_id": NO_LOOK,
+                "accent_preset_color_index": NO_LOOK,
                 "tempo_source": "online",
                 "energy": "",
             })
@@ -178,24 +187,28 @@ class LightPrefsEngine:
     def save_prefs_for(self, track_key, tempo_period,
                         dmx_color_index, dmx_theme_index,
                         marquee_color_index, marquee_theme_index,
-                        accent_color_index, accent_theme_index):
+                        accent_color_index, accent_theme_index,
+                        accent_preset_id, accent_preset_color_index):
         self._upsert(track_key, tempo_period=tempo_period,
                      # Legacy pair mirrors DMX -- see _save_cache()'s comment.
                      color_index=dmx_color_index, theme_index=dmx_theme_index,
                      dmx_color_index=dmx_color_index, dmx_theme_index=dmx_theme_index,
                      marquee_color_index=marquee_color_index, marquee_theme_index=marquee_theme_index,
                      accent_color_index=accent_color_index, accent_theme_index=accent_theme_index,
+                     accent_preset_id=accent_preset_id, accent_preset_color_index=accent_preset_color_index,
                      tempo_source="operator")
         print(f"[LIGHT PREFS] Saved for {track_key!r}: tempo={tempo_period:.3f}s, "
               f"dmx=({dmx_color_index},{dmx_theme_index}), "
               f"marquee=({marquee_color_index},{marquee_theme_index}), "
-              f"accent=({accent_color_index},{accent_theme_index})")
+              f"accent=({accent_color_index},{accent_theme_index}), "
+              f"accent_preset=({accent_preset_id},{accent_preset_color_index})")
 
     def save_fixture_look_for(self, track_key, **fields):
         """Partial per-fixture-type look save from the library's per-song
         editor (web/remote_server.py's /api/library/light-prefs) -- accepts
         any subset of dmx_color_index/dmx_theme_index/marquee_color_index/
-        marquee_theme_index/accent_color_index/accent_theme_index, merged
+        marquee_theme_index/accent_color_index/accent_theme_index/
+    accent_preset_id/accent_preset_color_index, merged
         via _upsert() same as every other write path here (editing just the
         marquee fields doesn't touch DMX/accent/tempo/energy). Editing a
         song that isn't the one currently playing only touches this row on
@@ -290,6 +303,7 @@ def update(now):
             state.dmx_color_index, state.dmx_theme_index,
             state.marquee_color_index, state.marquee_theme_index,
             state.accent_color_index, state.accent_theme_index,
+            state.accent_preset_id, state.accent_preset_color_index,
         )
 
 
@@ -349,6 +363,13 @@ def apply_prefs_for(track_key):
     this module's import chain avoids tangling them."""
     from drivers import lighting_engine
 
+    # Unlike the color/pattern pairs below, an outline preset never carries
+    # over from the previous track -- a saved WLED preset is a deliberate
+    # per-song pick (Fire1 for one specific song), so every new track starts
+    # from "no preset" and only gets one if its own row has it.
+    state.accent_preset_id = NO_LOOK
+    state.accent_preset_color_index = NO_LOOK
+
     prefs = light_prefs_engine.get_prefs_for(track_key)
     if not prefs:
         return
@@ -387,6 +408,14 @@ def apply_prefs_for(track_key):
         restored_any = True
         print(f"[LIGHT PREFS] Restored accent for {track_key!r}: "
               f"color={state.accent_color_index}, theme={state.accent_theme_index}")
+
+    accent_preset = prefs.get("accent_preset_id", NO_LOOK)
+    if accent_preset >= 0:
+        state.accent_preset_id = accent_preset
+        state.accent_preset_color_index = prefs.get("accent_preset_color_index", NO_LOOK)
+        restored_any = True
+        print(f"[LIGHT PREFS] Restored outline preset for {track_key!r}: "
+              f"preset={state.accent_preset_id}, color_override={state.accent_preset_color_index}")
 
     if not restored_any:
         print(f"[LIGHT PREFS] Restored tempo only for {track_key!r}: "

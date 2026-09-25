@@ -631,6 +631,48 @@ ACCENT_EFFECT_NAMES = [
 ]
 ACCENT_FX_SOLID = 0  # "Solid" -- used for the white/Price-Game look and flash() confirmations
 
+# The outline board's own saved WLED presets (2026-09-25), selectable per
+# song as an alternative to the raw effect+color look above -- id -> display
+# name. Hand-copied snapshot of the board's GET /presets.json, same
+# maintenance model as ACCENT_EFFECT_NAMES: presets are built/renamed in
+# WLED's own app (see state.accent_orchestrator_enabled's "disconnect"
+# toggle), so re-sync this by hand (curl http://192.168.1.10/presets.json)
+# whenever that happens -- IDs and names are NOT stable on their own, and a
+# stale entry here just silently loads whatever now lives at that ID. The
+# board's IP has moved before (was .6, confirmed .10 on 2026-09-25) --
+# check current DHCP lease if this curl doesn't connect.
+ACCENT_PRESETS = {
+    1: "Vvv",
+    2: "Yeh",
+    3: "Ballll",
+    4: "Fire1",
+    5: "Fire 2",
+    6: "GreenDefault",
+    7: "Neon lust",
+}
+
+# Preset id -> WLED segment IDs whose primary color gets replaced when the
+# operator picks an override color for that preset (drivers/accent_engine.py
+# ::_send_preset()). Presets not listed have no override and the UI hides
+# the color picker for them. Fire1/Fire 2's segments 1-3 share the orange
+# flame color; segment 0 is left black on purpose (natural heat palette).
+ACCENT_PRESET_OVERRIDE_TARGETS = {4: [1, 2, 3], 5: [1, 2, 3]}
+
+# WLED loads a "ps" preset asynchronously and ignores anything else in the
+# same request, so a segment color override has to follow as its own
+# request once the preset has actually landed -- this is that gap.
+ACCENT_PRESET_OVERRIDE_DELAY_SECONDS = 0.3
+
+# Leaving a multi-segment preset (Fire1/Fire 2/Neon lust) for a raw look
+# collapses the strip back to one full-length segment first -- otherwise the
+# raw look's plain {"seg": {...}} only reaches one segment and the rest keep
+# running the preset. Segment 0's stop is deliberately oversized (WLED clamps
+# it to the real strip length, which is NOT ACCENT_TOTAL_LEDS below -- the
+# presets themselves run segments out past LED 420), and IDs 1..this-1 are
+# deleted via stop=0 (a no-op for IDs that don't exist).
+ACCENT_SEGMENT_RESET_MAX_ID = 16
+ACCENT_SEGMENT_RESET_STOP = 9999
+
 # Approximate RGB stand-ins for DJ_COLOR_PALETTE's three dedicated-emitter
 # looks (white lamp/amber lamp/uv) -- those store r=g=b=0 with the real
 # intensity on a separate white/amber/uv attribute (see the DJColor class
@@ -677,12 +719,13 @@ ACCENT_FX_RAINBOW = 9
 ACCENT_FX_BLINK = 1
 ACCENT_FX_SPARKLE_PLUS = 22
 
-# Total LED count on the accent strip, per the user's own spec (a "120
-# lamp strip") -- NOT yet cross-verified against this board's actual
-# saved WLED LED-count setting (it wasn't reachable over WiFi to check
-# at the time this was written; confirm via its /json/info "leds.count"
-# if anything here seems off in practice).
-ACCENT_TOTAL_LEDS = 120
+# Total LED count on the accent strip. Confirmed live 2026-09-25 against
+# this board's own GET /json/info ("leds":{"count":423,...}, MAC-matched to
+# config.ACCENT_WLED_MAC to be sure it's this board) -- NOT the "120 lamp
+# strip" figure this used to hold, which was the user's own spec, never
+# cross-checked against the board (it wasn't reachable over WiFi at the
+# time). Re-verify via /json/info if the strip is ever rebuilt.
+ACCENT_TOTAL_LEDS = 423
 
 # Segment split for the "top panel only" vs "all panels" movie-chase
 # variants -- GUESS pending confirmation of the accent strip's actual

@@ -391,6 +391,14 @@
       </label>
       <div id="outline-color-swatches" class="color-swatch-picker"></div>
       <div id="outline-gradient-picker" class="gradient-mode-picker"></div>
+      <!-- The board's own saved WLED presets (config.ACCENT_PRESETS) -- a
+           preset replaces the effect/color above for this song until
+           cleared. The override color row only appears for presets listed
+           in config.ACCENT_PRESET_OVERRIDE_TARGETS. -->
+      <label style="display:block;font-size:.85rem;font-weight:700;margin-top:6px">WLED Preset
+        <select id="outline-preset-select" onchange="pickAccentPreset(this.value)"></select>
+      </label>
+      <div id="outline-preset-color-swatches" class="color-swatch-picker" style="display:none"></div>
       <label style="display:block;font-size:.85rem;font-weight:700;margin-top:6px">Speed
         <input type="range" id="accent-speed-slider" min="0" max="255" value="128" onchange="accentSpeedSet(this.value)">
       </label>
@@ -700,6 +708,45 @@ async function djLookLoadOptions() {
   populateThemeSelect('dmx-theme-select', d.dmx_theme_names);
   populateThemeSelect('marquee-theme-select', d.marquee_theme_names);
   populateThemeSelect('outline-theme-select', d.outline_theme_names);
+  document.getElementById('outline-preset-select').innerHTML =
+    '<option value="-1">&mdash; none (use effect/color) &mdash;</option>' +
+    d.outline_presets.map(p => `<option value="${p.id}">${p.id}: ${_escapeHtml(p.name)}</option>`).join('');
+}
+
+function pickAccentPreset(presetId) {
+  // Switching presets drops any override color -- it was chosen for the old one.
+  api('/api/accent/preset/set', {
+    method: 'POST', headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({preset_id: parseInt(presetId, 10), color_index: -1}),
+  }).then(djLookPoll);
+}
+
+function pickAccentPresetColor(colorIndex) {
+  const presetId = parseInt(document.getElementById('outline-preset-select').value, 10);
+  api('/api/accent/preset/set', {
+    method: 'POST', headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({preset_id: presetId, color_index: colorIndex}),
+  }).then(djLookPoll);
+}
+
+// Built once, class-toggled after (same reasoning as renderColorSwatchPicker
+// below); the leading "x" swatch means "the preset's own baked-in colors."
+function renderAccentPresetColorPicker(presetId, selectedIndex) {
+  const box = document.getElementById('outline-preset-color-swatches');
+  box.style.display = DJ_LOOK_OPTIONS.outline_preset_override_ids.includes(presetId) ? '' : 'none';
+  if (!box.dataset.rendered) {
+    box.innerHTML = `<button type="button" class="color-swatch-btn" data-color-index="-1"
+        style="background:#333;color:#999;font-size:12px;line-height:18px" title="Preset's own colors"
+        onclick="pickAccentPresetColor(-1)">&times;</button>` +
+      DJ_LOOK_OPTIONS.colors.map(c => `
+      <button type="button" class="color-swatch-btn" data-color-index="${c.index}"
+        style="background:rgb(${c.r},${c.g},${c.b})" title="${_escapeHtml(c.name)}"
+        onclick="pickAccentPresetColor(${c.index})"></button>`).join('');
+    box.dataset.rendered = '1';
+  }
+  box.querySelectorAll('.color-swatch-btn').forEach(btn => {
+    btn.classList.toggle('selected', Number(btn.dataset.colorIndex) === selectedIndex);
+  });
 }
 
 function populateThemeSelect(selectId, names) {
@@ -797,6 +844,8 @@ function djLookPoll() {
     _setSelectIfNotFocused('outline-theme-select', d.outline.theme_index);
     renderColorSwatchPicker('outline-color-swatches', 'outline', d.outline.color_index);
     renderGradientPicker('outline-gradient-picker', 'outline', d.outline.gradient_mode);
+    _setSelectIfNotFocused('outline-preset-select', d.accent_preset_id);
+    renderAccentPresetColorPicker(d.accent_preset_id, d.accent_preset_color_index);
     _setCheckedIfNotFocused('accent-sound-checkbox', d.accent_sound_enabled);
     _setCheckedIfNotFocused('accent-orchestrator-checkbox', d.accent_orchestrator_enabled);
     if (!_accentSpeedLoaded) {

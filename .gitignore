@@ -17,3 +17,6 @@ anthropic_key.txt
 
 # Large media -- lives on the device, not in git
 audio/music/
+
+# Personal Claude Code overrides (permissions, local allow-lists) -- not shared
+.claude/settings.local.json

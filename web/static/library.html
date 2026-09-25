@@ -233,6 +233,12 @@
       <div class="light-prefs-subhead">Outline Effect &amp; Color</div>
       <select id="tag-edit-accent-theme"></select>
       <div id="tag-edit-accent-swatches" class="color-swatch-picker"></div>
+      <!-- Board's own saved WLED preset (config.ACCENT_PRESETS) -- replaces
+           the effect/color above for this song when set. Override color row
+           only shows for presets in config.ACCENT_PRESET_OVERRIDE_TARGETS. -->
+      <div class="light-prefs-subhead">Outline WLED Preset</div>
+      <select id="tag-edit-accent-preset"></select>
+      <div id="tag-edit-accent-preset-swatches" class="color-swatch-picker"></div>
 
       <div class="row">
         <button class="btn" onclick="closeTagEdit()">Cancel</button>
@@ -662,7 +668,43 @@ async function _loadDjLookOptions() {
   _populateLightPrefsThemeSelect('tag-edit-dmx-theme', d.dmx_theme_names, 'dmx_theme_index');
   _populateLightPrefsThemeSelect('tag-edit-marquee-theme', d.marquee_theme_names, 'marquee_theme_index');
   _populateLightPrefsThemeSelect('tag-edit-accent-theme', d.outline_theme_names, 'accent_theme_index');
+
+  const presetSel = document.getElementById('tag-edit-accent-preset');
+  presetSel.innerHTML = '<option value="-1">&mdash; none (use effect/color) &mdash;</option>' +
+    d.outline_presets.map(p => `<option value="${p.id}">${p.id}: ${_escapeHtml(p.name)}</option>`).join('');
+  presetSel.onchange = () => {
+    _tagEditLightPrefs.accent_preset_id = parseInt(presetSel.value, 10);
+    _tagEditLightPrefs.accent_preset_color_index = -1;  // an override color belongs to the preset it was picked for
+    _renderPresetColorSwatches();
+  };
 }
+
+// Preset override color: unlike the swatch rows above, -1 here is a real
+// choice ("the preset's own colors"), not "not saved."
+function _renderPresetColorSwatches() {
+  const box = document.getElementById('tag-edit-accent-preset-swatches');
+  if (!LIB_DJ_LOOK_OPTIONS || !_tagEditLightPrefs) return;
+  const presetId = _tagEditLightPrefs.accent_preset_id;
+  box.style.display = LIB_DJ_LOOK_OPTIONS.outline_preset_override_ids.includes(presetId) ? '' : 'none';
+  const selected = _tagEditLightPrefs.accent_preset_color_index;
+  const ownBtn = `<button type="button" class="color-swatch-btn${selected === -1 ? ' selected' : ''}"
+    style="background:#333;color:#999;font-size:12px;line-height:18px" title="Preset's own colors"
+    onclick="tagEditPickPresetColor(-1)">&times;</button>`;
+  box.innerHTML = ownBtn + LIB_DJ_LOOK_OPTIONS.colors.map(c => `
+    <button type="button" class="color-swatch-btn${c.index === selected ? ' selected' : ''}"
+      style="background:rgb(${c.r},${c.g},${c.b})" title="${_escapeHtml(c.name)}"
+      onclick="tagEditPickPresetColor(${c.index})"></button>`).join('');
+}
+
+function tagEditPickPresetColor(index) {
+  _tagEditLightPrefs.accent_preset_color_index = index;
+  _renderPresetColorSwatches();
+}
+
+// These two are sent whenever they differ from what was loaded (including
+// back to -1, which clears a saved preset) -- see saveTagEdit().
+const _PRESET_FIELDS = ['accent_preset_id', 'accent_preset_color_index'];
+let _tagEditPresetLoaded = null;
 
 function _populateLightPrefsThemeSelect(selectId, names, field) {
   const sel = document.getElementById(selectId);
@@ -740,7 +782,14 @@ function openTagEdit(index) {
     dmx_color_index: lp.dmx_color_index ?? -1, dmx_theme_index: lp.dmx_theme_index ?? -1,
     marquee_color_index: lp.marquee_color_index ?? -1, marquee_theme_index: lp.marquee_theme_index ?? -1,
     accent_color_index: lp.accent_color_index ?? -1, accent_theme_index: lp.accent_theme_index ?? -1,
+    accent_preset_id: lp.accent_preset_id ?? -1, accent_preset_color_index: lp.accent_preset_color_index ?? -1,
   };
+  _tagEditPresetLoaded = {
+    accent_preset_id: _tagEditLightPrefs.accent_preset_id,
+    accent_preset_color_index: _tagEditLightPrefs.accent_preset_color_index,
+  };
+  document.getElementById('tag-edit-accent-preset').value = String(_tagEditLightPrefs.accent_preset_id);
+  _renderPresetColorSwatches();
   document.getElementById('tag-edit-dmx-theme').value = String(_tagEditLightPrefs.dmx_theme_index);
   document.getElementById('tag-edit-marquee-theme').value = String(_tagEditLightPrefs.marquee_theme_index);
   document.getElementById('tag-edit-accent-theme').value = String(_tagEditLightPrefs.accent_theme_index);
@@ -779,7 +828,9 @@ async function saveTagEdit() {
   let hasLightPrefsChange = false;
   if (_tagEditLightPrefs) {
     for (const [field, value] of Object.entries(_tagEditLightPrefs)) {
-      if (value >= 0) { lightPrefsBody[field] = value; hasLightPrefsChange = true; }
+      if (_PRESET_FIELDS.includes(field)) {
+        if (value !== _tagEditPresetLoaded[field]) { lightPrefsBody[field] = value; hasLightPrefsChange = true; }
+      } else if (value >= 0) { lightPrefsBody[field] = value; hasLightPrefsChange = true; }
     }
   }
 

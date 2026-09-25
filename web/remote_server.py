@@ -143,6 +143,10 @@ if app is not None:
     class AccentSpeedSet(BaseModel):
         speed: int
 
+    class AccentPresetSet(BaseModel):
+        preset_id: int
+        color_index: int | None = None
+
     class IdleThemeSet(BaseModel):
         theme: str
 
@@ -745,6 +749,8 @@ if app is not None:
             "marquee_theme_index": prefs.get("marquee_theme_index", no_look),
             "accent_color_index": prefs.get("accent_color_index", no_look),
             "accent_theme_index": prefs.get("accent_theme_index", no_look),
+            "accent_preset_id": prefs.get("accent_preset_id", no_look),
+            "accent_preset_color_index": prefs.get("accent_preset_color_index", no_look),
         }
 
     @app.get("/api/library/tracks")
@@ -833,6 +839,10 @@ if app is not None:
         marquee_theme_index: int | None = None
         accent_color_index: int | None = None
         accent_theme_index: int | None = None
+        # -1 is a real value for these two (clear the preset / drop the
+        # color override), unlike the pairs above where -1 is never sent.
+        accent_preset_id: int | None = None
+        accent_preset_color_index: int | None = None
 
     @app.post("/api/library/light-prefs")
     def library_light_prefs_set(body: LightPrefsSet):
@@ -862,6 +872,14 @@ if app is not None:
             if "color_index" in name and not (0 <= value < len(config.DJ_COLOR_PALETTE)):
                 return {"ok": False, "reason": f"{name} out of range"}
             fields[name] = value
+        if body.accent_preset_id is not None:
+            if body.accent_preset_id != light_prefs_engine.NO_LOOK and body.accent_preset_id not in config.ACCENT_PRESETS:
+                return {"ok": False, "reason": "accent_preset_id not a known preset"}
+            fields["accent_preset_id"] = body.accent_preset_id
+        if body.accent_preset_color_index is not None:
+            if not (-1 <= body.accent_preset_color_index < len(config.DJ_COLOR_PALETTE)):
+                return {"ok": False, "reason": "accent_preset_color_index out of range"}
+            fields["accent_preset_color_index"] = body.accent_preset_color_index
         if not fields:
             return {"ok": False, "reason": "nothing to update"}
 
@@ -1205,6 +1223,8 @@ if app is not None:
             "accent_speed": state.accent_speed,
             "accent_sound_enabled": state.accent_sound_enabled,
             "accent_orchestrator_enabled": state.accent_orchestrator_enabled,
+            "accent_preset_id": state.accent_preset_id,
+            "accent_preset_color_index": state.accent_preset_color_index,
         }
 
     @app.get("/api/dj-look/options")
@@ -1222,6 +1242,11 @@ if app is not None:
             "outline_theme_names": config.ACCENT_EFFECT_NAMES,
             "gradient_modes": list(config.GRADIENT_MODES),
             "feature_order": list(config.DJ_FEATURE_ORDER),
+            # The outline board's own saved WLED presets (static config
+            # snapshot, no live board fetch) and which of them accept a
+            # color override -- the UI only offers a color picker for those.
+            "outline_presets": [{"id": pid, "name": name} for pid, name in sorted(config.ACCENT_PRESETS.items())],
+            "outline_preset_override_ids": sorted(config.ACCENT_PRESET_OVERRIDE_TARGETS),
         }
 
     @app.post("/api/marquee/blank-lower/set")
@@ -1246,6 +1271,22 @@ if app is not None:
     def accent_orchestrator_set(body: BoolSet):
         accent_engine.set_orchestrator_enabled(body.enabled)
         return {"ok": True, "orchestrator_enabled": state.accent_orchestrator_enabled}
+
+    # Live per-song outline preset pick (2026-09-25) -- -1 = back to the raw
+    # effect/color look. Marked dirty like the other live DJ-look controls
+    # so it's saved to this track's light_prefs row; it resets to none on
+    # the next track (light_prefs_engine.apply_prefs_for()) unless that
+    # track has its own.
+    @app.post("/api/accent/preset/set")
+    def accent_preset_set(body: AccentPresetSet):
+        if body.preset_id != light_prefs_engine.NO_LOOK and body.preset_id not in config.ACCENT_PRESETS:
+            return {"ok": False, "error": f"unknown preset {body.preset_id}"}
+        state.accent_preset_id = body.preset_id
+        if body.color_index is not None:
+            state.accent_preset_color_index = max(-1, min(len(config.DJ_COLOR_PALETTE) - 1, body.color_index))
+        light_prefs_engine.mark_dirty()
+        return {"ok": True, "accent_preset_id": state.accent_preset_id,
+                "accent_preset_color_index": state.accent_preset_color_index}
 
     @app.post("/api/accent/speed/set")
     def accent_speed_set(body: AccentSpeedSet):

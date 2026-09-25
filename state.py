@@ -160,6 +160,8 @@ class State:
         self.accent_gradient_mode = "off"
         self.accent_speed = 128  # WLED per-segment "sx" (0-255)
         self.accent_sound_enabled = False  # True = let WLED's own AudioReactive effect run
+        self.accent_preset_id = -1  # WLED saved-preset id (config.ACCENT_PRESETS), -1 = none, use the raw effect/color above
+        self.accent_preset_color_index = -1  # DJ_COLOR_PALETTE override for the preset's segments, -1 = preset's own colors
         self.accent_orchestrator_enabled = True  # False = stop sending any commands to the outline board (design presets live in WLED's own app while the show keeps running)
 
         self.dj_selected_feature = "dmx"  # "dmx" | "marquee" | "outline"

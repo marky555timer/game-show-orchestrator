@@ -126,6 +126,8 @@ def next_effect():
 
 _manual_override = None  # None (auto-sync) or "top"/"all" while a manual movie-chase test is forced
 _last_sent_look = None  # (fx, r, g, b, sx) tuple last actually sent, so sync_to_show_state() only sends on real change
+_pending_override = None  # (due_time, payload) preset color override waiting on its preset to load -- see _send_preset()
+_preset_segments_active = False  # True once the board may be split into several segments -- see _with_segment_reset()
 
 # Btn9 feature-select confirmation flash (inputs/gamepad.py::
 # handle_feature_select) and any future win/loss-style trigger -- mirrors
@@ -142,7 +144,11 @@ def _resolve_dj_color():
     lamp) substituted for a visible RGB approximation -- see
     config.ACCENT_DEDICATED_EMITTER_RGB's comment for why those can't just
     be used as-is."""
-    color = config.DJ_COLOR_PALETTE[state.accent_color_index % len(config.DJ_COLOR_PALETTE)]
+    return _palette_rgb(state.accent_color_index)
+
+
+def _palette_rgb(color_index):
+    color = config.DJ_COLOR_PALETTE[color_index % len(config.DJ_COLOR_PALETTE)]
     if color.white or color.amber or color.uv:
         return config.ACCENT_DEDICATED_EMITTER_RGB.get(color.name, (255, 255, 255))
     return (color[0], color[1], color[2])
@@ -192,6 +198,10 @@ def _target_look():
         return (config.ACCENT_FX_SOLID, 255, 255, 255, state.accent_speed, None, None, None)  # Solid, white
     if state.accent_sound_enabled:
         return (config.ACCENT_AUDIOREACTIVE_FX_ID, None, None, None, None, None, None, None)
+    if state.accent_preset_id >= 0:
+        # Per-song WLED saved preset (2026-09-25) -- a distinct tuple shape
+        # so _last_sent_look can never mistake it for a raw-effect look.
+        return ("preset", state.accent_preset_id, state.accent_preset_color_index)
     # state.accent_theme_index is a direct WLED effect ID (index into
     # config.ACCENT_EFFECT_NAMES) since 2026-09-18 -- no longer routed
     # through a curated subset mapping, see that list's header comment.
@@ -216,22 +226,68 @@ def sync_to_show_state():
     active, or while a flash() confirmation is still showing; resume_auto_
     sync() (or another set_movie_chase() call) clears the former, the
     latter clears on its own once _flash_until passes."""
-    global _last_sent_look
-    if time.time() < _flash_until:
+    global _last_sent_look, _pending_override
+    now = time.time()
+    if now < _flash_until:
         return
     if _manual_override is not None or not available():
         return
+    if _pending_override is not None and now >= _pending_override[0]:
+        _send(_pending_override[1])
+        _pending_override = None
     look = _target_look()
     if look == _last_sent_look:
         return
+    _pending_override = None  # a look change supersedes any not-yet-sent override for the old one
+    if look[0] == "preset":
+        _send_preset(look[1], look[2])
+        _last_sent_look = look
+        return
     fx, r, g, b, sx, r2, g2, b2 = look
     if r is None:  # accent_sound_enabled sentinel -- select the effect once, nothing else
-        _send({"seg": {"fx": fx}})
+        seg = {"fx": fx}
     elif r2 is None:
-        _send({"seg": {"fx": fx, "col": [[r, g, b]], "sx": sx}})
+        seg = {"fx": fx, "col": [[r, g, b]], "sx": sx}
     else:
-        _send({"seg": {"fx": fx, "col": [[r, g, b], [r2, g2, b2]], "sx": sx}})
+        seg = {"fx": fx, "col": [[r, g, b], [r2, g2, b2]], "sx": sx}
+    _send({"seg": _with_segment_reset(seg)})
     _last_sent_look = look
+
+
+def _with_segment_reset(seg):
+    """Returns the "seg" value for a raw (non-preset) look: `seg` as-is
+    normally, or -- right after a preset may have split the strip into
+    several segments -- a list that applies `seg` to one full-length
+    segment 0 and deletes the rest, so the raw look covers the whole strip
+    instead of only whichever segment happens to be selected. See
+    config.ACCENT_SEGMENT_RESET_STOP's comment for the geometry."""
+    global _preset_segments_active
+    if not _preset_segments_active:
+        return seg
+    _preset_segments_active = False
+    return ([dict(seg, id=0, start=0, stop=config.ACCENT_SEGMENT_RESET_STOP, sel=True)]
+            + [{"id": i, "stop": 0} for i in range(1, config.ACCENT_SEGMENT_RESET_MAX_ID)])
+
+
+def _send_preset(preset_id, color_index):
+    """Loads one of the board's own saved WLED presets (config.
+    ACCENT_PRESETS), optionally recoloring its config.
+    ACCENT_PRESET_OVERRIDE_TARGETS segments to a DJ_COLOR_PALETTE entry.
+    WLED applies "ps" asynchronously and drops the rest of that request, so
+    the override can't ride along in the same payload -- it's queued in
+    _pending_override for sync_to_show_state() to send once
+    config.ACCENT_PRESET_OVERRIDE_DELAY_SECONDS have passed (and _send()'s
+    single pending slot means it couldn't just be a second back-to-back
+    _send() either; the second would overwrite the first)."""
+    global _pending_override, _preset_segments_active
+    _send({"ps": preset_id})
+    _preset_segments_active = True
+    targets = config.ACCENT_PRESET_OVERRIDE_TARGETS.get(preset_id)
+    if color_index < 0 or not targets:
+        return
+    r, g, b = _palette_rgb(color_index)
+    _pending_override = (time.time() + config.ACCENT_PRESET_OVERRIDE_DELAY_SECONDS,
+                         {"seg": [{"id": sid, "col": [[r, g, b]]} for sid in targets]})
 
 
 def flash(r, g, b, duration=None):
@@ -248,7 +304,7 @@ def flash(r, g, b, duration=None):
         return
     _flash_color = (r, g, b)
     _flash_until = time.time() + (duration if duration is not None else config.DJ_FEATURE_FLASH_SECONDS)
-    _send({"seg": {"fx": config.ACCENT_FX_SOLID, "col": [[r, g, b]]}})
+    _send({"seg": _with_segment_reset({"fx": config.ACCENT_FX_SOLID, "col": [[r, g, b]]})})
     _last_sent_look = None  # force a real resend once the flash expires, rather than trusting a stale comparison
 
 
@@ -306,11 +362,15 @@ def set_orchestrator_enabled(enabled):
     disabled -- the board's actual state may have drifted from that in
     the meantime (that's the whole point of the toggle), so a stale match
     there would otherwise leave the board showing whatever the operator
-    left it on instead of snapping back under show control."""
-    global _last_sent_look
+    left it on instead of snapping back under show control. For the same
+    reason the operator may have left the strip split into several
+    segments, so the next raw look collapses it back to one first (see
+    _with_segment_reset())."""
+    global _last_sent_look, _preset_segments_active
     state.accent_orchestrator_enabled = enabled
     if enabled:
         _last_sent_look = None
+        _preset_segments_active = True
 
 
 def _send(payload):
