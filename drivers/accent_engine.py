@@ -524,7 +524,7 @@ def _scan_loop():
 
 
 def _try_find_and_claim():
-    global _link
+    global _link, _last_sent_look, _last_sent_bri, _last_sent_preset_speed, _preset_segments_active
     for port in serial.tools.list_ports.comports():
         if (port.vid, port.pid) not in config.ESP32_USB_SERIAL_VID_PIDS:
             continue
@@ -539,6 +539,26 @@ def _try_find_and_claim():
             continue
         with _lock:
             _link = link
+        # A (re)connect here can mean the BOARD itself just reset (brief
+        # power/USB glitch, or a WLED crash/reboot) rather than only the Pi
+        # app restarting -- and WLED reloads its own saved boot preset on
+        # power-up (config.ACCENT_PRESETS' boot entry, confirmed live as
+        # preset 6/GreenDefault), silently overwriting whatever look this
+        # module last sent. Without this reset, sync_to_show_state() would
+        # keep comparing against its stale "last sent" cache, see no
+        # change, and never resend -- leaving the board stuck on the boot
+        # preset until the operator happens to pick a genuinely different
+        # look. Same reasoning as set_orchestrator_enabled(True)'s reset,
+        # just for a different disconnect/reconnect trigger. Real-world
+        # symptom this fixes: 2026-09-25 report of the strip "stuck on
+        # green default, no control except brightness" (brightness alone
+        # still worked because its check compares against the OPERATOR'S
+        # target value, not the board's actual state, so a new value on
+        # the slider always looked like a real change and got sent).
+        _last_sent_look = None
+        _last_sent_bri = None
+        _last_sent_preset_speed = None
+        _preset_segments_active = True
         print(f"[ACCENT] Connected over serial on {port.device} (confirmed by MAC).")
         return
 
