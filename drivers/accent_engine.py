@@ -135,6 +135,9 @@ _last_sent_preset_speed = None  # sx last applied to a preset's segments -- trac
 # ("preset", id, color_index) look tuple doesn't include speed (a raw look's sx lives in the tuple itself and so
 # is already covered by the normal look-changed check), so a live speed nudge while a preset stays selected needs
 # its own comparison.
+_last_full_reassert_at = 0.0  # time.time() of the last periodic forced full resend -- see config.
+# ACCENT_REASSERT_INTERVAL_SECONDS' comment for why this exists (self-heals a WLED-side reset that
+# _try_find_and_claim()'s reconnect-triggered reset can't see).
 
 # Btn9 feature-select confirmation flash (inputs/gamepad.py::
 # handle_feature_select) and any future win/loss-style trigger -- mirrors
@@ -240,13 +243,25 @@ def sync_to_show_state():
     changed. A look change also forces a brightness resend (see
     _last_sent_bri reset below): loading a WLED preset applies that
     preset's own saved brightness, silently overriding whatever the
-    operator last set, so the override has to be reasserted right after."""
-    global _last_sent_look, _pending_override, _last_sent_bri, _last_sent_preset_speed
+    operator last set, so the override has to be reasserted right after.
+
+    Also periodically forces a full resend regardless of whether the
+    computed look appears unchanged -- see config.
+    ACCENT_REASSERT_INTERVAL_SECONDS' comment for why (a WLED-side reset
+    this module has no way to detect directly)."""
+    global _last_sent_look, _pending_override, _last_sent_bri, _last_sent_preset_speed, \
+        _preset_segments_active, _last_full_reassert_at
     now = time.time()
     if now < _flash_until:
         return
     if _manual_override is not None or not available():
         return
+    if now - _last_full_reassert_at >= config.ACCENT_REASSERT_INTERVAL_SECONDS:
+        _last_sent_look = None
+        _last_sent_bri = None
+        _last_sent_preset_speed = None
+        _preset_segments_active = True
+        _last_full_reassert_at = now
     if _pending_override is not None and now >= _pending_override[0]:
         _send(_pending_override[1])
         _pending_override = None

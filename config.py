@@ -673,6 +673,25 @@ ACCENT_PRESET_OVERRIDE_DELAY_SECONDS = 0.3
 ACCENT_SEGMENT_RESET_MAX_ID = 16
 ACCENT_SEGMENT_RESET_STOP = 9999
 
+# Periodic full-resend interval (2026-09-26) -- drivers/accent_engine.py::
+# sync_to_show_state() forces a complete resend of the current look/
+# brightness on this cadence regardless of whether anything looks changed,
+# to self-heal a WLED-side reset that never drops the USB-serial
+# connection: this board's CP2102 bridge chip is separate silicon from the
+# ESP32 running WLED, so a firmware-only crash/reboot on the ESP32 (which
+# reloads WLED's own saved boot preset, confirmed live as preset 6/
+# GreenDefault) can leave the serial port nominally still open the whole
+# time -- no write ever fails, so _try_find_and_claim()'s own reconnect-
+# triggered reset (added 2026-09-25 for the *detectable* disconnect case)
+# never fires. Confirmed as the real remaining cause of a second "stuck on
+# green, board never recovers" report the same day, after the reconnect
+# fix alone didn't hold. This bounds how long the board can silently drift
+# from the show's intended look to at most this many seconds, without
+# needing to actually detect the reset. Trades a periodic (harmless but
+# visible) effect restart for that guarantee -- kept long enough that the
+# restart isn't distracting under normal operation.
+ACCENT_REASSERT_INTERVAL_SECONDS = 30.0
+
 # Approximate RGB stand-ins for DJ_COLOR_PALETTE's three dedicated-emitter
 # looks (white lamp/amber lamp/uv) -- those store r=g=b=0 with the real
 # intensity on a separate white/amber/uv attribute (see the DJColor class
