@@ -27,6 +27,7 @@ No-op everywhere (with a one-line log at import) if pyserial isn't
 available, so this stays safe to import from the Windows dev machine.
 """
 import json
+import queue
 import threading
 import time
 
@@ -50,11 +51,23 @@ _stop_scanning = threading.Event()
 
 # Serial write hand-off to _sender_loop's dedicated thread (2026-09-18) --
 # see that function's docstring for why _send() can't write inline on
-# whatever thread calls it. Same shape as drivers/wled_engine.py's own
-# _serial_lock/_serial_send_ready/_serial_pending.
-_send_lock = threading.Lock()
-_send_ready = threading.Event()
-_send_pending = None  # (serial.Serial instance, frame_bytes) tuple, or None once consumed
+# whatever thread calls it. A real FIFO queue, NOT a single overwritable
+# slot (that was the original shape here, matching drivers/wled_engine.py's
+# own _serial_lock/_serial_send_ready/_serial_pending) -- confirmed live
+# 2026-09-25 that a single slot silently drops frames whenever two
+# unrelated _send() calls land in the same tick before the sender thread
+# wakes to drain the first one. sync_to_show_state() does exactly that on
+# every look change: it sends the new "seg" payload, then immediately
+# forces a brightness resend in the same call (see that function's
+# docstring), and the second _send() was overwriting the first before it
+# ever reached the wire -- the board kept the color/effect it already had
+# and only ever picked up the brightness half, matching the "no control
+# except brightness" symptom exactly. A queue.Queue preserves every
+# distinct payload in order; the "stale frame superseded by a newer one"
+# tolerance this module is built around only ever applied to the SAME
+# kind of update (a look overtaken by a newer look), never to two
+# different fields like this.
+_send_queue = queue.Queue()
 
 _PROBE_SETTLE_S = 0.3
 _PROBE_REPLY_WAIT_S = 0.5
@@ -260,7 +273,19 @@ def sync_to_show_state():
         _last_sent_look = None
         _last_sent_bri = None
         _last_sent_preset_speed = None
-        _preset_segments_active = True
+        # Deliberately NOT forcing _preset_segments_active = True here (as
+        # this cycle originally did) -- that made every periodic reassert
+        # of a raw look go through _with_segment_reset()'s ~16-segment
+        # cleanup payload instead of the normal single-segment one, and
+        # that payload is too large for the board's serial input buffer:
+        # it's silently dropped, _last_sent_look still gets updated as if
+        # it had sent, and the strip freezes until the next cycle repeats
+        # the same failure -- confirmed live 2026-09-25 (small payloads --
+        # bri, movie-chase, next-effect -- kept working over serial the
+        # whole time; only this oversized one never reached the board).
+        # _preset_segments_active is still set True by the paths that
+        # actually need the cleanup (_send_preset(), _try_find_and_claim()
+        # after a reconnect), just no longer on every 30s tick regardless.
         _last_full_reassert_at = now
     if _pending_override is not None and now >= _pending_override[0]:
         _send(_pending_override[1])
@@ -452,7 +477,6 @@ def _send(payload):
     reaches the board, letting the operator drive it directly from WLED's
     own app (e.g. to design presets live against music) without this show
     fighting them over it."""
-    global _send_pending
     if not state.accent_orchestrator_enabled:
         return
     with _lock:
@@ -460,9 +484,7 @@ def _send(payload):
     if link is None:
         return
     frame = (json.dumps(payload) + "\n").encode("utf-8")
-    with _send_lock:
-        _send_pending = (link, frame)
-    _send_ready.set()
+    _send_queue.put((link, frame))
 
 
 def _fail_send_link(link, error):
@@ -506,21 +528,13 @@ def _sender_loop():
     main-loop freezes from precisely this gap before it got the same fix
     applied here) ties up whichever thread called _send() indefinitely;
     enough FastAPI worker threads stuck that way starves the whole web
-    server even though uvicorn itself is still running. Fire-and-forget
-    UDP-style tolerance isn't available here (this is a reliable serial
-    link, not UDP), but the same "a dropped/delayed frame just gets
-    superseded by the next one" reasoning still applies -- nothing here
-    needs an ack."""
-    global _send_pending
+    server even though uvicorn itself is still running.
+
+    Drains a real queue (see _send_queue's comment) rather than a single
+    overwritable slot -- every distinct payload _send() hands off gets
+    written, in order, even when several land in the same tick."""
     while True:
-        _send_ready.wait()
-        with _send_lock:
-            pending = _send_pending
-            _send_pending = None
-            _send_ready.clear()
-        if pending is None:
-            continue
-        link, frame = pending
+        link, frame = _send_queue.get()
         try:
             link.write(frame)
         except (OSError, serial.SerialException) as e:
