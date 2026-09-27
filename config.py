@@ -631,6 +631,34 @@ ACCENT_EFFECT_NAMES = [
 ]
 ACCENT_FX_SOLID = 0  # "Solid" -- used for the white/Price-Game look and flash() confirmations
 
+# WLED's own built-in multi-color gradient palettes (2026-09-26), selectable
+# per song as an alternative to a flat swatch from DJ_COLOR_PALETTE -- lets
+# the outline strip show a real blended gradient (e.g. "Autumn": orange/
+# yellow/brown) instead of one solid hue. state.accent_palette_index is a
+# direct index into this list == WLED's own "pal" ID, same "no curated
+# subset" convention as ACCENT_EFFECT_NAMES/state.accent_theme_index above.
+#
+# PLACEHOLDER -- NOT yet verified against this board's own GET /json/pal
+# (the Pi was powered off when this was written). This is WLED's widely-
+# documented stock palette ordering, but ACCENT_EFFECT_NAMES' own history
+# is a direct warning not to trust that for THIS specific board/firmware
+# ("Niji" build, 220 effects -- not a stock effect count either) without
+# checking: IDs can shift between releases and a custom build may add or
+# reorder entries. Re-verify (and correct this list) the next time the Pi/
+# board is powered on, the same way ACCENT_EFFECT_NAMES was confirmed
+# against /json/eff, before trusting index-based palette picks in the show.
+ACCENT_PALETTE_NAMES = [
+    "Default", "* Random Cycle", "* Color 1", "* Colors 1&2", "* Color Gradient", "* Colors Only",
+    "Party", "Cloud", "Lava", "Ocean", "Forest", "Rainbow", "Rainbow Bands", "Sunset", "Rivendell",
+    "Breeze", "Red & Blue", "Yellowout", "Analogous", "Splash", "Pastel", "Sunset 2", "Beach",
+    "Vintage", "Departure", "Landscape", "Beech", "Sherbet", "Hult", "Hult 64", "Drywet", "Jul",
+    "Grintage", "Rewhi", "Tertiary", "Fire", "Icefire", "Cyane", "Light Pink", "Autumn", "Magenta",
+    "Magred", "Yelmag", "Yelblu", "Orange & Teal", "Tiamat", "April Night", "Orangery", "C9",
+    "Sakura", "Aurora", "Atlantica", "C9 2", "C9 New", "Temperature", "Aurora 2", "Retro Clown",
+    "Candy", "Toxy Reaf", "Fairy Reaf", "Semi Blue", "Pink Candy", "Red Reaf", "Aqua Flash",
+    "Yelblu Hot", "Lite Light", "Red Flash", "Blink Red", "Red Shift", "Red Tide", "Candy2",
+]
+
 # The outline board's own saved WLED presets (2026-09-25), selectable per
 # song as an alternative to the raw effect+color look above -- id -> display
 # name. Hand-copied snapshot of the board's GET /presets.json, same
@@ -730,13 +758,36 @@ ACCENT_FX_RAINBOW = 9
 # request): the plain white "non-DJ" look (ACCENT_FX_SOLID above) holds
 # through the question itself, but a panel-button grade now briefly
 # overrides it with a distinct right/wrong cue -- "Blink" (col[0] only) for
-# a wrong answer, "Sparkle+" (col[0] base + col[1] secondary, see
-# drivers/accent_engine.py::_target_look()) for a right one, matching the
-# same QUIZ_CELEBRATION_HOLD_SECONDS/QUIZ_WRONG_ANSWER_HOLD_SECONDS windows
-# drivers/wled_engine.py's marquee and graphics/matrix_canvas.py's panel
-# text already resolve a grade in.
+# a wrong answer, flat "Solid" green (see ACCENT_QUIZ_CELEBRATION_* below)
+# for a right one.
 ACCENT_FX_BLINK = 1
-ACCENT_FX_SPARKLE_PLUS = 22
+
+# Outline strip's OWN grading-hold windows (2026-09-27 request: "linger
+# longer with the next question"), deliberately decoupled from
+# QUIZ_CELEBRATION_HOLD_SECONDS/QUIZ_WRONG_ANSWER_HOLD_SECONDS above --
+# those gate the marquee/matrix and are capped by GAME_SCORECARD_HOLD_
+# SECONDS, since drivers/factoid_engine.py::_apply_active_question() resets
+# state.quiz_locked/quiz_graded_at the instant the next question loads. The
+# outline strip is meant to keep bathing the room in the grade color well
+# past that point, so drivers/accent_engine.py tracks its own captured
+# grading timestamp instead of state.quiz_locked staying true.
+ACCENT_QUIZ_CELEBRATION_HOLD_SECONDS = 6.0
+# How much of that window is flat solid green before the crossfade to white
+# below kicks in. A "Sparkle+" twinkle (col[0] base + white sparkle dots)
+# was tried here first and confirmed live 2026-09-27 to read as bad static,
+# not a nice twinkle -- solid green is deliberately plain instead.
+ACCENT_QUIZ_CELEBRATION_SOLID_SECONDS = 4.0
+# WLED's own per-request "tt" crossfade duration (tenths of a second) for
+# the one-shot green-to-white dissolve once ACCENT_QUIZ_CELEBRATION_SOLID_
+# SECONDS elapses -- overrides the board's default transition time for
+# just this one command, so every other look change stays an instant cut.
+ACCENT_QUIZ_CELEBRATION_DISSOLVE_TT_DS = 20
+ACCENT_QUIZ_WRONG_HOLD_SECONDS = 8.0
+
+# Fastest WLED "sx" speed value -- the show-intro scene's "movie style"
+# marquee chase on the outline strip (2026-09-27 request) wants this at
+# full pace, not whatever state.accent_speed the operator last left it at.
+ACCENT_INTRO_CHASE_SPEED = 255
 
 # Total LED count on the accent strip. Confirmed live 2026-09-25 against
 # this board's own GET /json/info ("leds":{"count":423,...}, MAC-matched to

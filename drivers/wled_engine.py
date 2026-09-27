@@ -606,25 +606,30 @@ def _twinkle_segment(name, r, g, b):
 
 
 def _apply_intro(now):
+    """Show-intro scene -- scoped to the "title" segment (panels 1+2) only
+    since 2026-09-27; the lower four display panels (panel3-6, the Simon
+    panels) stay dark throughout, same as _blackout_lower_panels()'s other
+    callers, rather than flashing/twinkling along with the top strip."""
     elapsed = now - state.show_phase_started_at
     if elapsed < config.SHOW_INTRO_DMX_FLASH_AT_SECONDS:
-        _twinkle(255, 255, 255)
-        return
-    beat = elapsed - config.SHOW_INTRO_DMX_FLASH_AT_SECONDS
-    f = config.SHOW_INTRO_DMX_FLASH_SECONDS
-    if beat < f:
-        fill(255, 255, 255)
-    elif beat < f * 2:
-        fill(0, 0, 0)
-    elif beat < f * 3:
-        fill(255, 255, 255)
+        _twinkle_segment("title", 255, 255, 255)
     else:
-        # Matches the DMX rig's post-flash green marquee chase's color
-        # (drivers/lighting_engine.py::_render_show_intro_dmx) -- solid
-        # rather than a moving chase for the same reason _twinkle() above
-        # avoids one.
-        r, g, b = _resolve_marquee_color(config.DJ_COLOR_PALETTE[3])
-        fill(r, g, b)
+        beat = elapsed - config.SHOW_INTRO_DMX_FLASH_AT_SECONDS
+        f = config.SHOW_INTRO_DMX_FLASH_SECONDS
+        if beat < f:
+            set_segment("title", 255, 255, 255)
+        elif beat < f * 2:
+            set_segment("title", 0, 0, 0)
+        elif beat < f * 3:
+            set_segment("title", 255, 255, 255)
+        else:
+            # Matches the DMX rig's post-flash green marquee chase's color
+            # (drivers/lighting_engine.py::_render_show_intro_dmx) -- solid
+            # rather than a moving chase for the same reason
+            # _twinkle_segment() above avoids one.
+            r, g, b = _resolve_marquee_color(config.DJ_COLOR_PALETTE[3])
+            set_segment("title", r, g, b)
+    _blackout_lower_panels()
 
 
 def _apply_outro(now):

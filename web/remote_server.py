@@ -136,6 +136,7 @@ if app is not None:
         color_index: int | None = None
         theme_index: int | None = None
         gradient_mode: str | None = None
+        palette_index: int | None = None  # outline-only (config.ACCENT_PALETTE_NAMES) -- ignored for dmx/marquee
 
     class BoolSet(BaseModel):
         enabled: bool
@@ -754,6 +755,7 @@ if app is not None:
             "accent_theme_index": prefs.get("accent_theme_index", no_look),
             "accent_preset_id": prefs.get("accent_preset_id", no_look),
             "accent_preset_color_index": prefs.get("accent_preset_color_index", no_look),
+            "accent_palette_index": prefs.get("accent_palette_index", no_look),
         }
 
     @app.get("/api/library/tracks")
@@ -842,10 +844,11 @@ if app is not None:
         marquee_theme_index: int | None = None
         accent_color_index: int | None = None
         accent_theme_index: int | None = None
-        # -1 is a real value for these two (clear the preset / drop the
-        # color override), unlike the pairs above where -1 is never sent.
+        # -1 is a real value for these three (clear the preset/palette or
+        # drop the color override), unlike the pairs above where -1 is never sent.
         accent_preset_id: int | None = None
         accent_preset_color_index: int | None = None
+        accent_palette_index: int | None = None
 
     @app.post("/api/library/light-prefs")
     def library_light_prefs_set(body: LightPrefsSet):
@@ -883,6 +886,10 @@ if app is not None:
             if not (-1 <= body.accent_preset_color_index < len(config.DJ_COLOR_PALETTE)):
                 return {"ok": False, "reason": "accent_preset_color_index out of range"}
             fields["accent_preset_color_index"] = body.accent_preset_color_index
+        if body.accent_palette_index is not None:
+            if not (-1 <= body.accent_palette_index < len(config.ACCENT_PALETTE_NAMES)):
+                return {"ok": False, "reason": "accent_palette_index out of range"}
+            fields["accent_palette_index"] = body.accent_palette_index
         if not fields:
             return {"ok": False, "reason": "nothing to update"}
 
@@ -1200,13 +1207,19 @@ if app is not None:
             setattr(state, f"{prefix}_theme_index", max(0, min(theme_count - 1, body.theme_index)))
         if body.gradient_mode is not None and body.gradient_mode in config.GRADIENT_MODES:
             setattr(state, f"{prefix}_gradient_mode", body.gradient_mode)
+        if body.palette_index is not None and feature == "outline":
+            # -1 = none (fall back to accent_color_index's flat swatch) -- same sentinel convention as accent_preset_id.
+            state.accent_palette_index = max(-1, min(len(config.ACCENT_PALETTE_NAMES) - 1, body.palette_index))
         light_prefs_engine.mark_dirty()
-        return {
+        result = {
             "ok": True,
             "color_index": getattr(state, f"{prefix}_color_index"),
             "theme_index": getattr(state, f"{prefix}_theme_index"),
             "gradient_mode": getattr(state, f"{prefix}_gradient_mode"),
         }
+        if feature == "outline":
+            result["palette_index"] = state.accent_palette_index
+        return result
 
     @app.get("/api/dj-look/status")
     def dj_look_status():
@@ -1221,7 +1234,7 @@ if app is not None:
             "marquee": {"color_index": state.marquee_color_index, "theme_index": state.marquee_theme_index,
                         "gradient_mode": state.marquee_gradient_mode},
             "outline": {"color_index": state.accent_color_index, "theme_index": state.accent_theme_index,
-                        "gradient_mode": state.accent_gradient_mode},
+                        "gradient_mode": state.accent_gradient_mode, "palette_index": state.accent_palette_index},
             "blank_lower_marquees": state.blank_lower_marquees,
             "accent_speed": state.accent_speed,
             "accent_brightness": state.accent_brightness,
@@ -1244,6 +1257,9 @@ if app is not None:
             "dmx_theme_names": config.DJ_THEME_NAMES,
             "marquee_theme_names": config.MARQUEE_THEME_NAMES,
             "outline_theme_names": config.ACCENT_EFFECT_NAMES,
+            # PLACEHOLDER list, not yet verified against this board's own
+            # /json/pal -- see config.ACCENT_PALETTE_NAMES' header comment.
+            "outline_palette_names": config.ACCENT_PALETTE_NAMES,
             "gradient_modes": list(config.GRADIENT_MODES),
             "feature_order": list(config.DJ_FEATURE_ORDER),
             # The outline board's own saved WLED presets (static config

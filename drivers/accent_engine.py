@@ -159,6 +159,19 @@ _last_full_reassert_at = 0.0  # time.time() of the last periodic forced full res
 _flash_color = None
 _flash_until = 0.0
 
+# Grading-hold tracking for _target_look() (2026-09-27) -- captured once
+# per grading event rather than re-derived from state.quiz_locked/
+# quiz_selected_index/factoid_correct_index every frame, since all three
+# get reset the instant the next question loads (drivers/factoid_engine.py
+# ::_apply_active_question()), well before this board is meant to let go
+# of the grade color. See config.ACCENT_QUIZ_CELEBRATION_HOLD_SECONDS'
+# comment for why this window is deliberately longer than (and independent
+# of) the marquee/matrix's own QUIZ_CELEBRATION_HOLD_SECONDS/
+# QUIZ_WRONG_ANSWER_HOLD_SECONDS.
+_last_captured_grade_at = 0.0  # state.quiz_graded_at last captured, so a still-open grade isn't re-captured every frame
+_grade_hold_until = 0.0  # time.time() deadline through which _target_look() should keep showing the grade color
+_grade_was_correct = False  # captured alongside the two above
+
 
 def _resolve_dj_color():
     """Same color state.accent_color_index resolves to everywhere else on
@@ -178,16 +191,19 @@ def _palette_rgb(color_index):
 
 
 def _target_look():
-    """Returns the (fx, r, g, b, sx, r2, g2, b2) this board should
+    """Returns the (fx, r, g, b, sx, r2, g2, b2, pal, tt) this board should
     currently be showing, mirroring drivers/wled_engine.py::update()'s own
     show-phase dispatch so the accent strip reads as part of the same show
-    rather than an independently-run afterthought. Simplified relative to
-    that dispatch (no show-phase/Simon/Westminster branches yet -- see this
-    function's call site for why) since the immediate ask (2026-09-15) was
-    per-song DJ color/theme matching plus the Price Game white-out
-    specifically. r2/g2/b2 are a secondary color (WLED's col[1] slot,
-    e.g. Sparkle+'s accent color) -- None for every look that doesn't need
-    one, which is most of them.
+    rather than an independently-run afterthought. r2/g2/b2 are a secondary
+    color (WLED's col[1] slot) -- None for every look that doesn't need one,
+    which is most of them. pal is WLED's own "pal" (palette) id -- 0
+    ("Default", i.e. no override -- the effect renders straight off col)
+    for every look here except the plain DJ-color one at the bottom, which
+    is the only one a per-song gradient-palette choice (2026-09-26,
+    state.accent_palette_index) applies to. tt is a one-shot WLED "tt"
+    crossfade override (tenths of a second, None for the board's normal
+    instant-cut default) -- only the celebration's green-to-white dissolve
+    below uses it.
 
     When state.accent_sound_enabled is True, r/g/b come back None as a
     sentinel -- WLED's own AudioReactive effect (config.
@@ -197,30 +213,67 @@ def _target_look():
     this board's analog-input hardware actually being wired up (2026-09-17
     session, GPIO36) -- until then this selects the effect but it has no
     live signal to react to."""
+    global _last_captured_grade_at, _grade_hold_until, _grade_was_correct
+    if state.show_phase in ("setup", "countdown", "dark"):
+        # Show hasn't started (or is sitting in the deliberate silent
+        # "dark"/waiting pause between "Start Game" and the operator
+        # cueing the intro, see drivers/show_engine.py::enter_dark()) --
+        # keep the outline strip fully off rather than showing whatever DJ
+        # color/theme happened to be selected the last time the show ran
+        # (2026-09-27 request), same phases drivers/wled_engine.py's own
+        # marquee already blanks for.
+        return (config.ACCENT_FX_SOLID, 0, 0, 0, state.accent_speed, None, None, None, 0, None)
+    if state.show_phase == "intro":
+        # Show-intro scene (2026-09-27 request): a fast, plain white
+        # "movie style" marquee chase -- WLED's built-in Theater Chase at
+        # full speed, same look drivers/wled_engine.py's Simon top-strip
+        # pattern and set_movie_chase() use for this board, just always-on
+        # for the whole scene rather than a manual bring-up test.
+        return (config.ACCENT_FX_THEATER, 255, 255, 255, config.ACCENT_INTRO_CHASE_SPEED,
+                None, None, None, 0, None)
     if (state.mode == state.MODE_GAME and state.quiz_locked and not state.quiz_players
-            and state.factoid_choices):
-        # Follow-up-question grading result (2026-09-20 request): briefly
-        # overrides the plain white "non-DJ" look below with a distinct
-        # right/wrong cue on the outline strip, same grading windows
-        # drivers/wled_engine.py's marquee and graphics/matrix_canvas.py's
-        # panel text already resolve a grade in, so all three surfaces
-        # read as one moment rather than three independently-timed ones.
-        elapsed = time.time() - state.quiz_graded_at
-        correct = (state.quiz_selected_index == state.factoid_correct_index or state.round_timed_out)
-        if correct and elapsed < config.QUIZ_CELEBRATION_HOLD_SECONDS:
-            # Sparkle+: green base (col[0]) with white sparkle dots
-            # (col[1]).
-            return (config.ACCENT_FX_SPARKLE_PLUS, 0, 200, 0, state.accent_speed, 255, 255, 255)
-        if not correct and elapsed < config.QUIZ_WRONG_ANSWER_HOLD_SECONDS:
-            return (config.ACCENT_FX_BLINK, 255, 0, 0, state.accent_speed, None, None, None)  # solid blinking red
+            and state.factoid_choices and state.quiz_graded_at
+            and state.quiz_graded_at != _last_captured_grade_at):
+        # A fresh grade just landed -- capture it once (see the module-level
+        # comment above _last_captured_grade_at for why this can't just be
+        # re-derived from state every frame the way it used to be).
+        _last_captured_grade_at = state.quiz_graded_at
+        _grade_was_correct = (state.quiz_selected_index == state.factoid_correct_index
+                               or state.round_timed_out)
+        hold = (config.ACCENT_QUIZ_CELEBRATION_HOLD_SECONDS if _grade_was_correct
+                else config.ACCENT_QUIZ_WRONG_HOLD_SECONDS)
+        _grade_hold_until = state.quiz_graded_at + hold
+    if state.mode == state.MODE_GAME and time.time() < _grade_hold_until:
+        # Follow-up-question grading result (2026-09-20 request, hold
+        # windows decoupled 2026-09-27 -- see config.
+        # ACCENT_QUIZ_CELEBRATION_HOLD_SECONDS' comment): a distinct
+        # right/wrong cue on the outline strip that's meant to keep
+        # "basking" the room in the grade color past the point the
+        # marquee/matrix have already moved on to the stats page or the
+        # next question.
+        if _grade_was_correct:
+            elapsed = time.time() - _last_captured_grade_at
+            if elapsed < config.ACCENT_QUIZ_CELEBRATION_SOLID_SECONDS:
+                # Flat solid bright green -- a Sparkle+ twinkle was tried
+                # here first and confirmed live to read as bad static, not
+                # a nice twinkle, so this is deliberately plain instead.
+                return (config.ACCENT_FX_SOLID, 0, 200, 0, state.accent_speed,
+                        None, None, None, 0, None)
+            # One-shot crossfade to white via WLED's own "tt" transition
+            # override -- a nice dissolve rather than a hard cut.
+            return (config.ACCENT_FX_SOLID, 255, 255, 255, state.accent_speed, None, None, None, 0,
+                    config.ACCENT_QUIZ_CELEBRATION_DISSOLVE_TT_DS)
+        return (config.ACCENT_FX_BLINK, 255, 0, 0, state.accent_speed,
+                None, None, None, 0, None)  # solid blinking red
     if state.mode != state.MODE_DJ or state.price_game_active:
         # Same condition drivers/wled_engine.py::update() uses for its own
         # game-chase white pattern -- covers Price Game's white-lights
         # window and Quiz/other non-DJ modes with the same simple white
         # solid look, rather than inventing a second white-trigger rule.
-        return (config.ACCENT_FX_SOLID, 255, 255, 255, state.accent_speed, None, None, None)  # Solid, white
+        return (config.ACCENT_FX_SOLID, 255, 255, 255, state.accent_speed,
+                None, None, None, 0, None)  # Solid, white
     if state.accent_sound_enabled:
-        return (config.ACCENT_AUDIOREACTIVE_FX_ID, None, None, None, None, None, None, None)
+        return (config.ACCENT_AUDIOREACTIVE_FX_ID, None, None, None, None, None, None, None, 0, None)
     if state.accent_preset_id >= 0:
         # Per-song WLED saved preset (2026-09-25) -- a distinct tuple shape
         # so _last_sent_look can never mistake it for a raw-effect look.
@@ -237,7 +290,13 @@ def _target_look():
     elif gradient_mode in ("adjacent", "complementary"):
         degrees = 30 if gradient_mode == "adjacent" else 180
         r, g, b = color_utils.hue_shift(r, g, b, degrees)
-    return (fx, r, g, b, state.accent_speed, None, None, None)
+    # Gradient palette (2026-09-26): a per-song alternative to the flat
+    # r/g/b swatch above -- WLED renders the effect through the palette's
+    # own blended colors instead. -1 (none) falls back to plain col, same
+    # sentinel convention as accent_preset_id.
+    pal = (state.accent_palette_index
+           if 0 <= state.accent_palette_index < len(config.ACCENT_PALETTE_NAMES) else 0)
+    return (fx, r, g, b, state.accent_speed, None, None, None, pal, None)
 
 
 def sync_to_show_state():
@@ -296,14 +355,21 @@ def sync_to_show_state():
         if look[0] == "preset":
             _send_preset(look[1], look[2])
         else:
-            fx, r, g, b, sx, r2, g2, b2 = look
+            fx, r, g, b, sx, r2, g2, b2, pal, tt = look
             if r is None:  # accent_sound_enabled sentinel -- select the effect once, nothing else
                 seg = {"fx": fx}
             elif r2 is None:
-                seg = {"fx": fx, "col": [[r, g, b]], "sx": sx}
+                seg = {"fx": fx, "col": [[r, g, b]], "sx": sx, "pal": pal}
             else:
-                seg = {"fx": fx, "col": [[r, g, b], [r2, g2, b2]], "sx": sx}
-            _send({"seg": _with_segment_reset(seg)})
+                seg = {"fx": fx, "col": [[r, g, b], [r2, g2, b2]], "sx": sx, "pal": pal}
+            payload = {"seg": _with_segment_reset(seg)}
+            if tt is not None:
+                # One-shot transition-time override (WLED JSON API "tt",
+                # tenths of a second) -- applies only to this request, so
+                # every other look change stays this board's normal instant
+                # cut. See config.ACCENT_QUIZ_CELEBRATION_DISSOLVE_TT_DS.
+                payload["tt"] = tt
+            _send(payload)
         _last_sent_look = look
         _last_sent_bri = None  # force the brightness check below to resend -- see docstring
     elif look[0] == "preset":

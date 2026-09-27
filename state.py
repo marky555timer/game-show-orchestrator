@@ -158,6 +158,7 @@ class State:
         self.accent_color_index = 0
         self.accent_theme_index = 0
         self.accent_gradient_mode = "off"
+        self.accent_palette_index = -1  # WLED "pal" id (config.ACCENT_PALETTE_NAMES), -1 = none, use accent_color_index's flat swatch instead
         self.accent_speed = 128  # WLED per-segment "sx" (0-255) -- applies to both the raw effect and, since
         # 2026-09-25, a preset's known segments (drivers/accent_engine.py::_send_preset())
         self.accent_brightness = 180  # WLED top-level "bri" (0-255) -- live-only master dimmer, not saved per

@@ -363,31 +363,28 @@
            /api/dj-look/options rather than hardcoded here, and current
            selections sync from /api/dj-look/status while this panel is
            open (djLookPoll(), same cadence as simonHwPoll/accentPoll). -->
-      <div class="dj-look-subhead" style="margin-top:6px;padding-top:0;border-top:none">DMX Uplighting</div>
-      <label style="font-size:.85rem;font-weight:700">Pattern
-        <select id="dmx-theme-select" onchange="pickDjTheme('dmx', this.value)"></select>
-      </label>
-      <div id="dmx-color-swatches" class="color-swatch-picker"></div>
-      <div id="dmx-gradient-picker" class="gradient-mode-picker"></div>
-
-      <div class="dj-look-subhead">Marquee (Panel-Edge Lights)</div>
-      <label style="font-size:.85rem;font-weight:700">Pattern
-        <select id="marquee-theme-select" onchange="pickDjTheme('marquee', this.value)"></select>
-      </label>
-      <div id="marquee-color-swatches" class="color-swatch-picker"></div>
-      <div id="marquee-gradient-picker" class="gradient-mode-picker"></div>
-      <label style="display:flex;align-items:center;gap:6px;font-size:.85rem;font-weight:700;margin-top:6px">
-        <input type="checkbox" id="marquee-blank-lower-checkbox" checked onchange="marqueeBlankLowerToggle()">
-        Blank lower marquees (panels 3-6) during normal DJ dancing
-      </label>
-
-      <div class="dj-look-subhead">Outline Strip (Accent)</div>
+      <!-- Outline Strip listed first (2026-09-26): it's now the color
+           "master" for a song's look -- DMX and marquee get picked as
+           complements to whatever the outline is showing, not the other
+           way around -- so it's the first thing to set per song, not the
+           last. -->
+      <div class="dj-look-subhead" style="margin-top:6px;padding-top:0;border-top:none">Outline Strip (Accent)</div>
       <!-- Full WLED default effect catalog (config.ACCENT_EFFECT_NAMES,
            220 entries as of 2026-09-18, verified live against the board's
            own /json/eff) -- deliberately not curated/trimmed down, per
            request ("let's go with what's default in WLED"). -->
       <label style="font-size:.85rem;font-weight:700">Effect
         <select id="outline-theme-select" onchange="pickDjTheme('outline', this.value)"></select>
+      </label>
+      <!-- Gradient palette (2026-09-26) -- WLED's own built-in multi-color
+           palettes (config.ACCENT_PALETTE_NAMES), as an alternative to a
+           flat swatch below: picking one sends "pal" instead of/alongside
+           "col" so the effect renders through a real multi-color gradient
+           (e.g. Autumn: orange/yellow/brown) rather than a single hue.
+           "— none —" leaves the swatch/solid-color picker below in
+           control, matching the WLED preset picker's own "none" option. -->
+      <label style="display:block;font-size:.85rem;font-weight:700;margin-top:6px">Gradient Palette
+        <select id="outline-palette-select" onchange="pickAccentPalette(this.value)"></select>
       </label>
       <div id="outline-color-swatches" class="color-swatch-picker"></div>
       <div id="outline-gradient-picker" class="gradient-mode-picker"></div>
@@ -416,6 +413,24 @@
       <label style="display:flex;align-items:center;gap:6px;font-size:.85rem;font-weight:700;margin-top:6px">
         <input type="checkbox" id="accent-orchestrator-checkbox" checked onchange="accentOrchestratorToggle()">
         Show controls outline strip (uncheck to design presets live in WLED's own app)
+      </label>
+
+      <div class="dj-look-subhead">DMX Uplighting</div>
+      <label style="font-size:.85rem;font-weight:700">Pattern
+        <select id="dmx-theme-select" onchange="pickDjTheme('dmx', this.value)"></select>
+      </label>
+      <div id="dmx-color-swatches" class="color-swatch-picker"></div>
+      <div id="dmx-gradient-picker" class="gradient-mode-picker"></div>
+
+      <div class="dj-look-subhead">Marquee (Panel-Edge Lights)</div>
+      <label style="font-size:.85rem;font-weight:700">Pattern
+        <select id="marquee-theme-select" onchange="pickDjTheme('marquee', this.value)"></select>
+      </label>
+      <div id="marquee-color-swatches" class="color-swatch-picker"></div>
+      <div id="marquee-gradient-picker" class="gradient-mode-picker"></div>
+      <label style="display:flex;align-items:center;gap:6px;font-size:.85rem;font-weight:700;margin-top:6px">
+        <input type="checkbox" id="marquee-blank-lower-checkbox" checked onchange="marqueeBlankLowerToggle()">
+        Blank lower marquees (panels 3-6) during normal DJ dancing
       </label>
 
       <div class="subhead">Idle Animation Theme</div>
@@ -719,6 +734,16 @@ async function djLookLoadOptions() {
   document.getElementById('outline-preset-select').innerHTML =
     '<option value="-1">&mdash; none (use effect/color) &mdash;</option>' +
     d.outline_presets.map(p => `<option value="${p.id}">${p.id}: ${_escapeHtml(p.name)}</option>`).join('');
+  document.getElementById('outline-palette-select').innerHTML =
+    '<option value="-1">&mdash; none (use solid color below) &mdash;</option>' +
+    d.outline_palette_names.map((name, i) => `<option value="${i}">${_escapeHtml(name)}</option>`).join('');
+}
+
+function pickAccentPalette(paletteIndex) {
+  api('/api/dj-look/outline', {
+    method: 'POST', headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({palette_index: parseInt(paletteIndex, 10)}),
+  }).then(djLookPoll);
 }
 
 function pickAccentPreset(presetId) {
@@ -850,6 +875,7 @@ function djLookPoll() {
     _setCheckedIfNotFocused('marquee-blank-lower-checkbox', d.blank_lower_marquees);
 
     _setSelectIfNotFocused('outline-theme-select', d.outline.theme_index);
+    _setSelectIfNotFocused('outline-palette-select', d.outline.palette_index);
     renderColorSwatchPicker('outline-color-swatches', 'outline', d.outline.color_index);
     renderGradientPicker('outline-gradient-picker', 'outline', d.outline.gradient_mode);
     _setSelectIfNotFocused('outline-preset-select', d.accent_preset_id);
