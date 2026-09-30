@@ -1160,10 +1160,19 @@ if app is not None:
         from drivers import medley_engine
         return medley_engine.edit_adjust(body.field, body.delta)
 
+    class MedleyEditReplay(BaseModel):
+        scope: str = "a_top"   # "a_top" (A -> B) | "b_exit" (B -> next)
+
     @app.post("/api/medley/edit/replay")
-    def medley_edit_replay():
+    def medley_edit_replay(body: MedleyEditReplay):
         from drivers import medley_engine
-        return medley_engine.edit_replay()
+        return medley_engine.edit_replay(body.scope)
+
+    @app.post("/api/medley/replay")
+    def medley_replay():
+        """REPLAY MEDLEY: the last medley again, in order, with saved edits."""
+        from drivers import medley_engine
+        return medley_engine.replay()
 
     @app.post("/api/medley/edit/resume")
     def medley_edit_resume(body: MedleyEditResume):

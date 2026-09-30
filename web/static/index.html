@@ -219,27 +219,62 @@
     <div id="medley-status"></div>
     <button class="btn editbtn" id="medley-edit-btn" style="display:none;margin-top:10px" onclick="editBegin()">EDIT TRANSITION</button>
     <div id="medley-edit" style="display:none; margin-top:10px">
-      <div style="font-weight:700;color:#ff8a80" id="medley-edit-title">Editing</div>
-      <div style="font-size:.8rem;color:#ffe266;margin-top:2px" id="medley-edit-state"></div>
-      <div style="display:flex;gap:6px;margin-top:10px;align-items:center;flex-wrap:wrap">
-        <span style="width:54px;font-size:.85rem">Start</span>
-        <button class="btn" onclick="editAdjust('start',-4)">&minus;4</button>
-        <button class="btn" onclick="editAdjust('start',-1)">&minus;1</button>
-        <button class="btn" onclick="editAdjust('start',1)">+1</button>
-        <button class="btn" onclick="editAdjust('start',4)">+4</button>
+      <div style="font-size:.75rem;color:#ff8a80;letter-spacing:.06em">EDITING THIS TRANSITION</div>
+      <div id="medley-edit-state" style="font-size:.8rem;color:#ffe266;margin-top:2px"></div>
+
+      <div style="margin-top:10px;padding:10px;border:1px solid #ff3b30;border-radius:8px">
+        <div style="font-weight:700" id="medley-edit-a">Song A</div>
+        <div style="display:flex;gap:6px;margin-top:8px;align-items:center;flex-wrap:wrap">
+          <span style="width:54px;font-size:.85rem">In</span>
+          <button class="btn" onclick="editAdjust('a_start',-4)">&minus;4</button>
+          <button class="btn" onclick="editAdjust('a_start',-1)">&minus;1</button>
+          <button class="btn" onclick="editAdjust('a_start',1)">+1</button>
+          <button class="btn" onclick="editAdjust('a_start',4)">+4</button>
+          <span id="medley-edit-a-start" style="font-size:.8rem;color:#ffe266"></span>
+        </div>
+        <div style="display:flex;gap:6px;margin-top:8px;align-items:center;flex-wrap:wrap">
+          <span style="width:54px;font-size:.85rem">Out</span>
+          <button class="btn" onclick="editAdjust('a_end',-4)">&minus;4</button>
+          <button class="btn" onclick="editAdjust('a_end',-1)">&minus;1</button>
+          <button class="btn" onclick="editAdjust('a_end',1)">+1</button>
+          <button class="btn" onclick="editAdjust('a_end',4)">+4</button>
+          <span id="medley-edit-a-end" style="font-size:.8rem;color:#ffe266"></span>
+        </div>
       </div>
-      <div style="display:flex;gap:6px;margin-top:8px;align-items:center;flex-wrap:wrap">
-        <span style="width:54px;font-size:.85rem">End</span>
-        <button class="btn" onclick="editAdjust('end',-4)">&minus;4</button>
-        <button class="btn" onclick="editAdjust('end',-1)">&minus;1</button>
-        <button class="btn" onclick="editAdjust('end',1)">+1</button>
-        <button class="btn" onclick="editAdjust('end',4)">+4</button>
+
+      <div style="display:flex;align-items:center;gap:8px;margin:10px 0;color:#ff3b30;font-size:.75rem;letter-spacing:.1em">
+        <div style="flex:1;border-top:2px solid #ff3b30"></div>TRANSITION<div style="flex:1;border-top:2px solid #ff3b30"></div>
       </div>
-      <div style="font-size:.7rem;color:#999;margin-top:4px">Beats on the first song. Start changes replay from the top; End changes replay from just before the exit. End &minus; exits sooner, + stays longer.</div>
-      <button class="btn big" style="margin-top:10px" onclick="editReplay()">&#9654; PLAY FROM TOP</button>
-      <button class="btn medley big" style="margin-top:8px" onclick="editResume(true)">RESUME (save this transition)</button>
+
+      <div style="padding:10px;border:1px solid #ff3b30;border-radius:8px">
+        <div style="font-weight:700" id="medley-edit-b">Song B</div>
+        <div style="display:flex;gap:6px;margin-top:8px;align-items:center;flex-wrap:wrap">
+          <span style="width:54px;font-size:.85rem">In</span>
+          <button class="btn" onclick="editAdjust('b_start',-4)">&minus;4</button>
+          <button class="btn" onclick="editAdjust('b_start',-1)">&minus;1</button>
+          <button class="btn" onclick="editAdjust('b_start',1)">+1</button>
+          <button class="btn" onclick="editAdjust('b_start',4)">+4</button>
+          <span id="medley-edit-b-start" style="font-size:.8rem;color:#ffe266"></span>
+        </div>
+        <div style="display:flex;gap:6px;margin-top:8px;align-items:center;flex-wrap:wrap">
+          <span style="width:54px;font-size:.85rem">Out</span>
+          <button class="btn" onclick="editAdjust('b_end',-4)">&minus;4</button>
+          <button class="btn" onclick="editAdjust('b_end',-1)">&minus;1</button>
+          <button class="btn" onclick="editAdjust('b_end',1)">+1</button>
+          <button class="btn" onclick="editAdjust('b_end',4)">+4</button>
+          <span id="medley-edit-b-end" style="font-size:.8rem;color:#ffe266"></span>
+        </div>
+      </div>
+      <div style="font-size:.7rem;color:#999;margin-top:6px">Beats. In = where the song enters, Out = where it exits (&minus; sooner, + later). Each tweak replays the part it changes: A&rsquo;s In from the top; A&rsquo;s Out and B&rsquo;s In across the transition; B&rsquo;s Out into the next song.</div>
+
+      <div style="display:flex;gap:8px;margin-top:10px">
+        <button class="btn" style="flex:1;padding:14px 8px" onclick="editReplay('a_top')">&#9654; PLAY A &rarr; B</button>
+        <button class="btn" style="flex:1;padding:14px 8px" id="medley-edit-bnext" onclick="editReplay('b_exit')">&#9654; PLAY B &rarr; NEXT</button>
+      </div>
+      <button class="btn medley big" style="margin-top:8px" onclick="editResume(true)">RESUME (save both songs)</button>
       <button class="btn" style="margin-top:8px;width:100%" onclick="editResume(false)">Resume without saving</button>
     </div>
+    <button class="btn" id="medley-replay-btn" style="display:none;margin-top:10px;width:100%;border-color:#ffd400;color:#ffd400" onclick="replayMedley()">&#8635; REPLAY MEDLEY</button>
     <button class="btn small" id="medley-sweep-btn" style="margin-top:8px" onclick="cycleMedleySweepers()">Medley sweepers: MEDLEY</button>
   </section>
 
@@ -752,10 +787,16 @@ async function refreshMedley() {
     const ep = document.getElementById('medley-edit');
     if (d.edit) {
       ep.style.display = '';
-      document.getElementById('medley-edit-title').textContent = 'Editing: ' + d.edit.a.artist + ' \u2014 ' + d.edit.a.title + '  \u2192  ' + d.edit.b.title;
+      const sgn = (n) => (n >= 0 ? '+' : '') + n;
+      document.getElementById('medley-edit-a').textContent = 'Song A \u2014 ' + d.edit.a.artist + ' \u2014 ' + d.edit.a.title;
+      document.getElementById('medley-edit-b').textContent = 'Song B \u2014 ' + d.edit.b.artist + ' \u2014 ' + d.edit.b.title;
+      document.getElementById('medley-edit-a-start').textContent = sgn(d.edit.a.start_beats) + ' beats';
+      document.getElementById('medley-edit-a-end').textContent = sgn(d.edit.a.end_beats) + ' beats';
+      document.getElementById('medley-edit-b-start').textContent = sgn(d.edit.b.start_beats) + ' beats';
+      document.getElementById('medley-edit-b-end').textContent = sgn(d.edit.b.end_beats) + ' beats';
+      document.getElementById('medley-edit-bnext').style.opacity = d.edit.has_c ? '1' : '.5';
       document.getElementById('medley-edit-state').textContent =
-        (d.edit.playing ? '\u25B6 playing the transition\u2026' : '\u25A0 stopped') + '   \u00b7   start ' + (d.edit.start_beats >= 0 ? '+' : '') + d.edit.start_beats + ', end ' + (d.edit.end_beats >= 0 ? '+' : '') + d.edit.end_beats + ' beats (not saved until Resume)';
-    } else {
+        (d.edit.playing ? '\u25B6 playing\u2026' : '\u25A0 stopped') + '  \u00b7  not saved until Resume';    } else {
       ep.style.display = 'none';
     }
     btn.textContent = 'EXIT MEDLEY MODE';
@@ -777,6 +818,9 @@ async function refreshMedley() {
     btn.textContent = 'DANCE MEDLEY';
     st.textContent = (d.eligible != null) ? d.eligible + ' floor-fillers ready \u00b7 hooks of ~15s, beat-matched' : '';
   }
+  const rb = document.getElementById('medley-replay-btn');
+  rb.style.display = (d.has_last && !d.starting && !d.edit) ? '' : 'none';
+  rb.textContent = d.active ? '\u21BB REPLAY MEDLEY FROM THE TOP (with your edits)' : '\u21BB REPLAY LAST MEDLEY (' + (d.last_total || 0) + ' hooks)';
   document.getElementById('medley-sweep-btn').textContent = 'Medley sweepers: ' + String(d.sweeper_mode || 'medley').toUpperCase();
 }
 
@@ -790,8 +834,14 @@ async function editAdjust(field, delta) {
                                         body: JSON.stringify({field: field, delta: delta})});
   refreshMedley();
 }
-async function editReplay() {
-  await api('/api/medley/edit/replay', {method: 'POST'});
+async function editReplay(scope) {
+  await api('/api/medley/edit/replay', {method: 'POST', headers: {'Content-Type': 'application/json'},
+                                        body: JSON.stringify({scope: scope || 'a_top'})});
+  refreshMedley();
+}
+async function replayMedley() {
+  const r = await api('/api/medley/replay', {method: 'POST'});
+  if (r && !r.ok) showToast(r.error || 'Could not replay the medley.');
   refreshMedley();
 }
 async function editResume(save) {

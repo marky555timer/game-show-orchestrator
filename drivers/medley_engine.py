@@ -388,6 +388,7 @@ def _sweeper_paths():
 # --------------------------------------------------------------------------
 _lock = threading.Lock()
 _run = None  # the active run dict, or None
+_last_plan = []  # the most recent medley's plan (segments), for REPLAY MEDLEY
 
 
 def _deck_name(n):
@@ -440,6 +441,7 @@ def start():
            "deck": 2 if state.active_deck == 1 else 1, "from_deck": state.active_deck,
            "handoff_sent": False}
     _run = run
+    _last_plan[:] = plan
     state.medley_active = True
     state.trivia_confirm_active = False
     threading.Thread(target=_render_worker, args=(run,), daemon=True, name="medley-render").start()
@@ -598,35 +600,52 @@ def update(now):
 
 # --------------------------------------------------------------------------
 # transition editor
-#   EDIT TRANSITION pauses the medley, rewinds the hook that just played (A) to
-#   its start and plays it through its exit into the next hook (B), then stops.
-#   Start/End buttons change A's edges (pending, not yet saved) and replay;
-#   PLAY FROM TOP replays unchanged; RESUME saves A's edges and continues the
-#   medley from B.
+#   EDIT TRANSITION pauses the medley and rewinds to the transition between
+#   song A (the hook that just played) and song B (the next one). Both songs'
+#   start (in) and end (out) can be nudged in beats; every tweak replays the
+#   part of the mix it affects and stops. Nothing is saved until RESUME, which
+#   saves both songs' edges and continues the medley from B.
 # --------------------------------------------------------------------------
 def _edit_segments(run):
+    """(A', B', C) with the pending edits applied; C is B's successor (or None)."""
     ed = run["edit"]
-    base = run["plan"][ed["a"]]
-    a_seg = _make_seg(base, base["native"], base["tempo"], ed["sb"], ed["eb"])
-    return a_seg, run["plan"][ed["b"]]
+    plan = run["plan"]
+    a0, b0 = plan[ed["a"]], plan[ed["b"]]
+    a_seg = _make_seg(a0, a0["native"], a0["tempo"], ed["sa"], ed["ea"])
+    b_seg = _make_seg(b0, b0["native"], b0["tempo"], ed["sb"], ed["eb"])
+    c_seg = plan[ed["b"] + 1] if ed["b"] + 1 < len(plan) else None
+    return a_seg, b_seg, c_seg
 
 
-def _edit_play(run, from_top):
-    """Render + play the A -> B audition; from_top=False starts a few seconds
-    before the exit so end-point tweaks are quick to judge."""
+def _edit_play(run, scope):
+    """Render + play part of the A/B/C mix and stop.
+    scope: "a_top"  A from its start -> into B (stops 6s into B)
+           "a_exit" A from just before its exit -> into B
+           "b_exit" B from just before its exit -> into C (or B's tail if last)"""
     import pygame
     from drivers import deck_orchestrator
-    a_seg, b_seg = _edit_segments(run)
-    c0, carry = render_chunk([a_seg, b_seg], 0, None, first=0)
-    c1, _ = render_chunk([a_seg, b_seg], 1, carry, first=0, last_limit=config.MEDLEY_EDIT_POST_SECONDS)
-    clip = np.vstack([c0, c1])
-    if not from_top:
-        clip = clip[max(0, len(c0) - int(config.MEDLEY_EDIT_LEAD_SECONDS * FS)):]
+    a_seg, b_seg, c_seg = _edit_segments(run)
+    lead_n = int(config.MEDLEY_EDIT_LEAD_SECONDS * FS)
+    if scope == "b_exit":
+        if c_seg is not None:
+            c0, carry = render_chunk([b_seg, c_seg], 0, None, first=0)
+            c1, _ = render_chunk([b_seg, c_seg], 1, carry, first=0, last_limit=config.MEDLEY_EDIT_POST_SECONDS)
+            clip = np.vstack([c0, c1])
+        else:
+            c0, _ = render_chunk([b_seg], 0, None, first=0)
+            clip = c0
+        clip = clip[max(0, len(c0) - lead_n):]
+    else:
+        c0, carry = render_chunk([a_seg, b_seg], 0, None, first=0)
+        c1, _ = render_chunk([a_seg, b_seg], 1, carry, first=0, last_limit=config.MEDLEY_EDIT_POST_SECONDS)
+        clip = np.vstack([c0, c1])
+        if scope == "a_exit":
+            clip = clip[max(0, len(c0) - lead_n):]
     snd = pygame.mixer.Sound(buffer=to_int16(clip).tobytes())
     deck_orchestrator.dj_engine._channels[_deck_name(run["deck"])].stop()  # never play over a queued chunk
     deck_orchestrator.dj_engine.play_deck(_deck_name(run["deck"]), snd, volume=1.0)
     run["edit"]["playing"] = True
-    run["edit"]["a_beats"] = a_seg["beats"]
+    run["edit"]["scope"] = scope
 
 
 def edit_begin():
@@ -644,80 +663,130 @@ def edit_begin():
         return {"ok": False, "error": "nothing to edit yet"}
     run["stop"] = True      # stop the look-ahead renderer
     run["chunks"].clear()
-    seg = plan[a]
-    run["edit"] = {"a": a, "b": a + 1, "sb": int(seg.get("start_beats", 0)), "eb": int(seg.get("end_beats", 0)),
-                   "playing": False}
+    sa, ea = int(plan[a].get("start_beats", 0)), int(plan[a].get("end_beats", 0))
+    sb, eb = int(plan[a + 1].get("start_beats", 0)), int(plan[a + 1].get("end_beats", 0))
+    run["edit"] = {"a": a, "b": a + 1, "sa": sa, "ea": ea, "sb": sb, "eb": eb, "playing": False}
     try:
-        _edit_play(run, from_top=True)
+        _edit_play(run, "a_top")
     except Exception as e:
         print(f"[MEDLEY] Edit preview failed: {e}")
         run["edit"] = None
         return {"ok": False, "error": "could not render the preview"}
-    print(f"[MEDLEY] Edit transition: {seg['artist']} - {seg['title']} -> {plan[a + 1]['title']}")
+    print(f"[MEDLEY] Edit transition: {plan[a]['artist']} - {plan[a]['title']} -> {plan[a + 1]['title']}")
     return {"ok": True}
+
+
+_EDIT_FIELDS = {"a_start": ("sa", "a_top"), "a_end": ("ea", "a_exit"),
+                "b_start": ("sb", "a_exit"), "b_end": ("eb", "b_exit")}
 
 
 def edit_adjust(field, delta):
     run = _run
     if run is None or not run.get("edit"):
         return {"ok": False, "error": "not editing"}
-    ed = run["edit"]
-    key = "sb" if field == "start" else "eb" if field == "end" else None
-    if key is None:
+    if field not in _EDIT_FIELDS:
         return {"ok": False, "error": "bad field"}
+    key, scope = _EDIT_FIELDS[field]
+    ed = run["edit"]
     ed[key] = max(-64, min(64, ed[key] + int(delta)))
-    _edit_play(run, from_top=(field == "start"))
+    _edit_play(run, scope)
     return {"ok": True}
 
 
-def edit_replay():
+def edit_replay(scope="a_top"):
+    """Replay without changing anything: a_top = A -> B, b_exit = B -> next."""
     run = _run
     if run is None or not run.get("edit"):
         return {"ok": False, "error": "not editing"}
-    _edit_play(run, from_top=True)
+    _edit_play(run, scope if scope in ("a_top", "b_exit") else "a_top")
     return {"ok": True}
 
 
+def _save_override(key, sb, eb):
+    """Persist one song's start/end beats (caller holds _lock)."""
+    path = os.path.join(_BASE, config.MEDLEY_HOOK_OVERRIDES_FILE)
+    data = dict(_load(_hook_ov, config.MEDLEY_HOOK_OVERRIDES_FILE))
+    entry = {k: v for k, v in (("start_beats", sb), ("end_beats", eb)) if v}
+    if entry:
+        data[key] = entry
+    else:
+        data.pop(key, None)
+    tmp = path + ".tmp"
+    with open(tmp, "w", encoding="utf-8") as f:
+        json.dump(data, f, indent=1, sort_keys=True)
+    os.replace(tmp, path)
+    _hook_ov["data"], _hook_ov["mtime"] = data, os.path.getmtime(path)
+
+
 def edit_resume(save=True):
-    """Leave the editor. save=True persists hook A's start/end beats; the
-    medley then continues from hook B on the same deck."""
+    """Leave the editor. save=True persists BOTH songs' start/end beats (and
+    applies them to the running plan); the medley then continues from B."""
     global _run
     run = _run
     if run is None or not run.get("edit"):
         return {"ok": False, "error": "not editing"}
     ed = run["edit"]
     plan = run["plan"]
-    a_seg = plan[ed["a"]]
     if save:
-        path = os.path.join(_BASE, config.MEDLEY_HOOK_OVERRIDES_FILE)
+        a_seg, b_seg, _ = _edit_segments(run)
         with _lock:
-            data = dict(_load(_hook_ov, config.MEDLEY_HOOK_OVERRIDES_FILE))
-            entry = {k: v for k, v in (("start_beats", ed["sb"]), ("end_beats", ed["eb"])) if v}
-            if entry:
-                data[a_seg["key"]] = entry
-            else:
-                data.pop(a_seg["key"], None)
-            tmp = path + ".tmp"
-            with open(tmp, "w", encoding="utf-8") as f:
-                json.dump(data, f, indent=1, sort_keys=True)
-            os.replace(tmp, path)
-            _hook_ov["data"], _hook_ov["mtime"] = data, os.path.getmtime(path)
-        print(f"[MEDLEY] Saved transition for {a_seg['artist']} - {a_seg['title']}: start {ed['sb']:+d}, end {ed['eb']:+d} beats")
-    # stop the audition and restart the medley flow from hook B
+            _save_override(a_seg["key"], ed["sa"], ed["ea"])
+            _save_override(b_seg["key"], ed["sb"], ed["eb"])
+        plan[ed["a"]], plan[ed["b"]] = a_seg, b_seg
+        _last_plan[:] = plan
+        print(f"[MEDLEY] Saved: {a_seg['artist']} - {a_seg['title']} (start {ed['sa']:+d}, end {ed['ea']:+d}) | "
+              f"{b_seg['artist']} - {b_seg['title']} (start {ed['sb']:+d}, end {ed['eb']:+d}) beats")
     from drivers import deck_orchestrator
     deck_orchestrator.dj_engine._channels[_deck_name(run["deck"])].stop()
     run["stop"] = True
-    new = {"plan": plan, "first": ed["b"], "chunks": {}, "sounds": {}, "played": ed["b"], "queued": -1,
-           "stop": False, "started": False, "began_at": 0.0, "chunk_started_at": 0.0, "sweeps": run["sweeps"],
-           "deck": run["deck"], "from_deck": None, "handoff_sent": False}
+    new = _new_run(plan, run["deck"], None, ed["b"], run["sweeps"])
     _run = new
     threading.Thread(target=_render_worker, args=(new,), daemon=True, name="medley-render").start()
     return {"ok": True}
 
 
+def _new_run(plan, deck, from_deck, first, sweeps=0):
+    return {"plan": plan, "first": first, "chunks": {}, "sounds": {}, "played": first, "queued": -1,
+            "stop": False, "started": False, "began_at": 0.0, "chunk_started_at": 0.0, "sweeps": sweeps,
+            "deck": deck, "from_deck": from_deck, "handoff_sent": False}
+
+
+def replay():
+    """REPLAY MEDLEY: play the last medley again, in the same order, with every
+    saved edit applied -- from the top, whether or not one is running."""
+    global _run
+    if not _last_plan:
+        return {"ok": False, "error": "no medley to replay yet"}
+    ov = _load(_hook_ov, config.MEDLEY_HOOK_OVERRIDES_FILE)
+    plan = []
+    for s in _last_plan:
+        o = ov.get(s["key"], {})
+        plan.append(_make_seg(s, s["native"], s["tempo"], int(o.get("start_beats", 0)), int(o.get("end_beats", 0))))
+    from drivers import deck_orchestrator
+    if _run is not None:
+        old = _run
+        old["stop"] = True
+        deck_orchestrator.dj_engine._channels[_deck_name(old["deck"])].stop()
+        new = _new_run(plan, old["deck"], None, 0)
+    else:
+        if state.show_phase != "live" or state.mode != state.MODE_DJ:
+            return {"ok": False, "error": "medley needs a live show in DJ mode"}
+        if deck_orchestrator.has_pending_move():
+            return {"ok": False, "error": "a transition is already in progress"}
+        new = _new_run(plan, 2 if state.active_deck == 1 else 1, state.active_deck, 0)
+    _last_plan[:] = plan
+    _run = new
+    state.medley_active = True
+    state.trivia_confirm_active = False
+    threading.Thread(target=_render_worker, args=(new,), daemon=True, name="medley-render").start()
+    print(f"[MEDLEY] Replaying the last medley ({len(plan)} hooks) with saved edits.")
+    return {"ok": True, "tracks": len(plan)}
+
+
 def status():
     run = _run
-    st = {"active": run is not None, "sweeper_mode": state.medley_sweeper_mode}
+    st = {"active": run is not None, "sweeper_mode": state.medley_sweeper_mode,
+          "has_last": bool(_last_plan), "last_total": len(_last_plan)}
     if run is None:
         return st
     plan = run["plan"]
@@ -735,8 +804,7 @@ def status():
     ed = run.get("edit")
     if ed:
         a_, b_ = plan[ed["a"]], plan[ed["b"]]
-        st["edit"] = {"a": {"title": a_["title"], "artist": a_["artist"]},
-                      "b": {"title": b_["title"], "artist": b_["artist"]},
-                      "start_beats": ed["sb"], "end_beats": ed["eb"], "playing": ed["playing"],
-                      "beats": ed.get("a_beats")}
+        st["edit"] = {"a": {"title": a_["title"], "artist": a_["artist"], "start_beats": ed["sa"], "end_beats": ed["ea"]},
+                      "b": {"title": b_["title"], "artist": b_["artist"], "start_beats": ed["sb"], "end_beats": ed["eb"]},
+                      "has_c": ed["b"] + 1 < len(plan), "playing": ed["playing"], "scope": ed.get("scope")}
     return st
