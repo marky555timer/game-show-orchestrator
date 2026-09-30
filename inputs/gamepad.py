@@ -37,6 +37,7 @@ from drivers import auto_dj_engine
 from drivers import space_invaders_engine
 from drivers import simon_engine
 from drivers import simon_hardware
+from drivers import recovery_button
 from drivers import westminster_engine
 from drivers import idle_cycle_engine
 from drivers import live_round_engine
@@ -1429,6 +1430,7 @@ def process_events():
     ensure_prefetch(title, artist, confident)
     mystery_band_engine.check_new_track(title, artist, confident)
     hot_track_engine.update(time.time())
+    recovery_button.poll(time.time())
 
     _process_quiz_gate()
     deck_orchestrator.update(time.time())

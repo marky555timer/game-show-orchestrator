@@ -213,6 +213,7 @@
     <div class="now-tags" id="np-tags"></div>
     <div class="now-timer" id="autodj-remaining">--:--</div>
     <button class="btn" style="margin-top:8px" id="audition-btn" onclick="auditionEnding()">AUDITION ENDING (jump to -15s)</button>
+    <button class="btn" style="margin-top:8px; display:none" id="jukebox-btn" onclick="toggleJukebox()">JUKEBOX MODE</button>
   </section>
 
   <!-- Dark-phase lockdown (2026-08-18): shown ONLY while show_phase ==
@@ -709,6 +710,14 @@ async function refreshAutoDj() {
   const ss = String(s % 60).padStart(2, '0');
   document.getElementById('autodj-remaining').textContent =
     (d.enabled ? '' : '(OFF) ') + mm + ':' + ss;
+  const jb = document.getElementById('jukebox-btn');
+  jb.style.display = d.unattended ? '' : 'none';
+  jb.textContent = d.jukebox ? 'JUKEBOX: ON (no questions) — tap for trivia' : 'TRIVIA: ON — tap for jukebox';
+}
+
+async function toggleJukebox() {
+  await api('/api/jukebox/toggle', {method: 'POST'});
+  refreshAutoDj();
 }
 
 async function auditionEnding() {

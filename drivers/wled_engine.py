@@ -404,13 +404,27 @@ def _fail_serial_link(link, error):
 # wasn't actually satisfying "must never freeze" in practice. 90s keeps any
 # future wedge to a brief, easy-to-miss blip instead of a multi-minute
 # outage someone has to notice and report.
-# TEMPORARY DIAGNOSTIC (2026-09-21): bumped from 90.0 to effectively "off"
-# to find out whether the board actually still wedges on its own, or
-# whether every visible reset blip so far has just been this timer firing
-# on schedule regardless of need. Revert to 90.0 once that's answered --
-# this removes the bounded-recovery guarantee for as long as it's this
-# high, so don't leave it here for a real unattended show.
+# DISABLED ON PURPOSE (2026-09-21 finding, operator decision): a 4h17m run
+# with this timer off showed zero organic wedges -- the periodic reset blip
+# was itself the visible problem. Recovery is manual instead: the physical
+# recovery button (drivers/recovery_button.py) calls force_reconnect()
+# below. Left as a huge value rather than removed so the safety-net code
+# path stays available; set to e.g. 1800.0 to re-enable a gentle periodic
+# fallback.
 _PROACTIVE_RECONNECT_INTERVAL_S = 999999.0
+
+
+def force_reconnect():
+    """Manual recovery (recovery button): tears down the marquee's serial
+    link exactly like a failed write does, so _try_connect_serial() reopens
+    it on its next pass -- reopening resets the ESP32 through the RTS-wired
+    auto-reset circuit, the same effect as a power cycle. Returns True if
+    there was a live link to reset."""
+    link = _serial_link
+    if link is None:
+        return False
+    _fail_serial_link(link, "manual recovery requested")
+    return True
 
 
 def _serial_sender_loop():

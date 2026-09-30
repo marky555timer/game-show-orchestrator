@@ -31,6 +31,7 @@ from drivers import deck_orchestrator
 from drivers import power_monitor
 from drivers import wled_engine
 from drivers import simon_hardware
+from drivers import recovery_button
 from drivers import accent_engine
 from drivers import relay_engine
 from drivers.factoid_engine import save_track_cache
@@ -66,6 +67,7 @@ def main():
     joypad_manual.write_manual()
     tunnel_engine.start()
     simon_hardware.init()
+    recovery_button.init()
     accent_engine.init()
     relay_engine.init()
 
@@ -228,6 +230,7 @@ def main():
     deck_orchestrator._decode_process.stop()
     dmx.blackout()
     simon_hardware.cleanup()
+    recovery_button.cleanup()
     accent_engine.cleanup()
     relay_engine.cleanup()
     sfx_engine.cleanup()

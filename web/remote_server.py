@@ -1114,7 +1114,21 @@ if app is not None:
             "enabled": state.auto_dj_enabled,
             "remaining_seconds": max(0.0, remaining),
             "duration_seconds": state.auto_dj_track_duration,
+            "unattended": state.show_unattended_autoplay,
+            "jukebox": state.show_unattended_autoplay and not state.jukebox_trivia_enabled,
         }
+
+    @app.post("/api/jukebox/toggle")
+    def jukebox_toggle():
+        """Auto-start (unattended) show only: flips between jukebox (no
+        questions) and trivia-enabled -- the web-remote way back to jukebox
+        after the red-button confirm turned trivia on."""
+        if not state.show_unattended_autoplay:
+            return {"ok": False, "error": "jukebox mode only applies to the auto-start show"}
+        state.jukebox_trivia_enabled = not state.jukebox_trivia_enabled
+        state.trivia_confirm_active = False
+        print(f"[JUKEBOX] Web remote -> {'trivia ON' if state.jukebox_trivia_enabled else 'jukebox (no questions)'}")
+        return {"ok": True, "jukebox": not state.jukebox_trivia_enabled}
 
     @app.post("/api/autodj/skip10")
     def autodj_skip10():

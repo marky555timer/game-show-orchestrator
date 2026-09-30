@@ -2191,6 +2191,15 @@ SHOW_UNATTENDED_FINAL_WARNING_SECONDS = 10.0
 # YES/NO confirm waits before cancelling itself.
 JUKEBOX_TRIVIA_CONFIRM_TIMEOUT_SECONDS = 10.0
 
+# Manual recovery button (drivers/recovery_button.py): a momentary switch
+# between GPIO4 (physical pin 7) and GND (pin 6 or 9), internal pull-up,
+# active LOW -- same wiring shape as the Simon buttons. Pressing it resets the
+# marquee ESP32's serial link and kicks off a Bluetooth gamepad reconnect.
+# Harmless while nothing is wired (the pull-up reads "not pressed").
+RECOVERY_BUTTON_ENABLED = True
+RECOVERY_BUTTON_PIN = 4
+RECOVERY_BUTTON_COOLDOWN_SECONDS = 5.0
+
 # How long the deck fades out when the host hits "Reset to Setup" on an
 # unattended-autoplay show (web remote only, live-panel banner) -- no
 # outro fanfare, since this wasn't a real hosted show, just a fast fade
