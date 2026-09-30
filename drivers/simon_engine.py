@@ -474,6 +474,24 @@ def _poll_setup_hardware(pressed_colors, now):
         show_engine.mark_operator_interaction()
 
 
+def _close_trivia_confirm():
+    state.trivia_confirm_active = False
+    simon_hardware.set_led("green", False)
+    simon_hardware.set_led("red", False)
+
+
+def _poll_trivia_confirm(pressed_colors):
+    """"TRIVIA QUESTION?" confirm (auto-start jukebox mode, opened by the red
+    button -- see poll_hardware()): green = YES, turns trivia on for the rest
+    of this autoplay session; red or anything else = NO."""
+    _close_trivia_confirm()
+    if "green" in pressed_colors:
+        state.jukebox_trivia_enabled = True
+        print("[JUKEBOX] Trivia enabled by operator -- questions resume.")
+    else:
+        print("[JUKEBOX] Trivia confirm declined -- staying jukebox.")
+
+
 def poll_hardware(now):
     """Per-frame poll, called unconditionally from inputs/gamepad.py::
     process_events() regardless of mode -- the physical arcade buttons work
@@ -491,6 +509,8 @@ def poll_hardware(now):
     False->True for a press, True->False for a release, between polls) so
     holding a button down can't fire a repeated press or a double entry."""
     global _prev_hw_buttons
+    if state.trivia_confirm_active and now >= state.trivia_confirm_until:
+        _close_trivia_confirm()  # confirm timed out untouched
     buttons = simon_hardware.read_buttons()
     if not buttons:
         return
@@ -502,6 +522,10 @@ def poll_hardware(now):
         release(color)
 
     if not pressed_colors:
+        return
+
+    if state.trivia_confirm_active:
+        _poll_trivia_confirm(pressed_colors)
         return
 
     if state.mode == state.MODE_SIMON:
@@ -547,6 +571,13 @@ def poll_hardware(now):
             and not state.westminster_active and not state.win_sequence_active):
         if "green" in pressed_colors:
             enter_simon_hardware()
+        elif "red" in pressed_colors and state.show_unattended_autoplay and not state.jukebox_trivia_enabled:
+            # Auto-start jukebox mode: red asks "TRIVIA QUESTION?" instead of
+            # skipping (next song is still on the web remote / gamepad).
+            state.trivia_confirm_active = True
+            state.trivia_confirm_until = now + config.JUKEBOX_TRIVIA_CONFIRM_TIMEOUT_SECONDS
+            simon_hardware.set_led("green", True)
+            simon_hardware.set_led("red", True)
         elif "red" in pressed_colors:
             # Lazy import: same import-order-cycle reasoning as the other
             # lazy imports above.

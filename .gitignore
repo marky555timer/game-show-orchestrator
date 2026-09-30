@@ -19,4 +19,4 @@ anthropic_key.txt
 audio/music/
 
 # Personal Claude Code overrides (permissions, local allow-lists) -- not shared
-.claude/settings.local.json
+.claude/settings.local.jsoncue_previews/

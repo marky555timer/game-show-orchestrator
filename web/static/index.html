@@ -212,6 +212,7 @@
     <div class="now-artist" id="np-artist"></div>
     <div class="now-tags" id="np-tags"></div>
     <div class="now-timer" id="autodj-remaining">--:--</div>
+    <button class="btn" style="margin-top:8px" id="audition-btn" onclick="auditionEnding()">AUDITION ENDING (jump to -15s)</button>
   </section>
 
   <!-- Dark-phase lockdown (2026-08-18): shown ONLY while show_phase ==
@@ -402,7 +403,7 @@
       <!-- Master brightness (2026-09-25) -- top-level WLED "bri", applies
            whether the board is currently showing a raw effect or a preset
            (accent_engine.py::sync_to_show_state() pushes it independently
-           of the look). Live-only, not saved per song. -->
+           of the look). Saved per song along with Speed (2026-09-28). -->
       <label style="display:block;font-size:.85rem;font-weight:700;margin-top:6px">Brightness
         <input type="range" id="accent-brightness-slider" min="0" max="255" value="180" oninput="accentBrightnessSet(this.value)">
       </label>
@@ -432,6 +433,20 @@
         <input type="checkbox" id="marquee-blank-lower-checkbox" checked onchange="marqueeBlankLowerToggle()">
         Blank lower marquees (panels 3-6) during normal DJ dancing
       </label>
+
+      <!-- Cross-fixture lighting controls (2026-09-27): "Propagate Colors"
+           pushes the outline strip's current primary swatch onto DMX/
+           marquee too (see djLookPropagateColors() below); Copy/Paste
+           Lighting Settings snapshot the ENTIRE DMX+marquee+outline look
+           (color/pattern/gradient/palette/preset) into a same-session
+           clipboard so a look dialed in for one song can be copied, then
+           pasted onto whatever song is playing after a track change. -->
+      <div class="dj-look-subhead">Cross-Fixture Lighting</div>
+      <div class="row" style="gap:6px;flex-wrap:wrap">
+        <button class="btn" onclick="djLookPropagateColors()">Propagate Colors</button>
+        <button class="btn" onclick="djLookCopy()">Copy Lighting Settings</button>
+        <button class="btn" onclick="djLookPaste()">Paste Lighting Settings</button>
+      </div>
 
       <div class="subhead">Idle Animation Theme</div>
       <div class="row">
@@ -696,6 +711,15 @@ async function refreshAutoDj() {
     (d.enabled ? '' : '(OFF) ') + mm + ':' + ss;
 }
 
+async function auditionEnding() {
+  const b = document.getElementById('audition-btn');
+  const d = await api('/api/autodj/audition', {method: 'POST'});
+  const old = b.textContent;
+  b.textContent = d && d.ok ? 'Jumped to ' + Math.round(d.seek_to_seconds) + 's' : ((d && d.error) || 'Failed');
+  setTimeout(() => { b.textContent = old; }, 2500);
+  refreshAutoDj();
+}
+
 async function refreshHostPreview() {
   const d = await api('/api/host/preview');
   const emptyEl = document.getElementById('host-preview-empty');
@@ -721,8 +745,6 @@ async function refreshHostPreview() {
 // sync continuously via djLookPoll() while the Advanced panel is open.
 // ------------------------------------------
 let DJ_LOOK_OPTIONS = null;
-let _accentSpeedLoaded = false;  // same "load once, don't fight a live drag" convention as _volumeLoaded
-let _accentBrightnessLoaded = false;  // same convention, for the brightness slider
 
 async function djLookLoadOptions() {
   const d = await api('/api/dj-look/options');
@@ -845,6 +867,23 @@ function pickDjGradient(feature, mode) {
   }).then(djLookPoll);
 }
 
+// Cross-fixture lighting controls (2026-09-27) -- see the markup comment
+// above the "Cross-Fixture Lighting" subhead.
+function djLookPropagateColors() {
+  api('/api/dj-look/propagate-colors', {method: 'POST'}).then(djLookPoll);
+}
+
+function djLookCopy() {
+  api('/api/dj-look/copy', {method: 'POST'});
+}
+
+function djLookPaste() {
+  api('/api/dj-look/paste', {method: 'POST'}).then(d => {
+    if (d && !d.ok) alert(d.error || 'Nothing copied yet');
+    djLookPoll();
+  });
+}
+
 // Skips overwriting a <select>/checkbox the user currently has focus on
 // (mid-click, dropdown open, etc.) -- same "don't fight the operator's own
 // in-progress interaction" reasoning as _volumeLoaded/_brandingLoaded
@@ -882,14 +921,11 @@ function djLookPoll() {
     renderAccentPresetColorPicker(d.accent_preset_id, d.accent_preset_color_index);
     _setCheckedIfNotFocused('accent-sound-checkbox', d.accent_sound_enabled);
     _setCheckedIfNotFocused('accent-orchestrator-checkbox', d.accent_orchestrator_enabled);
-    if (!_accentSpeedLoaded) {
-      document.getElementById('accent-speed-slider').value = d.accent_speed;
-      _accentSpeedLoaded = true;
-    }
-    if (!_accentBrightnessLoaded) {
-      document.getElementById('accent-brightness-slider').value = d.accent_brightness;
-      _accentBrightnessLoaded = true;
-    }
+    // Speed/brightness are saved per song (2026-09-28), so they must keep
+    // syncing to follow a track change restoring a song's saved values --
+    // the focus check protects a live drag.
+    _setSelectIfNotFocused('accent-speed-slider', d.accent_speed);
+    _setSelectIfNotFocused('accent-brightness-slider', d.accent_brightness);
   });
 }
 

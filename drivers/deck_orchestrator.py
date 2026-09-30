@@ -644,6 +644,7 @@ def update(now):
 
         state.active_deck = target_deck
         state.now_playing_duration = track["duration"]
+        state.now_playing_path = track["path"]
         # DMX pace follows the track's own stored tempo (ID3 BPM tag) when it
         # has one. Otherwise it resets to config.TEMPO_DEFAULT_BPM (120)
         # rather than carrying the previous song's tempo forward

@@ -1720,8 +1720,20 @@ def _draw_cpu_temp_overlay():
     draw_marquee(matrix_surface, "cpu_temp_overlay", text, PANELS[5], align="center", scroll=False)
 
 
+def _draw_trivia_confirm():
+    """"TRIVIA QUESTION?" YES/NO confirm over the live jukebox screen (green
+    button = YES on panel 3, red = NO on panel 4)."""
+    for rect in (TOP_COMBINED, PANELS[3], PANELS[4]):
+        matrix_surface.fill(BLACK, rect)
+    draw_marquee(matrix_surface, "trivia_confirm_banner", "TRIVIA QUESTION?", TOP_COMBINED, align="center")
+    draw_marquee(matrix_surface, "trivia_confirm_yes", "YES", PANELS[3], align="center", scroll=False)
+    draw_marquee(matrix_surface, "trivia_confirm_no", "NO", PANELS[4], align="center", scroll=False)
+
+
 def update_matrix_canvas():
     _render_matrix_canvas_content()
+    if state.trivia_confirm_active:
+        _draw_trivia_confirm()
     if state.cpu_temp_overlay_active:
         _draw_cpu_temp_overlay()
 

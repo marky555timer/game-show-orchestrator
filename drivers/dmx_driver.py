@@ -26,6 +26,7 @@ import serial
 import serial.tools.list_ports
 
 from config import DMX_FIXTURE_CHANNELS, DMX_NUM_FIXTURES
+from drivers import dmx_head
 
 # FTDI FT232R, as reported by the Enttec DMX USB PRO itself (Manufacturer
 # "ENTTEC", Product "DMX USB PRO"). This is FTDI's generic default VID/PID,
@@ -205,6 +206,10 @@ class EnttecDMXPro:
             if not self.active:
                 return
             link = self.serial
+        try:
+            dmx_head.apply(self.dmx_data)
+        except Exception as e:
+            print(f"[DMX HEAD] apply failed: {e}")
         data_len = len(self.dmx_data)
         header = bytearray([
             self.START_VAL,

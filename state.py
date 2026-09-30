@@ -21,6 +21,7 @@ class State:
         self.deck2_track = ("READY FOR DECK 2", "")
         self.active_deck = 1  # 1 or 2
         self.now_playing_duration = 0.0  # exact length (sec) of the active deck's track
+        self.now_playing_path = ""       # audio file path of the active deck's track
 
         # True once a deck's (title, artist) came from an exact rekordbox
         # DB match or a resolved AI cleanup -- i.e. NOT a raw regex guess.
@@ -161,8 +162,8 @@ class State:
         self.accent_palette_index = -1  # WLED "pal" id (config.ACCENT_PALETTE_NAMES), -1 = none, use accent_color_index's flat swatch instead
         self.accent_speed = 128  # WLED per-segment "sx" (0-255) -- applies to both the raw effect and, since
         # 2026-09-25, a preset's known segments (drivers/accent_engine.py::_send_preset())
-        self.accent_brightness = 180  # WLED top-level "bri" (0-255) -- live-only master dimmer, not saved per
-        # song (same as accent_speed/accent_sound_enabled); applies uniformly whether raw or preset
+        self.accent_brightness = 180  # WLED top-level "bri" (0-255) -- master dimmer; saved per song like accent_speed
+        # (2026-09-28); applies uniformly whether raw or preset
         self.accent_sound_enabled = False  # True = let WLED's own AudioReactive effect run
         self.accent_preset_id = -1  # WLED saved-preset id (config.ACCENT_PRESETS), -1 = none, use the raw effect/color above
         self.accent_preset_color_index = -1  # DJ_COLOR_PALETTE override for the preset's segments, -1 = preset's own colors
@@ -553,6 +554,17 @@ class State:
         # _render_setup_confirm()); panel4/red confirms, anything else
         # cancels back to the normal AUTO countdown.
         self.setup_confirm_active = False
+
+        # --- Jukebox mode for the unattended (auto-start) show (2026-09-29) ---
+        # While show_unattended_autoplay is on and this is False, no questions
+        # are asked (no Mystery Band teaser, no white/dark question lighting) --
+        # the rig is just a jukebox. The red arcade button opens a "TRIVIA
+        # QUESTION?" confirm (trivia_confirm_active, rendered by
+        # graphics/matrix_canvas.py); green = yes sets this True for the rest
+        # of that autoplay session, red/anything else cancels.
+        self.jukebox_trivia_enabled = False
+        self.trivia_confirm_active = False
+        self.trivia_confirm_until = 0.0
         # Blue, same "setup" window: kicks off a Bluetooth gamepad reconnect
         # (drivers/bluetooth_engine.py::reconnect_paired_devices_async()).
         # text is shown on panels 1+2 in place of the AUTO countdown banner

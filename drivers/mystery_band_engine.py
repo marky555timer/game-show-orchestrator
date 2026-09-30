@@ -48,6 +48,8 @@ def check_new_track(title, artist, confident):
     state.intermission_active clears (drivers/win_sequence_engine.py)."""
     if state.intermission_active:
         return
+    if state.show_unattended_autoplay and not state.jukebox_trivia_enabled:
+        return  # auto-start jukebox mode: no questions until opted in (red button)
     if not confident or not artist:
         return
 

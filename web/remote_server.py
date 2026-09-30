@@ -756,6 +756,8 @@ if app is not None:
             "accent_preset_id": prefs.get("accent_preset_id", no_look),
             "accent_preset_color_index": prefs.get("accent_preset_color_index", no_look),
             "accent_palette_index": prefs.get("accent_palette_index", no_look),
+            "accent_speed": prefs.get("accent_speed", no_look),
+            "accent_brightness": prefs.get("accent_brightness", no_look),
         }
 
     @app.get("/api/library/tracks")
@@ -849,6 +851,8 @@ if app is not None:
         accent_preset_id: int | None = None
         accent_preset_color_index: int | None = None
         accent_palette_index: int | None = None
+        accent_speed: int | None = None  # 0-255, or -1 to clear
+        accent_brightness: int | None = None  # 0-255, or -1 to clear
 
     @app.post("/api/library/light-prefs")
     def library_light_prefs_set(body: LightPrefsSet):
@@ -890,6 +894,13 @@ if app is not None:
             if not (-1 <= body.accent_palette_index < len(config.ACCENT_PALETTE_NAMES)):
                 return {"ok": False, "reason": "accent_palette_index out of range"}
             fields["accent_palette_index"] = body.accent_palette_index
+        for name in ("accent_speed", "accent_brightness"):
+            value = getattr(body, name)
+            if value is None:
+                continue
+            if not (-1 <= value <= 255):
+                return {"ok": False, "reason": f"{name} out of range"}
+            fields[name] = value
         if not fields:
             return {"ok": False, "reason": "nothing to update"}
 
@@ -1125,6 +1136,24 @@ if app is not None:
         )
         return {"ok": True}
 
+    @app.post("/api/autodj/audition")
+    def autodj_audition():
+        """Jump the playing track to AUDITION_LEAD_SECONDS before its
+        transition point (the content-based cue-out, see
+        drivers/track_cue_engine.py), so a cue can be checked by ear without
+        sitting through the song. Seeks the real audio AND re-aligns
+        Auto-DJ's timer to match."""
+        if deck_orchestrator.has_pending_move():
+            return {"ok": False, "error": "a transition is already in progress"}
+        target = max(0.0, state.auto_dj_track_duration
+                     - config.AUTODJ_PRE_SWITCH_SECONDS
+                     - config.WEB_AUTODJ_AUDITION_LEAD_SECONDS)
+        deck_name = "deck1" if state.active_deck == 1 else "deck2"
+        if not deck_orchestrator.dj_engine.seek_deck(deck_name, target):
+            return {"ok": False, "error": "could not seek the playing track"}
+        state.auto_dj_track_started_at = time.time() - target
+        return {"ok": True, "seek_to_seconds": round(target, 1)}
+
     @app.post("/api/autodj/skip-now")
     def autodj_skip_now():
         deck_orchestrator.trigger_track_move("next")
@@ -1193,6 +1222,73 @@ if app is not None:
         "marquee": lambda: len(config.MARQUEE_THEME_NAMES),
         "outline": lambda: len(config.ACCENT_EFFECT_NAMES),
     }
+
+    @app.post("/api/dj-look/propagate-colors")
+    def dj_look_propagate_colors():
+        """"Propagate Colors" (2026-09-27 request): the outline strip is the
+        color "master" for a song's look (see the markup comment above the
+        Advanced panel's "Outline Strip (Accent)" section) -- this takes
+        whatever primary swatch it's currently showing (state.
+        accent_color_index) and applies that same swatch as DMX's and
+        marquee's own primary color too, a one-click way to bring all three
+        surfaces onto the same color without dialing each one in by hand.
+        Pattern/theme and gradient mode are untouched on either -- only the
+        color.
+
+        Registered ahead of the /api/dj-look/{feature} wildcard route below
+        -- Starlette matches path routes in registration order, not by
+        specificity, so a literal route placed AFTER a same-prefix
+        {parameter} route never gets a chance to match (confirmed live
+        2026-09-27: this and the copy/paste routes below were silently
+        swallowed by dj_look_set()'s `feature` wildcard until moved here)."""
+        state.dmx_color_index = state.accent_color_index
+        state.marquee_color_index = state.accent_color_index
+        light_prefs_engine.mark_dirty()
+        return {"ok": True, "dmx_color_index": state.dmx_color_index,
+                "marquee_color_index": state.marquee_color_index}
+
+    # Fields that make up "the entire lighting settings" for dj_look_copy/
+    # dj_look_paste below -- deliberately the same set light_prefs_engine.
+    # save_prefs_for()/apply_prefs_for() persist per-song (minus tempo_period,
+    # which is a BPM setting, not a "lighting" one). A plain module-level
+    # dict rather than anything persisted to disk -- this is a same-session
+    # operator scratch clipboard ("copy this song's look, skip to the next
+    # track, paste it there too"), not a saved show asset.
+    _LIGHTING_CLIPBOARD_FIELDS = (
+        "dmx_color_index", "dmx_theme_index", "dmx_gradient_mode",
+        "marquee_color_index", "marquee_theme_index", "marquee_gradient_mode",
+        "accent_color_index", "accent_theme_index", "accent_gradient_mode",
+        "accent_palette_index", "accent_preset_id", "accent_preset_color_index",
+        "accent_speed", "accent_brightness",
+    )
+    _lighting_clipboard = {"snapshot": None}  # single key mutated in place -- no rebinding, so no nonlocal/global needed
+
+    @app.post("/api/dj-look/copy")
+    def dj_look_copy():
+        """"Copy Lighting Settings" -- snapshots the currently-live DMX/
+        marquee/outline color+pattern+gradient (+ outline palette/preset)
+        into this same-session clipboard, for dj_look_paste() below to apply
+        to whatever song is playing when the operator hits "Paste". Also
+        registered ahead of the {feature} wildcard route -- see
+        dj_look_propagate_colors()'s docstring above."""
+        _lighting_clipboard["snapshot"] = {field: getattr(state, field) for field in _LIGHTING_CLIPBOARD_FIELDS}
+        return {"ok": True, "copied": True}
+
+    @app.post("/api/dj-look/paste")
+    def dj_look_paste():
+        """"Paste Lighting Settings" -- applies the last dj_look_copy()
+        snapshot to the current live state (i.e. whatever song is playing
+        right now), then marks it dirty so light_prefs_engine's normal
+        debounced save (drivers/light_prefs_engine.py::update()) persists it
+        to THIS song's own light_prefs.csv row, same as any other manual
+        color/pattern adjustment."""
+        snapshot = _lighting_clipboard["snapshot"]
+        if snapshot is None:
+            return {"ok": False, "error": "Nothing copied yet"}
+        for field, value in snapshot.items():
+            setattr(state, field, value)
+        light_prefs_engine.mark_dirty()
+        return {"ok": True, "pasted": True}
 
     @app.post("/api/dj-look/{feature}")
     def dj_look_set(feature: str, body: DjLookSet):
@@ -1311,15 +1407,17 @@ if app is not None:
     @app.post("/api/accent/speed/set")
     def accent_speed_set(body: AccentSpeedSet):
         state.accent_speed = max(0, min(255, body.speed))
+        light_prefs_engine.mark_dirty()
         return {"ok": True, "accent_speed": state.accent_speed}
 
-    # Live master-brightness dimmer (2026-09-25) -- same live-only,
-    # not-saved-per-song convention as accent_speed above; applies whether
+    # Live master-brightness dimmer (2026-09-25); saved per song like
+    # accent_speed above since 2026-09-28. Applies whether
     # the board is currently showing a raw effect or a preset (see
     # accent_engine.py::sync_to_show_state()'s independent brightness check).
     @app.post("/api/accent/brightness/set")
     def accent_brightness_set(body: AccentBrightnessSet):
         state.accent_brightness = max(0, min(255, body.brightness))
+        light_prefs_engine.mark_dirty()
         return {"ok": True, "accent_brightness": state.accent_brightness}
 
     # Relay hardware bring-up/test (2026-08-23): fires the same one-shot

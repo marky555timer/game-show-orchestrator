@@ -1,3 +1,6 @@
+import json
+import os
+import threading
 import time
 
 import config
@@ -54,12 +57,80 @@ _transition_cycle = 0
 _last_fired_cycle = -1
 
 
+_cue_cache = {"mtime": 0.0, "data": {}}
+_cue_overrides = {"mtime": 0.0, "data": {}}
+_cue_analyzing = set()
+_BASE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+
+def _load_json_cached(holder, name):
+    path = os.path.join(_BASE, name)
+    try:
+        mtime = os.path.getmtime(path)
+        if mtime != holder["mtime"]:
+            with open(path, "r", encoding="utf-8") as f:
+                holder["data"] = json.load(f)
+            holder["mtime"] = mtime
+    except Exception:
+        pass
+    return holder["data"]
+
+
+def _cue_for(path, duration):
+    """Cue-out seconds for `path` (override > analysis cache), or None."""
+    if not config.TRACK_CUES_ENABLED or not path:
+        return None
+    name = os.path.basename(path)
+    over = _load_json_cached(_cue_overrides, config.TRACK_CUE_OVERRIDES_FILE).get(name)
+    if isinstance(over, (int, float)) and 0 < over <= duration:
+        return float(over)
+    hit = _load_json_cached(_cue_cache, config.TRACK_CUES_FILE).get(name)
+    if hit and "cue" in hit and hit["cue"] >= duration * 0.3:
+        return min(float(hit["cue"]), duration)
+    return None
+
+
+def _analyze_in_background(path, track_key, duration):
+    """Track missing from the cue cache (a late addition): analyze it off the
+    main thread and, if it's still the playing track, tighten the timer."""
+    name = os.path.basename(path)
+    if name in _cue_analyzing:
+        return
+    _cue_analyzing.add(name)
+
+    def work():
+        try:
+            from drivers import track_cue_engine
+            res = track_cue_engine.analyze(path)
+            res["sig"] = track_cue_engine._sig(path)
+            cache_path = os.path.join(_BASE, config.TRACK_CUES_FILE)
+            cache = track_cue_engine.load_cache(cache_path)
+            cache[name] = res
+            track_cue_engine.save_cache(cache_path, cache)
+            cue = _cue_for(path, duration)
+            if cue and state.auto_dj_track_key == track_key:
+                state.auto_dj_track_duration = cue
+                print(f"[AUTO-DJ] Analyzed {name!r}: {res['kind']} ending, cue-out {cue:.0f}s "
+                      f"of {duration:.0f}s.")
+        except Exception as e:
+            print(f"[AUTO-DJ] Cue analysis failed for {name!r}: {e}")
+        finally:
+            _cue_analyzing.discard(name)
+
+    threading.Thread(target=work, daemon=True, name="track-cue-analysis").start()
+
+
 def _lookup_duration(title):
     # state.now_playing_duration is the exact length of the track deck_orchestrator
     # just loaded -- no fuzzy title lookup needed now that we read the file
     # directly instead of guessing from a rekordbox.xml match (2026-08-07).
     duration = state.now_playing_duration
     if duration and duration >= config.AUTODJ_MIN_PLAUSIBLE_DURATION_SECONDS:
+        # Content-based cue-out (2026-09-29): start the transition where the
+        # ending analysis says, not at the full file length.
+        cue = _cue_for(state.now_playing_path, float(duration))
+        if cue:
+            return cue
         return float(duration)
     return config.AUTODJ_DEFAULT_TRACK_SECONDS
 
@@ -72,8 +143,13 @@ def _start_timer(track_key, title):
     state.auto_dj_track_duration = _lookup_duration(title)
     state.auto_dj_announcement_played = False
     state.auto_dj_transition_at = 0.0
+    dur = state.now_playing_duration
+    if (config.TRACK_CUES_ENABLED and state.now_playing_path and dur
+            and dur >= config.AUTODJ_MIN_PLAUSIBLE_DURATION_SECONDS
+            and _cue_for(state.now_playing_path, float(dur)) is None):
+        _analyze_in_background(state.now_playing_path, track_key, float(dur))
     print(f"[AUTO-DJ] Tracking {title!r} -- duration {state.auto_dj_track_duration:.0f}s "
-          f"(transition sequence arms at -{config.AUTODJ_PRE_SWITCH_SECONDS:.0f}s).")
+          f"(cue-out; transition sequence arms at -{config.AUTODJ_PRE_SWITCH_SECONDS:.0f}s).")
 
 
 def toggle_auto_dj():

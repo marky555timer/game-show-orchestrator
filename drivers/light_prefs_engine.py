@@ -40,7 +40,16 @@ _HEADER = ["track_key", "tempo_period", "color_index", "theme_index",
            "accent_color_index", "accent_theme_index",
            "accent_preset_id", "accent_preset_color_index",
            "accent_palette_index",
+           "accent_speed", "accent_brightness",
            "tempo_source", "energy", "updated_at"]
+
+# Append-only change log (config.LIGHT_PREFS_LOG_PATH, added 2026-09-28): one
+# row per field that actually changed on a write, timestamped, so usage
+# patterns over time can be analysed -- light_prefs.csv itself is only the
+# latest state per song and its updated_at is re-stamped on every save.
+# Bookkeeping/legacy columns are excluded (the legacy pair just mirrors DMX).
+_LOG_HEADER = ["timestamp", "track_key", "source", "field", "old", "new"]
+_LOG_SKIP_FIELDS = ("color_index", "theme_index", "tempo_source")
 
 # Valid values for the "energy" column -- drivers/factoid_engine.py fetches
 # this from the AI alongside bpm/release_year and caches it here via
@@ -108,6 +117,9 @@ class LightPrefsEngine:
                             "accent_preset_color_index": _to_int(row.get("accent_preset_color_index")),
                             # 2026-09-26 -- same "no legacy fallback" as the preset pair above.
                             "accent_palette_index": _to_int(row.get("accent_palette_index")),
+                            # 2026-09-28 -- per-song outline speed/brightness; NO_LOOK = none saved.
+                            "accent_speed": _to_int(row.get("accent_speed")),
+                            "accent_brightness": _to_int(row.get("accent_brightness")),
                             "tempo_source": (row.get("tempo_source") or "operator").strip(),
                             "energy": (row.get("energy") or "").strip(),
                         }
@@ -142,6 +154,8 @@ class LightPrefsEngine:
                         "accent_preset_id": prefs.get("accent_preset_id", NO_LOOK),
                         "accent_preset_color_index": prefs.get("accent_preset_color_index", NO_LOOK),
                         "accent_palette_index": prefs.get("accent_palette_index", NO_LOOK),
+                        "accent_speed": prefs.get("accent_speed", NO_LOOK),
+                        "accent_brightness": prefs.get("accent_brightness", NO_LOOK),
                         "tempo_source": prefs.get("tempo_source", "operator"),
                         "energy": prefs.get("energy", ""),
                         "updated_at": now_str,
@@ -158,18 +172,22 @@ class LightPrefsEngine:
             entry = self._entries.get(track_key)
         return (entry or {}).get("energy") or None
 
-    def _upsert(self, track_key, **fields):
+    def _upsert(self, track_key, _source="operator", **fields):
         """Merges `fields` into whatever entry exists for track_key (or a
         blank template if there isn't one yet), leaving every field NOT
         passed untouched, then persists. Shared by every write path below
         so a save from one source (operator tap/cycle, online BPM lookup,
         AI energy classification) never clobbers a field owned by another
         -- e.g. an operator re-saving tempo/color/pattern must not erase
-        this track's already-cached energy tag."""
+        this track's already-cached energy tag.
+
+        `_source` labels who made the change in the change log ("operator",
+        "library", "online", "ai_energy")."""
         if not track_key:
             return
         with self._lock:
-            entry = dict(self._entries.get(track_key) or {
+            existing = self._entries.get(track_key)
+            entry = dict(existing or {
                 "tempo_period": config.TEMPO_DEFAULT_PERIOD_SECONDS,
                 "color_index": NO_LOOK,
                 "theme_index": NO_LOOK,
@@ -182,19 +200,54 @@ class LightPrefsEngine:
                 "accent_preset_id": NO_LOOK,
                 "accent_preset_color_index": NO_LOOK,
                 "accent_palette_index": NO_LOOK,
+                "accent_speed": NO_LOOK,
+                "accent_brightness": NO_LOOK,
                 "tempo_source": "online",
                 "energy": "",
             })
+            old = dict(existing) if existing else None
             entry.update(fields)
             self._entries[track_key] = entry
         self._save_cache()
+        self._log_changes(track_key, _source, old, entry)
+
+    def _log_changes(self, track_key, source, old, new):
+        """Appends one row per changed field to the change log. old is None
+        for a brand-new track row (logged with an empty "old"). Never raises
+        -- a logging failure must not affect the live show."""
+        try:
+            rows = []
+            ts = time.strftime("%Y-%m-%d %H:%M:%S")
+            for field, new_val in new.items():
+                if field in _LOG_SKIP_FIELDS:
+                    continue
+                old_val = "" if old is None else old.get(field, "")
+                if old is not None and old_val == new_val:
+                    continue
+                if old is None and new_val in (NO_LOOK, ""):
+                    continue  # a default the write didn't actually set
+                if (old is None and field == "tempo_period"
+                        and source in ("ai_energy", "library")):
+                    continue  # template default, not a tempo anyone chose
+                rows.append([ts, track_key, source, field, old_val, new_val])
+            if not rows:
+                return
+            os.makedirs(config.LIGHT_PREFS_DIR, exist_ok=True)
+            new_file = not os.path.exists(config.LIGHT_PREFS_LOG_PATH)
+            with open(config.LIGHT_PREFS_LOG_PATH, "a", encoding="utf-8", newline="") as f:
+                w = csv.writer(f)
+                if new_file:
+                    w.writerow(_LOG_HEADER)
+                w.writerows(rows)
+        except Exception as e:
+            print(f"[LIGHT PREFS] Failed to write change log: {e}")
 
     def save_prefs_for(self, track_key, tempo_period,
                         dmx_color_index, dmx_theme_index,
                         marquee_color_index, marquee_theme_index,
                         accent_color_index, accent_theme_index,
                         accent_preset_id, accent_preset_color_index,
-                        accent_palette_index):
+                        accent_palette_index, accent_speed, accent_brightness):
         self._upsert(track_key, tempo_period=tempo_period,
                      # Legacy pair mirrors DMX -- see _save_cache()'s comment.
                      color_index=dmx_color_index, theme_index=dmx_theme_index,
@@ -203,20 +256,23 @@ class LightPrefsEngine:
                      accent_color_index=accent_color_index, accent_theme_index=accent_theme_index,
                      accent_preset_id=accent_preset_id, accent_preset_color_index=accent_preset_color_index,
                      accent_palette_index=accent_palette_index,
-                     tempo_source="operator")
+                     accent_speed=accent_speed, accent_brightness=accent_brightness,
+                     tempo_source="operator", _source="operator")
         print(f"[LIGHT PREFS] Saved for {track_key!r}: tempo={tempo_period:.3f}s, "
               f"dmx=({dmx_color_index},{dmx_theme_index}), "
               f"marquee=({marquee_color_index},{marquee_theme_index}), "
               f"accent=({accent_color_index},{accent_theme_index}), "
               f"accent_preset=({accent_preset_id},{accent_preset_color_index}), "
-              f"accent_palette={accent_palette_index}")
+              f"accent_palette={accent_palette_index}, "
+              f"accent_speed={accent_speed}, accent_brightness={accent_brightness}")
 
     def save_fixture_look_for(self, track_key, **fields):
         """Partial per-fixture-type look save from the library's per-song
         editor (web/remote_server.py's /api/library/light-prefs) -- accepts
         any subset of dmx_color_index/dmx_theme_index/marquee_color_index/
         marquee_theme_index/accent_color_index/accent_theme_index/
-    accent_preset_id/accent_preset_color_index, merged
+    accent_preset_id/accent_preset_color_index/accent_palette_index/
+        accent_speed/accent_brightness, merged
         via _upsert() same as every other write path here (editing just the
         marquee fields doesn't touch DMX/accent/tempo/energy). Editing a
         song that isn't the one currently playing only touches this row on
@@ -232,7 +288,7 @@ class LightPrefsEngine:
             fields.setdefault("color_index", fields["dmx_color_index"])
         if "dmx_theme_index" in fields:
             fields.setdefault("theme_index", fields["dmx_theme_index"])
-        self._upsert(track_key, **fields)
+        self._upsert(track_key, _source="library", **fields)
         print(f"[LIGHT PREFS] Library edit saved for {track_key!r}: {fields}")
 
     def save_online_tempo_for(self, track_key, tempo_period):
@@ -246,7 +302,8 @@ class LightPrefsEngine:
             existing = self._entries.get(track_key)
             if existing and existing.get("tempo_source", "operator") == "operator":
                 return False
-        self._upsert(track_key, tempo_period=tempo_period, tempo_source="online")
+        self._upsert(track_key, tempo_period=tempo_period, tempo_source="online",
+                     _source="online")
         print(f"[LIGHT PREFS] Cached online tempo for {track_key!r}: {tempo_period:.3f}s "
               f"({60.0 / tempo_period:.0f} BPM)")
         return True
@@ -267,7 +324,7 @@ class LightPrefsEngine:
             existing = self._entries.get(track_key)
             if existing and existing.get("energy") == energy:
                 return
-        self._upsert(track_key, energy=energy)
+        self._upsert(track_key, energy=energy, _source="ai_energy")
         print(f"[LIGHT PREFS] Cached energy for {track_key!r}: {energy}")
 
 
@@ -313,6 +370,7 @@ def update(now):
             state.accent_color_index, state.accent_theme_index,
             state.accent_preset_id, state.accent_preset_color_index,
             state.accent_palette_index,
+            state.accent_speed, state.accent_brightness,
         )
 
 
@@ -434,6 +492,19 @@ def apply_prefs_for(track_key):
         restored_any = True
         print(f"[LIGHT PREFS] Restored outline gradient palette for {track_key!r}: "
               f"palette={state.accent_palette_index}")
+
+    # Outline speed/brightness (2026-09-28) -- unlike the preset/palette
+    # above these carry over from the previous track when this one has none
+    # saved, same as the color/pattern pairs (a live operator dial, not a
+    # deliberate per-song pick, until the operator actually saves one).
+    accent_speed = prefs.get("accent_speed", NO_LOOK)
+    if accent_speed >= 0:
+        state.accent_speed = max(0, min(255, accent_speed))
+        restored_any = True
+    accent_brightness = prefs.get("accent_brightness", NO_LOOK)
+    if accent_brightness >= 0:
+        state.accent_brightness = max(0, min(255, accent_brightness))
+        restored_any = True
 
     if not restored_any:
         print(f"[LIGHT PREFS] Restored tempo only for {track_key!r}: "

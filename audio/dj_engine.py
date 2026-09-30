@@ -231,6 +231,7 @@ class DJEngine:
             "announcement": pygame.mixer.Channel(CHAN_ANNOUNCEMENT),
         }
         self._ramps = {}  # channel name -> _VolumeRamp
+        self._seek_source = {}  # deck name -> (full Sound, sliced Sound) from seek_deck()
         self._ramps_lock = threading.Lock()
         self._running = True
         self._ramp_thread = threading.Thread(target=self._ramp_loop, daemon=True)
@@ -347,6 +348,36 @@ class DJEngine:
         # "next" -- see play_sweeper_and_announcement below, which had the
         # same gap on the sweeper/announcement starts).
         channel.play(sound, fade_ms=int(MIN_FADE_SECONDS * 1000))
+
+    def seek_deck(self, deck_name, seconds):
+        """Restarts the deck's currently playing track `seconds` in (audition
+        jump, web remote). A pygame Sound can't seek, so this re-slices the
+        already-decoded PCM buffer and plays the slice on the same channel at
+        the same volume. Keeps the ORIGINAL full-length Sound so repeated
+        seeks always measure from the real start. Returns True on success."""
+        channel = self._channels[deck_name]
+        current = channel.get_sound()
+        if current is None:
+            return False
+        src = self._seek_source.get(deck_name)
+        full = src[0] if (src is not None and src[1] is current) else current
+        init = pygame.mixer.get_init()
+        if not init:
+            return False
+        freq, fmt, chans = init
+        bytes_per_frame = chans * (abs(fmt) // 8)
+        raw = full.get_raw()
+        offset = int(max(0.0, seconds) * freq) * bytes_per_frame
+        if offset >= len(raw) - bytes_per_frame * freq:  # keep >= 1s to play
+            return False
+        sliced = pygame.mixer.Sound(buffer=memoryview(raw)[offset:])
+        self._seek_source[deck_name] = (full, sliced)
+        # Same volume the deck is currently meant to be at (logical level x
+        # master), set BEFORE play() exactly like play_deck() does --
+        # Channel.get_volume() isn't reliable mid-fade, so don't read it.
+        channel.set_volume(self.current_logical_volume(deck_name) * self._scale_for(deck_name))
+        channel.play(sliced, fade_ms=int(MIN_FADE_SECONDS * 1000))
+        return True
 
     def crossfade_decks(self, from_deck, to_deck, duration):
         """Plain radio-style crossfade, no sweeper/announcement -- the

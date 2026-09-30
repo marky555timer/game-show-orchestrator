@@ -203,6 +203,10 @@ def _enter_unattended_autoplay(now):
 
     state.show_unattended_autoplay = True
     state.show_unattended_autoplay_started_at = now
+    # Auto-start begins as a jukebox: no questions until the operator opts in
+    # with the red button (drivers/simon_engine.py).
+    state.jukebox_trivia_enabled = False
+    state.trivia_confirm_active = False
 
     # Same handoff _finish_intro() does at the end of a real intro -- a
     # previous show's outro (or a fresh app launch, since the fader
@@ -257,6 +261,8 @@ def reset_unattended_autoplay():
 
     state.show_unattended_autoplay = False
     state.show_unattended_autoplay_started_at = 0.0
+    state.jukebox_trivia_enabled = False
+    state.trivia_confirm_active = False
     state.show_phase = "setup"
     state.show_phase_started_at = time.time()
     # Explicit 0.0 reset (not left to _update_unattended_autoplay()'s own

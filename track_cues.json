@@ -1,0 +1,4962 @@
+{
+ "01 (I've Had) The Time Of My Life - From _Dirty Dancing_ Soundtrack.mp3": {
+  "body_db": -20.1,
+  "cue": 279.7,
+  "duration": 290.39,
+  "fade_start": 275.85,
+  "kind": "fade",
+  "last_audible": 284.75,
+  "sig": "9396849:1758510731",
+  "slope": -2.81
+ },
+ "01 (We're Gonna) Rock Around The Clock - Single Version.mp3": {
+  "body_db": -17.3,
+  "cue": 133.4,
+  "duration": 134.16,
+  "fade_start": 132.75,
+  "kind": "hard",
+  "last_audible": 134.1,
+  "sig": "4460159:1758565775",
+  "slope": -20.83
+ },
+ "01 (Your Love Keeps Lifting Me) Higher & Higher.mp3": {
+  "body_db": -14.5,
+  "cue": 169.8,
+  "duration": 179.17,
+  "fade_start": 166.95,
+  "kind": "fade",
+  "last_audible": 174.85,
+  "sig": "5861547:1758566214",
+  "slope": -4.13
+ },
+ "01 ...Baby One More Time.mp3": {
+  "body_db": -13.0,
+  "cue": 209.0,
+  "duration": 211.12,
+  "fade_start": 208.2,
+  "kind": "hard",
+  "last_audible": 209.9,
+  "sig": "6871775:1758505096",
+  "slope": -21.51
+ },
+ "01 9 to 5.mp3": {
+  "body_db": -13.7,
+  "cue": 149.15,
+  "duration": 162.49,
+  "fade_start": 144.1,
+  "kind": "fade",
+  "last_audible": 159.4,
+  "sig": "5302083:1758509021",
+  "slope": -1.67
+ },
+ "01 American Pie.mp3": {
+  "body_db": -16.2,
+  "cue": 510.2,
+  "duration": 516.95,
+  "fade_start": 501.3,
+  "kind": "natural",
+  "last_audible": 512.1,
+  "sig": "16683038:1758564615",
+  "slope": 0.17
+ },
+ "01 Baby.mp3": {
+  "body_db": -9.2,
+  "cue": 204.5,
+  "duration": 214.3,
+  "fade_start": 203.8,
+  "kind": "fade",
+  "last_audible": 211.85,
+  "sig": "6927609:1758511921",
+  "slope": -4.63
+ },
+ "01 Bad Romance.mp3": {
+  "body_db": -9.4,
+  "cue": 292.15,
+  "duration": 294.64,
+  "fade_start": 285.5,
+  "kind": "hard",
+  "last_audible": 292.4,
+  "sig": "9508329:1758511742",
+  "slope": -0.09
+ },
+ "01 Band On The Run - 2010 Remaster.mp3": {
+  "body_db": -14.9,
+  "cue": 309.2,
+  "duration": 313.07,
+  "fade_start": 308.1,
+  "kind": "fade",
+  "last_audible": 310.65,
+  "sig": "10124545:1758569505",
+  "slope": -13.83
+ },
+ "01 Beautiful Day.mp3": {
+  "body_db": -12.3,
+  "cue": 228.8,
+  "duration": 246.46,
+  "fade_start": 227.0,
+  "kind": "fade",
+  "last_audible": 245.05,
+  "sig": "7978955:1758515867",
+  "slope": -1.63
+ },
+ "01 Beautiful Girls.mp3": {
+  "body_db": -11.4,
+  "cue": 223.5,
+  "duration": 225.44,
+  "fade_start": 222.7,
+  "kind": "hard",
+  "last_audible": 223.8,
+  "sig": "7300045:1758511103",
+  "slope": -41.71
+ },
+ "01 Beds Are Burning - Remastered.mp3": {
+  "body_db": -15.4,
+  "cue": 254.3,
+  "duration": 255.72,
+  "fade_start": 253.25,
+  "kind": "stinger",
+  "last_audible": 254.65,
+  "sig": "8313970:1758510415",
+  "slope": -22.03
+ },
+ "01 Best of My Love.mp3": {
+  "body_db": -14.7,
+  "cue": 213.75,
+  "duration": 220.59,
+  "fade_start": 209.6,
+  "kind": "fade",
+  "last_audible": 218.9,
+  "sig": "7133809:1758564675",
+  "slope": -2.57
+ },
+ "01 Bitter Sweet Symphony - Remastered 2016.mp3": {
+  "body_db": -11.7,
+  "cue": 349.15,
+  "duration": 357.33,
+  "fade_start": 345.0,
+  "kind": "fade",
+  "last_audible": 355.0,
+  "sig": "11638589:1758505892",
+  "slope": -2.8
+ },
+ "01 Bleeding Love.mp3": {
+  "body_db": -10.8,
+  "cue": 257.6,
+  "duration": 262.52,
+  "fade_start": 249.3,
+  "kind": "fade",
+  "last_audible": 260.4,
+  "sig": "8531885:1758511245",
+  "slope": -0.78
+ },
+ "01 Blitzkrieg Bop.mp3": {
+  "body_db": -16.6,
+  "cue": 131.3,
+  "duration": 133.47,
+  "fade_start": 130.8,
+  "kind": "hard",
+  "last_audible": 131.8,
+  "sig": "4380129:1758565270",
+  "slope": -34.33
+ },
+ "01 Blowin' in the Wind.mp3": {
+  "body_db": -22.5,
+  "cue": 163.05,
+  "duration": 165.49,
+  "fade_start": 162.1,
+  "kind": "fade",
+  "last_audible": 164.5,
+  "sig": "5439022:1758568310",
+  "slope": -11.34
+ },
+ "01 Blue Suede Shoes.mp3": {
+  "body_db": -16.0,
+  "cue": 117.5,
+  "duration": 119.23,
+  "fade_start": 116.35,
+  "kind": "hard",
+  "last_audible": 118.1,
+  "sig": "3938237:1758566721",
+  "slope": -19.04
+ },
+ "01 Break My Stride.mp3": {
+  "body_db": -17.6,
+  "cue": 168.7,
+  "duration": 183.41,
+  "fade_start": 163.35,
+  "kind": "fade",
+  "last_audible": 178.15,
+  "sig": "6114538:1758509760",
+  "slope": -1.69
+ },
+ "01 Brown Eyed Girl.mp3": {
+  "body_db": -17.6,
+  "cue": 178.3,
+  "duration": 186.6,
+  "fade_start": 174.45,
+  "kind": "fade",
+  "last_audible": 181.65,
+  "sig": "6212192:1758564122",
+  "slope": -3.79
+ },
+ "01 Build Me Up Buttercup.mp3": {
+  "body_db": -10.9,
+  "cue": 172.05,
+  "duration": 180.19,
+  "fade_start": 168.75,
+  "kind": "fade",
+  "last_audible": 176.5,
+  "sig": "5905743:1758568106",
+  "slope": -3.66
+ },
+ "01 Building a Mystery.mp3": {
+  "body_db": -12.8,
+  "cue": 243.2,
+  "duration": 247.34,
+  "fade_start": 241.3,
+  "kind": "fade",
+  "last_audible": 244.7,
+  "sig": "7982412:1758507713",
+  "slope": -12.97
+ },
+ "01 Burning Heart - From _Rocky IV_ Soundtrack.mp3": {
+  "body_db": -16.3,
+  "cue": 222.15,
+  "duration": 230.78,
+  "fade_start": 218.7,
+  "kind": "fade",
+  "last_audible": 227.5,
+  "sig": "7522288:1758510694",
+  "slope": -3.38
+ },
+ "01 Bye Bye Bye.mp3": {
+  "body_db": -12.0,
+  "cue": 196.65,
+  "duration": 200.43,
+  "fade_start": 195.65,
+  "kind": "fade",
+  "last_audible": 198.0,
+  "sig": "6623433:1758505114",
+  "slope": -17.03
+ },
+ "01 C'est La Vie.mp3": {
+  "body_db": -12.4,
+  "cue": 171.1,
+  "duration": 173.75,
+  "fade_start": 170.35,
+  "kind": "hard",
+  "last_audible": 171.3,
+  "sig": "5741146:1758507546",
+  "slope": -39.64
+ },
+ "01 Cherry Pie.mp3": {
+  "body_db": -12.7,
+  "cue": 199.5,
+  "duration": 201.08,
+  "fade_start": 198.8,
+  "kind": "hard",
+  "last_audible": 199.9,
+  "sig": "6532352:1758507018",
+  "slope": -39.12
+ },
+ "01 Closer to Fine.mp3": {
+  "body_db": -13.2,
+  "cue": 236.05,
+  "duration": 241.63,
+  "fade_start": 234.85,
+  "kind": "fade",
+  "last_audible": 238.2,
+  "sig": "7830269:1758509857",
+  "slope": -11.16
+ },
+ "01 Copacabana (At the Copa).mp3": {
+  "body_db": -14.7,
+  "cue": 230.6,
+  "duration": 236.8,
+  "fade_start": 225.25,
+  "kind": "fade",
+  "last_audible": 234.3,
+  "sig": "7756878:1758508787",
+  "slope": -1.89
+ },
+ "01 Crazy In Love (feat. JAY-Z).mp3": {
+  "body_db": -11.8,
+  "cue": 230.0,
+  "duration": 236.19,
+  "fade_start": 226.6,
+  "kind": "fade",
+  "last_audible": 235.65,
+  "sig": "7740067:1758510930",
+  "slope": -3.01
+ },
+ "01 Crazy.mp3": {
+  "body_db": -8.2,
+  "cue": 159.9,
+  "duration": 162.93,
+  "fade_start": 158.8,
+  "kind": "fade",
+  "last_audible": 162.8,
+  "sig": "5347143:1758514439",
+  "slope": -3.27
+ },
+ "01 Cult of Personality (2023 Remaster).mp3": {
+  "body_db": -11.4,
+  "cue": 287.85,
+  "duration": 294.59,
+  "fade_start": 287.25,
+  "kind": "fade",
+  "last_audible": 292.55,
+  "sig": "9672440:1758508675",
+  "slope": -4.22
+ },
+ "01 Cult of Personality.mp3": {
+  "body_db": -11.4,
+  "cue": 287.85,
+  "duration": 294.59,
+  "fade_start": 287.25,
+  "kind": "fade",
+  "last_audible": 292.55,
+  "sig": "9658027:1758510636",
+  "slope": -4.22
+ },
+ "01 Do Ya Think I'm Sexy.mp3": {
+  "body_db": -21.6,
+  "cue": 320.55,
+  "duration": 325.87,
+  "fade_start": 317.2,
+  "kind": "fade",
+  "last_audible": 323.45,
+  "sig": "10503059:1758568741",
+  "slope": -3.85
+ },
+ "01 Do You Believe in Magic_.mp3": {
+  "body_db": -14.6,
+  "cue": 117.2,
+  "duration": 125.88,
+  "fade_start": 115.1,
+  "kind": "fade",
+  "last_audible": 122.05,
+  "sig": "4174861:1758567320",
+  "slope": -4.6
+ },
+ "01 Don't Stop 'Til You Get Enough.mp3": {
+  "body_db": -19.3,
+  "cue": 351.6,
+  "duration": 365.53,
+  "fade_start": 347.15,
+  "kind": "fade",
+  "last_audible": 361.3,
+  "sig": "11826499:1758569438",
+  "slope": -1.7
+ },
+ "01 Don't You Worry Child - Radio Edit.mp3": {
+  "body_db": -9.1,
+  "cue": 206.35,
+  "duration": 212.93,
+  "fade_start": 205.2,
+  "kind": "fade",
+  "last_audible": 209.5,
+  "sig": "6850871:1758513665",
+  "slope": -8.68
+ },
+ "01 Dynamite.mp3": {
+  "body_db": -8.8,
+  "cue": 198.2,
+  "duration": 202.66,
+  "fade_start": 197.25,
+  "kind": "fade",
+  "last_audible": 201.6,
+  "sig": "6575806:1758511861",
+  "slope": -8.48
+ },
+ "01 Eye of the Tiger.mp3": {
+  "body_db": -20.5,
+  "cue": 230.95,
+  "duration": 243.83,
+  "fade_start": 228.3,
+  "kind": "fade",
+  "last_audible": 241.2,
+  "sig": "8095189:1758508456",
+  "slope": -1.56
+ },
+ "01 Fade Into You.mp3": {
+  "body_db": -15.5,
+  "cue": 276.15,
+  "duration": 295.66,
+  "fade_start": 271.3,
+  "kind": "fade",
+  "last_audible": 289.5,
+  "sig": "9694292:1758506828",
+  "slope": -1.29
+ },
+ "01 Faith - Remastered.mp3": {
+  "body_db": -18.5,
+  "cue": 192.0,
+  "duration": 193.26,
+  "fade_start": 191.5,
+  "kind": "hard",
+  "last_audible": 192.0,
+  "sig": "6344919:1758509323",
+  "slope": -39.97
+ },
+ "01 Fantasy (feat. O.D.B.).mp3": {
+  "body_db": -14.5,
+  "cue": 273.6,
+  "duration": 290.53,
+  "fade_start": 267.7,
+  "kind": "fade",
+  "last_audible": 284.35,
+  "sig": "9437863:1758506709",
+  "slope": -1.12
+ },
+ "01 Fantasy.mp3": {
+  "body_db": -14.1,
+  "cue": 239.05,
+  "duration": 243.55,
+  "fade_start": 236.25,
+  "kind": "fade",
+  "last_audible": 240.5,
+  "sig": "7864999:1758505245",
+  "slope": -8.77
+ },
+ "01 For Your Love.mp3": {
+  "body_db": -12.6,
+  "cue": 145.25,
+  "duration": 153.53,
+  "fade_start": 140.6,
+  "kind": "fade",
+  "last_audible": 148.15,
+  "sig": "5049451:1758565331",
+  "slope": -3.24
+ },
+ "01 Forever.mp3": {
+  "body_db": -9.5,
+  "cue": 268.4,
+  "duration": 276.94,
+  "fade_start": 261.8,
+  "kind": "fade",
+  "last_audible": 276.05,
+  "sig": "9058816:1758513200",
+  "slope": -1.31
+ },
+ "01 Genie In a Bottle.mp3": {
+  "body_db": -12.1,
+  "cue": 214.25,
+  "duration": 217.64,
+  "fade_start": 211.45,
+  "kind": "fade",
+  "last_audible": 217.25,
+  "sig": "7076482:1758505849",
+  "slope": -2.0
+ },
+ "01 Gimme More.mp3": {
+  "body_db": -9.2,
+  "cue": 244.1,
+  "duration": 251.31,
+  "fade_start": 239.5,
+  "kind": "fade",
+  "last_audible": 249.1,
+  "sig": "8217782:1758514383",
+  "slope": -2.68
+ },
+ "01 Girl You Know It's True.mp3": {
+  "body_db": -11.1,
+  "cue": 194.15,
+  "duration": 198.69,
+  "fade_start": 193.5,
+  "kind": "fade",
+  "last_audible": 197.6,
+  "sig": "6483286:1758508986",
+  "slope": -6.04
+ },
+ "01 Good Vibrations - 2001 - Remaster.mp3": {
+  "body_db": -12.7,
+  "cue": 214.45,
+  "duration": 219.08,
+  "fade_start": 213.15,
+  "kind": "fade",
+  "last_audible": 215.4,
+  "sig": "7124002:1758567209",
+  "slope": -16.56
+ },
+ "01 He Wasn't Man Enough.mp3": {
+  "body_db": -9.6,
+  "cue": 261.45,
+  "duration": 261.99,
+  "fade_start": 259.95,
+  "kind": "hard",
+  "last_audible": 261.45,
+  "sig": "8460551:1758507788",
+  "slope": -10.58
+ },
+ "01 Hells Bells.mp3": {
+  "body_db": -11.9,
+  "cue": 311.3,
+  "duration": 312.35,
+  "fade_start": 310.75,
+  "kind": "hard",
+  "last_audible": 311.5,
+  "sig": "10021362:1758509235",
+  "slope": -59.89
+ },
+ "01 Hooked On A Feeling.mp3": {
+  "body_db": -13.2,
+  "cue": 164.85,
+  "duration": 172.92,
+  "fade_start": 160.3,
+  "kind": "fade",
+  "last_audible": 169.4,
+  "sig": "5681606:1758564832",
+  "slope": -2.66
+ },
+ "01 House of the Rising Sun.mp3": {
+  "body_db": -11.9,
+  "cue": 267.9,
+  "duration": 271.35,
+  "fade_start": 267.25,
+  "kind": "hard",
+  "last_audible": 268.9,
+  "sig": "8825736:1758567023",
+  "slope": -23.85
+ },
+ "01 I Hate Myself for Loving You.mp3": {
+  "body_db": -18.7,
+  "cue": 245.65,
+  "duration": 246.85,
+  "fade_start": 244.65,
+  "kind": "hard",
+  "last_audible": 246.1,
+  "sig": "8013611:1758510505",
+  "slope": -27.5
+ },
+ "01 I Love Rock 'N Roll.mp3": {
+  "body_db": -12.2,
+  "cue": 173.75,
+  "duration": 175.22,
+  "fade_start": 173.15,
+  "kind": "hard",
+  "last_audible": 174.15,
+  "sig": "5722186:1758508223",
+  "slope": -39.29
+ },
+ "01 I Wanna Dance with Somebody (Who Loves Me).mp3": {
+  "body_db": -16.6,
+  "cue": 281.5,
+  "duration": 291.34,
+  "fade_start": 279.1,
+  "kind": "fade",
+  "last_audible": 286.4,
+  "sig": "9455300:1758508071",
+  "slope": -3.93
+ },
+ "01 I Want It That Way.mp3": {
+  "body_db": -12.9,
+  "cue": 208.95,
+  "duration": 213.65,
+  "fade_start": 207.95,
+  "kind": "fade",
+  "last_audible": 210.7,
+  "sig": "6999143:1758513319",
+  "slope": -12.24
+ },
+ "01 I Will Always Love You.mp3": {
+  "body_db": -17.4,
+  "cue": 254.4,
+  "duration": 271.14,
+  "fade_start": 250.25,
+  "kind": "fade",
+  "last_audible": 269.4,
+  "sig": "8820618:1758506865",
+  "slope": -1.45
+ },
+ "01 I'm So Excited.mp3": {
+  "body_db": -12.8,
+  "cue": 220.25,
+  "duration": 230.67,
+  "fade_start": 217.2,
+  "kind": "fade",
+  "last_audible": 228.0,
+  "sig": "7533391:1758510287",
+  "slope": -2.8
+ },
+ "01 If You Had My Love.mp3": {
+  "body_db": -13.3,
+  "cue": 252.7,
+  "duration": 266.05,
+  "fade_start": 248.8,
+  "kind": "fade",
+  "last_audible": 261.9,
+  "sig": "8606105:1758505792",
+  "slope": -1.63
+ },
+ "01 Independent Women, Pt. 1.mp3": {
+  "body_db": -10.3,
+  "cue": 209.8,
+  "duration": 221.17,
+  "fade_start": 206.95,
+  "kind": "fade",
+  "last_audible": 217.6,
+  "sig": "7222514:1758506430",
+  "slope": -2.55
+ },
+ "01 It Must Have Been Love - From the Film _Pretty Woman_.mp3": {
+  "body_db": -14.3,
+  "cue": 251.8,
+  "duration": 259.72,
+  "fade_start": 247.2,
+  "kind": "fade",
+  "last_audible": 258.05,
+  "sig": "8423460:1758505869",
+  "slope": -1.72
+ },
+ "01 It's Not Right But It's Okay.mp3": {
+  "body_db": -12.5,
+  "cue": 276.5,
+  "duration": 292.46,
+  "fade_start": 271.75,
+  "kind": "fade",
+  "last_audible": 283.55,
+  "sig": "9449817:1758507165",
+  "slope": -1.93
+ },
+ "01 Just Dance.mp3": {
+  "body_db": -10.4,
+  "cue": 237.0,
+  "duration": 242.0,
+  "fade_start": 236.1,
+  "kind": "fade",
+  "last_audible": 239.35,
+  "sig": "7843452:1758514561",
+  "slope": -13.23
+ },
+ "01 Last Kiss.mp3": {
+  "body_db": -11.8,
+  "cue": 191.95,
+  "duration": 195.51,
+  "fade_start": 186.55,
+  "kind": "fade",
+  "last_audible": 194.55,
+  "sig": "6302458:1758506883",
+  "slope": -1.52
+ },
+ "01 Let's Groove.mp3": {
+  "body_db": -16.2,
+  "cue": 331.05,
+  "duration": 339.38,
+  "fade_start": 327.35,
+  "kind": "fade",
+  "last_audible": 336.55,
+  "sig": "10977553:1758508166",
+  "slope": -2.47
+ },
+ "01 Let's Hear It for the Boy - From _Footloose_ Original Soundtrack.mp3": {
+  "body_db": -13.7,
+  "cue": 247.55,
+  "duration": 262.48,
+  "fade_start": 243.85,
+  "kind": "fade",
+  "last_audible": 258.65,
+  "sig": "8573942:1758509935",
+  "slope": -1.34
+ },
+ "01 Livin' la Vida Loca.mp3": {
+  "body_db": -9.9,
+  "cue": 239.8,
+  "duration": 243.23,
+  "fade_start": 239.15,
+  "kind": "hard",
+  "last_audible": 240.65,
+  "sig": "7924815:1758505950",
+  "slope": -27.11
+ },
+ "01 Lonely Together.mp3": {
+  "body_db": -9.3,
+  "cue": 149.4,
+  "duration": 156.62,
+  "fade_start": 148.15,
+  "kind": "fade",
+  "last_audible": 155.1,
+  "sig": "5093785:1758512919",
+  "slope": -3.2
+ },
+ "01 Lost In Love.mp3": {
+  "body_db": -22.9,
+  "cue": 225.7,
+  "duration": 233.92,
+  "fade_start": 220.35,
+  "kind": "fade",
+  "last_audible": 229.55,
+  "sig": "7632873:1758510344",
+  "slope": -2.0
+ },
+ "01 Love Potion No. 9 - Remastered _ Single Version.mp3": {
+  "body_db": -19.1,
+  "cue": 106.4,
+  "duration": 113.24,
+  "fade_start": 103.0,
+  "kind": "fade",
+  "last_audible": 109.8,
+  "sig": "3785285:1758565571",
+  "slope": -4.05
+ },
+ "01 Mambo No. 5 (a Little Bit of...).mp3": {
+  "body_db": -11.8,
+  "cue": 217.85,
+  "duration": 220.33,
+  "fade_start": 216.2,
+  "kind": "fade",
+  "last_audible": 218.25,
+  "sig": "7211845:1758505437",
+  "slope": -16.61
+ },
+ "01 Mamma Mia.mp3": {
+  "body_db": -13.1,
+  "cue": 208.45,
+  "duration": 213.32,
+  "fade_start": 193.3,
+  "kind": "natural",
+  "last_audible": 210.4,
+  "sig": "6986369:1758569053",
+  "slope": 0.63
+ },
+ "01 Maneater.mp3": {
+  "body_db": -19.1,
+  "cue": 261.55,
+  "duration": 273.23,
+  "fade_start": 253.7,
+  "kind": "fade",
+  "last_audible": 268.55,
+  "sig": "8870688:1758508379",
+  "slope": -0.92
+ },
+ "01 Meet Virginia.mp3": {
+  "body_db": -11.5,
+  "cue": 232.35,
+  "duration": 239.98,
+  "fade_start": 230.45,
+  "kind": "fade",
+  "last_audible": 238.05,
+  "sig": "7836816:1758507056",
+  "slope": -4.51
+ },
+ "01 My Boo - Hitman's Club Mix.mp3": {
+  "body_db": -13.2,
+  "cue": 340.0,
+  "duration": 346.88,
+  "fade_start": 339.5,
+  "kind": "fade",
+  "last_audible": 346.8,
+  "sig": "11302459:1758507735",
+  "slope": -0.84
+ },
+ "01 Never Gonna Give You Up.mp3": {
+  "body_db": -19.7,
+  "cue": 205.15,
+  "duration": 213.62,
+  "fade_start": 200.1,
+  "kind": "fade",
+  "last_audible": 211.65,
+  "sig": "6959293:1758509972",
+  "slope": -1.59
+ },
+ "01 Never Let Me Down Again.mp3": {
+  "body_db": -12.8,
+  "cue": 265.75,
+  "duration": 288.18,
+  "fade_start": 257.45,
+  "kind": "fade",
+  "last_audible": 288.1,
+  "sig": "9324275:1758510253",
+  "slope": -0.96
+ },
+ "01 Never Too Much.mp3": {
+  "body_db": -17.4,
+  "cue": 218.95,
+  "duration": 230.53,
+  "fade_start": 216.2,
+  "kind": "fade",
+  "last_audible": 226.9,
+  "sig": "7557906:1758510470",
+  "slope": -2.52
+ },
+ "01 Oh My Love.mp3": {
+  "body_db": -10.2,
+  "cue": 163.2,
+  "duration": 164.58,
+  "fade_start": 162.7,
+  "kind": "hard",
+  "last_audible": 163.95,
+  "sig": "5388513:1758515157",
+  "slope": -33.48
+ },
+ "01 Oh Sherrie.mp3": {
+  "body_db": -10.9,
+  "cue": 220.8,
+  "duration": 229.02,
+  "fade_start": 212.5,
+  "kind": "fade",
+  "last_audible": 226.55,
+  "sig": "7419934:1758510676",
+  "slope": -0.54
+ },
+ "01 Oops!...I Did It Again.mp3": {
+  "body_db": -12.4,
+  "cue": 210.35,
+  "duration": 211.21,
+  "fade_start": 208.6,
+  "kind": "hard",
+  "last_audible": 210.35,
+  "sig": "6967207:1758505263",
+  "slope": -7.64
+ },
+ "01 Poison.mp3": {
+  "body_db": -12.3,
+  "cue": 258.75,
+  "duration": 270.12,
+  "fade_start": 254.4,
+  "kind": "fade",
+  "last_audible": 267.25,
+  "sig": "8776642:1758510066",
+  "slope": -2.3
+ },
+ "01 Pon de Replay.mp3": {
+  "body_db": -8.2,
+  "cue": 241.0,
+  "duration": 247.01,
+  "fade_start": 238.0,
+  "kind": "fade",
+  "last_audible": 245.25,
+  "sig": "8060342:1758513261",
+  "slope": -3.52
+ },
+ "01 Private Eyes.mp3": {
+  "body_db": -14.8,
+  "cue": 193.25,
+  "duration": 216.9,
+  "fade_start": 184.95,
+  "kind": "fade",
+  "last_audible": 210.95,
+  "sig": "7053974:1758509379",
+  "slope": -0.86
+ },
+ "01 Radio Ga Ga - Remastered 2011.mp3": {
+  "body_db": -12.3,
+  "cue": 340.05,
+  "duration": 348.28,
+  "fade_start": 336.35,
+  "kind": "fade",
+  "last_audible": 346.25,
+  "sig": "11244144:1758509533",
+  "slope": -3.04
+ },
+ "01 Replay.mp3": {
+  "body_db": -11.3,
+  "cue": 180.85,
+  "duration": 180.91,
+  "fade_start": 180.25,
+  "kind": "hard",
+  "last_audible": 180.85,
+  "sig": "5958465:1758511319",
+  "slope": -21.34
+ },
+ "01 Rockin' Robin.mp3": {
+  "body_db": -20.2,
+  "cue": 152.25,
+  "duration": 160.12,
+  "fade_start": 150.15,
+  "kind": "fade",
+  "last_audible": 152.95,
+  "sig": "5287687:1758566325",
+  "slope": -10.09
+ },
+ "01 Rosanna.mp3": {
+  "body_db": -19.1,
+  "cue": 321.05,
+  "duration": 331.26,
+  "fade_start": 317.15,
+  "kind": "fade",
+  "last_audible": 326.3,
+  "sig": "10674844:1758510106",
+  "slope": -2.86
+ },
+ "01 Running Up That Hill (A Deal With God) - 2018 Remaster.mp3": {
+  "body_db": -16.0,
+  "cue": 286.25,
+  "duration": 300.91,
+  "fade_start": 285.05,
+  "kind": "fade",
+  "last_audible": 295.25,
+  "sig": "9678639:1758508936",
+  "slope": -3.31
+ },
+ "01 Save The World.mp3": {
+  "body_db": -11.7,
+  "cue": 207.85,
+  "duration": 213.39,
+  "fade_start": 206.45,
+  "kind": "fade",
+  "last_audible": 210.4,
+  "sig": "6869534:1758515438",
+  "slope": -10.2
+ },
+ "01 Seven Nation Army.mp3": {
+  "body_db": -11.5,
+  "cue": 231.05,
+  "duration": 232.15,
+  "fade_start": 230.4,
+  "kind": "hard",
+  "last_audible": 231.45,
+  "sig": "7511018:1758513535",
+  "slope": -43.49
+ },
+ "01 Since U Been Gone.mp3": {
+  "body_db": -9.5,
+  "cue": 186.4,
+  "duration": 189.03,
+  "fade_start": 185.35,
+  "kind": "hard",
+  "last_audible": 187.25,
+  "sig": "6265812:1758514078",
+  "slope": -23.56
+ },
+ "01 Single Ladies (Put a Ring on It).mp3": {
+  "body_db": -10.6,
+  "cue": 190.45,
+  "duration": 193.26,
+  "fade_start": 189.25,
+  "kind": "hard",
+  "last_audible": 190.7,
+  "sig": "6289450:1758514680",
+  "slope": -25.09
+ },
+ "01 Sirius.mp3": {
+  "body_db": -18.1,
+  "cue": 115.25,
+  "duration": 115.31,
+  "fade_start": 99.05,
+  "kind": "hard",
+  "last_audible": 115.25,
+  "sig": "3734719:1758510234",
+  "slope": -0.24
+ },
+ "01 Smells Like Teen Spirit.mp3": {
+  "body_db": -10.9,
+  "cue": 294.9,
+  "duration": 301.98,
+  "fade_start": 290.95,
+  "kind": "fade",
+  "last_audible": 298.6,
+  "sig": "9802410:1758505362",
+  "slope": -4.17
+ },
+ "01 So What.mp3": {
+  "body_db": -9.7,
+  "cue": 213.85,
+  "duration": 215.23,
+  "fade_start": 212.15,
+  "kind": "hard",
+  "last_audible": 213.95,
+  "sig": "7072059:1758514800",
+  "slope": -15.6
+ },
+ "01 Space Oddity - 2009 Remastered Version.mp3": {
+  "body_db": -17.8,
+  "cue": 300.65,
+  "duration": 318.09,
+  "fade_start": 292.7,
+  "kind": "stinger",
+  "last_audible": 311.05,
+  "sig": "10347323:1758568492",
+  "slope": -3.14
+ },
+ "01 Steal My Sunshine - Single Version.mp3": {
+  "body_db": -12.6,
+  "cue": 199.75,
+  "duration": 210.81,
+  "fade_start": 192.6,
+  "kind": "fade",
+  "last_audible": 208.7,
+  "sig": "6968643:1758506626",
+  "slope": -0.66
+ },
+ "01 Suga Suga.mp3": {
+  "body_db": -10.2,
+  "cue": 234.45,
+  "duration": 243.55,
+  "fade_start": 227.55,
+  "kind": "fade",
+  "last_audible": 238.7,
+  "sig": "7884287:1758512685",
+  "slope": -0.89
+ },
+ "01 Sunny Came Home.mp3": {
+  "body_db": -11.5,
+  "cue": 256.85,
+  "duration": 264.27,
+  "fade_start": 249.1,
+  "kind": "fade",
+  "last_audible": 261.45,
+  "sig": "8774739:1758507457",
+  "slope": -0.67
+ },
+ "01 Take It Easy - 2013 Remaster.mp3": {
+  "body_db": -14.6,
+  "cue": 205.85,
+  "duration": 211.63,
+  "fade_start": 204.7,
+  "kind": "fade",
+  "last_audible": 208.25,
+  "sig": "6867165:1758568613",
+  "slope": -9.86
+ },
+ "01 Take Me Home Tonight.mp3": {
+  "body_db": -17.5,
+  "cue": 203.8,
+  "duration": 211.19,
+  "fade_start": 202.05,
+  "kind": "fade",
+  "last_audible": 208.15,
+  "sig": "6879249:1758509594",
+  "slope": -4.95
+ },
+ "01 Take Me Home, Country Roads - Rerecorded.mp3": {
+  "body_db": -16.9,
+  "cue": 192.25,
+  "duration": 197.88,
+  "fade_start": 186.35,
+  "kind": "fade",
+  "last_audible": 192.55,
+  "sig": "6520434:1758564769",
+  "slope": -1.36
+ },
+ "01 Take on Me.mp3": {
+  "body_db": -14.8,
+  "cue": 210.7,
+  "duration": 225.33,
+  "fade_start": 206.8,
+  "kind": "fade",
+  "last_audible": 220.65,
+  "sig": "7329949:1758508844",
+  "slope": -2.6
+ },
+ "01 Tearin' up My Heart - Radio Edit.mp3": {
+  "body_db": -10.8,
+  "cue": 206.55,
+  "duration": 211.05,
+  "fade_start": 202.8,
+  "kind": "fade",
+  "last_audible": 207.55,
+  "sig": "6892919:1758505455",
+  "slope": -5.9
+ },
+ "01 The Final Countdown.mp3": {
+  "body_db": -14.1,
+  "cue": 301.45,
+  "duration": 310.38,
+  "fade_start": 297.7,
+  "kind": "fade",
+  "last_audible": 305.45,
+  "sig": "10129510:1758509058",
+  "slope": -2.97
+ },
+ "01 The Warrior.mp3": {
+  "body_db": -11.7,
+  "cue": 224.8,
+  "duration": 237.89,
+  "fade_start": 221.55,
+  "kind": "fade",
+  "last_audible": 233.75,
+  "sig": "7731844:1758510380",
+  "slope": -2.57
+ },
+ "01 Thunderstruck.mp3": {
+  "body_db": -11.7,
+  "cue": 290.9,
+  "duration": 292.94,
+  "fade_start": 290.25,
+  "kind": "hard",
+  "last_audible": 291.85,
+  "sig": "9504559:1758509343",
+  "slope": -26.87
+ },
+ "01 Torn.mp3": {
+  "body_db": -10.7,
+  "cue": 236.0,
+  "duration": 244.72,
+  "fade_start": 230.0,
+  "kind": "fade",
+  "last_audible": 242.85,
+  "sig": "7931629:1758505282",
+  "slope": -1.43
+ },
+ "01 Tutti Frutti.mp3": {
+  "body_db": -11.5,
+  "cue": 143.5,
+  "duration": 144.29,
+  "fade_start": 142.7,
+  "kind": "hard",
+  "last_audible": 143.65,
+  "sig": "4723701:1758566437",
+  "slope": -41.09
+ },
+ "01 Umbrella.mp3": {
+  "body_db": -10.0,
+  "cue": 260.75,
+  "duration": 276.04,
+  "fade_start": 257.2,
+  "kind": "fade",
+  "last_audible": 271.0,
+  "sig": "8881119:1758514501",
+  "slope": -1.98
+ },
+ "01 Wake Me Up Before You Go-Go.mp3": {
+  "body_db": -19.0,
+  "cue": 220.85,
+  "duration": 231.39,
+  "fade_start": 216.1,
+  "kind": "fade",
+  "last_audible": 227.85,
+  "sig": "7475526:1758508261",
+  "slope": -1.94
+ },
+ "01 Wannabe.mp3": {
+  "body_db": -12.3,
+  "cue": 168.65,
+  "duration": 173.08,
+  "fade_start": 167.9,
+  "kind": "fade",
+  "last_audible": 170.65,
+  "sig": "5587770:1758505472",
+  "slope": -13.15
+ },
+ "01 Welcome To The Jungle.mp3": {
+  "body_db": -12.3,
+  "cue": 264.95,
+  "duration": 273.53,
+  "fade_start": 262.75,
+  "kind": "fade",
+  "last_audible": 268.45,
+  "sig": "8855979:1758509004",
+  "slope": -7.4
+ },
+ "01 What A Wonderful World.mp3": {
+  "body_db": -24.9,
+  "cue": 136.35,
+  "duration": 139.27,
+  "fade_start": 132.55,
+  "kind": "fade",
+  "last_audible": 136.75,
+  "sig": "4603167:1758567493",
+  "slope": -3.91
+ },
+ "01 What Makes You Beautiful.mp3": {
+  "body_db": -9.6,
+  "cue": 197.4,
+  "duration": 200.04,
+  "fade_start": 196.8,
+  "kind": "hard",
+  "last_audible": 197.4,
+  "sig": "6572598:1758511616",
+  "slope": -73.03
+ },
+ "01 Who Can It Be Now_.mp3": {
+  "body_db": -20.1,
+  "cue": 198.35,
+  "duration": 201.32,
+  "fade_start": 196.95,
+  "kind": "fade",
+  "last_audible": 200.1,
+  "sig": "6621991:1758509611",
+  "slope": -9.82
+ },
+ "01 Whole Lotta Love - 1990 Remaster.mp3": {
+  "body_db": -16.3,
+  "cue": 323.65,
+  "duration": 333.95,
+  "fade_start": 321.6,
+  "kind": "fade",
+  "last_audible": 329.4,
+  "sig": "10786143:1758564241",
+  "slope": -2.89
+ },
+ "01 Why Do Fools Fall in Love.mp3": {
+  "body_db": -15.5,
+  "cue": 136.45,
+  "duration": 139.53,
+  "fade_start": 135.5,
+  "kind": "hard",
+  "last_audible": 136.95,
+  "sig": "4626218:1758566034",
+  "slope": -29.14
+ },
+ "01 Womanizer.mp3": {
+  "body_db": -10.1,
+  "cue": 222.0,
+  "duration": 224.47,
+  "fade_start": 207.6,
+  "kind": "hard",
+  "last_audible": 222.25,
+  "sig": "7327087:1758514859",
+  "slope": -0.2
+ },
+ "01 Working for the Weekend.mp3": {
+  "body_db": -13.6,
+  "cue": 218.3,
+  "duration": 221.05,
+  "fade_start": 217.45,
+  "kind": "hard",
+  "last_audible": 218.9,
+  "sig": "7237005:1758509306",
+  "slope": -31.59
+ },
+ "01 You Got It.mp3": {
+  "body_db": -16.6,
+  "cue": 208.85,
+  "duration": 209.7,
+  "fade_start": 208.2,
+  "kind": "hard",
+  "last_audible": 209.05,
+  "sig": "6789231:1758510562",
+  "slope": -44.1
+ },
+ "01 You Make Me Wanna_.mp3": {
+  "body_db": -13.0,
+  "cue": 211.0,
+  "duration": 219.17,
+  "fade_start": 206.25,
+  "kind": "stinger",
+  "last_audible": 217.05,
+  "sig": "7136729:1758507638",
+  "slope": -1.5
+ },
+ "01 You Spin Me Round (Like a Record).mp3": {
+  "body_db": -10.9,
+  "cue": 187.05,
+  "duration": 195.21,
+  "fade_start": 180.9,
+  "kind": "fade",
+  "last_audible": 193.05,
+  "sig": "6375053:1758508882",
+  "slope": -1.37
+ },
+ "02 (You Drive Me) Crazy.mp3": {
+  "body_db": -12.5,
+  "cue": 197.95,
+  "duration": 198.11,
+  "fade_start": 197.3,
+  "kind": "hard",
+  "last_audible": 197.95,
+  "sig": "6455486:1758505418",
+  "slope": -51.37
+ },
+ "02 1, 2 Step (feat. Missy Elliott).mp3": {
+  "body_db": -11.3,
+  "cue": 186.6,
+  "duration": 203.85,
+  "fade_start": 185.35,
+  "kind": "fade",
+  "last_audible": 201.95,
+  "sig": "6657578:1758511086",
+  "slope": -1.42
+ },
+ "02 A Kind Of Magic - Remastered 2011.mp3": {
+  "body_db": -12.4,
+  "cue": 259.5,
+  "duration": 264.31,
+  "fade_start": 256.85,
+  "kind": "fade",
+  "last_audible": 262.35,
+  "sig": "8714940:1758509796",
+  "slope": -6.7
+ },
+ "02 All My Heroes - Radio Edit.mp3": {
+  "body_db": -8.1,
+  "cue": 220.65,
+  "duration": 228.48,
+  "fade_start": 220.05,
+  "kind": "fade",
+  "last_audible": 222.9,
+  "sig": "7498947:1758511677",
+  "slope": -9.86
+ },
+ "02 All Out of Love.mp3": {
+  "body_db": -22.9,
+  "cue": 238.75,
+  "duration": 243.07,
+  "fade_start": 238.05,
+  "kind": "hard",
+  "last_audible": 239.35,
+  "sig": "7925448:1758510219",
+  "slope": -22.93
+ },
+ "02 Back for Good - Radio Mix.mp3": {
+  "body_db": -15.1,
+  "cue": 235.7,
+  "duration": 242.32,
+  "fade_start": 231.0,
+  "kind": "fade",
+  "last_audible": 239.35,
+  "sig": "7983555:1758506748",
+  "slope": -1.79
+ },
+ "02 Be My Baby.mp3": {
+  "body_db": -13.8,
+  "cue": 151.15,
+  "duration": 160.94,
+  "fade_start": 148.05,
+  "kind": "fade",
+  "last_audible": 158.45,
+  "sig": "5316444:1758563833",
+  "slope": -2.72
+ },
+ "02 Because You Loved Me (Theme from _Up Close and Personal_).mp3": {
+  "body_db": -15.3,
+  "cue": 267.65,
+  "duration": 273.72,
+  "fade_start": 266.2,
+  "kind": "fade",
+  "last_audible": 272.0,
+  "sig": "8819648:1758506152",
+  "slope": -5.0
+ },
+ "02 Classic.mp3": {
+  "body_db": -9.7,
+  "cue": 172.8,
+  "duration": 175.47,
+  "fade_start": 172.3,
+  "kind": "hard",
+  "last_audible": 173.1,
+  "sig": "5732985:1758513722",
+  "slope": -54.12
+ },
+ "02 Complicated.mp3": {
+  "body_db": -12.7,
+  "cue": 239.55,
+  "duration": 244.58,
+  "fade_start": 237.2,
+  "kind": "fade",
+  "last_audible": 242.4,
+  "sig": "7929615:1758513043",
+  "slope": -6.94
+ },
+ "02 Crank That (Soulja Boy).mp3": {
+  "body_db": -7.9,
+  "cue": 221.5,
+  "duration": 221.98,
+  "fade_start": 214.0,
+  "kind": "hard",
+  "last_audible": 221.9,
+  "sig": "7251011:1758511138",
+  "slope": 0.68
+ },
+ "02 Crazy Train.mp3": {
+  "body_db": -12.0,
+  "cue": 277.25,
+  "duration": 293.24,
+  "fade_start": 272.8,
+  "kind": "fade",
+  "last_audible": 287.5,
+  "sig": "9513827:1758509492",
+  "slope": -1.79
+ },
+ "02 Crazy.mp3": {
+  "body_db": -6.9,
+  "cue": 179.05,
+  "duration": 182.11,
+  "fade_start": 176.75,
+  "kind": "fade",
+  "last_audible": 180.2,
+  "sig": "5997993:1758510964",
+  "slope": -9.24
+ },
+ "02 Creep.mp3": {
+  "body_db": -13.2,
+  "cue": 252.45,
+  "duration": 268.59,
+  "fade_start": 250.1,
+  "kind": "fade",
+  "last_audible": 263.95,
+  "sig": "8716781:1758505813",
+  "slope": -2.12
+ },
+ "02 Creep_1.mp3": {
+  "body_db": -13.4,
+  "cue": 231.4,
+  "duration": 238.68,
+  "fade_start": 217.75,
+  "kind": "stinger",
+  "last_audible": 235.7,
+  "sig": "7826842:1758506261",
+  "slope": -0.27
+ },
+ "02 Cum on Feel the Noize.mp3": {
+  "body_db": -11.9,
+  "cue": 276.5,
+  "duration": 290.99,
+  "fade_start": 270.95,
+  "kind": "fade",
+  "last_audible": 286.7,
+  "sig": "9500266:1758510086",
+  "slope": -1.49
+ },
+ "02 Don't Stop Believin' (2024 Remaster).mp3": {
+  "body_db": -13.4,
+  "cue": 240.85,
+  "duration": 250.89,
+  "fade_start": 236.25,
+  "kind": "fade",
+  "last_audible": 246.1,
+  "sig": "8218013:1758508031",
+  "slope": -2.59
+ },
+ "02 Dreams - 2004 Remaster.mp3": {
+  "body_db": -14.0,
+  "cue": 251.55,
+  "duration": 257.83,
+  "fade_start": 249.8,
+  "kind": "fade",
+  "last_audible": 254.2,
+  "sig": "8320225:1758568803",
+  "slope": -7.74
+ },
+ "02 Even Flow.mp3": {
+  "body_db": -12.2,
+  "cue": 290.1,
+  "duration": 292.64,
+  "fade_start": 288.8,
+  "kind": "fade",
+  "last_audible": 291.55,
+  "sig": "9582128:1758506942",
+  "slope": -12.99
+ },
+ "02 Everything She Wants.mp3": {
+  "body_db": -20.2,
+  "cue": 293.85,
+  "duration": 302.74,
+  "fade_start": 291.6,
+  "kind": "fade",
+  "last_audible": 299.4,
+  "sig": "9759248:1758508696",
+  "slope": -3.27
+ },
+ "02 Eye In The Sky.mp3": {
+  "body_db": -16.2,
+  "cue": 260.7,
+  "duration": 276.32,
+  "fade_start": 254.5,
+  "kind": "fade",
+  "last_audible": 269.45,
+  "sig": "8886492:1758510545",
+  "slope": -1.42
+ },
+ "02 Father Figure - Remastered.mp3": {
+  "body_db": -18.5,
+  "cue": 336.65,
+  "duration": 336.74,
+  "fade_start": 335.9,
+  "kind": "hard",
+  "last_audible": 336.65,
+  "sig": "10935791:1758508637",
+  "slope": -10.84
+ },
+ "02 Freak On a Leash.mp3": {
+  "body_db": -11.5,
+  "cue": 253.45,
+  "duration": 255.79,
+  "fade_start": 249.05,
+  "kind": "fade",
+  "last_audible": 255.7,
+  "sig": "8358474:1758507401",
+  "slope": -3.65
+ },
+ "02 Gangsta's Paradise.mp3": {
+  "body_db": -13.8,
+  "cue": 235.95,
+  "duration": 240.74,
+  "fade_start": 227.65,
+  "kind": "fade",
+  "last_audible": 240.3,
+  "sig": "7805124:1758505613",
+  "slope": -0.66
+ },
+ "02 Ghetto Supastar (That is What You Are) (feat. Ol' Dirty Bastard & M\u00fda).mp3": {
+  "body_db": -10.3,
+  "cue": 250.7,
+  "duration": 260.97,
+  "fade_start": 248.9,
+  "kind": "fade",
+  "last_audible": 260.9,
+  "sig": "8478979:1758505653",
+  "slope": -1.62
+ },
+ "02 Girls Just Want to Have Fun.mp3": {
+  "body_db": -11.4,
+  "cue": 223.4,
+  "duration": 238.31,
+  "fade_start": 208.9,
+  "kind": "natural",
+  "last_audible": 228.2,
+  "sig": "7834705:1758508127",
+  "slope": -0.39
+ },
+ "02 Give Me Everything (feat. Nayer).mp3": {
+  "body_db": -8.2,
+  "cue": 246.45,
+  "duration": 252.35,
+  "fade_start": 238.15,
+  "kind": "fade",
+  "last_audible": 252.3,
+  "sig": "8160924:1758511207",
+  "slope": -0.83
+ },
+ "02 Halo.mp3": {
+  "body_db": -10.9,
+  "cue": 259.3,
+  "duration": 261.69,
+  "fade_start": 258.65,
+  "kind": "hard",
+  "last_audible": 260.2,
+  "sig": "8450480:1758514138",
+  "slope": -24.82
+ },
+ "02 Hero.mp3": {
+  "body_db": -17.3,
+  "cue": 250.4,
+  "duration": 257.97,
+  "fade_start": 246.9,
+  "kind": "stinger",
+  "last_audible": 256.15,
+  "sig": "8323588:1758507078",
+  "slope": -2.47
+ },
+ "02 Hey, Good Lookin'.mp3": {
+  "body_db": -17.8,
+  "cue": 172.25,
+  "duration": 175.36,
+  "fade_start": 171.1,
+  "kind": "hard",
+  "last_audible": 173.05,
+  "sig": "5778275:1758563773",
+  "slope": -14.53
+ },
+ "02 I Have Nothing.mp3": {
+  "body_db": -17.1,
+  "cue": 284.7,
+  "duration": 289.2,
+  "fade_start": 267.85,
+  "kind": "natural",
+  "last_audible": 286.85,
+  "sig": "9399066:1758507262",
+  "slope": -0.17
+ },
+ "02 I Kissed A Girl.mp3": {
+  "body_db": -8.7,
+  "cue": 178.25,
+  "duration": 179.7,
+  "fade_start": 177.6,
+  "kind": "hard",
+  "last_audible": 178.6,
+  "sig": "5947470:1758514739",
+  "slope": -41.84
+ },
+ "02 I Want It That Way.mp3": {
+  "body_db": -13.3,
+  "cue": 208.65,
+  "duration": 213.37,
+  "fade_start": 207.7,
+  "kind": "fade",
+  "last_audible": 210.3,
+  "sig": "6947296:1758505132",
+  "slope": -11.63
+ },
+ "02 I Want To Break Free - Remastered 2011.mp3": {
+  "body_db": -13.4,
+  "cue": 250.45,
+  "duration": 258.07,
+  "fade_start": 247.6,
+  "kind": "fade",
+  "last_audible": 255.65,
+  "sig": "8357727:1758509362",
+  "slope": -3.47
+ },
+ "02 If I Let You Go - Radio Edit.mp3": {
+  "body_db": -11.6,
+  "cue": 214.8,
+  "duration": 221.33,
+  "fade_start": 211.8,
+  "kind": "fade",
+  "last_audible": 218.4,
+  "sig": "7154406:1758507495",
+  "slope": -5.55
+ },
+ "02 Inside Out.mp3": {
+  "body_db": -12.4,
+  "cue": 209.7,
+  "duration": 218.99,
+  "fade_start": 203.4,
+  "kind": "fade",
+  "last_audible": 218.35,
+  "sig": "7118913:1758506411",
+  "slope": -1.04
+ },
+ "02 It's Gonna Be Me.mp3": {
+  "body_db": -11.2,
+  "cue": 190.45,
+  "duration": 192.47,
+  "fade_start": 188.85,
+  "kind": "hard",
+  "last_audible": 190.45,
+  "sig": "6368483:1758505168",
+  "slope": -14.18
+ },
+ "02 It's Tricky.mp3": {
+  "body_db": -15.9,
+  "cue": 183.2,
+  "duration": 183.81,
+  "fade_start": 183.0,
+  "kind": "hard",
+  "last_audible": 183.2,
+  "sig": "6043955:1758510397",
+  "slope": 0.0
+ },
+ "02 Jessie's Girl.mp3": {
+  "body_db": -12.7,
+  "cue": 188.5,
+  "duration": 194.19,
+  "fade_start": 185.4,
+  "kind": "fade",
+  "last_audible": 191.9,
+  "sig": "6391060:1758509473",
+  "slope": -5.36
+ },
+ "02 Jump.mp3": {
+  "body_db": -14.8,
+  "cue": 183.6,
+  "duration": 195.14,
+  "fade_start": 181.55,
+  "kind": "fade",
+  "last_audible": 193.6,
+  "sig": "6392356:1758506587",
+  "slope": -2.46
+ },
+ "02 Just the Way You Are.mp3": {
+  "body_db": -8.0,
+  "cue": 212.4,
+  "duration": 220.8,
+  "fade_start": 176.65,
+  "kind": "natural",
+  "last_audible": 216.0,
+  "sig": "7157713:1758511559",
+  "slope": 0.66
+ },
+ "02 Keep on Loving You.mp3": {
+  "body_db": -12.8,
+  "cue": 196.1,
+  "duration": 200.32,
+  "fade_start": 189.95,
+  "kind": "fade",
+  "last_audible": 199.0,
+  "sig": "6568801:1758509215",
+  "slope": -0.87
+ },
+ "02 Learning to Fly.mp3": {
+  "body_db": -17.0,
+  "cue": 278.15,
+  "duration": 292.13,
+  "fade_start": 272.8,
+  "kind": "fade",
+  "last_audible": 287.6,
+  "sig": "9509154:1758509954",
+  "slope": -1.03
+ },
+ "02 Like A G6.mp3": {
+  "body_db": -8.2,
+  "cue": 215.85,
+  "duration": 216.94,
+  "fade_start": 213.85,
+  "kind": "fade",
+  "last_audible": 216.5,
+  "sig": "7086916:1758515499",
+  "slope": -14.3
+ },
+ "02 Lose Yourself.mp3": {
+  "body_db": -8.7,
+  "cue": 318.7,
+  "duration": 326.52,
+  "fade_start": 314.0,
+  "kind": "fade",
+  "last_audible": 324.55,
+  "sig": "10577534:1758515992",
+  "slope": -1.92
+ },
+ "02 Losing My Religion.mp3": {
+  "body_db": -11.3,
+  "cue": 249.3,
+  "duration": 268.49,
+  "fade_start": 245.8,
+  "kind": "fade",
+  "last_audible": 264.9,
+  "sig": "8707557:1758506172",
+  "slope": -1.15
+ },
+ "02 Man in the Box.mp3": {
+  "body_db": -13.9,
+  "cue": 285.05,
+  "duration": 285.26,
+  "fade_start": 284.35,
+  "kind": "hard",
+  "last_audible": 285.2,
+  "sig": "9258648:1758507099",
+  "slope": -47.28
+ },
+ "02 Maneater.mp3": {
+  "body_db": -9.5,
+  "cue": 248.65,
+  "duration": 258.95,
+  "fade_start": 242.85,
+  "kind": "fade",
+  "last_audible": 257.3,
+  "sig": "8456418:1758511441",
+  "slope": -1.36
+ },
+ "02 Mellow Yellow.mp3": {
+  "body_db": -17.0,
+  "cue": 221.45,
+  "duration": 227.25,
+  "fade_start": 219.0,
+  "kind": "fade",
+  "last_audible": 224.45,
+  "sig": "7428541:1758567380",
+  "slope": -6.57
+ },
+ "02 Mr. Brightside.mp3": {
+  "body_db": -10.5,
+  "cue": 220.0,
+  "duration": 223.03,
+  "fade_start": 217.25,
+  "kind": "fade",
+  "last_audible": 222.95,
+  "sig": "7226690:1758510981",
+  "slope": -6.42
+ },
+ "02 Mr. Sandman.mp3": {
+  "body_db": -13.7,
+  "cue": 141.05,
+  "duration": 143.66,
+  "fade_start": 140.6,
+  "kind": "hard",
+  "last_audible": 141.55,
+  "sig": "4720645:1758563661",
+  "slope": -35.15
+ },
+ "02 My Boy Lollipop.mp3": {
+  "body_db": -14.4,
+  "cue": 114.05,
+  "duration": 122.49,
+  "fade_start": 109.8,
+  "kind": "fade",
+  "last_audible": 119.4,
+  "sig": "4049095:1758567658",
+  "slope": -3.16
+ },
+ "02 My Own Worst Enemy.mp3": {
+  "body_db": -10.5,
+  "cue": 167.95,
+  "duration": 168.55,
+  "fade_start": 167.05,
+  "kind": "hard",
+  "last_audible": 167.95,
+  "sig": "5532129:1758505341",
+  "slope": -40.53
+ },
+ "02 Nothin' on You (feat. Bruno Mars).mp3": {
+  "body_db": -10.2,
+  "cue": 257.45,
+  "duration": 268.38,
+  "fade_start": 255.35,
+  "kind": "fade",
+  "last_audible": 265.15,
+  "sig": "8777095:1758512051",
+  "slope": -1.76
+ },
+ "02 Party In The U.S.A_.mp3": {
+  "body_db": -9.0,
+  "cue": 200.8,
+  "duration": 202.13,
+  "fade_start": 200.2,
+  "kind": "hard",
+  "last_audible": 201.05,
+  "sig": "6616490:1758515558",
+  "slope": -52.64
+ },
+ "02 Piano Man.mp3": {
+  "body_db": -12.2,
+  "cue": 329.3,
+  "duration": 339.03,
+  "fade_start": 321.0,
+  "kind": "fade",
+  "last_audible": 335.65,
+  "sig": "10932708:1758565516",
+  "slope": -0.63
+ },
+ "02 Pumped Up Kicks.mp3": {
+  "body_db": -10.6,
+  "cue": 229.95,
+  "duration": 239.65,
+  "fade_start": 229.2,
+  "kind": "fade",
+  "last_audible": 236.05,
+  "sig": "7816692:1758514021",
+  "slope": -5.43
+ },
+ "02 Rock with You - Single Version.mp3": {
+  "body_db": -19.8,
+  "cue": 214.55,
+  "duration": 220.68,
+  "fade_start": 210.7,
+  "kind": "fade",
+  "last_audible": 218.9,
+  "sig": "7191332:1758510270",
+  "slope": -1.83
+ },
+ "02 Sexual Healing.mp3": {
+  "body_db": -15.5,
+  "cue": 233.6,
+  "duration": 238.65,
+  "fade_start": 229.25,
+  "kind": "fade",
+  "last_audible": 237.05,
+  "sig": "7808275:1758510180",
+  "slope": -2.15
+ },
+ "02 SexyBack (feat. Timbaland).mp3": {
+  "body_db": -9.8,
+  "cue": 235.3,
+  "duration": 242.79,
+  "fade_start": 228.75,
+  "kind": "fade",
+  "last_audible": 240.1,
+  "sig": "7844692:1758512618",
+  "slope": -1.28
+ },
+ "02 She's so High.mp3": {
+  "body_db": -10.2,
+  "cue": 213.35,
+  "duration": 224.72,
+  "fade_start": 211.95,
+  "kind": "fade",
+  "last_audible": 222.35,
+  "sig": "7331812:1758506374",
+  "slope": -0.74
+ },
+ "02 Somebody to Love.mp3": {
+  "body_db": -16.7,
+  "cue": 171.25,
+  "duration": 174.89,
+  "fade_start": 169.95,
+  "kind": "fade",
+  "last_audible": 173.15,
+  "sig": "5741257:1758568369",
+  "slope": -10.48
+ },
+ "02 Stupid Cupid.mp3": {
+  "body_db": -16.8,
+  "cue": 126.85,
+  "duration": 135.0,
+  "fade_start": 122.8,
+  "kind": "fade",
+  "last_audible": 131.0,
+  "sig": "4418498:1758566089",
+  "slope": -2.29
+ },
+ "02 Survivor.mp3": {
+  "body_db": -8.6,
+  "cue": 252.0,
+  "duration": 254.1,
+  "fade_start": 251.2,
+  "kind": "hard",
+  "last_audible": 252.6,
+  "sig": "8276591:1758507807",
+  "slope": -32.78
+ },
+ "02 The Distance.mp3": {
+  "body_db": -13.2,
+  "cue": 174.65,
+  "duration": 179.0,
+  "fade_start": 171.05,
+  "kind": "fade",
+  "last_audible": 178.4,
+  "sig": "5855304:1758507530",
+  "slope": -2.7
+ },
+ "02 The Twist.mp3": {
+  "body_db": -14.8,
+  "cue": 153.6,
+  "duration": 153.81,
+  "fade_start": 153.05,
+  "kind": "hard",
+  "last_audible": 153.75,
+  "sig": "5008669:1758564005",
+  "slope": -32.29
+ },
+ "02 They Don't Care About Us.mp3": {
+  "body_db": -13.3,
+  "cue": 282.85,
+  "duration": 284.21,
+  "fade_start": 282.0,
+  "kind": "hard",
+  "last_audible": 283.6,
+  "sig": "9216492:1758507477",
+  "slope": -22.08
+ },
+ "02 This Is the Day.mp3": {
+  "body_db": -17.3,
+  "cue": 287.7,
+  "duration": 296.38,
+  "fade_start": 280.55,
+  "kind": "fade",
+  "last_audible": 293.45,
+  "sig": "9635232:1758509992",
+  "slope": -1.03
+ },
+ "02 This Love.mp3": {
+  "body_db": -10.2,
+  "cue": 195.4,
+  "duration": 206.26,
+  "fade_start": 188.7,
+  "kind": "fade",
+  "last_audible": 203.1,
+  "sig": "6770001:1758511155",
+  "slope": -1.01
+ },
+ "02 Threnody (Bombs Away Remix).mp3": {
+  "body_db": -9.0,
+  "cue": 244.8,
+  "duration": 247.34,
+  "fade_start": 244.3,
+  "kind": "fade",
+  "last_audible": 246.8,
+  "sig": "8091327:1758515743",
+  "slope": -12.83
+ },
+ "02 TiK ToK.mp3": {
+  "body_db": -9.3,
+  "cue": 197.5,
+  "duration": 199.76,
+  "fade_start": 196.75,
+  "kind": "fade",
+  "last_audible": 198.9,
+  "sig": "6580742:1758513961",
+  "slope": -12.16
+ },
+ "02 Tomorrow.mp3": {
+  "body_db": -10.9,
+  "cue": 261.45,
+  "duration": 266.31,
+  "fade_start": 259.7,
+  "kind": "fade",
+  "last_audible": 264.3,
+  "sig": "8605835:1758506509",
+  "slope": -7.18
+ },
+ "02 Toxic.mp3": {
+  "body_db": -11.1,
+  "cue": 198.55,
+  "duration": 198.88,
+  "fade_start": 196.75,
+  "kind": "hard",
+  "last_audible": 198.6,
+  "sig": "6505739:1758512541",
+  "slope": -8.42
+ },
+ "02 Turn Me Loose.mp3": {
+  "body_db": -14.6,
+  "cue": 334.7,
+  "duration": 338.25,
+  "fade_start": 334.1,
+  "kind": "hard",
+  "last_audible": 335.45,
+  "sig": "10956487:1758510326",
+  "slope": -27.47
+ },
+ "02 WRONG.mp3": {
+  "body_db": -9.4,
+  "cue": 176.35,
+  "duration": 177.31,
+  "fade_start": 174.85,
+  "kind": "hard",
+  "last_audible": 176.35,
+  "sig": "5779972:1758513605",
+  "slope": -10.25
+ },
+ "02 Walking on Broken Glass.mp3": {
+  "body_db": -16.0,
+  "cue": 238.5,
+  "duration": 253.35,
+  "fade_start": 235.45,
+  "kind": "fade",
+  "last_audible": 245.95,
+  "sig": "8258443:1758507282",
+  "slope": -2.98
+ },
+ "02 We Can't Stop.mp3": {
+  "body_db": -9.5,
+  "cue": 228.95,
+  "duration": 231.29,
+  "fade_start": 227.9,
+  "kind": "hard",
+  "last_audible": 229.85,
+  "sig": "7545247:1758513902",
+  "slope": -24.45
+ },
+ "02 We Didn't Start the Fire.mp3": {
+  "body_db": -11.4,
+  "cue": 272.35,
+  "duration": 287.79,
+  "fade_start": 268.65,
+  "kind": "fade",
+  "last_audible": 283.1,
+  "sig": "9276682:1758508438",
+  "slope": -2.75
+ },
+ "02 What a Girl Wants.mp3": {
+  "body_db": -12.0,
+  "cue": 207.15,
+  "duration": 215.85,
+  "fade_start": 203.85,
+  "kind": "fade",
+  "last_audible": 215.8,
+  "sig": "7019640:1758505187",
+  "slope": -2.05
+ },
+ "02 Yeah! (feat. Lil Jon & Ludacris).mp3": {
+  "body_db": -9.1,
+  "cue": 248.2,
+  "duration": 250.43,
+  "fade_start": 247.45,
+  "kind": "hard",
+  "last_audible": 249.35,
+  "sig": "8138523:1758510913",
+  "slope": -20.79
+ },
+ "02 You Give Love A Bad Name.mp3": {
+  "body_db": -11.5,
+  "cue": 214.5,
+  "duration": 222.77,
+  "fade_start": 209.7,
+  "kind": "fade",
+  "last_audible": 220.2,
+  "sig": "7370389:1758509039",
+  "slope": -2.63
+ },
+ "02 Your Love.mp3": {
+  "body_db": -18.9,
+  "cue": 207.1,
+  "duration": 216.53,
+  "fade_start": 200.0,
+  "kind": "fade",
+  "last_audible": 213.2,
+  "sig": "7060934:1758508089",
+  "slope": -1.06
+ },
+ "03 ABC.mp3": {
+  "body_db": -16.6,
+  "cue": 169.95,
+  "duration": 174.92,
+  "fade_start": 167.05,
+  "kind": "fade",
+  "last_audible": 173.05,
+  "sig": "5692988:1758569564",
+  "slope": -5.75
+ },
+ "03 Another One Bites The Dust - Remastered 2011.mp3": {
+  "body_db": -12.9,
+  "cue": 211.2,
+  "duration": 214.72,
+  "fade_start": 210.4,
+  "kind": "fade",
+  "last_audible": 213.5,
+  "sig": "6922228:1758508419",
+  "slope": -11.01
+ },
+ "03 Back & Forth.mp3": {
+  "body_db": -12.9,
+  "cue": 217.25,
+  "duration": 231.13,
+  "fade_start": 213.7,
+  "kind": "fade",
+  "last_audible": 226.7,
+  "sig": "7577749:1758507676",
+  "slope": -1.67
+ },
+ "03 Be My Lover.mp3": {
+  "body_db": -15.6,
+  "cue": 238.15,
+  "duration": 241.19,
+  "fade_start": 236.45,
+  "kind": "fade",
+  "last_audible": 239.0,
+  "sig": "7827342:1758505551",
+  "slope": -14.16
+ },
+ "03 Bennie And The Jets - Remastered 2014.mp3": {
+  "body_db": -14.1,
+  "cue": 310.95,
+  "duration": 322.62,
+  "fade_start": 288.55,
+  "kind": "natural",
+  "last_audible": 317.3,
+  "sig": "10488215:1758569120",
+  "slope": -0.31
+ },
+ "03 Bills, Bills, Bills.mp3": {
+  "body_db": -11.2,
+  "cue": 254.45,
+  "duration": 256.09,
+  "fade_start": 253.6,
+  "kind": "fade",
+  "last_audible": 256.0,
+  "sig": "8313799:1758507365",
+  "slope": -0.72
+ },
+ "03 Black and Yellow.mp3": {
+  "body_db": -8.3,
+  "cue": 211.35,
+  "duration": 217.73,
+  "fade_start": 210.7,
+  "kind": "fade",
+  "last_audible": 215.65,
+  "sig": "7045588:1758511120",
+  "slope": -3.9
+ },
+ "03 Blame It on the Rain.mp3": {
+  "body_db": -10.8,
+  "cue": 246.6,
+  "duration": 248.62,
+  "fade_start": 245.65,
+  "kind": "hard",
+  "last_audible": 247.65,
+  "sig": "8080723:1758509289",
+  "slope": -18.77
+ },
+ "03 Careless Whisper.mp3": {
+  "body_db": -14.7,
+  "cue": 289.2,
+  "duration": 300.14,
+  "fade_start": 284.9,
+  "kind": "fade",
+  "last_audible": 298.25,
+  "sig": "9678578:1758508401",
+  "slope": -1.79
+ },
+ "03 Daughter - Remastered.mp3": {
+  "body_db": -14.5,
+  "cue": 218.55,
+  "duration": 234.38,
+  "fade_start": 189.65,
+  "kind": "natural",
+  "last_audible": 230.25,
+  "sig": "7619785:1758507513",
+  "slope": -0.12
+ },
+ "03 Don't Stop The Music.mp3": {
+  "body_db": -9.9,
+  "cue": 252.8,
+  "duration": 267.15,
+  "fade_start": 251.25,
+  "kind": "fade",
+  "last_audible": 265.0,
+  "sig": "8615013:1758511226",
+  "slope": -1.28
+ },
+ "03 Down Under.mp3": {
+  "body_db": -20.4,
+  "cue": 204.6,
+  "duration": 222.35,
+  "fade_start": 196.3,
+  "kind": "fade",
+  "last_audible": 217.2,
+  "sig": "7294898:1758508544",
+  "slope": -0.52
+ },
+ "03 Drop It Like It's Hot.mp3": {
+  "body_db": -9.7,
+  "cue": 258.3,
+  "duration": 266.12,
+  "fade_start": 257.6,
+  "kind": "fade",
+  "last_audible": 265.85,
+  "sig": "8626648:1758515376",
+  "slope": -1.9
+ },
+ "03 Everybody Wants To Rule The World.mp3": {
+  "body_db": -17.4,
+  "cue": 241.7,
+  "duration": 251.54,
+  "fade_start": 237.3,
+  "kind": "fade",
+  "last_audible": 247.75,
+  "sig": "8148388:1758508279",
+  "slope": -2.51
+ },
+ "03 Everywhere - 2017 Remaster.mp3": {
+  "body_db": -15.6,
+  "cue": 212.35,
+  "duration": 226.72,
+  "fade_start": 207.05,
+  "kind": "fade",
+  "last_audible": 218.6,
+  "sig": "7397927:1758510029",
+  "slope": -1.64
+ },
+ "03 Ex-Factor.mp3": {
+  "body_db": -12.1,
+  "cue": 317.4,
+  "duration": 326.57,
+  "fade_start": 313.85,
+  "kind": "fade",
+  "last_audible": 324.0,
+  "sig": "10711758:1758505733",
+  "slope": -1.95
+ },
+ "03 Footloose.mp3": {
+  "body_db": -13.7,
+  "cue": 218.05,
+  "duration": 220.24,
+  "fade_start": 217.4,
+  "kind": "fade",
+  "last_audible": 219.6,
+  "sig": "7251559:1758509456",
+  "slope": -15.67
+ },
+ "03 Gettin' Jiggy Wit It.mp3": {
+  "body_db": -12.1,
+  "cue": 221.5,
+  "duration": 228.0,
+  "fade_start": 219.2,
+  "kind": "fade",
+  "last_audible": 226.45,
+  "sig": "7408084:1758505381",
+  "slope": -3.31
+ },
+ "03 Hips Don't Lie (feat. Wyclef Jean).mp3": {
+  "body_db": -11.5,
+  "cue": 214.7,
+  "duration": 220.4,
+  "fade_start": 204.2,
+  "kind": "natural",
+  "last_audible": 215.8,
+  "sig": "7194326:1758512172",
+  "slope": 0.08
+ },
+ "03 Hollaback Girl.mp3": {
+  "body_db": -9.2,
+  "cue": 197.2,
+  "duration": 199.9,
+  "fade_start": 196.2,
+  "kind": "hard",
+  "last_audible": 198.1,
+  "sig": "6552531:1758511017",
+  "slope": -24.62
+ },
+ "03 I Shot The Sheriff.mp3": {
+  "body_db": -13.7,
+  "cue": 279.45,
+  "duration": 281.08,
+  "fade_start": 270.55,
+  "kind": "hard",
+  "last_audible": 279.65,
+  "sig": "9246644:1758564955",
+  "slope": 0.79
+ },
+ "03 I Want to Know What Love Is - 1999 Remaster.mp3": {
+  "body_db": -15.0,
+  "cue": 287.7,
+  "duration": 304.85,
+  "fade_start": 283.1,
+  "kind": "fade",
+  "last_audible": 297.95,
+  "sig": "9805991:1758509155",
+  "slope": -1.94
+ },
+ "03 Insane in the Brain.mp3": {
+  "body_db": -14.6,
+  "cue": 203.65,
+  "duration": 208.33,
+  "fade_start": 201.9,
+  "kind": "fade",
+  "last_audible": 207.45,
+  "sig": "6832270:1758506960",
+  "slope": -4.22
+ },
+ "03 It Wasn't Me.mp3": {
+  "body_db": -11.6,
+  "cue": 224.25,
+  "duration": 227.65,
+  "fade_start": 223.6,
+  "kind": "fade",
+  "last_audible": 226.25,
+  "sig": "7380991:1758506393",
+  "slope": -14.22
+ },
+ "03 It's Not Unusual.mp3": {
+  "body_db": -17.0,
+  "cue": 115.75,
+  "duration": 119.86,
+  "fade_start": 113.65,
+  "kind": "fade",
+  "last_audible": 117.7,
+  "sig": "3947816:1758568220",
+  "slope": -8.2
+ },
+ "03 Leader Of The Pack.mp3": {
+  "body_db": -16.0,
+  "cue": 166.7,
+  "duration": 171.39,
+  "fade_start": 164.85,
+  "kind": "fade",
+  "last_audible": 169.4,
+  "sig": "5645001:1758567548",
+  "slope": -6.22
+ },
+ "03 Learn to Fly.mp3": {
+  "body_db": -9.7,
+  "cue": 233.45,
+  "duration": 235.36,
+  "fade_start": 223.9,
+  "kind": "natural",
+  "last_audible": 235.3,
+  "sig": "7582614:1758506338",
+  "slope": 0.07
+ },
+ "03 Let's Dance - 2018 Remaster.mp3": {
+  "body_db": -13.0,
+  "cue": 444.05,
+  "duration": 457.74,
+  "fade_start": 437.15,
+  "kind": "fade",
+  "last_audible": 455.0,
+  "sig": "14783859:1758509181",
+  "slope": -0.9
+ },
+ "03 Little Miss Can't Be Wrong.mp3": {
+  "body_db": -15.9,
+  "cue": 227.9,
+  "duration": 232.92,
+  "fade_start": 225.6,
+  "kind": "fade",
+  "last_audible": 230.9,
+  "sig": "7584853:1758507580",
+  "slope": -6.91
+ },
+ "03 Livin' On A Prayer.mp3": {
+  "body_db": -11.7,
+  "cue": 239.45,
+  "duration": 249.36,
+  "fade_start": 236.5,
+  "kind": "fade",
+  "last_audible": 244.7,
+  "sig": "8221348:1758508916",
+  "slope": -4.12
+ },
+ "03 Mr. Jones.mp3": {
+  "body_db": -12.1,
+  "cue": 265.8,
+  "duration": 272.35,
+  "fade_start": 262.4,
+  "kind": "fade",
+  "last_audible": 268.7,
+  "sig": "8975467:1758506903",
+  "slope": -5.37
+ },
+ "03 My All.mp3": {
+  "body_db": -13.5,
+  "cue": 224.75,
+  "duration": 230.99,
+  "fade_start": 223.25,
+  "kind": "fade",
+  "last_audible": 228.7,
+  "sig": "7509777:1758506051",
+  "slope": -5.21
+ },
+ "03 My Girl.mp3": {
+  "body_db": -17.6,
+  "cue": 157.9,
+  "duration": 165.05,
+  "fade_start": 155.25,
+  "kind": "fade",
+  "last_audible": 160.7,
+  "sig": "5440680:1758568162",
+  "slope": -5.87
+ },
+ "03 My Love Is Your Love.mp3": {
+  "body_db": -9.6,
+  "cue": 244.85,
+  "duration": 261.64,
+  "fade_start": 238.35,
+  "kind": "stinger",
+  "last_audible": 257.8,
+  "sig": "8463425:1758507602",
+  "slope": -1.14
+ },
+ "03 Never There.mp3": {
+  "body_db": -12.4,
+  "cue": 159.65,
+  "duration": 164.14,
+  "fade_start": 157.5,
+  "kind": "fade",
+  "last_audible": 163.0,
+  "sig": "5349048:1758506844",
+  "slope": -6.74
+ },
+ "03 Old Time Rock & Roll.mp3": {
+  "body_db": -9.8,
+  "cue": 187.7,
+  "duration": 194.21,
+  "fade_start": 183.75,
+  "kind": "fade",
+  "last_audible": 191.7,
+  "sig": "6341819:1758564894",
+  "slope": -3.14
+ },
+ "03 People Are People.mp3": {
+  "body_db": -14.4,
+  "cue": 229.5,
+  "duration": 232.04,
+  "fade_start": 227.6,
+  "kind": "fade",
+  "last_audible": 230.9,
+  "sig": "7585048:1758510580",
+  "slope": -12.2
+ },
+ "03 Personal Jesus.mp3": {
+  "body_db": -12.7,
+  "cue": 291.15,
+  "duration": 296.01,
+  "fade_start": 290.65,
+  "kind": "fade",
+  "last_audible": 292.95,
+  "sig": "9517021:1758506318",
+  "slope": -13.49
+ },
+ "03 Rap Promoter.mp3": {
+  "body_db": -15.0,
+  "cue": 132.8,
+  "duration": 132.89,
+  "fade_start": 132.6,
+  "kind": "hard",
+  "last_audible": 132.8,
+  "sig": "4366734:1758507563",
+  "slope": 0.0
+ },
+ "03 Ready or Not.mp3": {
+  "body_db": -19.3,
+  "cue": 226.9,
+  "duration": 227.0,
+  "fade_start": 226.75,
+  "kind": "stinger",
+  "last_audible": 226.9,
+  "sig": "7323101:1758506528",
+  "slope": 0.0
+ },
+ "03 Runaway Train (2022 Remaster).mp3": {
+  "body_db": -11.8,
+  "cue": 252.45,
+  "duration": 266.61,
+  "fade_start": 247.7,
+  "kind": "fade",
+  "last_audible": 261.9,
+  "sig": "8700912:1758507327",
+  "slope": -1.41
+ },
+ "03 Scar Tissue.mp3": {
+  "body_db": -10.5,
+  "cue": 212.05,
+  "duration": 215.97,
+  "fade_start": 209.35,
+  "kind": "fade",
+  "last_audible": 215.25,
+  "sig": "7128628:1758507000",
+  "slope": -5.73
+ },
+ "03 Shimmer.mp3": {
+  "body_db": -11.5,
+  "cue": 203.0,
+  "duration": 214.16,
+  "fade_start": 198.8,
+  "kind": "fade",
+  "last_audible": 211.9,
+  "sig": "6952397:1758507346",
+  "slope": -1.94
+ },
+ "03 Should I Stay or Should I Go - Remastered.mp3": {
+  "body_db": -13.8,
+  "cue": 185.75,
+  "duration": 189.03,
+  "fade_start": 185.15,
+  "kind": "hard",
+  "last_audible": 186.2,
+  "sig": "6240998:1758508508",
+  "slope": -36.72
+ },
+ "03 Sk8er Boi.mp3": {
+  "body_db": -11.3,
+  "cue": 203.15,
+  "duration": 204.06,
+  "fade_start": 202.55,
+  "kind": "hard",
+  "last_audible": 203.15,
+  "sig": "6633104:1758512744",
+  "slope": -58.81
+ },
+ "03 Smooth Operator - Single Version.mp3": {
+  "body_db": -12.8,
+  "cue": 247.6,
+  "duration": 258.74,
+  "fade_start": 242.6,
+  "kind": "fade",
+  "last_audible": 255.05,
+  "sig": "8392748:1758505711",
+  "slope": -1.71
+ },
+ "03 Son of a Preacher Man.mp3": {
+  "body_db": -17.9,
+  "cue": 141.75,
+  "duration": 149.19,
+  "fade_start": 139.35,
+  "kind": "fade",
+  "last_audible": 144.6,
+  "sig": "4907480:1758567832",
+  "slope": -5.84
+ },
+ "03 Strangelove.mp3": {
+  "body_db": -14.4,
+  "cue": 274.85,
+  "duration": 294.55,
+  "fade_start": 266.55,
+  "kind": "fade",
+  "last_audible": 294.45,
+  "sig": "9528227:1758509399",
+  "slope": -0.85
+ },
+ "03 Stronger.mp3": {
+  "body_db": -9.3,
+  "cue": 310.1,
+  "duration": 311.91,
+  "fade_start": 309.0,
+  "kind": "hard",
+  "last_audible": 310.75,
+  "sig": "10114303:1758511069",
+  "slope": -22.72
+ },
+ "03 The Flame.mp3": {
+  "body_db": -18.3,
+  "cue": 319.35,
+  "duration": 338.83,
+  "fade_start": 312.0,
+  "kind": "fade",
+  "last_audible": 332.15,
+  "sig": "10946007:1758510657",
+  "slope": -0.69
+ },
+ "03 Truly Madly Deeply.mp3": {
+  "body_db": -13.0,
+  "cue": 266.25,
+  "duration": 277.29,
+  "fade_start": 262.75,
+  "kind": "fade",
+  "last_audible": 273.75,
+  "sig": "8932055:1758506131",
+  "slope": -1.67
+ },
+ "03 With Or Without You.mp3": {
+  "body_db": -15.1,
+  "cue": 283.85,
+  "duration": 295.57,
+  "fade_start": 276.8,
+  "kind": "fade",
+  "last_audible": 292.85,
+  "sig": "9598367:1758509631",
+  "slope": -1.13
+ },
+ "04 4 Minutes (feat. Justin Timberlake & Timbaland).mp3": {
+  "body_db": -10.0,
+  "cue": 188.4,
+  "duration": 189.75,
+  "fade_start": 180.3,
+  "kind": "hard",
+  "last_audible": 189.05,
+  "sig": "6406784:1758514918",
+  "slope": -0.34
+ },
+ "04 Amber.mp3": {
+  "body_db": -12.8,
+  "cue": 205.95,
+  "duration": 210.67,
+  "fade_start": 198.85,
+  "kind": "natural",
+  "last_audible": 208.55,
+  "sig": "6825511:1758505671",
+  "slope": -0.26
+ },
+ "04 At The Hop.mp3": {
+  "body_db": -15.5,
+  "cue": 148.1,
+  "duration": 150.93,
+  "fade_start": 147.55,
+  "kind": "hard",
+  "last_audible": 148.4,
+  "sig": "4941961:1758565887",
+  "slope": -45.01
+ },
+ "04 Because of You.mp3": {
+  "body_db": -11.0,
+  "cue": 202.2,
+  "duration": 219.54,
+  "fade_start": 199.4,
+  "kind": "fade",
+  "last_audible": 219.0,
+  "sig": "7165729:1758514978",
+  "slope": -3.55
+ },
+ "04 Bleed The Freak.mp3": {
+  "body_db": -15.2,
+  "cue": 239.85,
+  "duration": 242.65,
+  "fade_start": 238.15,
+  "kind": "fade",
+  "last_audible": 241.7,
+  "sig": "7895266:1758507419",
+  "slope": -10.39
+ },
+ "04 Blue Monday.mp3": {
+  "body_db": -18.4,
+  "cue": 440.25,
+  "duration": 449.21,
+  "fade_start": 434.85,
+  "kind": "fade",
+  "last_audible": 445.4,
+  "sig": "14401311:1758509820",
+  "slope": -1.6
+ },
+ "04 Caribbean Queen (No More Love On the Run).mp3": {
+  "body_db": -12.6,
+  "cue": 235.35,
+  "duration": 244.48,
+  "fade_start": 229.25,
+  "kind": "fade",
+  "last_audible": 242.8,
+  "sig": "7913390:1758509727",
+  "slope": -1.32
+ },
+ "04 Come Sail Away.mp3": {
+  "body_db": -21.0,
+  "cue": 339.8,
+  "duration": 367.06,
+  "fade_start": 333.95,
+  "kind": "fade",
+  "last_audible": 349.75,
+  "sig": "11976964:1758569245",
+  "slope": -1.54
+ },
+ "04 Criminal.mp3": {
+  "body_db": -12.7,
+  "cue": 339.9,
+  "duration": 341.03,
+  "fade_start": 327.65,
+  "kind": "natural",
+  "last_audible": 340.75,
+  "sig": "10973973:1758507143",
+  "slope": -0.07
+ },
+ "04 Differences.mp3": {
+  "body_db": -10.3,
+  "cue": 260.7,
+  "duration": 265.33,
+  "fade_start": 258.85,
+  "kind": "fade",
+  "last_audible": 265.25,
+  "sig": "8616929:1758507621",
+  "slope": -4.17
+ },
+ "04 Dream Lover.mp3": {
+  "body_db": -10.5,
+  "cue": 146.6,
+  "duration": 150.74,
+  "fade_start": 144.9,
+  "kind": "fade",
+  "last_audible": 149.45,
+  "sig": "4883466:1758565978",
+  "slope": -9.05
+ },
+ "04 Eye of the Tiger.mp3": {
+  "body_db": -15.5,
+  "cue": 233.15,
+  "duration": 245.69,
+  "fade_start": 228.95,
+  "kind": "fade",
+  "last_audible": 242.75,
+  "sig": "7999572:1758510362",
+  "slope": -1.46
+ },
+ "04 Gold Digger.mp3": {
+  "body_db": -7.7,
+  "cue": 205.3,
+  "duration": 207.68,
+  "fade_start": 204.7,
+  "kind": "fade",
+  "last_audible": 207.6,
+  "sig": "6764088:1758512292",
+  "slope": -8.38
+ },
+ "04 Have You Ever Seen The Rain_.mp3": {
+  "body_db": -13.6,
+  "cue": 155.65,
+  "duration": 160.19,
+  "fade_start": 153.9,
+  "kind": "fade",
+  "last_audible": 157.85,
+  "sig": "5290986:1758565017",
+  "slope": -8.85
+ },
+ "04 Heart of Gold - 2009 Remaster.mp3": {
+  "body_db": -15.6,
+  "cue": 180.55,
+  "duration": 187.06,
+  "fade_start": 179.15,
+  "kind": "fade",
+  "last_audible": 187.0,
+  "sig": "6126256:1758569180",
+  "slope": -4.3
+ },
+ "04 Hungry Like the Wolf - 2009 Remaster.mp3": {
+  "body_db": -14.8,
+  "cue": 214.2,
+  "duration": 220.68,
+  "fade_start": 208.55,
+  "kind": "fade",
+  "last_audible": 217.7,
+  "sig": "7166520:1758508750",
+  "slope": -1.69
+ },
+ "04 I Got You Babe.mp3": {
+  "body_db": -17.3,
+  "cue": 185.95,
+  "duration": 193.89,
+  "fade_start": 184.5,
+  "kind": "fade",
+  "last_audible": 189.0,
+  "sig": "6359810:1758564355",
+  "slope": -6.88
+ },
+ "04 I Try.mp3": {
+  "body_db": -11.4,
+  "cue": 222.05,
+  "duration": 239.47,
+  "fade_start": 215.55,
+  "kind": "fade",
+  "last_audible": 232.9,
+  "sig": "7771977:1758505511",
+  "slope": -1.2
+ },
+ "04 I'm Gonna Miss You.mp3": {
+  "body_db": -12.1,
+  "cue": 233.2,
+  "duration": 239.56,
+  "fade_start": 228.8,
+  "kind": "fade",
+  "last_audible": 237.6,
+  "sig": "7790657:1758509897",
+  "slope": -1.97
+ },
+ "04 Ignition - Remix.mp3": {
+  "body_db": -10.3,
+  "cue": 176.15,
+  "duration": 186.08,
+  "fade_start": 172.0,
+  "kind": "fade",
+  "last_audible": 184.85,
+  "sig": "6044626:1758511033",
+  "slope": -1.13
+ },
+ "04 Independence Day.mp3": {
+  "body_db": -13.1,
+  "cue": 199.9,
+  "duration": 204.66,
+  "fade_start": 196.45,
+  "kind": "fade",
+  "last_audible": 203.9,
+  "sig": "6670246:1758507383",
+  "slope": -4.18
+ },
+ "04 It's Still Rock and Roll to Me.mp3": {
+  "body_db": -14.0,
+  "cue": 168.15,
+  "duration": 176.47,
+  "fade_start": 165.8,
+  "kind": "fade",
+  "last_audible": 174.75,
+  "sig": "5796913:1758508898",
+  "slope": -3.72
+ },
+ "04 Just Give Me a Reason (feat. Nate Ruess).mp3": {
+  "body_db": -11.5,
+  "cue": 226.55,
+  "duration": 242.79,
+  "fade_start": 224.95,
+  "kind": "fade",
+  "last_audible": 241.8,
+  "sig": "7938053:1758514199",
+  "slope": -1.02
+ },
+ "04 Kiss Me.mp3": {
+  "body_db": -13.4,
+  "cue": 204.0,
+  "duration": 208.72,
+  "fade_start": 201.15,
+  "kind": "fade",
+  "last_audible": 206.4,
+  "sig": "6868675:1758506449",
+  "slope": -6.34
+ },
+ "04 Knockin' On Heaven's Door.mp3": {
+  "body_db": -14.3,
+  "cue": 333.75,
+  "duration": 336.06,
+  "fade_start": 332.6,
+  "kind": "hard",
+  "last_audible": 333.85,
+  "sig": "10908525:1758506649",
+  "slope": -22.92
+ },
+ "04 Love Shack.mp3": {
+  "body_db": -15.1,
+  "cue": 315.25,
+  "duration": 320.74,
+  "fade_start": 314.45,
+  "kind": "fade",
+  "last_audible": 319.85,
+  "sig": "10421477:1758509135",
+  "slope": -3.78
+ },
+ "04 Poker Face.mp3": {
+  "body_db": -9.6,
+  "cue": 234.95,
+  "duration": 237.26,
+  "fade_start": 234.0,
+  "kind": "hard",
+  "last_audible": 235.65,
+  "sig": "7692136:1758511189",
+  "slope": -24.85
+ },
+ "04 Pure Massacre.mp3": {
+  "body_db": -11.5,
+  "cue": 293.1,
+  "duration": 298.68,
+  "fade_start": 291.6,
+  "kind": "fade",
+  "last_audible": 296.6,
+  "sig": "9641543:1758507906",
+  "slope": -7.8
+ },
+ "04 Raspberry Beret.mp3": {
+  "body_db": -20.5,
+  "cue": 200.3,
+  "duration": 215.23,
+  "fade_start": 196.95,
+  "kind": "fade",
+  "last_audible": 208.6,
+  "sig": "7146966:1758509743",
+  "slope": -3.29
+ },
+ "04 Riptide.mp3": {
+  "body_db": -10.5,
+  "cue": 198.25,
+  "duration": 204.34,
+  "fade_start": 196.75,
+  "kind": "fade",
+  "last_audible": 198.95,
+  "sig": "6690614:1758511501",
+  "slope": -16.82
+ },
+ "04 Rock the Casbah - Remastered.mp3": {
+  "body_db": -14.3,
+  "cue": 210.35,
+  "duration": 222.49,
+  "fade_start": 204.1,
+  "kind": "fade",
+  "last_audible": 217.4,
+  "sig": "7311796:1758508826",
+  "slope": -1.44
+ },
+ "04 Saving All My Love for You.mp3": {
+  "body_db": -19.5,
+  "cue": 221.0,
+  "duration": 237.19,
+  "fade_start": 217.5,
+  "kind": "fade",
+  "last_audible": 229.7,
+  "sig": "7685930:1758510618",
+  "slope": -2.75
+ },
+ "04 Scream & Shout.mp3": {
+  "body_db": -8.9,
+  "cue": 266.5,
+  "duration": 283.47,
+  "fade_start": 265.7,
+  "kind": "fade",
+  "last_audible": 281.7,
+  "sig": "9179218:1758512113",
+  "slope": -1.0
+ },
+ "04 Sh-Boom.mp3": {
+  "body_db": -13.9,
+  "cue": 143.85,
+  "duration": 144.36,
+  "fade_start": 142.4,
+  "kind": "hard",
+  "last_audible": 143.95,
+  "sig": "4691778:1758563717",
+  "slope": -20.68
+ },
+ "04 So Anxious.mp3": {
+  "body_db": -15.3,
+  "cue": 274.4,
+  "duration": 275.6,
+  "fade_start": 272.1,
+  "kind": "stinger",
+  "last_audible": 274.8,
+  "sig": "9004484:1758506193",
+  "slope": -8.3
+ },
+ "04 Still D.R.E_.mp3": {
+  "body_db": -10.6,
+  "cue": 267.15,
+  "duration": 270.65,
+  "fade_start": 265.45,
+  "kind": "fade",
+  "last_audible": 270.6,
+  "sig": "8691049:1758505492",
+  "slope": -5.05
+ },
+ "04 Sugar, We're Goin Down.mp3": {
+  "body_db": -10.5,
+  "cue": 219.75,
+  "duration": 229.16,
+  "fade_start": 211.65,
+  "kind": "fade",
+  "last_audible": 227.8,
+  "sig": "7441180:1758513382",
+  "slope": -1.08
+ },
+ "04 Summer Breeze.mp3": {
+  "body_db": -11.5,
+  "cue": 195.0,
+  "duration": 205.54,
+  "fade_start": 190.45,
+  "kind": "fade",
+  "last_audible": 200.3,
+  "sig": "6678900:1758568924",
+  "slope": -2.59
+ },
+ "04 Surfin' Bird - Original recording.mp3": {
+  "body_db": -14.8,
+  "cue": 137.5,
+  "duration": 144.75,
+  "fade_start": 134.95,
+  "kind": "fade",
+  "last_audible": 140.0,
+  "sig": "4851867:1758566847",
+  "slope": -6.71
+ },
+ "04 Sweater Weather.mp3": {
+  "body_db": -8.6,
+  "cue": 231.55,
+  "duration": 240.47,
+  "fade_start": 228.55,
+  "kind": "fade",
+  "last_audible": 237.3,
+  "sig": "7807189:1758513781",
+  "slope": -3.89
+ },
+ "04 The Way I Are.mp3": {
+  "body_db": -9.9,
+  "cue": 179.1,
+  "duration": 179.19,
+  "fade_start": 179.0,
+  "kind": "hard",
+  "last_audible": 179.1,
+  "sig": "5831663:1758511801",
+  "slope": 0.0
+ },
+ "04 There's Your Trouble.mp3": {
+  "body_db": -11.9,
+  "cue": 177.85,
+  "duration": 193.1,
+  "fade_start": 171.75,
+  "kind": "fade",
+  "last_audible": 187.2,
+  "sig": "6334846:1758505632",
+  "slope": -1.35
+ },
+ "04 Time After Time.mp3": {
+  "body_db": -13.5,
+  "cue": 229.0,
+  "duration": 241.37,
+  "fade_start": 221.25,
+  "kind": "stinger",
+  "last_audible": 236.25,
+  "sig": "7932495:1758508474",
+  "slope": -0.67
+ },
+ "04 Time.mp3": {
+  "body_db": -15.2,
+  "cue": 408.85,
+  "duration": 414.01,
+  "fade_start": 407.7,
+  "kind": "fade",
+  "last_audible": 413.75,
+  "sig": "13277353:1758569630",
+  "slope": -4.96
+ },
+ "04 True Colors.mp3": {
+  "body_db": -18.5,
+  "cue": 223.4,
+  "duration": 227.65,
+  "fade_start": 222.3,
+  "kind": "fade",
+  "last_audible": 224.45,
+  "sig": "7433058:1758510712",
+  "slope": -15.84
+ },
+ "04 Un-Break My Heart.mp3": {
+  "body_db": -13.8,
+  "cue": 257.45,
+  "duration": 270.4,
+  "fade_start": 250.4,
+  "kind": "fade",
+  "last_audible": 265.9,
+  "sig": "8786609:1758507241",
+  "slope": -1.17
+ },
+ "04 Uptown Funk (feat. Bruno Mars).mp3": {
+  "body_db": -13.5,
+  "cue": 267.75,
+  "duration": 269.72,
+  "fade_start": 267.2,
+  "kind": "hard",
+  "last_audible": 267.75,
+  "sig": "8735043:1758514263",
+  "slope": -78.44
+ },
+ "04 Walk This Way (feat. Aerosmith).mp3": {
+  "body_db": -15.9,
+  "cue": 310.2,
+  "duration": 310.45,
+  "fade_start": 308.85,
+  "kind": "hard",
+  "last_audible": 310.2,
+  "sig": "10096518:1758509554",
+  "slope": -10.95
+ },
+ "04 Weak.mp3": {
+  "body_db": -16.3,
+  "cue": 280.8,
+  "duration": 291.94,
+  "fade_start": 277.0,
+  "kind": "fade",
+  "last_audible": 290.15,
+  "sig": "9493548:1758507659",
+  "slope": -1.09
+ },
+ "04 Zombie.mp3": {
+  "body_db": -12.3,
+  "cue": 304.15,
+  "duration": 305.67,
+  "fade_start": 303.4,
+  "kind": "hard",
+  "last_audible": 304.2,
+  "sig": "9839336:1758505592",
+  "slope": -52.43
+ },
+ "05 All Star.mp3": {
+  "body_db": -10.7,
+  "cue": 194.6,
+  "duration": 200.43,
+  "fade_start": 191.55,
+  "kind": "fade",
+  "last_audible": 199.1,
+  "sig": "6545575:1758506488",
+  "slope": -3.99
+ },
+ "05 Always Be My Baby.mp3": {
+  "body_db": -14.4,
+  "cue": 245.55,
+  "duration": 258.18,
+  "fade_start": 242.15,
+  "kind": "fade",
+  "last_audible": 254.3,
+  "sig": "8333124:1758505531",
+  "slope": -2.25
+ },
+ "05 Beat It.mp3": {
+  "body_db": -10.7,
+  "cue": 245.35,
+  "duration": 258.09,
+  "fade_start": 244.5,
+  "kind": "fade",
+  "last_audible": 254.45,
+  "sig": "8412116:1758508768",
+  "slope": -2.11
+ },
+ "05 Crazy Little Thing Called Love - Remastered 2011.mp3": {
+  "body_db": -12.1,
+  "cue": 152.3,
+  "duration": 163.42,
+  "fade_start": 148.5,
+  "kind": "fade",
+  "last_audible": 161.1,
+  "sig": "5280489:1758508951",
+  "slope": -2.98
+ },
+ "05 Cry Me a River.mp3": {
+  "body_db": -10.4,
+  "cue": 282.15,
+  "duration": 288.39,
+  "fade_start": 278.25,
+  "kind": "fade",
+  "last_audible": 287.6,
+  "sig": "9315411:1758512982",
+  "slope": -2.7
+ },
+ "05 Danger Zone - From _Top Gun_ Original Soundtrack.mp3": {
+  "body_db": -12.0,
+  "cue": 206.7,
+  "duration": 214.72,
+  "fade_start": 200.65,
+  "kind": "fade",
+  "last_audible": 211.15,
+  "sig": "7074383:1758508145",
+  "slope": -1.18
+ },
+ "05 Doo Wop (That Thing).mp3": {
+  "body_db": -12.2,
+  "cue": 290.45,
+  "duration": 320.3,
+  "fade_start": 226.7,
+  "kind": "stinger",
+  "last_audible": 318.25,
+  "sig": "10511149:1758505931",
+  "slope": -4.64
+ },
+ "05 Eternal Flame.mp3": {
+  "body_db": -13.8,
+  "cue": 220.5,
+  "duration": 238.07,
+  "fade_start": 212.3,
+  "kind": "fade",
+  "last_audible": 231.8,
+  "sig": "7733489:1758510453",
+  "slope": -1.25
+ },
+ "05 Freedom! '90 - Edit.mp3": {
+  "body_db": -15.2,
+  "cue": 310.6,
+  "duration": 321.85,
+  "fade_start": 306.5,
+  "kind": "fade",
+  "last_audible": 316.75,
+  "sig": "10378407:1758506982",
+  "slope": -2.41
+ },
+ "05 Gasolina.mp3": {
+  "body_db": -12.8,
+  "cue": 192.3,
+  "duration": 192.66,
+  "fade_start": 191.35,
+  "kind": "hard",
+  "last_audible": 192.6,
+  "sig": "6289590:1758511171",
+  "slope": -16.15
+ },
+ "05 I Gotta Feeling.mp3": {
+  "body_db": -10.0,
+  "cue": 285.65,
+  "duration": 289.18,
+  "fade_start": 284.9,
+  "kind": "fade",
+  "last_audible": 288.5,
+  "sig": "9381321:1758511985",
+  "slope": -3.53
+ },
+ "05 I Walk The Line - Single Version.mp3": {
+  "body_db": -13.5,
+  "cue": 158.05,
+  "duration": 163.1,
+  "fade_start": 156.15,
+  "kind": "fade",
+  "last_audible": 161.85,
+  "sig": "5351162:1758566383",
+  "slope": -5.4
+ },
+ "05 I'm a Believer.mp3": {
+  "body_db": -14.0,
+  "cue": 159.65,
+  "duration": 167.44,
+  "fade_start": 156.15,
+  "kind": "fade",
+  "last_audible": 163.45,
+  "sig": "5522192:1758568044",
+  "slope": -3.65
+ },
+ "05 In Da Club.mp3": {
+  "body_db": -8.8,
+  "cue": 188.15,
+  "duration": 193.52,
+  "fade_start": 186.2,
+  "kind": "fade",
+  "last_audible": 192.95,
+  "sig": "6387440:1758512861",
+  "slope": -3.84
+ },
+ "05 Let's Get Loud.mp3": {
+  "body_db": -10.0,
+  "cue": 237.25,
+  "duration": 239.47,
+  "fade_start": 236.5,
+  "kind": "hard",
+  "last_audible": 237.95,
+  "sig": "7755972:1758506091",
+  "slope": -25.78
+ },
+ "05 Low (feat. T-Pain).mp3": {
+  "body_db": -8.2,
+  "cue": 228.55,
+  "duration": 231.46,
+  "fade_start": 227.9,
+  "kind": "hard",
+  "last_audible": 229.65,
+  "sig": "7558353:1758515617",
+  "slope": -24.37
+ },
+ "05 Ms. Jackson.mp3": {
+  "body_db": -12.2,
+  "cue": 257.45,
+  "duration": 270.56,
+  "fade_start": 249.85,
+  "kind": "stinger",
+  "last_audible": 268.45,
+  "sig": "8807816:1758512354",
+  "slope": -1.24
+ },
+ "05 Neon Moon.mp3": {
+  "body_db": -16.3,
+  "cue": 245.25,
+  "duration": 261.29,
+  "fade_start": 242.4,
+  "kind": "fade",
+  "last_audible": 256.25,
+  "sig": "8505869:1758507850",
+  "slope": -2.1
+ },
+ "05 No Scrubs.mp3": {
+  "body_db": -11.3,
+  "cue": 205.95,
+  "duration": 214.46,
+  "fade_start": 202.2,
+  "kind": "fade",
+  "last_audible": 214.3,
+  "sig": "7227067:1758505078",
+  "slope": -2.24
+ },
+ "05 Remember the Time.mp3": {
+  "body_db": -11.3,
+  "cue": 235.65,
+  "duration": 239.28,
+  "fade_start": 233.05,
+  "kind": "fade",
+  "last_audible": 237.95,
+  "sig": "7922358:1758506729",
+  "slope": -5.15
+ },
+ "05 Runaround Sue - Remastered 1991.mp3": {
+  "body_db": -17.1,
+  "cue": 161.0,
+  "duration": 171.67,
+  "fade_start": 158.4,
+  "kind": "fade",
+  "last_audible": 167.2,
+  "sig": "5600254:1758565714",
+  "slope": -2.94
+ },
+ "05 Smooth (feat. Rob Thomas).mp3": {
+  "body_db": -10.0,
+  "cue": 282.95,
+  "duration": 294.55,
+  "fade_start": 276.6,
+  "kind": "fade",
+  "last_audible": 292.55,
+  "sig": "9789506:1758505771",
+  "slope": -1.32
+ },
+ "05 Stayin' Alive - From _Saturday Night Fever_ Soundtrack.mp3": {
+  "body_db": -12.4,
+  "cue": 274.95,
+  "duration": 285.44,
+  "fade_start": 272.25,
+  "kind": "fade",
+  "last_audible": 280.55,
+  "sig": "9283652:1758564545",
+  "slope": -3.03
+ },
+ "05 Take My Breath Away - Love Theme from _Top Gun_.mp3": {
+  "body_db": -15.2,
+  "cue": 244.75,
+  "duration": 255.77,
+  "fade_start": 241.25,
+  "kind": "fade",
+  "last_audible": 250.95,
+  "sig": "8352663:1758509839",
+  "slope": -3.49
+ },
+ "05 The Way It Is.mp3": {
+  "body_db": -17.8,
+  "cue": 288.55,
+  "duration": 297.91,
+  "fade_start": 282.75,
+  "kind": "fade",
+  "last_audible": 294.35,
+  "sig": "9664426:1758510600",
+  "slope": -1.3
+ },
+ "05 Voices Carry.mp3": {
+  "body_db": -14.3,
+  "cue": 252.8,
+  "duration": 263.62,
+  "fade_start": 247.15,
+  "kind": "fade",
+  "last_audible": 260.75,
+  "sig": "8590038:1758509915",
+  "slope": -1.47
+ },
+ "05 West End Girls.mp3": {
+  "body_db": -13.7,
+  "cue": 232.8,
+  "duration": 240.51,
+  "fade_start": 227.75,
+  "kind": "fade",
+  "last_audible": 237.2,
+  "sig": "7829841:1758510010",
+  "slope": -1.82
+ },
+ "05 What's My Age Again_.mp3": {
+  "body_db": -13.3,
+  "cue": 141.4,
+  "duration": 148.42,
+  "fade_start": 138.35,
+  "kind": "fade",
+  "last_audible": 147.85,
+  "sig": "4900261:1758506277",
+  "slope": -4.22
+ },
+ "05 Yellow.mp3": {
+  "body_db": -13.2,
+  "cue": 261.15,
+  "duration": 266.82,
+  "fade_start": 252.85,
+  "kind": "fade",
+  "last_audible": 265.75,
+  "sig": "8588457:1758515039",
+  "slope": -0.63
+ },
+ "06 (I Can't Get No) Satisfaction.mp3": {
+  "body_db": -14.9,
+  "cue": 217.1,
+  "duration": 222.87,
+  "fade_start": 214.4,
+  "kind": "fade",
+  "last_audible": 220.85,
+  "sig": "7276476:1758568551",
+  "slope": -4.54
+ },
+ "06 Any Way You Want It (2024 Remaster).mp3": {
+  "body_db": -12.2,
+  "cue": 187.1,
+  "duration": 203.78,
+  "fade_start": 180.6,
+  "kind": "fade",
+  "last_audible": 198.85,
+  "sig": "6710016:1758509270",
+  "slope": -1.41
+ },
+ "06 Back In Black.mp3": {
+  "body_db": -12.2,
+  "cue": 245.6,
+  "duration": 255.56,
+  "fade_start": 231.3,
+  "kind": "natural",
+  "last_audible": 251.7,
+  "sig": "8204078:1758508562",
+  "slope": -0.46
+ },
+ "06 Billie Jean.mp3": {
+  "body_db": -11.4,
+  "cue": 284.8,
+  "duration": 293.89,
+  "fade_start": 282.15,
+  "kind": "fade",
+  "last_audible": 291.1,
+  "sig": "9558164:1758508186",
+  "slope": -3.11
+ },
+ "06 Butterfly.mp3": {
+  "body_db": -10.3,
+  "cue": 206.6,
+  "duration": 216.78,
+  "fade_start": 202.45,
+  "kind": "fade",
+  "last_audible": 213.2,
+  "sig": "7080051:1758505569",
+  "slope": -2.23
+ },
+ "06 Californication.mp3": {
+  "body_db": -7.9,
+  "cue": 326.4,
+  "duration": 329.79,
+  "fade_start": 323.65,
+  "kind": "fade",
+  "last_audible": 329.7,
+  "sig": "10770728:1758506471",
+  "slope": -6.92
+ },
+ "06 Can't Fight This Feeling.mp3": {
+  "body_db": -17.3,
+  "cue": 284.85,
+  "duration": 294.82,
+  "fade_start": 280.85,
+  "kind": "fade",
+  "last_audible": 290.65,
+  "sig": "9572257:1758509651",
+  "slope": -2.26
+ },
+ "06 Come on over Baby (All I Want Is You) - Radio Version.mp3": {
+  "body_db": -12.8,
+  "cue": 200.7,
+  "duration": 203.38,
+  "fade_start": 199.95,
+  "kind": "hard",
+  "last_audible": 201.7,
+  "sig": "6620107:1758505150",
+  "slope": -23.52
+ },
+ "06 December, 1963 (Oh What a Night!).mp3": {
+  "body_db": -19.8,
+  "cue": 190.75,
+  "duration": 197.18,
+  "fade_start": 187.2,
+  "kind": "fade",
+  "last_audible": 194.9,
+  "sig": "6411930:1758565451",
+  "slope": -3.57
+ },
+ "06 Dixieland Delight.mp3": {
+  "body_db": -21.5,
+  "cue": 305.4,
+  "duration": 322.15,
+  "fade_start": 300.55,
+  "kind": "fade",
+  "last_audible": 313.15,
+  "sig": "10449457:1758509878",
+  "slope": -1.47
+ },
+ "06 Easy Lover.mp3": {
+  "body_db": -13.2,
+  "cue": 290.5,
+  "duration": 305.92,
+  "fade_start": 282.2,
+  "kind": "fade",
+  "last_audible": 300.75,
+  "sig": "9902251:1758509512",
+  "slope": -0.89
+ },
+ "06 Fu-Gee-La.mp3": {
+  "body_db": -15.1,
+  "cue": 258.65,
+  "duration": 260.13,
+  "fade_start": 254.7,
+  "kind": "fade",
+  "last_audible": 260.05,
+  "sig": "8383879:1758507694",
+  "slope": -2.55
+ },
+ "06 Happy Together.mp3": {
+  "body_db": -15.4,
+  "cue": 171.6,
+  "duration": 176.33,
+  "fade_start": 170.5,
+  "kind": "hard",
+  "last_audible": 172.45,
+  "sig": "5793240:1758567084",
+  "slope": -19.65
+ },
+ "06 How Will I Know.mp3": {
+  "body_db": -19.8,
+  "cue": 264.35,
+  "duration": 269.75,
+  "fade_start": 259.65,
+  "kind": "fade",
+  "last_audible": 266.7,
+  "sig": "8728309:1758510199",
+  "slope": -2.44
+ },
+ "06 Hungry Heart.mp3": {
+  "body_db": -15.6,
+  "cue": 182.95,
+  "duration": 199.51,
+  "fade_start": 178.75,
+  "kind": "fade",
+  "last_audible": 194.55,
+  "sig": "6509321:1758509198",
+  "slope": -1.54
+ },
+ "06 Let It Be - Remastered 2009.mp3": {
+  "body_db": -13.7,
+  "cue": 239.35,
+  "duration": 243.09,
+  "fade_start": 237.9,
+  "kind": "fade",
+  "last_audible": 241.65,
+  "sig": "7901721:1758569304",
+  "slope": -8.69
+ },
+ "06 Light My Fire - New Stereo Mix Advanced Resolution.mp3": {
+  "body_db": -13.5,
+  "cue": 425.45,
+  "duration": 429.13,
+  "fade_start": 423.9,
+  "kind": "fade",
+  "last_audible": 426.95,
+  "sig": "13826630:1758566791",
+  "slope": -12.35
+ },
+ "06 Paradise By the Dashboard Light.mp3": {
+  "body_db": -14.5,
+  "cue": 501.7,
+  "duration": 508.38,
+  "fade_start": 477.35,
+  "kind": "natural",
+  "last_audible": 505.9,
+  "sig": "16415863:1758569373",
+  "slope": -0.24
+ },
+ "06 Paradise City.mp3": {
+  "body_db": -13.2,
+  "cue": 403.8,
+  "duration": 405.65,
+  "fade_start": 402.85,
+  "kind": "hard",
+  "last_audible": 404.4,
+  "sig": "13083210:1758509576",
+  "slope": -19.42
+ },
+ "06 Reelin' In The Years.mp3": {
+  "body_db": -21.6,
+  "cue": 255.65,
+  "duration": 277.52,
+  "fade_start": 250.85,
+  "kind": "fade",
+  "last_audible": 270.55,
+  "sig": "9113226:1758568988",
+  "slope": -1.88
+ },
+ "06 Rock Your Body.mp3": {
+  "body_db": -12.1,
+  "cue": 256.35,
+  "duration": 267.31,
+  "fade_start": 255.6,
+  "kind": "fade",
+  "last_audible": 267.25,
+  "sig": "8640825:1758512233",
+  "slope": -3.6
+ },
+ "06 Santeria.mp3": {
+  "body_db": -10.8,
+  "cue": 180.25,
+  "duration": 182.81,
+  "fade_start": 177.9,
+  "kind": "fade",
+  "last_audible": 182.6,
+  "sig": "6028820:1758506667",
+  "slope": -5.32
+ },
+ "06 Smalltown Boy.mp3": {
+  "body_db": -14.0,
+  "cue": 292.3,
+  "duration": 302.46,
+  "fade_start": 287.95,
+  "kind": "fade",
+  "last_audible": 299.0,
+  "sig": "9762748:1758508865",
+  "slope": -2.27
+ },
+ "06 Stand and Deliver.mp3": {
+  "body_db": -16.2,
+  "cue": 213.0,
+  "duration": 215.69,
+  "fade_start": 212.1,
+  "kind": "hard",
+  "last_audible": 213.0,
+  "sig": "7023409:1758509687",
+  "slope": -39.32
+ },
+ "06 Summer Of '69.mp3": {
+  "body_db": -12.5,
+  "cue": 199.2,
+  "duration": 216.11,
+  "fade_start": 193.7,
+  "kind": "fade",
+  "last_audible": 211.3,
+  "sig": "6980353:1758508968",
+  "slope": -1.69
+ },
+ "06 Sweet Dreams (Are Made of This) - 2005 Remaster.mp3": {
+  "body_db": -13.1,
+  "cue": 205.45,
+  "duration": 216.99,
+  "fade_start": 200.5,
+  "kind": "fade",
+  "last_audible": 213.25,
+  "sig": "6973411:1758508319",
+  "slope": -1.8
+ },
+ "06 Sweet Emotion.mp3": {
+  "body_db": -15.4,
+  "cue": 258.2,
+  "duration": 274.13,
+  "fade_start": 249.9,
+  "kind": "fade",
+  "last_audible": 271.55,
+  "sig": "8950303:1758565142",
+  "slope": -0.96
+ },
+ "06 Talking In Your Sleep (2023 Remaster).mp3": {
+  "body_db": -10.3,
+  "cue": 224.65,
+  "duration": 236.68,
+  "fade_start": 218.5,
+  "kind": "fade",
+  "last_audible": 232.45,
+  "sig": "7651851:1758508492",
+  "slope": -0.89
+ },
+ "06 Thank You.mp3": {
+  "body_db": -13.3,
+  "cue": 209.65,
+  "duration": 217.9,
+  "fade_start": 208.7,
+  "kind": "fade",
+  "last_audible": 217.8,
+  "sig": "7025327:1758506806",
+  "slope": -1.76
+ },
+ "06 Uptown Girl.mp3": {
+  "body_db": -12.0,
+  "cue": 185.75,
+  "duration": 197.76,
+  "fade_start": 179.15,
+  "kind": "fade",
+  "last_audible": 191.75,
+  "sig": "6444944:1758508358",
+  "slope": -0.93
+ },
+ "06 Venus.mp3": {
+  "body_db": -12.4,
+  "cue": 221.9,
+  "duration": 229.23,
+  "fade_start": 218.0,
+  "kind": "fade",
+  "last_audible": 227.0,
+  "sig": "7511361:1758510162",
+  "slope": -2.93
+ },
+ "06 Virtual Insanity - Remastered 2006.mp3": {
+  "body_db": -11.0,
+  "cue": 222.6,
+  "duration": 229.41,
+  "fade_start": 207.9,
+  "kind": "natural",
+  "last_audible": 224.5,
+  "sig": "7464937:1758507037",
+  "slope": 0.4
+ },
+ "06 Walking On Sunshine.mp3": {
+  "body_db": -19.9,
+  "cue": 226.85,
+  "duration": 238.79,
+  "fade_start": 221.9,
+  "kind": "fade",
+  "last_audible": 233.5,
+  "sig": "7833658:1758510047",
+  "slope": -2.13
+ },
+ "06 You Can Call Me Al.mp3": {
+  "body_db": -13.1,
+  "cue": 270.75,
+  "duration": 280.06,
+  "fade_start": 265.7,
+  "kind": "fade",
+  "last_audible": 277.95,
+  "sig": "9084226:1758509670",
+  "slope": -1.96
+ },
+ "07 Are You Ready.mp3": {
+  "body_db": -11.9,
+  "cue": 248.6,
+  "duration": 250.38,
+  "fade_start": 247.95,
+  "kind": "hard",
+  "last_audible": 248.8,
+  "sig": "8142012:1758507885",
+  "slope": -52.3
+ },
+ "07 Basket Case.mp3": {
+  "body_db": -10.2,
+  "cue": 175.35,
+  "duration": 181.58,
+  "fade_start": 170.55,
+  "kind": "fade",
+  "last_audible": 179.6,
+  "sig": "6087428:1758506355",
+  "slope": -1.92
+ },
+ "07 California Dreamin' - Single Version.mp3": {
+  "body_db": -17.4,
+  "cue": 155.15,
+  "duration": 162.42,
+  "fade_start": 154.3,
+  "kind": "fade",
+  "last_audible": 157.2,
+  "sig": "5415069:1758563893",
+  "slope": -10.99
+ },
+ "07 Candy Shop.mp3": {
+  "body_db": -9.0,
+  "cue": 197.1,
+  "duration": 209.17,
+  "fade_start": 196.2,
+  "kind": "fade",
+  "last_audible": 206.35,
+  "sig": "6822898:1758512802",
+  "slope": -2.16
+ },
+ "07 Club Tropicana.mp3": {
+  "body_db": -14.4,
+  "cue": 252.2,
+  "duration": 265.66,
+  "fade_start": 245.0,
+  "kind": "fade",
+  "last_audible": 265.6,
+  "sig": "8633312:1758510144",
+  "slope": -0.64
+ },
+ "07 Everlasting Love.mp3": {
+  "body_db": -17.5,
+  "cue": 175.9,
+  "duration": 182.44,
+  "fade_start": 168.65,
+  "kind": "fade",
+  "last_audible": 180.5,
+  "sig": "6012973:1758566964",
+  "slope": -1.03
+ },
+ "07 Hey, Soul Sister.mp3": {
+  "body_db": -11.2,
+  "cue": 211.4,
+  "duration": 216.94,
+  "fade_start": 210.55,
+  "kind": "fade",
+  "last_audible": 214.4,
+  "sig": "7089990:1758514321",
+  "slope": -9.4
+ },
+ "07 Hot N Cold.mp3": {
+  "body_db": -9.7,
+  "cue": 214.4,
+  "duration": 220.29,
+  "fade_start": 211.15,
+  "kind": "fade",
+  "last_audible": 219.3,
+  "sig": "7245646:1758515312",
+  "slope": -3.66
+ },
+ "07 Last Nite.mp3": {
+  "body_db": -11.8,
+  "cue": 192.6,
+  "duration": 193.42,
+  "fade_start": 191.85,
+  "kind": "hard",
+  "last_audible": 192.6,
+  "sig": "6249604:1758516050",
+  "slope": -37.38
+ },
+ "07 Love T.K.O_.mp3": {
+  "body_db": -16.7,
+  "cue": 288.2,
+  "duration": 299.19,
+  "fade_start": 287.0,
+  "kind": "fade",
+  "last_audible": 294.4,
+  "sig": "9718284:1758510434",
+  "slope": -3.34
+ },
+ "07 Lover, You Should've Come Over.mp3": {
+  "body_db": -11.1,
+  "cue": 395.7,
+  "duration": 404.28,
+  "fade_start": 393.65,
+  "kind": "fade",
+  "last_audible": 400.25,
+  "sig": "13068028:1758507307",
+  "slope": -4.68
+ },
+ "07 Maria Maria (feat. The Product G&B).mp3": {
+  "body_db": -10.6,
+  "cue": 249.6,
+  "duration": 261.48,
+  "fade_start": 248.95,
+  "kind": "fade",
+  "last_audible": 257.2,
+  "sig": "8731248:1758505302",
+  "slope": -2.62
+ },
+ "07 Our House.mp3": {
+  "body_db": -17.2,
+  "cue": 172.05,
+  "duration": 179.82,
+  "fade_start": 170.0,
+  "kind": "stinger",
+  "last_audible": 177.1,
+  "sig": "5872988:1758567715",
+  "slope": -3.71
+ },
+ "07 Policy of Truth.mp3": {
+  "body_db": -13.8,
+  "cue": 286.5,
+  "duration": 295.33,
+  "fade_start": 278.2,
+  "kind": "fade",
+  "last_audible": 292.05,
+  "sig": "9495298:1758506549",
+  "slope": -0.57
+ },
+ "07 September.mp3": {
+  "body_db": -16.0,
+  "cue": 211.15,
+  "duration": 215.16,
+  "fade_start": 208.7,
+  "kind": "fade",
+  "last_audible": 213.2,
+  "sig": "7048696:1758568866",
+  "slope": -7.54
+ },
+ "07 Stand By Me.mp3": {
+  "body_db": -15.3,
+  "cue": 168.35,
+  "duration": 180.12,
+  "fade_start": 166.85,
+  "kind": "fade",
+  "last_audible": 175.8,
+  "sig": "5867890:1758563950",
+  "slope": -2.7
+ },
+ "07 Still Not a Player (feat. Joe).mp3": {
+  "body_db": -11.0,
+  "cue": 235.5,
+  "duration": 236.94,
+  "fade_start": 234.8,
+  "kind": "hard",
+  "last_audible": 236.5,
+  "sig": "7674868:1758507438",
+  "slope": -17.3
+ },
+ "07 Suicidal Dream.mp3": {
+  "body_db": -11.6,
+  "cue": 191.85,
+  "duration": 192.82,
+  "fade_start": 191.15,
+  "kind": "hard",
+  "last_audible": 192.0,
+  "sig": "6254403:1758507769",
+  "slope": -42.69
+ },
+ "07 That'll Be The Day.mp3": {
+  "body_db": -12.9,
+  "cue": 147.0,
+  "duration": 150.19,
+  "fade_start": 146.15,
+  "kind": "hard",
+  "last_audible": 147.95,
+  "sig": "4930123:1758563605",
+  "slope": -21.3
+ },
+ "07 The Most Beautiful Girl In the World.mp3": {
+  "body_db": -12.0,
+  "cue": 261.1,
+  "duration": 265.36,
+  "fade_start": 256.35,
+  "kind": "fade",
+  "last_audible": 265.3,
+  "sig": "8611552:1758506570",
+  "slope": -2.46
+ },
+ "07 True.mp3": {
+  "body_db": -15.0,
+  "cue": 349.1,
+  "duration": 365.23,
+  "fade_start": 343.5,
+  "kind": "fade",
+  "last_audible": 358.85,
+  "sig": "11827141:1758509708",
+  "slope": -1.39
+ },
+ "07 Two Princes.mp3": {
+  "body_db": -16.3,
+  "cue": 248.2,
+  "duration": 256.42,
+  "fade_start": 243.25,
+  "kind": "fade",
+  "last_audible": 252.55,
+  "sig": "8336328:1758505691",
+  "slope": -2.32
+ },
+ "07 You Really Got Me.mp3": {
+  "body_db": -10.2,
+  "cue": 130.6,
+  "duration": 134.0,
+  "fade_start": 129.55,
+  "kind": "fade",
+  "last_audible": 131.7,
+  "sig": "4395092:1758567265",
+  "slope": -16.15
+ },
+ "07 You Shook Me All Night Long.mp3": {
+  "body_db": -11.8,
+  "cue": 209.45,
+  "duration": 210.23,
+  "fade_start": 208.85,
+  "kind": "hard",
+  "last_audible": 209.55,
+  "sig": "6752938:1758508337",
+  "slope": -63.56
+ },
+ "08 All The Small Things.mp3": {
+  "body_db": -10.8,
+  "cue": 163.05,
+  "duration": 167.11,
+  "fade_start": 160.3,
+  "kind": "fade",
+  "last_audible": 166.2,
+  "sig": "5498778:1758505750",
+  "slope": -6.28
+ },
+ "08 Can I Kick It_.mp3": {
+  "body_db": -9.2,
+  "cue": 251.55,
+  "duration": 251.61,
+  "fade_start": 251.1,
+  "kind": "hard",
+  "last_audible": 251.55,
+  "sig": "8222803:1758506768",
+  "slope": -31.07
+ },
+ "08 Could You Be Loved.mp3": {
+  "body_db": -12.7,
+  "cue": 226.0,
+  "duration": 237.05,
+  "fade_start": 222.15,
+  "kind": "fade",
+  "last_audible": 233.7,
+  "sig": "7704717:1758509095",
+  "slope": -2.57
+ },
+ "08 Drive.mp3": {
+  "body_db": -12.4,
+  "cue": 230.8,
+  "duration": 232.32,
+  "fade_start": 228.1,
+  "kind": "fade",
+  "last_audible": 232.15,
+  "sig": "7570829:1758506787",
+  "slope": -7.81
+ },
+ "08 Free Bird.mp3": {
+  "body_db": -13.7,
+  "cue": 532.8,
+  "duration": 547.15,
+  "fade_start": 524.5,
+  "kind": "fade",
+  "last_audible": 544.45,
+  "sig": "17681303:1758565212",
+  "slope": -0.79
+ },
+ "08 Gone Till November (feat. The New York Philharmonic Orchestra).mp3": {
+  "body_db": -12.8,
+  "cue": 206.8,
+  "duration": 207.68,
+  "fade_start": 205.7,
+  "kind": "hard",
+  "last_audible": 207.35,
+  "sig": "6795350:1758507753",
+  "slope": -13.57
+ },
+ "08 Just like Heaven.mp3": {
+  "body_db": -11.3,
+  "cue": 206.1,
+  "duration": 211.93,
+  "fade_start": 204.1,
+  "kind": "fade",
+  "last_audible": 208.9,
+  "sig": "6940524:1758508526",
+  "slope": -7.84
+ },
+ "08 Killing Me Softly With His Song.mp3": {
+  "body_db": -18.8,
+  "cue": 298.5,
+  "duration": 298.72,
+  "fade_start": 296.6,
+  "kind": "fade",
+  "last_audible": 298.65,
+  "sig": "9618533:1758507827",
+  "slope": -7.43
+ },
+ "08 Miami.mp3": {
+  "body_db": -13.4,
+  "cue": 195.8,
+  "duration": 197.63,
+  "fade_start": 195.15,
+  "kind": "fade",
+  "last_audible": 197.55,
+  "sig": "6436732:1758505225",
+  "slope": -3.06
+ },
+ "08 Promiscuous.mp3": {
+  "body_db": -9.4,
+  "cue": 238.95,
+  "duration": 242.44,
+  "fade_start": 238.2,
+  "kind": "fade",
+  "last_audible": 241.15,
+  "sig": "7867268:1758513518",
+  "slope": -13.26
+ },
+ "08 Roll Over Beethoven - Single Version.mp3": {
+  "body_db": -16.9,
+  "cue": 142.15,
+  "duration": 144.64,
+  "fade_start": 141.7,
+  "kind": "hard",
+  "last_audible": 142.15,
+  "sig": "4724787:1758565831",
+  "slope": -90.05
+ },
+ "08 The Horses.mp3": {
+  "body_db": -20.4,
+  "cue": 245.0,
+  "duration": 256.16,
+  "fade_start": 240.1,
+  "kind": "fade",
+  "last_audible": 250.55,
+  "sig": "8275445:1758506297",
+  "slope": -1.97
+ },
+ "08 The Real Slim Shady.mp3": {
+  "body_db": -10.5,
+  "cue": 278.65,
+  "duration": 284.26,
+  "fade_start": 276.85,
+  "kind": "fade",
+  "last_audible": 283.4,
+  "sig": "9203831:1758510999",
+  "slope": -3.97
+ },
+ "08 Waiting for Tonight.mp3": {
+  "body_db": -12.9,
+  "cue": 241.45,
+  "duration": 246.48,
+  "fade_start": 240.65,
+  "kind": "fade",
+  "last_audible": 244.35,
+  "sig": "7980003:1758506212",
+  "slope": -8.19
+ },
+ "08 Waterfalls.mp3": {
+  "body_db": -12.1,
+  "cue": 264.7,
+  "duration": 279.57,
+  "fade_start": 260.95,
+  "kind": "fade",
+  "last_audible": 275.75,
+  "sig": "9068708:1758505323",
+  "slope": -1.99
+ },
+ "08 Whatever Will Be, Will Be (Que Sera, Sera) (with Frank DeVol & His Orchestra) - Single Version.mp3": {
+  "body_db": -19.2,
+  "cue": 123.3,
+  "duration": 125.09,
+  "fade_start": 122.6,
+  "kind": "hard",
+  "last_audible": 123.65,
+  "sig": "4079137:1758566666",
+  "slope": -32.24
+ },
+ "08 You Make My Dreams (Come True).mp3": {
+  "body_db": -20.2,
+  "cue": 176.4,
+  "duration": 190.68,
+  "fade_start": 173.15,
+  "kind": "fade",
+  "last_audible": 181.7,
+  "sig": "6197756:1758508616",
+  "slope": -2.53
+ },
+ "08 You've Got Another Thing Coming.mp3": {
+  "body_db": -12.4,
+  "cue": 294.75,
+  "duration": 310.13,
+  "fade_start": 276.75,
+  "kind": "natural",
+  "last_audible": 303.95,
+  "sig": "10178021:1758510525",
+  "slope": -0.45
+ },
+ "09 Black or White - Single Version.mp3": {
+  "body_db": -11.8,
+  "cue": 197.8,
+  "duration": 202.92,
+  "fade_start": 195.75,
+  "kind": "fade",
+  "last_audible": 200.2,
+  "sig": "6598238:1758505831",
+  "slope": -8.06
+ },
+ "09 Hey Ya!.mp3": {
+  "body_db": -8.1,
+  "cue": 222.5,
+  "duration": 235.26,
+  "fade_start": 215.9,
+  "kind": "fade",
+  "last_audible": 234.95,
+  "sig": "7710404:1758513839",
+  "slope": -1.34
+ },
+ "09 I Can't Help Myself (Sugar Pie, Honey Bunch).mp3": {
+  "body_db": -12.8,
+  "cue": 158.9,
+  "duration": 163.75,
+  "fade_start": 155.65,
+  "kind": "fade",
+  "last_audible": 162.05,
+  "sig": "5406039:1758564064",
+  "slope": -4.6
+ },
+ "09 Like a Prayer.mp3": {
+  "body_db": -11.7,
+  "cue": 330.7,
+  "duration": 342.73,
+  "fade_start": 326.2,
+  "kind": "fade",
+  "last_audible": 339.25,
+  "sig": "11301857:1758508207",
+  "slope": -2.43
+ },
+ "09 Paradise.mp3": {
+  "body_db": -13.8,
+  "cue": 200.9,
+  "duration": 217.52,
+  "fade_start": 194.95,
+  "kind": "fade",
+  "last_audible": 210.75,
+  "sig": "7074481:1758509253",
+  "slope": -1.23
+ },
+ "09 Separate Ways (Worlds Apart) [2024 Remaster].mp3": {
+  "body_db": -11.5,
+  "cue": 321.7,
+  "duration": 326.29,
+  "fade_start": 321.05,
+  "kind": "hard",
+  "last_audible": 322.45,
+  "sig": "10630482:1758509420",
+  "slope": -28.92
+ },
+ "09 Sweet Child O' Mine.mp3": {
+  "body_db": -13.7,
+  "cue": 350.95,
+  "duration": 356.12,
+  "fade_start": 347.5,
+  "kind": "fade",
+  "last_audible": 352.8,
+  "sig": "11498315:1758508301",
+  "slope": -6.61
+ },
+ "09 There Is a Light That Never Goes Out - 2011 Remaster.mp3": {
+  "body_db": -12.2,
+  "cue": 227.3,
+  "duration": 244.65,
+  "fade_start": 220.1,
+  "kind": "fade",
+  "last_audible": 240.7,
+  "sig": "7927696:1758509114",
+  "slope": -1.19
+ },
+ "10 Africa.mp3": {
+  "body_db": -21.7,
+  "cue": 282.7,
+  "duration": 295.96,
+  "fade_start": 280.8,
+  "kind": "fade",
+  "last_audible": 290.7,
+  "sig": "9545519:1758508108",
+  "slope": -1.99
+ },
+ "10 Don't You Want Me.mp3": {
+  "body_db": -14.4,
+  "cue": 230.5,
+  "duration": 236.98,
+  "fade_start": 225.45,
+  "kind": "fade",
+  "last_audible": 235.5,
+  "sig": "7650797:1758508581",
+  "slope": -2.0
+ },
+ "10 Glory Days.mp3": {
+  "body_db": -12.1,
+  "cue": 242.4,
+  "duration": 254.79,
+  "fade_start": 236.95,
+  "kind": "fade",
+  "last_audible": 251.65,
+  "sig": "8269955:1758510306",
+  "slope": -1.4
+ },
+ "10 Hits from the Bong.mp3": {
+  "body_db": -15.1,
+  "cue": 155.05,
+  "duration": 160.91,
+  "fade_start": 154.65,
+  "kind": "fade",
+  "last_audible": 158.8,
+  "sig": "5314243:1758507220",
+  "slope": -6.2
+ },
+ "10 Mrs. Robinson - From _The Graduate_ Soundtrack.mp3": {
+  "body_db": -17.8,
+  "cue": 224.15,
+  "duration": 244.09,
+  "fade_start": 218.65,
+  "kind": "fade",
+  "last_audible": 236.25,
+  "sig": "7892557:1758565393",
+  "slope": -2.07
+ },
+ "10 November Rain.mp3": {
+  "body_db": -15.6,
+  "cue": 523.05,
+  "duration": 536.13,
+  "fade_start": 515.2,
+  "kind": "fade",
+  "last_audible": 527.5,
+  "sig": "17345677:1758506241",
+  "slope": -0.5
+ },
+ "10 One Summer.mp3": {
+  "body_db": -16.6,
+  "cue": 204.5,
+  "duration": 222.8,
+  "fade_start": 199.35,
+  "kind": "fade",
+  "last_audible": 218.9,
+  "sig": "7284524:1758509777",
+  "slope": -1.28
+ },
+ "10 Sweet Jane.mp3": {
+  "body_db": -23.7,
+  "cue": 207.35,
+  "duration": 215.04,
+  "fade_start": 206.25,
+  "kind": "fade",
+  "last_audible": 214.4,
+  "sig": "7042650:1758510124",
+  "slope": -3.26
+ },
+ "10 Without Me.mp3": {
+  "body_db": -9.7,
+  "cue": 283.45,
+  "duration": 290.39,
+  "fade_start": 280.45,
+  "kind": "fade",
+  "last_audible": 290.05,
+  "sig": "9419276:1758515100",
+  "slope": -3.5
+ },
+ "11 Dancing In the Dark.mp3": {
+  "body_db": -11.6,
+  "cue": 224.9,
+  "duration": 241.37,
+  "fade_start": 219.2,
+  "kind": "fade",
+  "last_audible": 236.55,
+  "sig": "7840302:1758508656",
+  "slope": -1.51
+ },
+ "11 Dirty Diana.mp3": {
+  "body_db": -12.4,
+  "cue": 268.75,
+  "duration": 280.66,
+  "fade_start": 264.5,
+  "kind": "fade",
+  "last_audible": 278.15,
+  "sig": "9023390:1758508715",
+  "slope": -1.86
+ },
+ "11 Do Wah Diddy Diddy - 1997 Remastered Version.mp3": {
+  "body_db": -15.4,
+  "cue": 140.95,
+  "duration": 144.2,
+  "fade_start": 140.3,
+  "kind": "hard",
+  "last_audible": 140.95,
+  "sig": "4818829:1758567604",
+  "slope": -62.65
+ },
+ "11 Everlong.mp3": {
+  "body_db": -10.2,
+  "cue": 245.0,
+  "duration": 250.61,
+  "fade_start": 242.7,
+  "kind": "fade",
+  "last_audible": 248.7,
+  "sig": "8083362:1758505970",
+  "slope": -6.13
+ },
+ "11 Jumpin', Jumpin'.mp3": {
+  "body_db": -10.0,
+  "cue": 221.8,
+  "duration": 230.25,
+  "fade_start": 221.3,
+  "kind": "fade",
+  "last_audible": 230.0,
+  "sig": "7487074:1758505401",
+  "slope": -0.98
+ },
+ "11 Just Can't Get Enough.mp3": {
+  "body_db": -14.9,
+  "cue": 210.15,
+  "duration": 220.96,
+  "fade_start": 203.85,
+  "kind": "fade",
+  "last_audible": 218.25,
+  "sig": "7216900:1758509076",
+  "slope": -1.45
+ },
+ "11 Paper Planes.mp3": {
+  "body_db": -11.7,
+  "cue": 201.4,
+  "duration": 205.26,
+  "fade_start": 189.7,
+  "kind": "hard",
+  "last_audible": 201.8,
+  "sig": "6848619:1758515927",
+  "slope": -0.25
+ },
+ "11 Stuck In The Middle With You.mp3": {
+  "body_db": -17.7,
+  "cue": 201.75,
+  "duration": 203.94,
+  "fade_start": 200.1,
+  "kind": "fade",
+  "last_audible": 202.8,
+  "sig": "6807595:1758565081",
+  "slope": -11.33
+ },
+ "11 Temperature.mp3": {
+  "body_db": -9.9,
+  "cue": 215.85,
+  "duration": 216.36,
+  "fade_start": 215.05,
+  "kind": "hard",
+  "last_audible": 216.3,
+  "sig": "7041047:1758512481",
+  "slope": -38.93
+ },
+ "11 The Next Episode.mp3": {
+  "body_db": -9.4,
+  "cue": 161.5,
+  "duration": 161.56,
+  "fade_start": 156.0,
+  "kind": "natural",
+  "last_audible": 161.5,
+  "sig": "5200259:1758516125",
+  "slope": 5.77
+ },
+ "11 Under Pressure - Remastered 2011.mp3": {
+  "body_db": -12.8,
+  "cue": 223.5,
+  "duration": 248.5,
+  "fade_start": 220.2,
+  "kind": "fade",
+  "last_audible": 238.45,
+  "sig": "8047957:1758508050",
+  "slope": -2.03
+ },
+ "11 Under the Bridge.mp3": {
+  "body_db": -19.8,
+  "cue": 264.3,
+  "duration": 264.36,
+  "fade_start": 239.05,
+  "kind": "natural",
+  "last_audible": 264.3,
+  "sig": "8628067:1758506031",
+  "slope": 0.08
+ },
+ "12 Buy U a Drank (Shawty Snappin') (feat. Yung Joc).mp3": {
+  "body_db": -9.5,
+  "cue": 227.9,
+  "duration": 228.02,
+  "fade_start": 216.15,
+  "kind": "hard",
+  "last_audible": 227.95,
+  "sig": "7468455:1758513102",
+  "slope": -0.04
+ },
+ "12 My Heart Will Go On - Love Theme from _Titanic_.mp3": {
+  "body_db": -16.1,
+  "cue": 270.65,
+  "duration": 280.06,
+  "fade_start": 253.0,
+  "kind": "natural",
+  "last_audible": 275.65,
+  "sig": "9028820:1758506608",
+  "slope": -0.29
+ },
+ "12 Open Arms (2024 Remaster).mp3": {
+  "body_db": -14.5,
+  "cue": 179.9,
+  "duration": 199.18,
+  "fade_start": 174.55,
+  "kind": "fade",
+  "last_audible": 195.55,
+  "sig": "6562885:1758510487",
+  "slope": -1.44
+ },
+ "12 Say My Name.mp3": {
+  "body_db": -11.7,
+  "cue": 270.85,
+  "duration": 271.39,
+  "fade_start": 266.05,
+  "kind": "stinger",
+  "last_audible": 271.0,
+  "sig": "8803640:1758505207",
+  "slope": 2.7
+ },
+ "12 Time of the Season - Mono Version.mp3": {
+  "body_db": -17.5,
+  "cue": 207.1,
+  "duration": 214.09,
+  "fade_start": 203.75,
+  "kind": "fade",
+  "last_audible": 210.7,
+  "sig": "7027886:1758567776",
+  "slope": -2.06
+ },
+ "12 Under the Boardwalk.mp3": {
+  "body_db": -14.9,
+  "cue": 158.75,
+  "duration": 161.82,
+  "fade_start": 158.25,
+  "kind": "hard",
+  "last_audible": 159.25,
+  "sig": "5274720:1758566494",
+  "slope": -34.64
+ },
+ "13 All By Myself.mp3": {
+  "body_db": -11.7,
+  "cue": 288.25,
+  "duration": 310.92,
+  "fade_start": 270.95,
+  "kind": "natural",
+  "last_audible": 305.0,
+  "sig": "10004620:1758506688",
+  "slope": -0.41
+ },
+ "13 Come Fly With Me - Remastered.mp3": {
+  "body_db": -17.6,
+  "cue": 192.35,
+  "duration": 199.16,
+  "fade_start": 191.65,
+  "kind": "fade",
+  "last_audible": 195.7,
+  "sig": "6457736:1758566610",
+  "slope": -5.93
+ },
+ "13 Dreamer.mp3": {
+  "body_db": -10.7,
+  "cue": 238.0,
+  "duration": 251.19,
+  "fade_start": 237.05,
+  "kind": "fade",
+  "last_audible": 247.4,
+  "sig": "8225790:1758515805",
+  "slope": -0.96
+ },
+ "13 Kiss of Life.mp3": {
+  "body_db": -13.8,
+  "cue": 237.35,
+  "duration": 251.4,
+  "fade_start": 236.05,
+  "kind": "fade",
+  "last_audible": 246.25,
+  "sig": "8157836:1758508733",
+  "slope": -2.12
+ },
+ "13 Sweet Caroline.mp3": {
+  "body_db": -20.3,
+  "cue": 195.25,
+  "duration": 203.64,
+  "fade_start": 191.55,
+  "kind": "fade",
+  "last_audible": 199.1,
+  "sig": "6728871:1758564414",
+  "slope": -3.31
+ },
+ "13 Timber.mp3": {
+  "body_db": -8.7,
+  "cue": 201.05,
+  "duration": 204.22,
+  "fade_start": 200.45,
+  "kind": "hard",
+  "last_audible": 201.95,
+  "sig": "6621790:1758511380",
+  "slope": -27.17
+ },
+ "13 Why I Love You So Much.mp3": {
+  "body_db": -14.4,
+  "cue": 255.95,
+  "duration": 270.3,
+  "fade_start": 254.45,
+  "kind": "fade",
+  "last_audible": 265.0,
+  "sig": "8788631:1758507120",
+  "slope": -2.72
+ },
+ "13 Would_ (2022 Remaster).mp3": {
+  "body_db": -12.6,
+  "cue": 205.05,
+  "duration": 206.82,
+  "fade_start": 204.55,
+  "kind": "hard",
+  "last_audible": 206.3,
+  "sig": "6767103:1758506921",
+  "slope": -21.03
+ },
+ "14 Chain Gang.mp3": {
+  "body_db": -16.8,
+  "cue": 149.9,
+  "duration": 155.2,
+  "fade_start": 147.5,
+  "kind": "fade",
+  "last_audible": 152.8,
+  "sig": "5144625:1758567437",
+  "slope": -6.37
+ },
+ "14 Great Balls of Fire.mp3": {
+  "body_db": -12.4,
+  "cue": 110.35,
+  "duration": 111.6,
+  "fade_start": 109.75,
+  "kind": "hard",
+  "last_audible": 110.35,
+  "sig": "3654503:1758565627",
+  "slope": -49.09
+ },
+ "14 I've Got a Woman.mp3": {
+  "body_db": -10.3,
+  "cue": 163.9,
+  "duration": 171.5,
+  "fade_start": 162.3,
+  "kind": "fade",
+  "last_audible": 168.0,
+  "sig": "5633656:1758566552",
+  "slope": -6.88
+ },
+ "14 If I Ruled the World (Imagine That) (feat. Lauryn Hill).mp3": {
+  "body_db": -11.2,
+  "cue": 275.5,
+  "duration": 282.4,
+  "fade_start": 274.0,
+  "kind": "fade",
+  "last_audible": 281.0,
+  "sig": "9147505:1758507204",
+  "slope": -1.68
+ },
+ "14 Me and Bobby McGee.mp3": {
+  "body_db": -17.1,
+  "cue": 263.35,
+  "duration": 271.39,
+  "fade_start": 261.45,
+  "kind": "fade",
+  "last_audible": 266.95,
+  "sig": "8856145:1758568430",
+  "slope": -5.8
+ },
+ "14 Pinball Wizard - Original Album Version.mp3": {
+  "body_db": -15.3,
+  "cue": 174.55,
+  "duration": 181.0,
+  "fade_start": 171.95,
+  "kind": "fade",
+  "last_audible": 179.05,
+  "sig": "5911416:1758567955",
+  "slope": -4.97
+ },
+ "14 Streets of Philadelphia - Single Edit.mp3": {
+  "body_db": -12.8,
+  "cue": 186.55,
+  "duration": 195.12,
+  "fade_start": 182.45,
+  "kind": "fade",
+  "last_audible": 192.7,
+  "sig": "6344816:1758507867",
+  "slope": -2.16
+ },
+ "14 You Owe Me (feat. Ginuwine).mp3": {
+  "body_db": -12.3,
+  "cue": 276.7,
+  "duration": 287.95,
+  "fade_start": 276.1,
+  "kind": "fade",
+  "last_audible": 286.95,
+  "sig": "9322547:1758506072",
+  "slope": -1.39
+ },
+ "15 All Along the Watchtower.mp3": {
+  "body_db": -12.5,
+  "cue": 237.75,
+  "duration": 240.86,
+  "fade_start": 235.5,
+  "kind": "fade",
+  "last_audible": 238.45,
+  "sig": "7890136:1758564483",
+  "slope": -9.96
+ },
+ "15 Brother Louie Mix '98 (feat. Eric Singleton) - Radio Edit.mp3": {
+  "body_db": -11.2,
+  "cue": 201.85,
+  "duration": 203.89,
+  "fade_start": 200.55,
+  "kind": "fade",
+  "last_audible": 203.35,
+  "sig": "6627923:1758507183",
+  "slope": -12.23
+ },
+ "15 That's Amore - 1996 Digital Remaster.mp3": {
+  "body_db": -17.6,
+  "cue": 185.6,
+  "duration": 188.17,
+  "fade_start": 185.05,
+  "kind": "hard",
+  "last_audible": 185.75,
+  "sig": "6153364:1758566269",
+  "slope": -55.22
+ },
+ "15 You Can't Hurry Love.mp3": {
+  "body_db": -16.8,
+  "cue": 162.45,
+  "duration": 168.0,
+  "fade_start": 160.55,
+  "kind": "fade",
+  "last_audible": 165.65,
+  "sig": "5538440:1758564298",
+  "slope": -6.71
+ },
+ "16 Ain't No Mountain High Enough - Mono.mp3": {
+  "body_db": -14.1,
+  "cue": 142.25,
+  "duration": 148.12,
+  "fade_start": 138.15,
+  "kind": "fade",
+  "last_audible": 145.9,
+  "sig": "4858264:1758564179",
+  "slope": -2.89
+ },
+ "16 DJ Got Us Fallin' In Love (feat. Pitbull).mp3": {
+  "body_db": -9.1,
+  "cue": 217.95,
+  "duration": 220.84,
+  "fade_start": 216.6,
+  "kind": "fade",
+  "last_audible": 219.75,
+  "sig": "7164211:1758514621",
+  "slope": -7.44
+ },
+ "16 Men In Black - From _Men In Black_ Soundtrack.mp3": {
+  "body_db": -13.5,
+  "cue": 220.75,
+  "duration": 227.32,
+  "fade_start": 219.8,
+  "kind": "fade",
+  "last_audible": 224.85,
+  "sig": "7387212:1758506110",
+  "slope": -6.26
+ },
+ "16 The Lion Sleeps Tonight (Re-Recorded).mp3": {
+  "body_db": -17.4,
+  "cue": 149.3,
+  "duration": 153.72,
+  "fade_start": 138.7,
+  "kind": "natural",
+  "last_audible": 150.7,
+  "sig": "5032179:1758566905",
+  "slope": -0.29
+ },
+ "17 Hungry Eyes - From _Dirty Dancing_ Soundtrack.mp3": {
+  "body_db": -15.2,
+  "cue": 236.55,
+  "duration": 251.1,
+  "fade_start": 229.2,
+  "kind": "fade",
+  "last_audible": 246.8,
+  "sig": "8134546:1758509439",
+  "slope": -1.13
+ },
+ "18 Make Me Lose Control.mp3": {
+  "body_db": -15.5,
+  "cue": 276.2,
+  "duration": 285.98,
+  "fade_start": 272.9,
+  "kind": "fade",
+  "last_audible": 281.95,
+  "sig": "9250472:1758506010",
+  "slope": -3.84
+ },
+ "18 My Boo.mp3": {
+  "body_db": -11.4,
+  "cue": 209.75,
+  "duration": 223.49,
+  "fade_start": 209.0,
+  "kind": "fade",
+  "last_audible": 221.8,
+  "sig": "7276660:1758513443",
+  "slope": -1.37
+ },
+ "18 Pony.mp3": {
+  "body_db": -13.3,
+  "cue": 244.15,
+  "duration": 251.63,
+  "fade_start": 243.55,
+  "kind": "fade",
+  "last_audible": 248.35,
+  "sig": "8222533:1758505989",
+  "slope": -6.23
+ },
+ "18 Till I Collapse.mp3": {
+  "body_db": -8.3,
+  "cue": 287.5,
+  "duration": 297.84,
+  "fade_start": 286.45,
+  "kind": "fade",
+  "last_audible": 296.9,
+  "sig": "9657529:1758515253",
+  "slope": -1.5
+ },
+ "48 Total Eclipse of the Heart.mp3": {
+  "body_db": -12.6,
+  "cue": 254.6,
+  "duration": 267.42,
+  "fade_start": 251.9,
+  "kind": "stinger",
+  "last_audible": 263.7,
+  "sig": "8700313:1758508242",
+  "slope": -4.95
+ },
+ "ABBAMammaMia(HardFestivalRemix)REGMIKE.mp3": {
+  "body_db": -12.7,
+  "cue": 237.15,
+  "duration": 238.14,
+  "fade_start": 235.6,
+  "kind": "fade",
+  "last_audible": 238.05,
+  "sig": "5717200:1790604460",
+  "slope": -9.95
+ },
+ "Alannah Myles - Black Velvet (Lyrics).mp3": {
+  "body_db": -17.0,
+  "cue": 273.25,
+  "duration": 287.44,
+  "fade_start": 266.75,
+  "kind": "fade",
+  "last_audible": 284.05,
+  "sig": "6907937:1786926560",
+  "slope": -0.8
+ },
+ "Andrew Gold - Spooky, Scary Skeletons (Undead Tombstone Remix) (Official Lyric Video) - Craft Recordings (128k).mp3": {
+  "body_db": -8.1,
+  "cue": 120.5,
+  "duration": 125.9,
+  "fade_start": 119.9,
+  "kind": "fade",
+  "last_audible": 123.85,
+  "sig": "2015536:1788054846",
+  "slope": -8.32
+ },
+ "Beck-WhereIt'sAt(OfficialMusicVideo).mp3": {
+  "body_db": -12.0,
+  "cue": 204.9,
+  "duration": 209.77,
+  "fade_start": 201.35,
+  "kind": "fade",
+  "last_audible": 209.25,
+  "sig": "5036013:1788787731",
+  "slope": -2.54
+ },
+ "CHIQUITITA _ ABBA (DANCE TECHNO COVER).mp3": {
+  "body_db": -11.5,
+  "cue": 238.75,
+  "duration": 240.49,
+  "fade_start": 237.95,
+  "kind": "fade",
+  "last_audible": 240.15,
+  "sig": "5773342:1790603400",
+  "slope": -18.7
+ },
+ "Depeche Mode - Enjoy The Silence (Live in Berlin).mp3": {
+  "body_db": -11.6,
+  "cue": 448.65,
+  "duration": 450.05,
+  "fade_start": 444.35,
+  "kind": "fade",
+  "last_audible": 449.35,
+  "sig": "10814825:1786830105",
+  "slope": -3.18
+ },
+ "Dixie Chicks-Goodbye Earl Lyrics.mp3": {
+  "body_db": -14.4,
+  "cue": 264.35,
+  "duration": 266.4,
+  "fade_start": 258.0,
+  "kind": "stinger",
+  "last_audible": 264.65,
+  "sig": "6395539:1788033219",
+  "slope": -0.64
+ },
+ "IRON BUTTERFLY IN- A-GADDA-DA-VIDA IN HD BEST FULL VERSION.mp3": {
+  "body_db": -24.7,
+  "cue": 1020.75,
+  "duration": 1025.2,
+  "fade_start": 1020.1,
+  "kind": "hard",
+  "last_audible": 1020.9,
+  "sig": "24606189:1789321149",
+  "slope": -32.36
+ },
+ "Last Caress.mp3": {
+  "body_db": -12.6,
+  "cue": 115.35,
+  "duration": 119.83,
+  "fade_start": 114.55,
+  "kind": "hard",
+  "last_audible": 116.4,
+  "sig": "2881097:1786830981",
+  "slope": -21.96
+ },
+ "Lay All Your Love On Me.mp3": {
+  "body_db": -8.5,
+  "cue": 153.7,
+  "duration": 155.08,
+  "fade_start": 153.1,
+  "kind": "hard",
+  "last_audible": 154.2,
+  "sig": "3728208:1786785817",
+  "slope": -41.03
+ },
+ "Limahl \u2013 The Never Ending Story 2k26 Remix (DJ Monster Cover Edit).mp3": {
+  "body_db": -11.4,
+  "cue": 300.6,
+  "duration": 303.54,
+  "fade_start": 298.05,
+  "kind": "fade",
+  "last_audible": 303.35,
+  "sig": "7294824:1786755936",
+  "slope": -7.37
+ },
+ "RandyKatana-You&I(OriginalMix).mp3": {
+  "body_db": -8.9,
+  "cue": 417.5,
+  "duration": 420.93,
+  "fade_start": 416.5,
+  "kind": "fade",
+  "last_audible": 420.85,
+  "sig": "7334038:1788791055",
+  "slope": -8.42
+ },
+ "Rise (Local Heroes Remix).mp3": {
+  "body_db": -10.1,
+  "cue": 445.8,
+  "duration": 453.02,
+  "fade_start": 437.5,
+  "kind": "fade",
+  "last_audible": 448.1,
+  "sig": "7694551:1786569358",
+  "slope": -1.2
+ },
+ "Social Distortion - Cold Feelings.mp3": {
+  "body_db": -14.5,
+  "cue": 207.4,
+  "duration": 211.66,
+  "fade_start": 204.1,
+  "kind": "fade",
+  "last_audible": 209.4,
+  "sig": "5087681:1786831199",
+  "slope": -6.28
+ },
+ "Something Outside.mp3": {
+  "body_db": -19.3,
+  "cue": 465.25,
+  "duration": 472.02,
+  "fade_start": 451.15,
+  "kind": "natural",
+  "last_audible": 467.55,
+  "sig": "7816647:1786574876",
+  "slope": 0.09
+ },
+ "The Smiths - Please, Please, Please Let Me Get What I Want (Official Lyric Video) - The Smiths (128k).mp3": {
+  "body_db": -16.3,
+  "cue": 107.35,
+  "duration": 116.89,
+  "fade_start": 104.45,
+  "kind": "fade",
+  "last_audible": 112.3,
+  "sig": "1871340:1788056322",
+  "slope": -4.18
+ },
+ "Tiesto - Urban Train (Cosmic Gate Remix).mp3": {
+  "body_db": -8.2,
+  "cue": 471.1,
+  "duration": 471.69,
+  "fade_start": 470.8,
+  "kind": "hard",
+  "last_audible": 471.1,
+  "sig": "7967620:1787170637",
+  "slope": -116.49
+ },
+ "Twist And Shout (Remastered 2009) - The Beatles (128k).mp3": {
+  "body_db": -16.8,
+  "cue": 151.35,
+  "duration": 155.24,
+  "fade_start": 148.5,
+  "kind": "fade",
+  "last_audible": 152.25,
+  "sig": "2484904:1788056513",
+  "slope": -7.09
+ }
+}

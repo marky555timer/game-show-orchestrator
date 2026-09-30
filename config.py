@@ -395,6 +395,44 @@ RELAY2_CHANNEL = 178
 RELAY3_CHANNEL = 179
 RELAY_PULSE_SECONDS = 0.25
 
+# ZU&RU 70W RGBW moving head, the show's robotic "face" (drivers/dmx_head.py).
+# 14-channel mode at address 180 (right after the relay block): 1/2 pan
+# coarse/fine, 3/4 tilt coarse/fine, 5 P/T speed (0 fast..255 slow), 6
+# dimmer, 7 strobe, 8-11 R/G/B/W, 12 color macros, 13 auto/sound, 14 reset.
+# Its color/brightness follow fixture 2 (an uplight), capped at
+# DMX_HEAD_IDLE_BRIGHTNESS; on a graded answer it goes full green (nod) or
+# red (shake) for DMX_HEAD_REACT_SECONDS, then fades back to the dim color.
+DMX_HEAD_ENABLED = True
+# Channel offsets (from DMX_HEAD_BASE_CHANNEL) of R, G, B, W. The manual says
+# ch8-11 (offsets 7-10) but this unit lit one slot early (2026-09-29: sent
+# green -> blue, red -> green), i.e. ch7-10 (offsets 6-9).
+DMX_HEAD_RGBW_OFFSETS = (6, 7, 8, 9)
+DMX_HEAD_BASE_CHANNEL = 180
+DMX_HEAD_IDLE_BRIGHTNESS = 0.10
+DMX_HEAD_MIN_BRIGHTNESS = 0.05   # floor -- never darker than this while the show runs
+DMX_HEAD_SMOOTH_SECONDS = 0.5    # low-pass on idle brightness/color so beat flashes don't strobe it
+# Positions are in coarse DMX units (0-255 across the fixture's full
+# range, ~2.1 deg/unit pan, ~1.06 deg/unit tilt). TILT_CENTER is whatever
+# makes it face straight ahead for how it's mounted -- adjust on site.
+DMX_HEAD_PAN_CENTER = 163.0
+DMX_HEAD_TILT_CENTER = 25.0
+DMX_HEAD_SWAY_PAN_UNITS = 8.0     # +/- ~17 deg
+DMX_HEAD_SWAY_TILT_UNITS = 6.0    # +/- ~6 deg
+DMX_HEAD_SWAY_BEATS = 4.0         # beats per full pan sway cycle (tilt is 2x as fast)
+DMX_HEAD_SWAY_SPEED = 110         # P/T speed channel while swaying (smooth)
+DMX_HEAD_SCAN_PERIOD_SECONDS = 9.0  # gameplay: one look-around every this many seconds
+DMX_HEAD_SCAN_STOP_SECONDS = 1.1    # hold time at each side (blinks twice)
+DMX_HEAD_SCAN_UNITS = 22.0          # sharp right/left look distance
+DMX_HEAD_REACT_SPEED = 0          # P/T speed channel during nod/shake (fast)
+DMX_HEAD_REACT_SECONDS = 1.6      # full-color nod/shake duration
+DMX_HEAD_FADE_SECONDS = 0.6       # fade back to the dim uplight color
+DMX_HEAD_NOD_UNITS = 14.0         # tilt swing of a win nod
+DMX_HEAD_SHAKE_UNITS = 22.0       # pan swing of a loss shake
+DMX_HEAD_REACT_CYCLES = 3
+# True = the nod (win) moves the PAN axis and the shake (loss) moves TILT, for
+# a mounting where the axes read the other way around (2026-09-29).
+DMX_HEAD_SWAP_NOD_SHAKE_AXES = False
+
 # ==========================================
 # USB RELAY BOARD (4-channel, drivers/relay_engine.py, added 2026-09-14,
 # corrected to 4 channels 2026-09-18)
@@ -860,6 +898,8 @@ TEMPO_PERIOD_DEFAULT_SECONDS = 0.6
 LIGHT_PREFS_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "light_prefs")
 LIGHT_PREFS_CACHE_PATH = os.path.join(LIGHT_PREFS_DIR, "light_prefs.csv")
 LIGHT_PREFS_SAVE_DEBOUNCE_SECONDS = 2.5
+# Append-only, timestamped log of every field change (see light_prefs_engine._log_changes).
+LIGHT_PREFS_LOG_PATH = os.path.join(LIGHT_PREFS_DIR, "light_prefs_log.csv")
 
 # ==========================================
 # SHOW CURATION: PER-TRACK METADATA (2026-08-12)
@@ -1132,6 +1172,14 @@ DJ_COLOR_PALETTE = [
     DJColor("white lamp", white=255),
     DJColor("amber lamp", amber=255),
     DJColor("uv",         uv=255),
+    # Plain RGB blue/white (2026-09-27 request -- neither existed before:
+    # "cyan"/"purple" are the closest blue-ish swatches, and "white lamp"
+    # above is a DMX dedicated-channel look, not a usable RGB white for the
+    # marquee/outline strip, which are plain RGB and would just render it
+    # as black). Appended at the end, same index-stability reasoning as the
+    # emitter block above.
+    DJColor("blue",  r=0,   g=0,   b=255),
+    DJColor("white", r=255, g=255, b=255),
 ]
 
 # --- Per-fixture-type DJ look decoupling (2026-09-17) ---
@@ -1667,7 +1715,19 @@ MAIN_LOOP_STALL_WARN_SECONDS = 0.3
 # fallback end of the track -- see drivers/auto_dj_engine.py::update() and
 # the "STATION ANNOUNCEMENT VOICE-OVERS" section below for the rest of the
 # overlapping-transition timing.
-AUTODJ_PRE_SWITCH_SECONDS = 15.0
+AUTODJ_PRE_SWITCH_SECONDS = 1.0
+
+# Content-based cue-out (drivers/track_cue_engine.py, 2026-09-29): instead of
+# waiting for the file's full length, the transition starts at the point the
+# ending analysis picked -- after any closing hit, well into (not through)
+# a long fade, never in trailing silence. AUTODJ_PRE_SWITCH_SECONDS is still
+# the lead time before that cue (decode of the next track). Analysis results
+# live in TRACK_CUES_FILE (built offline by tools/analyze_track_cues.py; new
+# tracks missing from it are analyzed in the background). Hand overrides go
+# in TRACK_CUE_OVERRIDES_FILE as {"file name.mp3": cue_seconds}.
+TRACK_CUES_ENABLED = True
+TRACK_CUES_FILE = "track_cues.json"
+TRACK_CUE_OVERRIDES_FILE = "track_cue_overrides.json"
 
 # Once the station announcement voice-over starts, the actual track
 # transition (deck-start MIDI sequence + TrackSearch) fires this many
@@ -1845,6 +1905,10 @@ TUNNEL_RETRY_SECONDS = 10.0
 # window back (i.e. buy the DJ more time before the auto-advance transition
 # arms) -- the mirror image of WEB_AUTODJ_SKIP_SECONDS above.
 WEB_AUTODJ_ADD_SECONDS = 10.0
+
+# Web remote's "AUDITION ENDING" button: jumps the playing track to this many
+# seconds before its transition point.
+WEB_AUTODJ_AUDITION_LEAD_SECONDS = 15.0
 
 # ==========================================
 # WEB REMOTE: MANUAL GAME-MODE TRIGGER + CATEGORY SELECTOR
@@ -2121,6 +2185,11 @@ SHOW_UNATTENDED_FLASH_PERIOD_SECONDS = 0.5
 # one word per panel -- an unmissable last warning right before the
 # unattended-autoplay fallback actually fires.
 SHOW_UNATTENDED_FINAL_WARNING_SECONDS = 10.0
+
+# Auto-start (unattended) show = jukebox until trivia is opted into (see
+# state.jukebox_trivia_enabled): how long the red-button "TRIVIA QUESTION?"
+# YES/NO confirm waits before cancelling itself.
+JUKEBOX_TRIVIA_CONFIRM_TIMEOUT_SECONDS = 10.0
 
 # How long the deck fades out when the host hits "Reset to Setup" on an
 # unattended-autoplay show (web remote only, live-panel banner) -- no
