@@ -560,6 +560,19 @@ def poll_hardware(now):
         state.quiz_skip_wait_requested = True
         return
 
+    # PHYSICAL ARCADE-BUTTON MAP -- one place to spot conflicts when panel
+    # button features are added/removed (operator is actively changing them):
+    #   setup phase : green = "START SHOW NOW?" confirm, blue = gamepad
+    #                 reconnect, (in the confirm) red = yes / other = no
+    #   trivia confirm (auto-start jukebox): green = YES, red/other = NO
+    #   live round / Simon input : all four = answer / pad presses
+    #   graded round waiting     : any = skip the wait
+    #   DJ mode, live, idle      : green = Simon, red = next song (reject),
+    #                              blue = TRIVIA QUESTION? (auto-start jukebox
+    #                              only), yellow = audition the ending
+    # The last group is the ONLY place blue/yellow/red act as features; the
+    # branches above it return first, so none of them fire during gameplay.
+    #
     # Entry (green only, 2026-09-17 -- a single, unambiguous point of
     # entry instead of any of the 4) / next-song (red), from DJ mode, only
     # during a live show and only when nothing else is already taking over
@@ -571,13 +584,19 @@ def poll_hardware(now):
             and not state.westminster_active and not state.win_sequence_active):
         if "green" in pressed_colors:
             enter_simon_hardware()
-        elif "red" in pressed_colors and state.show_unattended_autoplay and not state.jukebox_trivia_enabled:
-            # Auto-start jukebox mode: red asks "TRIVIA QUESTION?" instead of
-            # skipping (next song is still on the web remote / gamepad).
+        elif ("blue" in pressed_colors and state.show_unattended_autoplay
+              and not state.jukebox_trivia_enabled):
+            # Auto-start jukebox mode: blue asks "TRIVIA QUESTION?" (green =
+            # yes, red = no -- see _poll_trivia_confirm). Blue does nothing
+            # in a hosted show.
             state.trivia_confirm_active = True
             state.trivia_confirm_until = now + config.JUKEBOX_TRIVIA_CONFIRM_TIMEOUT_SECONDS
             simon_hardware.set_led("green", True)
             simon_hardware.set_led("red", True)
+        elif "yellow" in pressed_colors:
+            # Instant outro audition: jump to 15s before this song's cue-out.
+            from drivers import auto_dj_engine
+            auto_dj_engine.audition_ending()
         elif "red" in pressed_colors:
             # Lazy import: same import-order-cycle reasoning as the other
             # lazy imports above.

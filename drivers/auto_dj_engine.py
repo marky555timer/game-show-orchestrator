@@ -152,6 +152,25 @@ def _start_timer(track_key, title):
           f"(cue-out; transition sequence arms at -{config.AUTODJ_PRE_SWITCH_SECONDS:.0f}s).")
 
 
+def audition_ending():
+    """Jump the playing track to config.WEB_AUTODJ_AUDITION_LEAD_SECONDS
+    before its transition point (the content-based cue-out) so an ending can
+    be judged by ear without sitting through the song. Seeks the real audio
+    and re-aligns Auto-DJ's timer. Shared by the web remote's AUDITION
+    ENDING button and the physical yellow arcade button. Returns a dict."""
+    if deck_orchestrator.has_pending_move():
+        return {"ok": False, "error": "a transition is already in progress"}
+    target = max(0.0, state.auto_dj_track_duration
+                 - config.AUTODJ_PRE_SWITCH_SECONDS
+                 - config.WEB_AUTODJ_AUDITION_LEAD_SECONDS)
+    deck_name = "deck1" if state.active_deck == 1 else "deck2"
+    if not deck_orchestrator.dj_engine.seek_deck(deck_name, target):
+        return {"ok": False, "error": "could not seek the playing track"}
+    state.auto_dj_track_started_at = time.time() - target
+    print(f"[AUTO-DJ] Audition: jumped to {target:.0f}s (cue-out at {state.auto_dj_track_duration:.0f}s).")
+    return {"ok": True, "seek_to_seconds": round(target, 1)}
+
+
 def toggle_auto_dj():
     """Web remote's Auto-DJ toggle (web/remote_server.py -- the only trigger
     since 2026-08-12, when the physical Btn4 binding was removed for being
