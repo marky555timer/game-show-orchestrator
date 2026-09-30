@@ -35,6 +35,9 @@
   .btn.medley { background: #ffd400; border-color: #ffd400; color: #111; font-weight: 800; letter-spacing: .04em; }
   .btn.medley.on { background: #111; color: #ffd400; border-color: #ffd400; }
   #medley-status { margin-top: 8px; font-size: .85rem; color: #ffe266; line-height: 1.35; }
+  /* Medley mode: the per-song controls are removed until the operator exits */
+  body.medley-on #live-panel, body.medley-on #audition-btn, body.medley-on #jukebox-btn { display: none !important; }
+  body.medley-on #medley-btn { padding: 26px 14px; font-size: 1.25rem; }
   .btn.big { width: 100%; padding: 18px 14px; font-size: 1.1rem; }
   .timer { font-size: 1.6rem; font-variant-numeric: tabular-nums; }
   input[type=range] { width: 100%; }
@@ -720,7 +723,8 @@ async function refreshMedley() {
   const st = document.getElementById('medley-status');
   if (d.active) {
     btn.classList.add('on');
-    btn.textContent = 'MEDLEY RUNNING \u2014 tap to stop';
+    document.body.classList.add('medley-on');
+    btn.textContent = 'EXIT MEDLEY MODE';
     if (d.starting) {
       st.textContent = 'Building the mix... ' + d.total + ' hooks planned';
     } else {
@@ -732,6 +736,7 @@ async function refreshMedley() {
     }
   } else {
     btn.classList.remove('on');
+    document.body.classList.remove('medley-on');
     btn.textContent = 'DANCE MEDLEY';
     st.textContent = (d.eligible != null) ? d.eligible + ' floor-fillers ready \u00b7 hooks of ~15s, beat-matched' : '';
   }

@@ -467,6 +467,16 @@ def _set_now_playing(run, i):
     state.active_deck = n
     state.now_playing_path = seg["path"]
     state.now_playing_duration = seg["duration"]
+    # ensure_prefetch() (which normally sets this and applies the song's saved
+    # light show) is switched off during a medley, so do both here.
+    state.factoid_track_key = seg["key"]
+    try:
+        from drivers import light_prefs_engine
+        light_prefs_engine.apply_prefs_for(seg["key"])
+    except Exception as e:
+        print(f"[MEDLEY] Light prefs for {seg['key']!r} failed: {e}")
+    # the saved look is applied above, but the LIGHT TEMPO follows what is
+    # actually playing (the hook's playback tempo), not the song's saved tempo
     state.dj_tempo_period = 60.0 / seg["tempo"]
     state.tempo_operator_set = True  # keep online BPM lookups from overriding it
     state.deck_change_count += 1

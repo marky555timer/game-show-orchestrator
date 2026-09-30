@@ -345,6 +345,8 @@ def mark_dirty():
     global _dirty_track_key, _dirty_since
     if state.mode != state.MODE_DJ or not state.factoid_track_key:
         return
+    if state.medley_active:
+        return  # the medley owns the lights; never re-save a song's look from its hook
     _dirty_track_key = state.factoid_track_key
     _dirty_since = time.time()
 
