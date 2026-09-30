@@ -48,8 +48,8 @@ def check_new_track(title, artist, confident):
     state.intermission_active clears (drivers/win_sequence_engine.py)."""
     if state.intermission_active:
         return
-    if state.questions_suppressed:
-        return  # jukebox mode (auto-start / Setup box): no questions until opted in
+    if state.questions_suppressed or state.medley_active:
+        return  # jukebox mode (auto-start / Setup box) or a running Dance Medley: no questions
     if not confident or not artist:
         return
 

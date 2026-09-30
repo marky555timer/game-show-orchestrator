@@ -376,6 +376,11 @@ def _begin_move(direction, announced, sweeper_only=False):
     if _pending is not None:
         print("[DECK ORCHESTRATOR] Move already in flight -- ignoring duplicate trigger.")
         return
+    if state.medley_active:
+        # A normal next/back while a Dance Medley runs: the medley's deck is
+        # about to be crossfaded away, so stop feeding it (medley_engine).
+        from drivers import medley_engine
+        medley_engine.notify_external_move()
 
     inactive = 2 if state.active_deck == 1 else 1
 

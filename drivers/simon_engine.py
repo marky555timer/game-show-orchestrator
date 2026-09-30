@@ -492,6 +492,48 @@ def _poll_trivia_confirm(pressed_colors):
         print("[JUKEBOX] Trivia confirm declined -- staying jukebox.")
 
 
+_yellow_down_at = 0.0
+_yellow_long_fired = False
+_yellow_was_down = False
+
+
+def _dj_idle_live():
+    return (state.mode == state.MODE_DJ and state.show_phase == "live"
+            and not state.intermission_active and not state.price_game_active
+            and not state.westminster_active and not state.win_sequence_active)
+
+
+def _poll_yellow_hold(buttons, now):
+    """Yellow (DJ mode, live, idle only): a SHORT press auditions the ending,
+    a LONG press (config.MEDLEY_LONG_PRESS_SECONDS) starts -- or, while one is
+    running, stops -- Dance Medley mode. Short-press action fires on release
+    so it can be told apart from a hold."""
+    global _yellow_down_at, _yellow_long_fired, _yellow_was_down
+    down = bool(buttons.get("yellow"))
+    if down and not _yellow_was_down:
+        _yellow_down_at = now if (_dj_idle_live() and not state.trivia_confirm_active) else 0.0
+        _yellow_long_fired = False
+    elif down and _yellow_down_at and not _yellow_long_fired:
+        if now - _yellow_down_at >= config.MEDLEY_LONG_PRESS_SECONDS:
+            _yellow_long_fired = True
+            from drivers import medley_engine
+            if medley_engine.is_active():
+                medley_engine.stop("yellow long-press")
+            else:
+                res = medley_engine.start()
+                if not res.get("ok"):
+                    print(f"[MEDLEY] Not started: {res.get('error')}")
+                    state.set_message("NO MEDLEY", 1.5)
+    elif not down and _yellow_was_down:
+        if _yellow_down_at and not _yellow_long_fired and _dj_idle_live():
+            from drivers import medley_engine
+            if not medley_engine.is_active():
+                from drivers import auto_dj_engine
+                auto_dj_engine.audition_ending()
+        _yellow_down_at = 0.0
+    _yellow_was_down = down
+
+
 def poll_hardware(now):
     """Per-frame poll, called unconditionally from inputs/gamepad.py::
     process_events() regardless of mode -- the physical arcade buttons work
@@ -514,6 +556,7 @@ def poll_hardware(now):
     buttons = simon_hardware.read_buttons()
     if not buttons:
         return
+    _poll_yellow_hold(buttons, now)
     pressed_colors = [c for c, is_down in buttons.items() if is_down and not _prev_hw_buttons.get(c)]
     released_colors = [c for c, is_down in buttons.items() if not is_down and _prev_hw_buttons.get(c)]
     _prev_hw_buttons = buttons
@@ -580,8 +623,10 @@ def poll_hardware(now):
     #   live round / Simon input : all four = answer / pad presses
     #   graded round waiting     : any = skip the wait
     #   DJ mode, live, idle      : green = Simon, red = next song (reject),
-    #                              blue = TRIVIA QUESTION? (auto-start jukebox
-    #                              only), yellow = audition the ending
+    #                              blue = TRIVIA QUESTION? (jukebox mode only),
+    #                              yellow SHORT = audition the ending,
+    #                              yellow LONG (hold) = start/stop DANCE MEDLEY,
+    #                              red during a medley = leave it (reject)
     # The last group is the ONLY place blue/yellow/red act as features; the
     # branches above it return first, so none of them fire during gameplay.
     #
@@ -606,11 +651,12 @@ def poll_hardware(now):
             simon_hardware.set_led("green", True)
             simon_hardware.set_led("red", True)
         elif "yellow" in pressed_colors:
-            # Instant outro audition: jump to 15s before this song's cue-out.
-            from drivers import auto_dj_engine
-            auto_dj_engine.audition_ending()
+            pass  # handled by _poll_yellow_hold(): short = audition, long = medley
         elif "red" in pressed_colors:
             # Lazy import: same import-order-cycle reasoning as the other
             # lazy imports above.
-            from drivers import deck_orchestrator
-            deck_orchestrator.trigger_track_move("next")
+            from drivers import deck_orchestrator, medley_engine
+            if medley_engine.is_active():
+                medley_engine.stop("red button")  # reject: leave the medley for normal play
+            else:
+                deck_orchestrator.trigger_track_move("next")

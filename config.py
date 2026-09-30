@@ -2195,6 +2195,39 @@ SHOW_UNATTENDED_FINAL_WARNING_SECONDS = 10.0
 # YES/NO confirm waits before cancelling itself.
 JUKEBOX_TRIVIA_CONFIRM_TIMEOUT_SECONDS = 10.0
 
+# ==========================================
+# DANCE MEDLEY MODE (drivers/medley_engine.py, 2026-09-30)
+# ==========================================
+# A "medley machine": chains ~15s hooks (chorus/drop) of floor-filler tracks,
+# beat-matched and crossfaded, then hands back to normal Auto-DJ once the
+# mixable tracks are used up. Started by a LONG press of the yellow arcade
+# button or the yellow "DANCE MEDLEY" button at the top of the web remote.
+MEDLEY_ANALYSIS_FILE = "medley_analysis.json"      # built by tools/analyze_medley.py
+MEDLEY_CANDIDATES_FILE = "medley_candidates.json"  # optional {"include": [...], "exclude": [...]} (file names or track keys)
+MEDLEY_MIN_GRID_CONF = 15.0     # beat-grid confidence needed (live/organic tracks score low)
+MEDLEY_MIN_ENERGY = 4           # metadata energy_rank (1-5 floor-filler scale) needed
+MEDLEY_EXCLUDE_GENRES = ("Country", "Children's")  # never medley material, whatever their energy tag
+MEDLEY_TEMPO_MIN = 96.0         # playable tempo window (double/half time counted)
+MEDLEY_TEMPO_MAX = 140.0
+MEDLEY_MAX_STRETCH = 0.04       # max speed change (pitch shift) applied to any track
+MEDLEY_MAX_TEMPO_DRIFT = 0.015  # max tempo change between consecutive hooks
+MEDLEY_MAX_JUMP = 0.06          # native tempo must be within this of the running tempo
+MEDLEY_MIN_TRACKS = 4           # fewer mixable tracks than this = no medley
+MEDLEY_MAX_TRACKS = 60
+MEDLEY_MAX_SECONDS = 600.0      # ~10 minutes
+MEDLEY_HOOK_TARGET_SECONDS = 15.0  # aim for this hook length (even bar counts; never over the analyzed window)
+MEDLEY_XFADE_BEATS = 4
+MEDLEY_ENTRY_FADE_SECONDS = 1.5   # fade from the normal track into the first hook
+MEDLEY_LAST_TAIL_SECONDS = 4.0    # the last hook rings out this long
+MEDLEY_HANDOFF_LEAD_SECONDS = 6.0 # start the normal-track crossfade this early (its decode takes a moment)
+MEDLEY_TARGET_RMS = 0.27          # per-hook level matching target (linear RMS, ~ -11 dBFS)
+MEDLEY_LONG_PRESS_SECONDS = 1.0   # yellow button hold to start/stop a medley
+# Announcements are always off in a medley. Sweepers: "off" | "medley" (only
+# audio/MedleySweepers) | "all" (also the regular audio/sweepers folder).
+MEDLEY_SWEEPER_DIR = resource_path("audio", "MedleySweepers")
+MEDLEY_SWEEPER_MODE_DEFAULT = "medley"
+MEDLEY_SWEEPER_EVERY = 3          # a sweeper every Nth transition
+
 # Manual recovery button (drivers/recovery_button.py): a momentary switch
 # between GPIO4 (physical pin 7) and GND (pin 6 or 9), internal pull-up,
 # active LOW -- same wiring shape as the Simon buttons. Pressing it resets the

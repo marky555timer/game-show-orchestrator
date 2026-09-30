@@ -1121,6 +1121,35 @@ if app is not None:
             "jukebox": state.questions_suppressed,
         }
 
+    @app.get("/api/medley/status")
+    def medley_status():
+        from drivers import medley_engine
+        st = medley_engine.status()
+        st["live"] = state.show_phase == "live"
+        if not st["active"]:
+            try:
+                st["eligible"] = len(medley_engine.eligible_candidates())
+            except Exception:
+                st["eligible"] = 0
+        return st
+
+    @app.post("/api/medley/start")
+    def medley_start():
+        from drivers import medley_engine
+        return medley_engine.start()
+
+    @app.post("/api/medley/stop")
+    def medley_stop():
+        from drivers import medley_engine
+        return {"ok": medley_engine.stop("web remote")}
+
+    @app.post("/api/medley/sweepers")
+    def medley_sweepers():
+        """Cycle the medley sweeper class: off -> medley -> all -> off."""
+        order = ["off", "medley", "all"]
+        state.medley_sweeper_mode = order[(order.index(state.medley_sweeper_mode) + 1) % 3]
+        return {"ok": True, "mode": state.medley_sweeper_mode}
+
     @app.post("/api/jukebox/toggle")
     def jukebox_toggle():
         """Live show: flips between jukebox (no questions) and trivia-enabled

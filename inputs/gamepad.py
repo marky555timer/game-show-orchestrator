@@ -38,6 +38,7 @@ from drivers import space_invaders_engine
 from drivers import simon_engine
 from drivers import simon_hardware
 from drivers import recovery_button
+from drivers import medley_engine
 from drivers import westminster_engine
 from drivers import idle_cycle_engine
 from drivers import live_round_engine
@@ -1428,7 +1429,8 @@ def process_events():
     # TRACK_QUESTIONS_PER_TRACK questions.
     title, artist = _current_dj_track()
     confident = state.deck1_confident if state.active_deck == 1 else state.deck2_confident
-    ensure_prefetch(title, artist, confident)
+    if not state.medley_active:  # no per-track AI question prefetch while a medley runs
+        ensure_prefetch(title, artist, confident)
     mystery_band_engine.check_new_track(title, artist, confident)
     hot_track_engine.update(time.time())
     recovery_button.poll(time.time())
@@ -1438,6 +1440,7 @@ def process_events():
     price_game_engine.update(time.time())
     mystery_band_engine.update(time.time())
     auto_dj_engine.update(time.time())
+    medley_engine.update(time.time())
     westminster_engine.update(time.time())
     idle_cycle_engine.update(time.time())
     live_round_engine.update(time.time())

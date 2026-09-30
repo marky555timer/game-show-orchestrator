@@ -264,6 +264,8 @@ def _fire_announced_transition(track_key):
 
 
 def update(now):
+    if state.medley_active:
+        return  # Dance Medley owns transitions until it hands back (drivers/medley_engine.py)
     track_key = state.factoid_track_key  # "" until a track is confidently identified
     if not track_key:
         return

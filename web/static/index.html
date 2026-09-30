@@ -31,6 +31,10 @@
   button { cursor: pointer; }
   .btn { padding: 10px 14px; border-radius: 8px; border: 1px solid #333; background: #202024; color: #f2f2f2; font-size: .9rem; }
   .btn.primary { background: #ff3b30; border-color: #ff3b30; color: #fff; font-weight: 700; }
+  /* Dance Medley: the one thematic-yellow exception (mirrors the yellow arcade button) */
+  .btn.medley { background: #ffd400; border-color: #ffd400; color: #111; font-weight: 800; letter-spacing: .04em; }
+  .btn.medley.on { background: #111; color: #ffd400; border-color: #ffd400; }
+  #medley-status { margin-top: 8px; font-size: .85rem; color: #ffe266; line-height: 1.35; }
   .btn.big { width: 100%; padding: 18px 14px; font-size: 1.1rem; }
   .timer { font-size: 1.6rem; font-variant-numeric: tabular-nums; }
   input[type=range] { width: 100%; }
@@ -205,6 +209,12 @@
     </div>
   </div>
   <h1>Game Show Orchestrator &mdash; Remote</h1>
+
+  <section id="medley-bar" style="display:none">
+    <button class="btn medley big" id="medley-btn" onclick="toggleMedley()">DANCE MEDLEY</button>
+    <div id="medley-status"></div>
+    <button class="btn small" id="medley-sweep-btn" style="margin-top:8px" onclick="cycleMedleySweepers()">Medley sweepers: MEDLEY</button>
+  </section>
 
   <section>
     <h2>Now Playing</h2>
@@ -702,6 +712,48 @@ async function refreshNowPlaying() {
   document.getElementById('np-tags').innerHTML = d.title ? _tagSummaryHtml(d.metadata) : '';
 }
 
+async function refreshMedley() {
+  const d = await api('/api/medley/status');
+  if (!d) return;
+  document.getElementById('medley-bar').style.display = d.live ? '' : 'none';
+  const btn = document.getElementById('medley-btn');
+  const st = document.getElementById('medley-status');
+  if (d.active) {
+    btn.classList.add('on');
+    btn.textContent = 'MEDLEY RUNNING \u2014 tap to stop';
+    if (d.starting) {
+      st.textContent = 'Building the mix... ' + d.total + ' hooks planned';
+    } else {
+      let t = 'Track ' + d.index + ' of ' + d.total + ' \u00b7 ' + d.remaining + ' to go';
+      if (d.current) t += '\nNow: ' + d.current.artist + ' \u2014 ' + d.current.title + ' (' + d.current.tempo + ' BPM)';
+      if (d.next) t += '\nNext: ' + d.next.artist + ' \u2014 ' + d.next.title + (d.next_in_seconds != null ? ' in ' + Math.ceil(d.next_in_seconds) + 's' : '');
+      else t += '\nLast hook \u2014 then normal play resumes';
+      st.innerHTML = t.split('\n').map((x) => x.replace(/&/g, '&amp;').replace(/</g, '&lt;')).join('<br>');
+    }
+  } else {
+    btn.classList.remove('on');
+    btn.textContent = 'DANCE MEDLEY';
+    st.textContent = (d.eligible != null) ? d.eligible + ' floor-fillers ready \u00b7 hooks of ~15s, beat-matched' : '';
+  }
+  document.getElementById('medley-sweep-btn').textContent = 'Medley sweepers: ' + String(d.sweeper_mode || 'medley').toUpperCase();
+}
+
+async function toggleMedley() {
+  const d = await api('/api/medley/status');
+  if (d && d.active) {
+    await api('/api/medley/stop', {method: 'POST'});
+  } else {
+    const r = await api('/api/medley/start', {method: 'POST'});
+    if (r && !r.ok) showToast(r.error || 'Could not start the medley.');
+  }
+  refreshMedley();
+}
+
+async function cycleMedleySweepers() {
+  await api('/api/medley/sweepers', {method: 'POST'});
+  refreshMedley();
+}
+
 async function refreshAutoDj() {
   const d = await api('/api/autodj/status');
   if (!d) return;
@@ -712,6 +764,7 @@ async function refreshAutoDj() {
     (d.enabled ? '' : '(OFF) ') + mm + ':' + ss;
   const jb = document.getElementById('jukebox-btn');
   jb.style.display = d.live ? '' : 'none';
+  refreshMedley();
   jb.textContent = d.jukebox ? 'JUKEBOX: ON (no questions) — tap for trivia' : 'TRIVIA: ON — tap for jukebox';
 }
 
