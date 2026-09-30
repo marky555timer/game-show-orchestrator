@@ -158,6 +158,23 @@ def _pick_bars(max_bars, tempo):
     return best[1] if best else int(max_bars)
 
 
+def _make_seg(c, native, tempo, sb, eb):
+    """One plan segment from candidate fields `c` at playback `tempo`, with the
+    per-song start/end beat adjustments (`sb`, `eb`; positive = later)."""
+    beat_native = 60.0 / native            # one felt beat, in the file's own seconds
+    hook_start = max(0.0, c["hook"]["start"] + sb * beat_native)
+    beats = _pick_bars(c["hook"]["bars"], tempo) * 4 + config.MEDLEY_EXTRA_BARS * 4 + eb - sb
+    room = c["duration"] - hook_start - 2.0  # keep it inside the file
+    step = 1 if (sb or eb) else 4            # tuned songs trim beat by beat
+    while beats > config.MEDLEY_MIN_HOOK_BEATS and (
+            beats * 60.0 / tempo > config.MEDLEY_MAX_HOOK_SECONDS or beats * beat_native > room):
+        beats -= step
+    beats = max(beats, config.MEDLEY_MIN_HOOK_BEATS)
+    return {**c, "hook_start": hook_start, "bars": beats // 4, "beats": beats, "native": native,
+            "tempo": tempo, "rate": tempo / native, "length": beats * 60.0 / tempo,
+            "start_beats": sb, "end_beats": eb}
+
+
 def build_plan(start_bpm=None, seed=None, first_name=None):
     """Greedy tempo/key chain over the eligible pool. Returns a list of
     segment dicts (see render_chunk) -- empty if there aren't enough."""
@@ -180,23 +197,11 @@ def build_plan(start_bpm=None, seed=None, first_name=None):
     def add(c, native, tempo):
         nonlocal total
         ov = _load(_hook_ov, config.MEDLEY_HOOK_OVERRIDES_FILE).get(c["key"], {})
-        sb, eb = int(ov.get("start_beats", 0)), int(ov.get("end_beats", 0))
-        beat_native = 60.0 / native            # one felt beat, in the file's own seconds
-        hook_start = max(0.0, c["hook"]["start"] + sb * beat_native)
-        beats = _pick_bars(c["hook"]["bars"], tempo) * 4 + config.MEDLEY_EXTRA_BARS * 4 + eb - sb
-        room = c["duration"] - hook_start - 2.0  # keep it inside the file
-        step = 1 if (sb or eb) else 4            # tuned songs trim beat by beat
-        while beats > config.MEDLEY_MIN_HOOK_BEATS and (
-                beats * 60.0 / tempo > config.MEDLEY_MAX_HOOK_SECONDS or beats * beat_native > room):
-            beats -= step
-        beats = max(beats, config.MEDLEY_MIN_HOOK_BEATS)
-        length = beats * 60.0 / tempo
-        plan.append({**c, "hook_start": hook_start, "bars": beats // 4, "beats": beats, "native": native,
-                     "tempo": tempo, "rate": tempo / native, "length": length,
-                     "start_beats": sb, "end_beats": eb})
+        seg = _make_seg(c, native, tempo, int(ov.get("start_beats", 0)), int(ov.get("end_beats", 0)))
+        plan.append(seg)
         used.add(c["name"])
         used_keys.add(c["key"])
-        total += length
+        total += seg["length"]
 
     n0 = min(_tempo_options(first["bpm"]), key=lambda n: abs(n - (start_bpm or 118.0)))
     add(first, n0, n0)
@@ -312,21 +317,24 @@ def _xf_seconds(tempo):
     return config.MEDLEY_XFADE_BEATS * 60.0 / tempo
 
 
-def render_chunk(plan, i, carry):
+def render_chunk(plan, i, carry, first=0, last_limit=None):
     """Render chunk i (float32 stereo, gapless with chunk i+1).
     `carry` = the previous segment's faded-out tail array (or None).
+    `first` = index of the run's first chunk (gets the short fade-in).
+    `last_limit` = for the transition editor: stop the final chunk this many
+    seconds after its hook begins instead of playing it out.
     Returns (chunk, next_carry)."""
     seg = plan[i]
     last = i == len(plan) - 1
-    xf_in = 0.5 if i == 0 else _xf_seconds(seg["tempo"])
+    xf_in = 0.5 if i == first else _xf_seconds(seg["tempo"])
     xf_out = 0.0 if last else _xf_seconds(plan[i + 1]["tempo"])
-    tail_extra = config.MEDLEY_LAST_TAIL_SECONDS if last else 0.0
+    tail_extra = config.MEDLEY_LAST_TAIL_SECONDS if last and not last_limit else 0.0
     y, pre = _seg_window(seg, xf_in, tail_extra)
     body_end = pre + int(round(seg["length"] * FS))
     # fade-in at the very start of the medley's first chunk (the deck
     # crossfade handles the rest); later chunks get their head from _xfade
     chunk = y[:body_end - int(round(xf_out * FS))].copy() if not last else y.copy()
-    if i == 0:
+    if i == first:
         n = min(len(chunk), int(0.4 * FS))
         chunk[:n] *= np.linspace(0.0, 1.0, n, dtype=np.float32)[:, None]
     if carry is not None:
@@ -335,6 +343,10 @@ def render_chunk(plan, i, carry):
     next_carry = None
     if not last:
         next_carry = y[body_end - int(round(xf_out * FS)):body_end].copy()
+    elif last_limit:
+        chunk = chunk[:pre + int(last_limit * FS)]
+        n = min(len(chunk), int(0.6 * FS))
+        chunk[-n:] *= np.linspace(1.0, 0.0, n, dtype=np.float32)[:, None]
     else:
         n = min(len(chunk), int(config.MEDLEY_LAST_TAIL_SECONDS * FS))
         chunk[-n:] *= np.linspace(1.0, 0.0, n, dtype=np.float32)[:, None]
@@ -389,14 +401,15 @@ def is_active():
 def _render_worker(run):
     """Keeps a couple of chunks rendered ahead of playback."""
     plan = run["plan"]
+    first = run["first"]
     try:
         carry = None
-        for i in range(len(plan)):
+        for i in range(first, len(plan)):
             while not run["stop"] and i - run["played"] > 2:
                 time.sleep(0.2)
             if run["stop"]:
                 return
-            chunk, carry = render_chunk(plan, i, carry)
+            chunk, carry = render_chunk(plan, i, carry, first=first)
             with _lock:
                 run["chunks"][i] = to_int16(chunk).tobytes()
     except Exception as e:
@@ -422,7 +435,7 @@ def start():
     plan = build_plan(start_bpm)
     if not plan:
         return {"ok": False, "error": "not enough mixable floor-filler tracks"}
-    run = {"plan": plan, "chunks": {}, "sounds": {}, "played": 0, "queued": -1, "stop": False,
+    run = {"plan": plan, "first": 0, "chunks": {}, "sounds": {}, "played": 0, "queued": -1, "stop": False,
            "started": False, "began_at": 0.0, "chunk_started_at": 0.0, "sweeps": 0,
            "deck": 2 if state.active_deck == 1 else 1, "from_deck": state.active_deck,
            "handoff_sent": False}
@@ -527,24 +540,33 @@ def update(now):
         return
     ch = dj._channels[_deck_name(run["deck"])]
 
+    if run.get("edit"):
+        if run["edit"]["playing"] and not ch.get_busy():
+            run["edit"]["playing"] = False  # the audition reached its stop point
+        return
+
     if not run["started"]:
+        f0 = run["first"]
         with _lock:
-            ready = 0 in run["chunks"] and (1 in run["chunks"] or len(plan) == 1)
+            ready = f0 in run["chunks"] and (f0 + 1 in run["chunks"] or f0 == len(plan) - 1)
         if not ready:
             return
         with _lock:
-            raw0 = run["chunks"].pop(0)
+            raw0 = run["chunks"].pop(f0)
         snd0 = pygame.mixer.Sound(buffer=raw0)
-        deck_from = _deck_name(run["from_deck"])
-        dj.play_deck(_deck_name(run["deck"]), snd0, volume=0.0)
-        dj.crossfade_decks(deck_from, _deck_name(run["deck"]), config.MEDLEY_ENTRY_FADE_SECONDS)
+        if run["from_deck"] is None:  # resuming after an edit: same deck, no crossfade
+            dj.play_deck(_deck_name(run["deck"]), snd0, volume=1.0)
+        else:
+            deck_from = _deck_name(run["from_deck"])
+            dj.play_deck(_deck_name(run["deck"]), snd0, volume=0.0)
+            dj.crossfade_decks(deck_from, _deck_name(run["deck"]), config.MEDLEY_ENTRY_FADE_SECONDS)
         run["started"] = True
         run["began_at"] = run["chunk_started_at"] = now
-        run["queued"] = 0
-        run["played"] = 0
+        run["queued"] = f0
+        run["played"] = f0
         run["cur_len"] = len(raw0) / 4 / FS
-        _set_now_playing(run, 0)
-        print(f"[MEDLEY] Started: 1/{len(plan)} {plan[0]['artist']} - {plan[0]['title']}")
+        _set_now_playing(run, f0)
+        print(f"[MEDLEY] Started: {f0 + 1}/{len(plan)} {plan[f0]['artist']} - {plan[f0]['title']}")
         return
 
     # queue the next rendered chunk once the queue slot is free
@@ -574,38 +596,123 @@ def update(now):
         _finish(run, "playback ended", handoff=True)
 
 
-def adjust_current(field, delta=0):
-    """Tune the hook that is playing NOW (applies the next time that song is
-    planned into a medley). field: "start" | "end" (beats to shift that edge;
-    positive = later) | "reset". Persists to config.MEDLEY_HOOK_OVERRIDES_FILE."""
+# --------------------------------------------------------------------------
+# transition editor
+#   EDIT TRANSITION pauses the medley, rewinds the hook that just played (A) to
+#   its start and plays it through its exit into the next hook (B), then stops.
+#   Start/End buttons change A's edges (pending, not yet saved) and replay;
+#   PLAY FROM TOP replays unchanged; RESUME saves A's edges and continues the
+#   medley from B.
+# --------------------------------------------------------------------------
+def _edit_segments(run):
+    ed = run["edit"]
+    base = run["plan"][ed["a"]]
+    a_seg = _make_seg(base, base["native"], base["tempo"], ed["sb"], ed["eb"])
+    return a_seg, run["plan"][ed["b"]]
+
+
+def _edit_play(run, from_top):
+    """Render + play the A -> B audition; from_top=False starts a few seconds
+    before the exit so end-point tweaks are quick to judge."""
+    import pygame
+    from drivers import deck_orchestrator
+    a_seg, b_seg = _edit_segments(run)
+    c0, carry = render_chunk([a_seg, b_seg], 0, None, first=0)
+    c1, _ = render_chunk([a_seg, b_seg], 1, carry, first=0, last_limit=config.MEDLEY_EDIT_POST_SECONDS)
+    clip = np.vstack([c0, c1])
+    if not from_top:
+        clip = clip[max(0, len(c0) - int(config.MEDLEY_EDIT_LEAD_SECONDS * FS)):]
+    snd = pygame.mixer.Sound(buffer=to_int16(clip).tobytes())
+    deck_orchestrator.dj_engine._channels[_deck_name(run["deck"])].stop()  # never play over a queued chunk
+    deck_orchestrator.dj_engine.play_deck(_deck_name(run["deck"]), snd, volume=1.0)
+    run["edit"]["playing"] = True
+    run["edit"]["a_beats"] = a_seg["beats"]
+
+
+def edit_begin():
     run = _run
-    if run is None or not run["started"]:
-        return None
-    seg = run["plan"][run["played"]]
-    path = os.path.join(_BASE, config.MEDLEY_HOOK_OVERRIDES_FILE)
-    with _lock:
-        data = dict(_load(_hook_ov, config.MEDLEY_HOOK_OVERRIDES_FILE))
-        entry = dict(data.get(seg["key"], {}))
-        if field == "reset":
-            entry = {}
-        elif field in ("start", "end"):
-            name = field + "_beats"
-            entry[name] = max(-64, min(64, int(entry.get(name, 0)) + int(delta)))
-        else:
-            return None
-        entry = {k: v for k, v in entry.items() if v}
-        if entry:
-            data[seg["key"]] = entry
-        else:
-            data.pop(seg["key"], None)
-        tmp = path + ".tmp"
-        with open(tmp, "w", encoding="utf-8") as f:
-            json.dump(data, f, indent=1, sort_keys=True)
-        os.replace(tmp, path)
-        _hook_ov["data"], _hook_ov["mtime"] = data, os.path.getmtime(path)
-    print(f"[MEDLEY] Tuned {seg['artist']} - {seg['title']}: {entry or 'reset'}")
-    return {"title": seg["title"], "artist": seg["artist"],
-            "start_beats": entry.get("start_beats", 0), "end_beats": entry.get("end_beats", 0)}
+    if run is None or not run["started"] or run.get("edit"):
+        return {"ok": False, "error": "no medley hook is playing"}
+    plan = run["plan"]
+    i = run["played"]
+    elapsed = time.time() - run["chunk_started_at"]
+    if i >= 1 and (elapsed < 0.5 * run.get("cur_len", 15.0) or i + 1 >= len(plan)):
+        a = i - 1          # the transition just heard: previous hook -> current
+    elif i + 1 < len(plan):
+        a = i              # late in a hook: the transition coming up
+    else:
+        return {"ok": False, "error": "nothing to edit yet"}
+    run["stop"] = True      # stop the look-ahead renderer
+    run["chunks"].clear()
+    seg = plan[a]
+    run["edit"] = {"a": a, "b": a + 1, "sb": int(seg.get("start_beats", 0)), "eb": int(seg.get("end_beats", 0)),
+                   "playing": False}
+    try:
+        _edit_play(run, from_top=True)
+    except Exception as e:
+        print(f"[MEDLEY] Edit preview failed: {e}")
+        run["edit"] = None
+        return {"ok": False, "error": "could not render the preview"}
+    print(f"[MEDLEY] Edit transition: {seg['artist']} - {seg['title']} -> {plan[a + 1]['title']}")
+    return {"ok": True}
+
+
+def edit_adjust(field, delta):
+    run = _run
+    if run is None or not run.get("edit"):
+        return {"ok": False, "error": "not editing"}
+    ed = run["edit"]
+    key = "sb" if field == "start" else "eb" if field == "end" else None
+    if key is None:
+        return {"ok": False, "error": "bad field"}
+    ed[key] = max(-64, min(64, ed[key] + int(delta)))
+    _edit_play(run, from_top=(field == "start"))
+    return {"ok": True}
+
+
+def edit_replay():
+    run = _run
+    if run is None or not run.get("edit"):
+        return {"ok": False, "error": "not editing"}
+    _edit_play(run, from_top=True)
+    return {"ok": True}
+
+
+def edit_resume(save=True):
+    """Leave the editor. save=True persists hook A's start/end beats; the
+    medley then continues from hook B on the same deck."""
+    global _run
+    run = _run
+    if run is None or not run.get("edit"):
+        return {"ok": False, "error": "not editing"}
+    ed = run["edit"]
+    plan = run["plan"]
+    a_seg = plan[ed["a"]]
+    if save:
+        path = os.path.join(_BASE, config.MEDLEY_HOOK_OVERRIDES_FILE)
+        with _lock:
+            data = dict(_load(_hook_ov, config.MEDLEY_HOOK_OVERRIDES_FILE))
+            entry = {k: v for k, v in (("start_beats", ed["sb"]), ("end_beats", ed["eb"])) if v}
+            if entry:
+                data[a_seg["key"]] = entry
+            else:
+                data.pop(a_seg["key"], None)
+            tmp = path + ".tmp"
+            with open(tmp, "w", encoding="utf-8") as f:
+                json.dump(data, f, indent=1, sort_keys=True)
+            os.replace(tmp, path)
+            _hook_ov["data"], _hook_ov["mtime"] = data, os.path.getmtime(path)
+        print(f"[MEDLEY] Saved transition for {a_seg['artist']} - {a_seg['title']}: start {ed['sb']:+d}, end {ed['eb']:+d} beats")
+    # stop the audition and restart the medley flow from hook B
+    from drivers import deck_orchestrator
+    deck_orchestrator.dj_engine._channels[_deck_name(run["deck"])].stop()
+    run["stop"] = True
+    new = {"plan": plan, "first": ed["b"], "chunks": {}, "sounds": {}, "played": ed["b"], "queued": -1,
+           "stop": False, "started": False, "began_at": 0.0, "chunk_started_at": 0.0, "sweeps": run["sweeps"],
+           "deck": run["deck"], "from_deck": None, "handoff_sent": False}
+    _run = new
+    threading.Thread(target=_render_worker, args=(new,), daemon=True, name="medley-render").start()
+    return {"ok": True}
 
 
 def status():
@@ -615,16 +722,21 @@ def status():
         return st
     plan = run["plan"]
     i = run["played"] if run["started"] else -1
-    remaining = len(plan) - (i + 1) if run["started"] else len(plan)
+    remaining = len(plan) - (i + 1) if run["started"] else len(plan) - run["first"]
     cur = plan[i] if i >= 0 else None
     nxt = plan[i + 1] if i + 1 < len(plan) else None
     st.update({
         "starting": not run["started"],
         "total": len(plan), "index": i + 1, "remaining": remaining,
-        "current": {"title": cur["title"], "artist": cur["artist"], "tempo": round(cur["tempo"], 1),
-                    "beats": cur.get("beats"), "start_beats": cur.get("start_beats", 0),
-                    "end_beats": cur.get("end_beats", 0)} if cur else None,
+        "current": {"title": cur["title"], "artist": cur["artist"], "tempo": round(cur["tempo"], 1)} if cur else None,
         "next": {"title": nxt["title"], "artist": nxt["artist"], "tempo": round(nxt["tempo"], 1)} if nxt else None,
         "next_in_seconds": max(0.0, run.get("cur_len", 0) - (time.time() - run["chunk_started_at"])) if run["started"] else None,
     })
+    ed = run.get("edit")
+    if ed:
+        a_, b_ = plan[ed["a"]], plan[ed["b"]]
+        st["edit"] = {"a": {"title": a_["title"], "artist": a_["artist"]},
+                      "b": {"title": b_["title"], "artist": b_["artist"]},
+                      "start_beats": ed["sb"], "end_beats": ed["eb"], "playing": ed["playing"],
+                      "beats": ed.get("a_beats")}
     return st

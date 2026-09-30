@@ -337,6 +337,11 @@ class DJEngine:
     # ------------------------------------------------------------
     def play_deck(self, deck_name, sound, volume=1.0):
         channel = self._channels[deck_name]
+        if channel.get_queue() is not None:
+            # pygame segfaults if Channel.play() replaces a sound that has a
+            # chunk queued behind it (Dance Medley queues its chunks) -- stop
+            # first, which also clears the queue. Verified 2026-09-30.
+            channel.stop()
         if deck_name in self._logical_volume:
             self._logical_volume[deck_name] = volume
         channel.set_volume(volume * self._scale_for(deck_name))

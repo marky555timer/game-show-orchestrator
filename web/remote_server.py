@@ -1143,16 +1143,32 @@ if app is not None:
         from drivers import medley_engine
         return {"ok": medley_engine.stop("web remote")}
 
-    class MedleyAdjust(BaseModel):
-        field: str          # "start" | "end" | "reset"
+    class MedleyEditAdjust(BaseModel):
+        field: str          # "start" | "end"
         delta: int = 0      # beats, positive = later
 
-    @app.post("/api/medley/adjust")
-    def medley_adjust(body: MedleyAdjust):
-        """Tune the hook playing now (beats, per edge); saved per song."""
+    class MedleyEditResume(BaseModel):
+        save: bool = True
+
+    @app.post("/api/medley/edit/begin")
+    def medley_edit_begin():
         from drivers import medley_engine
-        r = medley_engine.adjust_current(body.field, body.delta)
-        return {"ok": r is not None, **(r or {})}
+        return medley_engine.edit_begin()
+
+    @app.post("/api/medley/edit/adjust")
+    def medley_edit_adjust(body: MedleyEditAdjust):
+        from drivers import medley_engine
+        return medley_engine.edit_adjust(body.field, body.delta)
+
+    @app.post("/api/medley/edit/replay")
+    def medley_edit_replay():
+        from drivers import medley_engine
+        return medley_engine.edit_replay()
+
+    @app.post("/api/medley/edit/resume")
+    def medley_edit_resume(body: MedleyEditResume):
+        from drivers import medley_engine
+        return medley_engine.edit_resume(body.save)
 
     @app.post("/api/medley/sweepers")
     def medley_sweepers():
