@@ -174,7 +174,12 @@ def build_plan(start_bpm=None, seed=None):
 
     def add(c, native, tempo):
         nonlocal total
-        bars = _pick_bars(c["hook"]["bars"], tempo)
+        bars = _pick_bars(c["hook"]["bars"], tempo) + config.MEDLEY_EXTRA_BARS
+        room = c["duration"] - c["hook"]["start"] - 2.0  # keep it inside the file
+        native_bar = 4 * 60.0 / native
+        while bars > 4 and (bars * 4 * 60.0 / tempo > config.MEDLEY_MAX_HOOK_SECONDS
+                            or bars * native_bar > room):
+            bars -= 1
         length = bars * 4 * 60.0 / tempo
         plan.append({**c, "hook_start": c["hook"]["start"], "bars": bars, "native": native,
                      "tempo": tempo, "rate": tempo / native, "length": length})

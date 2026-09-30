@@ -2216,6 +2216,8 @@ MEDLEY_MIN_TRACKS = 4           # fewer mixable tracks than this = no medley
 MEDLEY_MAX_TRACKS = 60
 MEDLEY_MAX_SECONDS = 600.0      # ~10 minutes
 MEDLEY_HOOK_TARGET_SECONDS = 15.0  # aim for this hook length (even bar counts; never over the analyzed window)
+MEDLEY_EXTRA_BARS = 4             # bars added to every hook so the exit isn't early (operator, 2026-09-30)
+MEDLEY_MAX_HOOK_SECONDS = 29.0    # hard ceiling on any hook, extra bars included
 MEDLEY_XFADE_BEATS = 4
 MEDLEY_ENTRY_FADE_SECONDS = 1.5   # fade from the normal track into the first hook
 MEDLEY_LAST_TAIL_SECONDS = 4.0    # the last hook rings out this long
