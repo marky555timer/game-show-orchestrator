@@ -766,6 +766,7 @@ async function refreshMedley() {
       if (d.current) t += '\nNow: ' + d.current.artist + ' \u2014 ' + d.current.title + ' (' + d.current.tempo + ' BPM)';
       if (d.next) t += '\nNext: ' + d.next.artist + ' \u2014 ' + d.next.title + (d.next_in_seconds != null ? ' in ' + Math.ceil(d.next_in_seconds) + 's' : '');
       else t += '\nLast hook \u2014 then normal play resumes';
+      if (d.edit) t = 'Medley paused \u2014 editing a transition';
       st.innerHTML = t.split('\n').map((x) => x.replace(/&/g, '&amp;').replace(/</g, '&lt;')).join('<br>');
     }
   } else {
