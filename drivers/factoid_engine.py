@@ -479,6 +479,20 @@ def pull_by_category(key, category_key):
     return True
 
 
+def has_next_queued_question():
+    """Non-mutating twin of advance_to_next_queued_question()'s "is there
+    anything to advance to?" check -- lets the post-grade hold know whether
+    this is the LAST question of the round before it's actually popped."""
+    if state.factoid_category == "price_game":
+        return False  # Price Game is a one-off, never a segue into the queue
+    queue = state.track_question_queue
+    if not queue:
+        return False
+    if state.quiz_players:
+        return True
+    return any(q.get("category") not in config.PANEL_SOLO_EXCLUDED_CATEGORIES for q in queue)
+
+
 def advance_to_next_queued_question():
     """Multi-question game loop: pops the next pre-fetched question off the
     active track's runtime queue and makes it the active round question,

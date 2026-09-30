@@ -30,7 +30,7 @@ from config import (
 import config
 from state import state
 from drivers.deck_orchestrator import get_now_playing as get_rekordbox_track
-from drivers.factoid_engine import build_mock_question, advance_to_next_queued_question, question_reveal_count
+from drivers.factoid_engine import build_mock_question, advance_to_next_queued_question, has_next_queued_question, question_reveal_count
 from drivers.branding_engine import get_current_text
 from drivers.announcement_engine import get_text_for as get_announcement_text_for
 from drivers import led_bridge
@@ -951,12 +951,19 @@ def _render_quiz_mode(t):
     sel = state.quiz_selected_index
     is_true_false = choices == ["True", "False"]
     show_correction = locked and is_true_false and correct == 1 and state.factoid_correction
+    # The correction-length hold below is only right when the correction text
+    # is actually what's on screen: a SOLO wrong pick. Multiplayer shows the
+    # "CORRECT: names / NOBODY GOT IT" line and a solo correct pick shows the
+    # answer panel -- neither shows the correction, but they used to hold for
+    # its full scroll length anyway (median ~26s, up to ~36s on real
+    # True/False questions), 2026-09-30 fix.
+    correction_on_screen = show_correction and not state.quiz_players and sel != correct
     if state.round_timed_out:
         # 30s question timeout (drivers/live_round_engine.py): "TIMES UP!"
         # then correct-answer-only reveal, distinct (longer) hold than the
         # normal win/loss celebration.
         celebration_hold = config.TIMESUP_HOLD_SECONDS
-    elif show_correction:
+    elif correction_on_screen:
         # 2026-09-18: timed to the correction text's own real scroll-pass
         # length (plus a 2s read buffer) instead of a flat guess -- a short
         # correction no longer holds the room needlessly long, and a long
@@ -979,6 +986,11 @@ def _render_quiz_mode(t):
         celebration_hold = QUIZ_WRONG_ANSWER_HOLD_SECONDS
     else:
         celebration_hold = QUIZ_CELEBRATION_HOLD_SECONDS
+
+    if locked and not has_next_queued_question():
+        # Last question: don't zip back to DJ mode -- give the room at least
+        # QUIZ_LAST_ANSWER_HOLD_SECONDS to see the right answer.
+        celebration_hold = max(celebration_hold, config.QUIZ_LAST_ANSWER_HOLD_SECONDS)
 
     if state.quiz_locked:
         elapsed = t - state.quiz_graded_at

@@ -352,6 +352,10 @@ QUIZ_TF_CORRECTION_HOLD_SECONDS = 8.0
 # a correct answer, a True/False correction (its own scroll-based hold
 # above), and multiplayer results all use their own hold logic.
 QUIZ_WRONG_ANSWER_HOLD_SECONDS = 5.0
+# On the LAST question of a round (nothing queued to advance into) the
+# post-grade hold is at least this long before returning to DJ mode, so people
+# not playing on the app have time to read the right answer (2026-09-30).
+QUIZ_LAST_ANSWER_HOLD_SECONDS = 5.0
 
 # ==========================================
 # GAMEPAD BUTTON DEBOUNCE (Btns 5-8)
