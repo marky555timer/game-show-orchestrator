@@ -401,6 +401,7 @@ def _grade_multiplayer_round():
     print(f"[MULTIPLAYER QUIZ] GRADE -> {correct_count}/{len(results)} locked-in players correct "
           f"({not_locked} didn't lock in an answer). Operator pick correct: {operator_correct}.")
 
+    state.round_any_correct = correct_count > 0 or operator_correct
     if correct_count > 0 or operator_correct:
         trigger_big_win()
     else:

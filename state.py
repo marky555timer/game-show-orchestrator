@@ -111,6 +111,7 @@ class State:
         # Quiz mode answer selection.
         self.quiz_selected_index = -1
         self.quiz_locked = False
+        self.round_any_correct = False  # multiplayer grade: did anyone (operator or a player) get it right
         self.quiz_graded_at = 0.0  # time.time() when grade_quiz_selection() ran
 
         # True when the currently-loaded quiz question is the local

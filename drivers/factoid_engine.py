@@ -339,6 +339,7 @@ def _apply_active_question(data, source):
     state.quiz_is_test = False
     state.quiz_selected_index = -1
     state.quiz_locked = False
+    state.round_any_correct = False
     state.quiz_graded_at = 0.0
     state.fixture1_mode = "off"  # Reset rule: new question -> Fixture 1 black
 

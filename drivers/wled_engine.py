@@ -1085,6 +1085,39 @@ def _apply_wrong_answer_marquee(now):
             set_segment(name, 0, 0, 0)
 
 
+def _graded_round_correct():
+    """Did the just-graded round end 'right'? Solo: the operator's pick was
+    correct. With app players signed up (2026-09-29: this used to be excluded
+    from every graded-round marquee look, dumping app rounds onto the old
+    all-white chase): anyone right (state.round_any_correct, set by
+    inputs/gamepad.py's multiplayer grade). A timeout always counts as the
+    'reveal' look, same as before."""
+    if state.round_timed_out:
+        return True
+    if state.quiz_players:
+        return state.round_any_correct
+    return state.quiz_selected_index == state.factoid_correct_index
+
+
+def _graded_round_celebration():
+    return (state.mode == state.MODE_GAME and state.quiz_locked
+            and bool(state.factoid_choices) and _graded_round_correct())
+
+
+def _graded_round_wrong_hold(now):
+    return (state.mode == state.MODE_GAME and state.quiz_locked
+            and bool(state.factoid_choices) and not _graded_round_correct()
+            and now - state.quiz_graded_at < config.QUIZ_WRONG_ANSWER_HOLD_SECONDS)
+
+
+def _graded_round_idle():
+    """Graded round whose celebration / wrong-answer call-out has finished:
+    the marquee goes DARK until the next question (2026-09-29, replaces the
+    old all-white all-panel game chase for this window)."""
+    return (state.mode == state.MODE_GAME and state.quiz_locked
+            and bool(state.factoid_choices))
+
+
 _last_marquee_branch = None
 
 
@@ -1113,19 +1146,16 @@ def _log_marquee_branch_transition(now):
         branch = "get_ready"
     elif state.mystery_active:
         branch = "mystery"
-    elif (state.mode == state.MODE_GAME and state.quiz_locked and not state.quiz_players
-          and state.factoid_choices
-          and (state.quiz_selected_index == state.factoid_correct_index or state.round_timed_out)):
+    elif _graded_round_celebration():
         branch = "correct_celebration"
     elif state.mode == state.MODE_DJ and not state.price_game_active:
         branch = "dj_dance"
     elif live_round_engine.is_round_active():
         branch = "question_marquee"
-    elif (state.mode == state.MODE_GAME and state.quiz_locked and not state.quiz_players
-          and state.factoid_choices
-          and state.quiz_selected_index != state.factoid_correct_index
-          and now - state.quiz_graded_at < config.QUIZ_WRONG_ANSWER_HOLD_SECONDS):
+    elif _graded_round_wrong_hold(now):
         branch = "wrong_answer"
+    elif _graded_round_idle():
+        branch = "graded_dark"
     else:
         branch = "game_chase"
 
@@ -1168,9 +1198,7 @@ def update(now):
             _apply_get_ready_marquee(now)
         elif state.mystery_active:
             _apply_mystery_marquee(now)
-        elif (state.mode == state.MODE_GAME and state.quiz_locked and not state.quiz_players
-              and state.factoid_choices
-              and (state.quiz_selected_index == state.factoid_correct_index or state.round_timed_out)):
+        elif _graded_round_celebration():
             # Follow-up question graded CORRECT (any path -- panel button,
             # joystick, or a timeout that happened to land on the right
             # pick) or ended via TIMEOUT at all, right or wrong (2026-09-18,
@@ -1203,15 +1231,14 @@ def update(now):
             # choreography keeps taking priority during that window (this
             # condition is also true then, but never reached).
             _apply_question_marquee(now)
-        elif (state.mode == state.MODE_GAME and state.quiz_locked and not state.quiz_players
-              and state.factoid_choices
-              and state.quiz_selected_index != state.factoid_correct_index
-              and now - state.quiz_graded_at < config.QUIZ_WRONG_ANSWER_HOLD_SECONDS):
+        elif _graded_round_wrong_hold(now):
             # Single-player wrong grade (2026-09-18): call out the correct
             # answer's panel with a 1Hz blink instead of falling through to
             # the generic white game chase below -- see graphics/
             # matrix_canvas.py's matching matrix-text redesign for why.
             _apply_wrong_answer_marquee(now)
+        elif _graded_round_idle():
+            fill(0, 0, 0)  # graded round, call-out over: dark until the next question
         else:
             _apply_game_chase(now)
     render()
