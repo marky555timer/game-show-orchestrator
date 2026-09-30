@@ -571,6 +571,15 @@ def poll_hardware(now):
         _poll_trivia_confirm(pressed_colors)
         return
 
+    if state.medley_active:
+        from drivers import medley_game
+        if medley_game.enabled() and ("green" in pressed_colors or "red" in pressed_colors):
+            # Dance Medley game: green = TRUE, red = FALSE (one tap, first tap
+            # counts). Red no longer leaves the medley while the game is on --
+            # use the remote's EXIT MEDLEY MODE or a yellow long-press.
+            medley_game.answer_panel("green" in pressed_colors)
+            return
+
     if state.mode == state.MODE_SIMON:
         if state.simon_phase == "input":
             press(config.SIMON_HW_COLOR_ORDER.index(pressed_colors[0]), hold=True)
@@ -626,7 +635,9 @@ def poll_hardware(now):
     #                              blue = TRIVIA QUESTION? (jukebox mode only),
     #                              yellow SHORT = audition the ending,
     #                              yellow LONG (hold) = start/stop DANCE MEDLEY,
-    #                              red during a medley = leave it (reject)
+    #                              red during a medley = leave it (reject),
+    #                              EXCEPT while the medley GAME is on (questions not
+    #                              suppressed): green = TRUE, red = FALSE answers
     # The last group is the ONLY place blue/yellow/red act as features; the
     # branches above it return first, so none of them fire during gameplay.
     #
@@ -639,7 +650,9 @@ def poll_hardware(now):
     if (state.mode == state.MODE_DJ and state.show_phase == "live"
             and not state.intermission_active and not state.price_game_active
             and not state.westminster_active and not state.win_sequence_active):
-        if "green" in pressed_colors:
+        if "green" in pressed_colors and state.medley_active:
+            pass  # never start Simon over a running medley
+        elif "green" in pressed_colors:
             enter_simon_hardware()
         elif "blue" in pressed_colors and state.questions_suppressed:
             # Jukebox mode (auto-start, or the Setup "suppress questions"

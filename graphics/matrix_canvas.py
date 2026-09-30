@@ -1733,10 +1733,11 @@ def _draw_cpu_temp_overlay():
     draw_marquee(matrix_surface, "cpu_temp_overlay", text, PANELS[5], align="center", scroll=False)
 
 
-def _draw_medley_banner(t):
-    """"MEDLEY TIME!" across the middle row (panels 3+4) for as long as a Dance
-    Medley runs: scrolls along the row while bobbing up and down."""
-    x0, y0, w, h = PANELS[3][0], PANELS[3][1], PANEL_W * 2, PANEL_H
+def _draw_medley_banner(t, row_panel=3):
+    """"MEDLEY TIME!" across one row (panels 3+4 by default; 5+6 while the
+    medley game uses the middle row) for as long as a Dance Medley runs:
+    scrolls along the row while bobbing up and down."""
+    x0, y0, w, h = PANELS[row_panel][0], PANELS[row_panel][1], PANEL_W * 2, PANEL_H
     matrix_surface.fill(BLACK, (x0, y0, w, h))
     text = "MEDLEY TIME!"
     tw = text_width(text)
@@ -1747,6 +1748,58 @@ def _draw_medley_banner(t):
     y = y0 + (h - 7) // 2 + bob
     for k in (0, 1):
         draw_bitmap_text(matrix_surface, text, x0 - offset + k * span, y, color=RED_FULL, clip_rect=(x0, y0, w, h))
+
+
+def _medley_panel_choice(t, panel_id, label, picked, flash):
+    x0, y0, w, h = PANELS[panel_id]
+    matrix_surface.fill(BLACK, (x0, y0, w, h))
+    draw_marquee(matrix_surface, f"medley_choice_{panel_id}", label, PANELS[panel_id], align="center", scroll=False)
+    if picked or (flash and int(t * 2.5) % 2 == 0):
+        pygame.draw.rect(matrix_surface, RED_FULL, (x0, y0, w, h), 1)
+
+
+def _draw_medley_game(t):
+    """Dance Medley game on the LEDs: panels 1+2 "THIS IS <ARTIST>?", panels
+    3/4 TRUE / FALSE (green / red arcade buttons), the banner moves to panels
+    5+6. For a few seconds after each hook, the previous statement's answer."""
+    from drivers import medley_game
+    now = time.time()
+    q, rv = state.medley_q, state.medley_reveal
+    tx, ty, tw, th = TOP_COMBINED
+    showing_reveal = rv is not None and now < rv["until"]
+    showing_q = q is not None and medley_game.enabled() and now < q["deadline"]
+    if not (showing_reveal or showing_q):
+        return False
+    matrix_surface.fill(BLACK, TOP_COMBINED)
+    if showing_reveal:
+        draw_marquee(matrix_surface, "medley_rv1", "THAT WAS", (tx, ty, tw, LINE_H), align="center", scroll=False)
+        draw_marquee(matrix_surface, "medley_rv2", rv["real"].upper(), (tx, ty + LINE_H, tw, LINE_H), align="center")
+        _medley_panel_choice(t, 3, "TRUE", rv["panel"] is True, flash=rv["was_true"])
+        _medley_panel_choice(t, 4, "FALSE", rv["panel"] is False, flash=not rv["was_true"])
+    else:
+        draw_marquee(matrix_surface, "medley_q1", "THIS IS", (tx, ty, tw, LINE_H), align="center", scroll=False)
+        draw_marquee(matrix_surface, "medley_q2", q["shown"].upper() + "?", (tx, ty + LINE_H, tw, LINE_H), align="center")
+        _medley_panel_choice(t, 3, "TRUE", q["panel"] is True, flash=False)
+        _medley_panel_choice(t, 4, "FALSE", q["panel"] is False, flash=False)
+    _draw_medley_banner(t, row_panel=5)
+    return True
+
+
+def _draw_medley_results(t):
+    """End of a medley with the game on: "N TOTAL SONGS" on panels 1+2, the
+    medley leaderboard (top 4) on panels 3-6."""
+    tx, ty, tw, th = TOP_COMBINED
+    matrix_surface.fill(BLACK, TOP_COMBINED)
+    draw_marquee(matrix_surface, "medley_res1", f"{state.medley_songs_total} TOTAL SONGS", (tx, ty, tw, LINE_H), align="center", scroll=False)
+    draw_marquee(matrix_surface, "medley_res2", "MEDLEY SCORES", (tx, ty + LINE_H, tw, LINE_H), align="center", scroll=False)
+    rows = state.medley_results[:4]
+    for k, pid in enumerate((3, 4, 5, 6)):
+        x0, y0, w, h = PANELS[pid]
+        matrix_surface.fill(BLACK, (x0, y0, w, h))
+        if k < len(rows):
+            r = rows[k]
+            draw_marquee(matrix_surface, f"medley_row_{pid}", f"{k + 1} {r['initials']} {r['points']}", PANELS[pid],
+                         align="center", scroll=False)
 
 
 def _draw_trivia_confirm():
@@ -1761,8 +1814,11 @@ def _draw_trivia_confirm():
 
 def update_matrix_canvas():
     _render_matrix_canvas_content()
-    if state.medley_active:
-        _draw_medley_banner(time.time())
+    if state.medley_results and time.time() < state.medley_results_until:
+        _draw_medley_results(time.time())
+    elif state.medley_active:
+        if not _draw_medley_game(time.time()):
+            _draw_medley_banner(time.time())
     if state.trivia_confirm_active:
         _draw_trivia_confirm()
     if state.cpu_temp_overlay_active:

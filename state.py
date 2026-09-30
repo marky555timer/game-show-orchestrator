@@ -564,6 +564,15 @@ class State:
         # graphics/matrix_canvas.py); green = yes sets this True for the rest
         # of that autoplay session, red/anything else cancels.
         self.medley_active = False
+        # "This is <artist>" true/false game inside a medley (drivers/medley_game.py).
+        # Runs only when questions aren't suppressed and this is on.
+        self.medley_game_enabled = True
+        self.medley_q = None               # the open statement (dict) or None
+        self.medley_reveal = None          # the last statement's answer, shown briefly
+        self.medley_scores = {}            # player_id | "PANEL" -> {initials, points, answered}
+        self.medley_results = []           # end-of-medley leaderboard rows
+        self.medley_results_until = 0.0
+        self.medley_songs_total = 0
         self.medley_sweeper_mode = config.MEDLEY_SWEEPER_MODE_DEFAULT  # "off" | "medley" | "all"
         self.questions_suppressed = False  # jukebox mode: no questions asked (auto-start, or the Setup "suppress questions" box)
         self.show_suppress_questions = True   # Setup page checkbox (pre-checked): start the show as a jukebox

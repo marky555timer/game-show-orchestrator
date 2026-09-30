@@ -47,6 +47,7 @@ from drivers import simon_hardware
 from drivers import accent_engine
 from drivers import light_prefs_engine
 from drivers import relay_engine
+from drivers import medley_game
 from graphics.animations import deal_panel_animations
 from web.net_info import get_lan_ip, get_play_url
 
@@ -103,6 +104,8 @@ _ICY_METAINT = 8192
 
 
 def _current_stream_title():
+    if state.medley_active:
+        return "Dance Medley"  # the artist/title would spoil the medley game
     title, artist = deck_orchestrator.get_now_playing()
     title = (title or "").strip()
     artist = (artist or "").strip()
@@ -626,7 +629,8 @@ if app is not None:
         now_playing_title = ""
         now_playing_artist = ""
         song_trivia = []
-        if not active and state.mode != state.MODE_GAME:
+        _in_medley = state.medley_active
+        if not active and state.mode != state.MODE_GAME and not _in_medley:
             title, artist = deck_orchestrator.get_now_playing()
             artist_key = str(artist).strip().lower()
             mystery_pending = bool(artist_key) and artist_key not in state.asked_artists
@@ -669,6 +673,7 @@ if app is not None:
             "timeout_seconds": timeout_seconds,
             "leaderboard": leaderboard,
             "win_score": state.game_win_score,
+            "medley": medley_game.player_view(player_id) if state.medley_active or state.medley_results else None,
             "now_playing_title": now_playing_title,
             "now_playing_artist": now_playing_artist,
             "song_trivia": song_trivia,
@@ -690,6 +695,23 @@ if app is not None:
             # (graphics/matrix_canvas.py).
             state.round_first_answer_at = time.time()
         return {"ok": True}
+
+    class PlayerMedleyAnswer(BaseModel):
+        player_id: str
+        qid: int | None = None
+        answer: bool          # True = "yes, this is that artist"
+
+    @app.post("/api/player/medley-answer")
+    def player_medley_answer(body: PlayerMedleyAnswer):
+        """Dance Medley game: one tap answers (and locks) TRUE/FALSE."""
+        return medley_game.answer_player(body.player_id, body.qid, body.answer)
+
+    @app.post("/api/medley/game")
+    def medley_game_toggle():
+        """Operator switch for the medley game (the master suppress-questions
+        flag still wins: with it set there is no game at all)."""
+        state.medley_game_enabled = not state.medley_game_enabled
+        return {"ok": True, "game_switch": state.medley_game_enabled, "game_on": medley_game.enabled()}
 
     @app.post("/api/player/lock")
     def player_lock(body: PlayerLock):

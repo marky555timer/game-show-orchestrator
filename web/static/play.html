@@ -295,6 +295,23 @@ button { cursor: pointer; font-family: var(--font-body); }
       <div class="status">Scores are reset -- next game starts soon.</div>
     </div>
 
+    <div id="medley-block" class="hidden">
+      <div class="win-message" style="margin-bottom:6px">MEDLEY TIME!</div>
+      <div id="medley-reveal" class="correct-message hidden"></div>
+      <div id="medley-live" class="hidden">
+        <div class="timer-track"><div class="timer-fill" id="medley-timer" style="width:100%"></div></div>
+        <div class="question" style="margin-top:10px">This is&hellip;</div>
+        <div class="question" id="medley-artist" style="font-size:1.6rem;margin:6px 0 14px"></div>
+        <div style="display:flex;gap:10px">
+          <button class="choice" id="medley-true" style="flex:1;padding:22px 8px;font-size:1.3rem;border-color:var(--signal-green)" onclick="medleyAnswer(true)">TRUE</button>
+          <button class="choice" id="medley-false" style="flex:1;padding:22px 8px;font-size:1.3rem;border-color:var(--signal-red)" onclick="medleyAnswer(false)">FALSE</button>
+        </div>
+        <div class="status" id="medley-answered"></div>
+      </div>
+      <div id="medley-results" class="hidden"></div>
+      <div class="status" id="medley-points"></div>
+    </div>
+
     <div id="waiting-block" class="status">
       <div class="waiting-title" id="waiting-title">Waiting for the next question&hellip;</div>
       <div id="waiting-leaderboard" class="leaderboard"></div>
@@ -540,6 +557,58 @@ function renderRoundRoster(roster) {
     </div>`).join('');
 }
 
+let _medleyQid = null;
+async function medleyAnswer(value) {
+  document.getElementById('medley-true').disabled = true;
+  document.getElementById('medley-false').disabled = true;
+  await api('/api/player/medley-answer', {method: 'POST', headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({player_id: playerId, qid: _medleyQid, answer: value})});
+  poll();
+}
+
+function renderMedley(m) {
+  const live = document.getElementById('medley-live');
+  const rv = document.getElementById('medley-reveal');
+  const res = document.getElementById('medley-results');
+  if (m.reveal) {
+    const r = m.reveal;
+    let t = r.was_true ? ('Yes — it was ' + r.real + '!') : ('Nope — not ' + r.shown + '. It was ' + r.real + '.');
+    if (r.correct === true) t += '  +1 point!';
+    else if (r.correct === false) t += '  (no point)';
+    rv.textContent = t;
+    rv.classList.toggle('wrong', r.correct === false);
+    rv.classList.remove('hidden');
+  } else {
+    rv.classList.add('hidden');
+  }
+  if (m.active) {
+    _medleyQid = m.qid;
+    live.classList.remove('hidden');
+    document.getElementById('medley-artist').textContent = m.artist + '?';
+    const pct = Math.max(0, Math.min(100, (m.remaining_seconds / m.total_seconds) * 100));
+    document.getElementById('medley-timer').style.width = pct + '%';
+    const answered = (m.answered === true || m.answered === false);
+    const t = document.getElementById('medley-true'), f = document.getElementById('medley-false');
+    t.disabled = answered; f.disabled = answered;
+    t.classList.toggle('selected', m.answered === true);
+    f.classList.toggle('selected', m.answered === false);
+    document.getElementById('medley-answered').textContent = answered ? 'Locked in! Answer at the next song.' : 'One tap, one point — before this song ends.';
+  } else {
+    live.classList.add('hidden');
+  }
+  if (m.results && !m.active) {
+    const mine = (document.getElementById('my-initials').textContent || '').trim();
+    res.innerHTML = '<div class="win-message">' + (m.total_songs || 0) + ' TOTAL SONGS</div><div class="leaderboard">' +
+      m.results.map((r, i) => '<div class="leaderboard-row' + (r.initials === mine ? ' me' : '') + '"><span class="rank">' + (i + 1) +
+        '.</span><span class="lb-init">' + String(r.initials).replace(/&/g, '&amp;').replace(/</g, '&lt;') +
+        '</span><span class="lb-score">' + r.points + '</span></div>').join('') + '</div>';
+    res.classList.remove('hidden');
+  } else {
+    res.classList.add('hidden');
+  }
+  document.getElementById('medley-points').textContent = 'Medley points: ' + (m.points || 0);
+}
+
 async function poll() {
   if (!playerId) return;
   const d = await api('/api/player/question?player_id=' + encodeURIComponent(playerId));
@@ -608,6 +677,20 @@ async function poll() {
   const qBlock = document.getElementById('question-block');
   const intermissionBlock = document.getElementById('intermission-block');
   const myAvatar = document.getElementById('my-avatar');
+
+  // Dance Medley game ("This is <artist>" true/false): takes over the whole
+  // view while a statement, its reveal, or the results are up.
+  const medleyBlock = document.getElementById('medley-block');
+  const m = d.medley;
+  if (m && m.enabled !== false && (m.active || m.reveal || m.results)) {
+    medleyBlock.classList.remove('hidden');
+    waiting.classList.add('hidden');
+    qBlock.classList.add('hidden');
+    intermissionBlock.classList.add('hidden');
+    renderMedley(m);
+    return;
+  }
+  medleyBlock.classList.add('hidden');
 
   if (d.intermission_active) {
     waiting.classList.add('hidden');

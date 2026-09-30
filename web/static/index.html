@@ -275,6 +275,7 @@
       <button class="btn" style="margin-top:8px;width:100%" onclick="editResume(false)">Resume without saving</button>
     </div>
     <button class="btn" id="medley-replay-btn" style="display:none;margin-top:10px;width:100%;border-color:#ffd400;color:#ffd400" onclick="replayMedley()">&#8635; REPLAY MEDLEY</button>
+    <button class="btn small" id="medley-game-btn" style="margin-top:8px;margin-right:6px" onclick="toggleMedleyGame()">Medley game: ON</button>
     <button class="btn small" id="medley-sweep-btn" style="margin-top:8px" onclick="cycleMedleySweepers()">Medley sweepers: MEDLEY</button>
   </section>
 
@@ -821,6 +822,10 @@ async function refreshMedley() {
   const rb = document.getElementById('medley-replay-btn');
   rb.style.display = (d.has_last && !d.starting && !d.edit) ? '' : 'none';
   rb.textContent = d.active ? '\u21BB REPLAY MEDLEY FROM THE TOP (with your edits)' : '\u21BB REPLAY LAST MEDLEY (' + (d.last_total || 0) + ' hooks)';
+  const gb = document.getElementById('medley-game-btn');
+  if (d.suppressed) { gb.textContent = 'Medley game: OFF (questions suppressed)'; gb.style.opacity = '.6'; }
+  else if (!d.game_switch) { gb.textContent = 'Medley game: OFF (tap to turn on)'; gb.style.opacity = '1'; }
+  else { gb.textContent = 'Medley game: ON (tap to turn off)'; gb.style.opacity = '1'; }
   document.getElementById('medley-sweep-btn').textContent = 'Medley sweepers: ' + String(d.sweeper_mode || 'medley').toUpperCase();
 }
 
@@ -858,6 +863,11 @@ async function toggleMedley() {
     const r = await api('/api/medley/start', {method: 'POST'});
     if (r && !r.ok) showToast(r.error || 'Could not start the medley.');
   }
+  refreshMedley();
+}
+
+async function toggleMedleyGame() {
+  await api('/api/medley/game', {method: 'POST'});
   refreshMedley();
 }
 

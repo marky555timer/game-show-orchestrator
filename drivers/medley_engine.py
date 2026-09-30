@@ -442,6 +442,8 @@ def start():
            "handoff_sent": False}
     _run = run
     _last_plan[:] = plan
+    from drivers import medley_game
+    medley_game.new_game(plan)
     state.medley_active = True
     state.trivia_confirm_active = False
     threading.Thread(target=_render_worker, args=(run,), daemon=True, name="medley-render").start()
@@ -458,6 +460,8 @@ def _finish(run, reason, handoff):
     run["stop"] = True
     _run = None
     state.medley_active = False
+    from drivers import medley_game
+    medley_game.finish(show_results=True)
     print(f"[MEDLEY] Ended ({reason}).")
     if handoff:
         from drivers import deck_orchestrator
@@ -510,6 +514,8 @@ def _set_now_playing(run, i):
     state.auto_dj_track_duration = 3600.0  # nothing else may fire a transition mid-medley
     from drivers.branding_engine import notify_deck_change
     notify_deck_change()
+    from drivers import medley_game
+    medley_game.begin_hook(i, seg, run.get("cur_len", seg["length"]))
 
 
 def _maybe_sweeper(run):
@@ -663,6 +669,8 @@ def edit_begin():
         return {"ok": False, "error": "nothing to edit yet"}
     run["stop"] = True      # stop the look-ahead renderer
     run["chunks"].clear()
+    from drivers import medley_game
+    medley_game.pause()     # no scoring while the transition editor is open
     sa, ea = int(plan[a].get("start_beats", 0)), int(plan[a].get("end_beats", 0))
     sb, eb = int(plan[a + 1].get("start_beats", 0)), int(plan[a + 1].get("end_beats", 0))
     run["edit"] = {"a": a, "b": a + 1, "sa": sa, "ea": ea, "sb": sb, "eb": eb, "playing": False}
@@ -776,6 +784,8 @@ def replay():
         new = _new_run(plan, 2 if state.active_deck == 1 else 1, state.active_deck, 0)
     _last_plan[:] = plan
     _run = new
+    from drivers import medley_game
+    medley_game.new_game(plan)
     state.medley_active = True
     state.trivia_confirm_active = False
     threading.Thread(target=_render_worker, args=(new,), daemon=True, name="medley-render").start()
@@ -785,7 +795,10 @@ def replay():
 
 def status():
     run = _run
+    from drivers import medley_game
     st = {"active": run is not None, "sweeper_mode": state.medley_sweeper_mode,
+          "game_on": medley_game.enabled(), "game_switch": state.medley_game_enabled,
+          "suppressed": state.questions_suppressed,
           "has_last": bool(_last_plan), "last_total": len(_last_plan)}
     if run is None:
         return st
