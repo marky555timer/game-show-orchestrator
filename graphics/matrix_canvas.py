@@ -1,4 +1,5 @@
 import os
+import math
 import time
 import random
 import pygame
@@ -1732,6 +1733,22 @@ def _draw_cpu_temp_overlay():
     draw_marquee(matrix_surface, "cpu_temp_overlay", text, PANELS[5], align="center", scroll=False)
 
 
+def _draw_medley_banner(t):
+    """"MEDLEY TIME!" across the middle row (panels 3+4) for as long as a Dance
+    Medley runs: scrolls along the row while bobbing up and down."""
+    x0, y0, w, h = PANELS[3][0], PANELS[3][1], PANEL_W * 2, PANEL_H
+    matrix_surface.fill(BLACK, (x0, y0, w, h))
+    text = "MEDLEY TIME!"
+    tw = text_width(text)
+    gap = 16
+    span = tw + gap
+    offset = (t * config.MEDLEY_BANNER_SCROLL_PX_PER_SEC) % span
+    bob = int(round(config.MEDLEY_BANNER_BOB_PX * math.sin(t * 2 * math.pi / config.MEDLEY_BANNER_BOB_PERIOD_SECONDS)))
+    y = y0 + (h - 7) // 2 + bob
+    for k in (0, 1):
+        draw_bitmap_text(matrix_surface, text, x0 - offset + k * span, y, color=RED_FULL, clip_rect=(x0, y0, w, h))
+
+
 def _draw_trivia_confirm():
     """"TRIVIA QUESTION?" YES/NO confirm over the live jukebox screen (green
     button = YES on panel 3, red = NO on panel 4)."""
@@ -1744,6 +1761,8 @@ def _draw_trivia_confirm():
 
 def update_matrix_canvas():
     _render_matrix_canvas_content()
+    if state.medley_active:
+        _draw_medley_banner(time.time())
     if state.trivia_confirm_active:
         _draw_trivia_confirm()
     if state.cpu_temp_overlay_active:
