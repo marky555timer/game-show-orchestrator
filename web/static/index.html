@@ -216,6 +216,23 @@
   <section id="medley-bar" style="display:none">
     <button class="btn medley big" id="medley-btn" onclick="toggleMedley()">DANCE MEDLEY</button>
     <div id="medley-status"></div>
+    <div id="medley-tune" style="display:none; margin-top:10px">
+      <div style="font-size:.8rem;color:#ffe266" id="medley-tune-label">Tune this hook</div>
+      <div style="display:flex;gap:6px;margin-top:6px;align-items:center;flex-wrap:wrap">
+        <span style="width:54px;font-size:.8rem">End</span>
+        <button class="btn" onclick="tuneHook('end',-4)">&minus;4</button>
+        <button class="btn" onclick="tuneHook('end',-1)">&minus;1</button>
+        <button class="btn" onclick="tuneHook('end',1)">+1</button>
+        <button class="btn" onclick="tuneHook('end',4)">+4</button>
+      </div>
+      <div style="display:flex;gap:6px;margin-top:6px;align-items:center;flex-wrap:wrap">
+        <span style="width:54px;font-size:.8rem">Start</span>
+        <button class="btn" onclick="tuneHook('start',-4)">&minus;4</button>
+        <button class="btn" onclick="tuneHook('start',4)">+4</button>
+        <button class="btn" onclick="tuneHook('reset',0)">Reset</button>
+      </div>
+      <div style="font-size:.7rem;color:#999;margin-top:4px">Beats. End &minus; = exit sooner, + = stay longer. Saved for this song; applies the next time it plays in a medley.</div>
+    </div>
     <button class="btn small" id="medley-sweep-btn" style="margin-top:8px" onclick="cycleMedleySweepers()">Medley sweepers: MEDLEY</button>
   </section>
 
@@ -724,12 +741,15 @@ async function refreshMedley() {
   if (d.active) {
     btn.classList.add('on');
     document.body.classList.add('medley-on');
+    document.getElementById('medley-tune').style.display = d.starting ? 'none' : '';
     btn.textContent = 'EXIT MEDLEY MODE';
     if (d.starting) {
       st.textContent = 'Building the mix... ' + d.total + ' hooks planned';
     } else {
       let t = 'Track ' + d.index + ' of ' + d.total + ' \u00b7 ' + d.remaining + ' to go';
       if (d.current) t += '\nNow: ' + d.current.artist + ' \u2014 ' + d.current.title + ' (' + d.current.tempo + ' BPM)';
+      if (d.current) document.getElementById('medley-tune-label').textContent =
+        'Tune: ' + d.current.title + ' \u2014 start ' + (d.current.start_beats >= 0 ? '+' : '') + d.current.start_beats + ', end ' + (d.current.end_beats >= 0 ? '+' : '') + d.current.end_beats + ' beats';
       if (d.next) t += '\nNext: ' + d.next.artist + ' \u2014 ' + d.next.title + (d.next_in_seconds != null ? ' in ' + Math.ceil(d.next_in_seconds) + 's' : '');
       else t += '\nLast hook \u2014 then normal play resumes';
       st.innerHTML = t.split('\n').map((x) => x.replace(/&/g, '&amp;').replace(/</g, '&lt;')).join('<br>');
@@ -737,10 +757,18 @@ async function refreshMedley() {
   } else {
     btn.classList.remove('on');
     document.body.classList.remove('medley-on');
+    document.getElementById('medley-tune').style.display = 'none';
     btn.textContent = 'DANCE MEDLEY';
     st.textContent = (d.eligible != null) ? d.eligible + ' floor-fillers ready \u00b7 hooks of ~15s, beat-matched' : '';
   }
   document.getElementById('medley-sweep-btn').textContent = 'Medley sweepers: ' + String(d.sweeper_mode || 'medley').toUpperCase();
+}
+
+async function tuneHook(field, delta) {
+  const r = await api('/api/medley/adjust', {method: 'POST', headers: {'Content-Type': 'application/json'},
+                                              body: JSON.stringify({field: field, delta: delta})});
+  if (r && r.ok) showToast((r.artist || '') + ' \u2014 ' + (r.title || '') + ': start ' + (r.start_beats >= 0 ? '+' : '') + r.start_beats + ', end ' + (r.end_beats >= 0 ? '+' : '') + r.end_beats + ' beats');
+  refreshMedley();
 }
 
 async function toggleMedley() {

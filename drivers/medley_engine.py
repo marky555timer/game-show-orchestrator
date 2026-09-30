@@ -39,6 +39,7 @@ _BASE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 _analysis = {"mtime": 0.0, "data": {}}
 _overrides = {"mtime": 0.0, "data": {}}
+_hook_ov = {"mtime": 0.0, "data": {}}
 
 
 # --------------------------------------------------------------------------
@@ -157,14 +158,18 @@ def _pick_bars(max_bars, tempo):
     return best[1] if best else int(max_bars)
 
 
-def build_plan(start_bpm=None, seed=None):
+def build_plan(start_bpm=None, seed=None, first_name=None):
     """Greedy tempo/key chain over the eligible pool. Returns a list of
     segment dicts (see render_chunk) -- empty if there aren't enough."""
     rng = random.Random(seed)
     pool = eligible_candidates()
     if len(pool) < config.MEDLEY_MIN_TRACKS:
         return []
-    if start_bpm:
+    named = [c for c in pool if first_name and first_name.lower() in (c["name"] + " " + c["key"]).lower()]
+    if named:
+        first = named[0]
+        start_bpm = start_bpm or first["bpm"]
+    elif start_bpm:
         opts = [c for c in pool if _feasible(start_bpm, c["bpm"])]
         first = min(opts, key=lambda c: _feasible(start_bpm, c["bpm"])[0]) if opts else rng.choice(pool)
     else:
@@ -174,15 +179,21 @@ def build_plan(start_bpm=None, seed=None):
 
     def add(c, native, tempo):
         nonlocal total
-        bars = _pick_bars(c["hook"]["bars"], tempo) + config.MEDLEY_EXTRA_BARS
-        room = c["duration"] - c["hook"]["start"] - 2.0  # keep it inside the file
-        native_bar = 4 * 60.0 / native
-        while bars > 4 and (bars * 4 * 60.0 / tempo > config.MEDLEY_MAX_HOOK_SECONDS
-                            or bars * native_bar > room):
-            bars -= 1
-        length = bars * 4 * 60.0 / tempo
-        plan.append({**c, "hook_start": c["hook"]["start"], "bars": bars, "native": native,
-                     "tempo": tempo, "rate": tempo / native, "length": length})
+        ov = _load(_hook_ov, config.MEDLEY_HOOK_OVERRIDES_FILE).get(c["key"], {})
+        sb, eb = int(ov.get("start_beats", 0)), int(ov.get("end_beats", 0))
+        beat_native = 60.0 / native            # one felt beat, in the file's own seconds
+        hook_start = max(0.0, c["hook"]["start"] + sb * beat_native)
+        beats = _pick_bars(c["hook"]["bars"], tempo) * 4 + config.MEDLEY_EXTRA_BARS * 4 + eb - sb
+        room = c["duration"] - hook_start - 2.0  # keep it inside the file
+        step = 1 if (sb or eb) else 4            # tuned songs trim beat by beat
+        while beats > config.MEDLEY_MIN_HOOK_BEATS and (
+                beats * 60.0 / tempo > config.MEDLEY_MAX_HOOK_SECONDS or beats * beat_native > room):
+            beats -= step
+        beats = max(beats, config.MEDLEY_MIN_HOOK_BEATS)
+        length = beats * 60.0 / tempo
+        plan.append({**c, "hook_start": hook_start, "bars": beats // 4, "beats": beats, "native": native,
+                     "tempo": tempo, "rate": tempo / native, "length": length,
+                     "start_beats": sb, "end_beats": eb})
         used.add(c["name"])
         used_keys.add(c["key"])
         total += length
@@ -563,6 +574,40 @@ def update(now):
         _finish(run, "playback ended", handoff=True)
 
 
+def adjust_current(field, delta=0):
+    """Tune the hook that is playing NOW (applies the next time that song is
+    planned into a medley). field: "start" | "end" (beats to shift that edge;
+    positive = later) | "reset". Persists to config.MEDLEY_HOOK_OVERRIDES_FILE."""
+    run = _run
+    if run is None or not run["started"]:
+        return None
+    seg = run["plan"][run["played"]]
+    path = os.path.join(_BASE, config.MEDLEY_HOOK_OVERRIDES_FILE)
+    with _lock:
+        data = dict(_load(_hook_ov, config.MEDLEY_HOOK_OVERRIDES_FILE))
+        entry = dict(data.get(seg["key"], {}))
+        if field == "reset":
+            entry = {}
+        elif field in ("start", "end"):
+            name = field + "_beats"
+            entry[name] = max(-64, min(64, int(entry.get(name, 0)) + int(delta)))
+        else:
+            return None
+        entry = {k: v for k, v in entry.items() if v}
+        if entry:
+            data[seg["key"]] = entry
+        else:
+            data.pop(seg["key"], None)
+        tmp = path + ".tmp"
+        with open(tmp, "w", encoding="utf-8") as f:
+            json.dump(data, f, indent=1, sort_keys=True)
+        os.replace(tmp, path)
+        _hook_ov["data"], _hook_ov["mtime"] = data, os.path.getmtime(path)
+    print(f"[MEDLEY] Tuned {seg['artist']} - {seg['title']}: {entry or 'reset'}")
+    return {"title": seg["title"], "artist": seg["artist"],
+            "start_beats": entry.get("start_beats", 0), "end_beats": entry.get("end_beats", 0)}
+
+
 def status():
     run = _run
     st = {"active": run is not None, "sweeper_mode": state.medley_sweeper_mode}
@@ -576,7 +621,9 @@ def status():
     st.update({
         "starting": not run["started"],
         "total": len(plan), "index": i + 1, "remaining": remaining,
-        "current": {"title": cur["title"], "artist": cur["artist"], "tempo": round(cur["tempo"], 1)} if cur else None,
+        "current": {"title": cur["title"], "artist": cur["artist"], "tempo": round(cur["tempo"], 1),
+                    "beats": cur.get("beats"), "start_beats": cur.get("start_beats", 0),
+                    "end_beats": cur.get("end_beats", 0)} if cur else None,
         "next": {"title": nxt["title"], "artist": nxt["artist"], "tempo": round(nxt["tempo"], 1)} if nxt else None,
         "next_in_seconds": max(0.0, run.get("cur_len", 0) - (time.time() - run["chunk_started_at"])) if run["started"] else None,
     })

@@ -21,6 +21,7 @@ def main():
     ap.add_argument("--seed", type=int, default=1)
     ap.add_argument("--start-bpm", type=float, default=0)
     ap.add_argument("--tracks", type=int, default=8)
+    ap.add_argument("--first", default="", help="start the medley from this song (name/key substring) to audition its hook + exit")
     ap.add_argument("--out", default=os.path.join(ROOT, "medley_preview.mp3"))
     a = ap.parse_args()
     import config
@@ -28,7 +29,7 @@ def main():
         config.MUSIC_METADATA_PATH = a.metadata
     import numpy as np
     from drivers import medley_engine as me
-    plan = me.build_plan(a.start_bpm or None, seed=a.seed)[:a.tracks]
+    plan = me.build_plan(a.start_bpm or None, seed=a.seed, first_name=a.first or None)[:a.tracks]
     if not plan:
         print("no plan (not enough eligible tracks)"); return
     print(f"{len(plan)} hooks:")
