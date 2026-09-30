@@ -563,7 +563,9 @@ class State:
         # QUESTION?" confirm (trivia_confirm_active, rendered by
         # graphics/matrix_canvas.py); green = yes sets this True for the rest
         # of that autoplay session, red/anything else cancels.
-        self.jukebox_trivia_enabled = False
+        self.questions_suppressed = False  # jukebox mode: no questions asked (auto-start, or the Setup "suppress questions" box)
+        self.show_suppress_questions = True   # Setup page checkbox (pre-checked): start the show as a jukebox
+        self.show_skip_intro = False          # Setup page checkbox: dark -> first track directly, no intro
         self.trivia_confirm_active = False
         self.trivia_confirm_until = 0.0
         # Blue, same "setup" window: kicks off a Bluetooth gamepad reconnect

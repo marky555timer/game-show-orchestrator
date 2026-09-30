@@ -77,6 +77,14 @@
   <h1>Show Setup</h1>
 
   <section>
+    <h2>Start Options</h2>
+    <div class="tag-grid">
+      <label class="check"><input type="checkbox" id="suppress-questions" checked> Suppress questions (start as a jukebox &mdash; no trivia until you turn it on)</label>
+      <label class="check"><input type="checkbox" id="skip-intro"> Skip intro &mdash; go straight to the first track (still starts dark; green panel button or the app button starts it)</label>
+    </div>
+  </section>
+
+  <section>
     <h2>Crowd-Matching Tags</h2>
     <div class="tag-grid">
       <label class="check"><input type="checkbox" id="exclude-explicit"> Exclude explicit lyrics</label>
@@ -303,6 +311,8 @@ function buildSetupPayload() {
     exclude_never_charted: document.getElementById('exclude-nevercharted').checked,
     allowed_genres: selectedGenres(),
     auto_final_round: document.getElementById('auto-final-round').checked,
+    suppress_questions: document.getElementById('suppress-questions').checked,
+    skip_intro: document.getElementById('skip-intro').checked,
     rounds_estimate: parseInt(document.getElementById('rounds-count').textContent, 10) || 0,
   };
 }
@@ -349,6 +359,8 @@ async function loadStatus() {
   document.getElementById('exclude-slowdance').checked = !!d.exclude_slow_dance;
   document.getElementById('exclude-nevercharted').checked = !!d.exclude_never_charted;
   document.getElementById('auto-final-round').checked = !!d.auto_final_round;
+  document.getElementById('suppress-questions').checked = d.suppress_questions !== false;
+  document.getElementById('skip-intro').checked = !!d.skip_intro;
   (d.allowed_genres || []).forEach((g) => {
     const cb = document.querySelector(`.genre-cb[value="${g}"]`);
     if (cb) cb.checked = true;

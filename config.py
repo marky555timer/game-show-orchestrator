@@ -2191,7 +2191,7 @@ SHOW_UNATTENDED_FLASH_PERIOD_SECONDS = 0.5
 SHOW_UNATTENDED_FINAL_WARNING_SECONDS = 10.0
 
 # Auto-start (unattended) show = jukebox until trivia is opted into (see
-# state.jukebox_trivia_enabled): how long the red-button "TRIVIA QUESTION?"
+# state.questions_suppressed): how long the red-button "TRIVIA QUESTION?"
 # YES/NO confirm waits before cancelling itself.
 JUKEBOX_TRIVIA_CONFIRM_TIMEOUT_SECONDS = 10.0
 

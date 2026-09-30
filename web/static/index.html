@@ -226,8 +226,8 @@
        calls during this phase. -->
   <section id="dark-lockdown" style="display:none">
     <div class="lockdown-label">Show armed &mdash; holding dark</div>
-    <button class="btn primary big" onclick="beginIntro()">BEGIN INTRO</button>
-    <div class="lockdown-hint">Starts ShowStart.mp3 and the LED intro choreography.<br>Press when the room's ready for the show to begin.</div>
+    <button class="btn primary big" id="begin-intro-btn" onclick="beginIntro()">BEGIN INTRO</button>
+    <div class="lockdown-hint" id="begin-intro-hint">Starts ShowStart.mp3 and the LED intro choreography.<br>Press when the room's ready for the show to begin. (Green panel button does the same.)</div>
   </section>
 
   <!-- Show-start lockdown (2026-08-18): shown ONLY while show_phase ==
@@ -711,7 +711,7 @@ async function refreshAutoDj() {
   document.getElementById('autodj-remaining').textContent =
     (d.enabled ? '' : '(OFF) ') + mm + ':' + ss;
   const jb = document.getElementById('jukebox-btn');
-  jb.style.display = d.unattended ? '' : 'none';
+  jb.style.display = d.live ? '' : 'none';
   jb.textContent = d.jukebox ? 'JUKEBOX: ON (no questions) — tap for trivia' : 'TRIVIA: ON — tap for jukebox';
 }
 
@@ -1296,6 +1296,10 @@ async function refreshGamepadStatus() {
   // actually flipped to "live" -- not optimistically the instant a
   // lockdown button is tapped.
   document.getElementById('dark-lockdown').style.display = (d.show_phase === 'dark') ? '' : 'none';
+  document.getElementById('begin-intro-btn').textContent = d.show_skip_intro ? 'START SHOW (first track)' : 'BEGIN INTRO';
+  document.getElementById('begin-intro-hint').innerHTML = d.show_skip_intro
+    ? "Skips the intro and goes straight to the first track.<br>Press when the room's ready. (Green panel button does the same.)"
+    : "Starts ShowStart.mp3 and the LED intro choreography.<br>Press when the room's ready for the show to begin. (Green panel button does the same.)";
   document.getElementById('intro-lockdown').style.display = (d.show_phase === 'intro') ? '' : 'none';
   document.getElementById('live-panel').style.display = (d.show_phase === 'live') ? '' : 'none';
 

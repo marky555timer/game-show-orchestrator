@@ -486,7 +486,7 @@ def _poll_trivia_confirm(pressed_colors):
     of this autoplay session; red or anything else = NO."""
     _close_trivia_confirm()
     if "green" in pressed_colors:
-        state.jukebox_trivia_enabled = True
+        state.questions_suppressed = False
         print("[JUKEBOX] Trivia enabled by operator -- questions resume.")
     else:
         print("[JUKEBOX] Trivia confirm declined -- staying jukebox.")
@@ -537,6 +537,16 @@ def poll_hardware(now):
         _poll_setup_hardware(pressed_colors, now)
         return
 
+    if state.show_phase == "dark":
+        # Armed and holding dark: green is the push-button start (same call
+        # as the app's BEGIN button / joystick X-; the Setup page's "skip
+        # intro" box decides whether it plays the intro or goes straight to
+        # the first track).
+        if "green" in pressed_colors:
+            from drivers import show_engine
+            show_engine.begin_intro()
+        return
+
     # Lazy imports: same import-order-cycle reasoning as _poll_setup_
     # hardware()'s own lazy imports above.
     from drivers import live_round_engine
@@ -562,6 +572,8 @@ def poll_hardware(now):
 
     # PHYSICAL ARCADE-BUTTON MAP -- one place to spot conflicts when panel
     # button features are added/removed (operator is actively changing them):
+    #   dark phase  : green = start the show (intro, or first track if the
+    #                 Setup "skip intro" box is checked); others ignored
     #   setup phase : green = "START SHOW NOW?" confirm, blue = gamepad
     #                 reconnect, (in the confirm) red = yes / other = no
     #   trivia confirm (auto-start jukebox): green = YES, red/other = NO
@@ -584,11 +596,11 @@ def poll_hardware(now):
             and not state.westminster_active and not state.win_sequence_active):
         if "green" in pressed_colors:
             enter_simon_hardware()
-        elif ("blue" in pressed_colors and state.show_unattended_autoplay
-              and not state.jukebox_trivia_enabled):
-            # Auto-start jukebox mode: blue asks "TRIVIA QUESTION?" (green =
-            # yes, red = no -- see _poll_trivia_confirm). Blue does nothing
-            # in a hosted show.
+        elif "blue" in pressed_colors and state.questions_suppressed:
+            # Jukebox mode (auto-start, or the Setup "suppress questions"
+            # box): blue asks "TRIVIA QUESTION?" (green = yes, red = no --
+            # see _poll_trivia_confirm). Blue does nothing when questions are
+            # already on.
             state.trivia_confirm_active = True
             state.trivia_confirm_until = now + config.JUKEBOX_TRIVIA_CONFIRM_TIMEOUT_SECONDS
             simon_hardware.set_led("green", True)

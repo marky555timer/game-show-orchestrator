@@ -188,6 +188,8 @@ if app is not None:
         allowed_genres: list[str] = []
         auto_final_round: bool = False
         rounds_estimate: int = 0  # computed client-side from the time-range slider
+        suppress_questions: bool = True   # Setup "start as a jukebox" box (pre-checked)
+        skip_intro: bool = False          # Setup "skip intro, first track directly" box
 
     class ShowSchedule(ShowSetupSave):
         target_epoch: float
@@ -1115,20 +1117,20 @@ if app is not None:
             "remaining_seconds": max(0.0, remaining),
             "duration_seconds": state.auto_dj_track_duration,
             "unattended": state.show_unattended_autoplay,
-            "jukebox": state.show_unattended_autoplay and not state.jukebox_trivia_enabled,
+            "live": state.show_phase == "live",
+            "jukebox": state.questions_suppressed,
         }
 
     @app.post("/api/jukebox/toggle")
     def jukebox_toggle():
-        """Auto-start (unattended) show only: flips between jukebox (no
-        questions) and trivia-enabled -- the web-remote way back to jukebox
-        after the red-button confirm turned trivia on."""
-        if not state.show_unattended_autoplay:
-            return {"ok": False, "error": "jukebox mode only applies to the auto-start show"}
-        state.jukebox_trivia_enabled = not state.jukebox_trivia_enabled
+        """Live show: flips between jukebox (no questions) and trivia-enabled
+        -- works for the auto-start show and hosted shows alike."""
+        if state.show_phase != "live":
+            return {"ok": False, "error": "the show isn't live"}
+        state.questions_suppressed = not state.questions_suppressed
         state.trivia_confirm_active = False
-        print(f"[JUKEBOX] Web remote -> {'trivia ON' if state.jukebox_trivia_enabled else 'jukebox (no questions)'}")
-        return {"ok": True, "jukebox": not state.jukebox_trivia_enabled}
+        print(f"[JUKEBOX] Web remote -> {'jukebox (no questions)' if state.questions_suppressed else 'trivia ON'}")
+        return {"ok": True, "jukebox": state.questions_suppressed}
 
     @app.post("/api/autodj/skip10")
     def autodj_skip10():
@@ -1726,6 +1728,7 @@ if app is not None:
             "intermission_paused": state.intermission_paused,
             "intermission_remaining_seconds": win_sequence_engine.get_intermission_remaining_seconds(time.time()),
             "show_phase": state.show_phase,
+            "show_skip_intro": state.show_skip_intro,
             "show_unattended_autoplay": state.show_unattended_autoplay,
             "show_unattended_autoplay_started_at": state.show_unattended_autoplay_started_at,
         }
@@ -1769,6 +1772,8 @@ if app is not None:
         state.show_exclude_slow_dance = bool(body.exclude_slow_dance)
         state.show_exclude_never_charted = bool(body.exclude_never_charted)
         state.show_allowed_genres = [g for g in body.allowed_genres if g in config.MUSIC_GENRES]
+        state.show_suppress_questions = bool(body.suppress_questions)
+        state.show_skip_intro = bool(body.skip_intro)
         state.show_final_round_number = (
             max(1, int(body.rounds_estimate))
             if body.auto_final_round and body.rounds_estimate else None
@@ -1791,6 +1796,8 @@ if app is not None:
             "exclude_slow_dance": state.show_exclude_slow_dance,
             "exclude_never_charted": state.show_exclude_never_charted,
             "allowed_genres": state.show_allowed_genres,
+            "suppress_questions": state.show_suppress_questions,
+            "skip_intro": state.show_skip_intro,
             "auto_final_round": state.show_final_round_number is not None,
             "final_round_number": state.show_final_round_number,
             "game_round_number": state.game_round_number,

@@ -81,6 +81,10 @@ def enter_dark():
     state.show_phase = "dark"
     state.show_phase_started_at = now
     state.show_scheduled_start_at = 0.0
+    # Setup page "suppress questions" box (pre-checked): a hosted show can
+    # start as a jukebox too; unchecked = normal trivia night.
+    state.questions_suppressed = state.show_suppress_questions
+    state.trivia_confirm_active = False
     state.game_round_number = 1
     state.show_cumulative_scores = {}
     state.game_winner_player_id = ""
@@ -104,6 +108,13 @@ def begin_intro():
         return
     global _show_music_channel
     now = time.time()
+    if state.show_skip_intro:
+        # Setup page "skip intro" box: the same push-button start (app button,
+        # panel green, or joystick X-) goes straight to the first track --
+        # no ShowStart.mp3, no intro choreography. Still sat dark until now.
+        print("[SHOW] Start pressed with skip-intro -- going straight to the first track.")
+        _finish_intro(now)
+        return
     state.show_phase = "intro"
     state.show_phase_started_at = now
     _show_music_channel = play_processed_sound(show_start_sound)
@@ -203,9 +214,9 @@ def _enter_unattended_autoplay(now):
 
     state.show_unattended_autoplay = True
     state.show_unattended_autoplay_started_at = now
-    # Auto-start begins as a jukebox: no questions until the operator opts in
-    # with the red button (drivers/simon_engine.py).
-    state.jukebox_trivia_enabled = False
+    # Auto-start is always a jukebox: no questions until the operator opts in
+    # with the blue button / web toggle (drivers/simon_engine.py).
+    state.questions_suppressed = True
     state.trivia_confirm_active = False
 
     # Same handoff _finish_intro() does at the end of a real intro -- a
@@ -261,7 +272,7 @@ def reset_unattended_autoplay():
 
     state.show_unattended_autoplay = False
     state.show_unattended_autoplay_started_at = 0.0
-    state.jukebox_trivia_enabled = False
+    state.questions_suppressed = False
     state.trivia_confirm_active = False
     state.show_phase = "setup"
     state.show_phase_started_at = time.time()
