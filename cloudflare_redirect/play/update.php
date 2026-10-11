@@ -4,6 +4,7 @@
 require __DIR__ . '/config.php';
 
 header('Content-Type: application/json');
+header('Cache-Control: no-store');
 
 $raw = file_get_contents('php://input');
 $data = json_decode($raw, true);
@@ -11,7 +12,7 @@ $data = json_decode($raw, true);
 $secret = $data['secret'] ?? '';
 $url = $data['url'] ?? '';
 
-if (!is_string($secret) || !hash_equals(SHARED_SECRET, $secret)) {
+if (!is_string($secret) || !hash_equals(SHARED_SECRET_SHA256, hash('sha256', $secret))) {
     http_response_code(403);
     echo json_encode(['ok' => false, 'error' => 'bad secret']);
     exit;
@@ -26,6 +27,7 @@ if (!is_string($url) || !preg_match('#^https://[a-zA-Z0-9.\-]+(:\d+)?(/.*)?$#', 
 }
 
 $payload = json_encode(['url' => rtrim($url, '/'), 'updated_at' => time()]);
+if (!is_dir(STATE_DIR)) @mkdir(STATE_DIR, 0755, true);
 $ok = file_put_contents(STATE_FILE, $payload, LOCK_EX);
 
 if ($ok === false) {

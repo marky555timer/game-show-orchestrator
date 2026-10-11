@@ -37,6 +37,7 @@ from drivers import auto_dj_engine
 from drivers import space_invaders_engine
 from drivers import simon_engine
 from drivers import simon_hardware
+from drivers import panel_led_engine
 from drivers import recovery_button
 from drivers import medley_engine
 from drivers import westminster_engine
@@ -454,6 +455,28 @@ def abort_game_mode_early():
     price_game_engine.force_end_price_game_audio()
     state.set_message("MODE: DJ (GAME ABORTED)", 1.5)
     print("GAME MODE EXIT: Aborted early via Gamepad Button 7")
+
+def cancel_question():
+    """Admin CANCEL QUESTION (2026-10-05): whatever quiz is showing -- a live
+    or graded question, a mystery "Who is this?" teaser (pending or up), the
+    jukebox "TRIVIA QUESTION?" confirm -- goes away with no score, and the
+    show is in DJ mode immediately. Built on the Btn7 abort. Returns what was
+    showing (for the log / the button's reply)."""
+    from drivers import mystery_band_engine, simon_engine
+    was = []
+    if state.mode == state.MODE_GAME or state.factoid_question or state.quiz_gate_status != "idle":
+        was.append("question")
+    if mystery_band_engine.cancel():
+        was.append("mystery")
+    if state.trivia_confirm_active:
+        simon_engine._close_trivia_confirm()
+        was.append("trivia confirm")
+    if state.mode == state.MODE_GAME or "question" in was or "mystery" in was:
+        abort_game_mode_early()
+        state.set_message("MODE: DJ (QUESTION CANCELLED)", 1.5)
+    print(f"[ADMIN] Cancel question: {', '.join(was) or 'nothing showing'} -> DJ mode.")
+    return was
+
 
 def trigger_big_win():
     stop_previous_audio()
@@ -1399,17 +1422,37 @@ def _sync_panel_leds():
     -- same "cheap no-op unless changed" convention used elsewhere in this
     app (e.g. drivers/wled_engine.py's own sync_to_show_state())."""
     global _panel_led_state
-    if state.mode == state.MODE_SIMON:
+    if state.blackout_active:
+        if _panel_led_state != "blackout":
+            simon_hardware.set_all_leds(False)
+            _panel_led_state = "blackout"
         return
+    if state.mode == state.MODE_SIMON:
+        _panel_led_state = None  # Simon drives the LEDs itself; resync once it ends
+        return
+    # 2026-10-09 (drivers/panel_led_engine.py): a pressed button always lights
+    # its own LED (held + a short linger), OR'd over whatever else is showing;
+    # during ordinary music play the four run beat-synced patterns.
+    now = time.time()
+    pressed = panel_led_engine.pressed_mask(now)
     if (state.quiz_locked and not state.quiz_players and state.factoid_choices
             and 0 <= state.factoid_correct_index < len(config.SIMON_HW_COLOR_ORDER)):
-        flash_on = int(time.time() / _CORRECT_LED_FLASH_PERIOD_SECONDS) % 2 == 0
+        flash_on = int(now / _CORRECT_LED_FLASH_PERIOD_SECONDS) % 2 == 0
         for i, color in enumerate(config.SIMON_HW_COLOR_ORDER):
-            simon_hardware.set_led(color, flash_on and i == state.factoid_correct_index)
+            simon_hardware.set_led(color, (flash_on and i == state.factoid_correct_index) or pressed[i])
         _panel_led_state = None  # force a resync once the round goes live again
         return
-    choice_count = len(state.factoid_choices) if live_round_engine.is_round_active() else 0
-    desired = tuple(i < choice_count for i in range(len(config.SIMON_HW_COLOR_ORDER)))
+    if state.trivia_confirm_active:
+        # "TRIVIA QUESTION?": green = yes / red = no are the live answers
+        base = tuple(c in ("green", "red") for c in config.SIMON_HW_COLOR_ORDER)
+    elif live_round_engine.is_round_active():
+        choice_count = len(state.factoid_choices)
+        base = tuple(i < choice_count for i in range(len(config.SIMON_HW_COLOR_ORDER)))
+    elif panel_led_engine.music_fx_wanted():
+        base = panel_led_engine.music_fx_mask(now)
+    else:
+        base = (False,) * len(config.SIMON_HW_COLOR_ORDER)
+    desired = tuple(b or p for b, p in zip(base, pressed))
     if desired != _panel_led_state:
         for color, on in zip(config.SIMON_HW_COLOR_ORDER, desired):
             simon_hardware.set_led(color, on)

@@ -17,6 +17,10 @@ anthropic_key.txt
 
 # Large media -- lives on the device, not in git
 audio/music/
+# Demucs instrumental stems (~30 MB each) -- made on the PC, copied to the Pi
+audio/MedleyStems/
+# Generated cue-out audition clips
+cue_previews/
 
 # Personal Claude Code overrides (permissions, local allow-lists) -- not shared
-.claude/settings.local.jsoncue_previews/
+.claude/settings.local.json

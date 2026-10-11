@@ -151,6 +151,10 @@ MATRIX_HEIGHT = ROW3_Y + PANEL_H
 # virtual matrix window doesn't dominate the dev display.
 PIXEL_SCALE = 3
 GAP = 1
+# 2026-10-08 CPU survey: skip drawing the desktop preview window (simulator +
+# overlay panel) while no monitor is plugged into the Pi -- it was ~80% of the
+# app's CPU drawing to nowhere. The LED panels are fed either way.
+SIMULATOR_SKIP_WHEN_HEADLESS = True
 
 # Pixel size of just the LED-matrix render region within the window --
 # separate from WINDOW_W/H below (Feature Update: right-side overlay panel),
@@ -191,7 +195,9 @@ HAIKU_OUTPUT_COST_PER_MTOK = 5.00
 # ==========================================
 # SCROLLING / MARQUEE TEXT ENGINE
 # ==========================================
-SCROLL_SPEED_PX_PER_SEC = 15.0
+# 20 = exactly 1px per panel frame at led_bridge's 20 frames/s (2026-10-08;
+# was 15 = 0.75px/frame, which stalled every 4th frame -- visible hitches).
+SCROLL_SPEED_PX_PER_SEC = 20.0
 SCROLL_PAUSE_SECONDS = 1.0
 
 # How long each "page" stays up on the DJ-mode top display before
@@ -289,6 +295,34 @@ FACTOID_UNKNOWN_RETRY_SECONDS = 86400      # AI explicitly wasn't confident
 # track (replays cost nothing) until a question is consumed by gameplay.
 TRACK_QUESTIONS_PER_TRACK = 3
 TRACK_CACHE_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "track_cache.json")
+
+# ==========================================
+# QUESTION AUDIT (web page /questions, drivers/question_audit.py)
+# ==========================================
+# Operator-started only (never runs on its own during a show), so unlike the
+# runtime calls above these are allowed to spend Sonnet/Opus tokens: a wrong
+# "correct answer" in front of a paying room is the one failure this business
+# can't afford. The AI audit answers each question BLIND (without seeing the
+# stored answer) and compares. "Deep verify" on a single question uses the
+# bigger model.
+QUESTION_AUDIT_MODEL = "claude-sonnet-5-5"
+QUESTION_DEEP_AUDIT_MODEL = "claude-opus-5-5"
+QUESTION_AUDIT_TIMEOUT_SECONDS = 90.0
+QUESTION_AUDIT_WORKERS = 3                 # parallel audit calls in a bulk run
+# Cost ESTIMATES for the audit page's "how much to audit" picker, US$ per
+# million tokens (input, output). Check console.anthropic.com pricing and
+# edit if they differ -- only the on-screen estimate uses these.
+QUESTION_AUDIT_PRICE_PER_M = (3.0, 15.0)        # QUESTION_AUDIT_MODEL
+QUESTION_DEEP_AUDIT_PRICE_PER_M = (15.0, 75.0)  # QUESTION_DEEP_AUDIT_MODEL
+# Short (LED) version limits. The LED wording is a terse headline
+# ("#1 toy in 1999?"), written from the full phone question; the prompt aims
+# for QUESTION_SHORT_TARGET_CHARS, MAX is the hard ceiling.
+QUESTION_SHORT_TARGET_CHARS = 32
+QUESTION_SHORT_MAX_CHARS = 48
+QUESTION_SHORT_CHOICE_MAX_CHARS = 24
+# Long (phone) version limits.
+QUESTION_LONG_MAX_CHARS = 280
+QUESTION_LONG_CHOICE_MAX_CHARS = 80
 
 # Priority tiers for TrackQuestionEngine's background worker queue (lower
 # number = served first). A Hot Track import's prefetch (drivers/
@@ -415,24 +449,34 @@ DMX_HEAD_BASE_CHANNEL = 180
 DMX_HEAD_IDLE_BRIGHTNESS = 0.10
 DMX_HEAD_MIN_BRIGHTNESS = 0.05   # floor -- never darker than this while the show runs
 DMX_HEAD_SMOOTH_SECONDS = 0.5    # low-pass on idle brightness/color so beat flashes don't strobe it
-# Positions are in coarse DMX units (0-255 across the fixture's full
-# range, ~2.1 deg/unit pan, ~1.06 deg/unit tilt). TILT_CENTER is whatever
-# makes it face straight ahead for how it's mounted -- adjust on site.
-DMX_HEAD_PAN_CENTER = 163.0
-DMX_HEAD_TILT_CENTER = 25.0
-DMX_HEAD_SWAY_PAN_UNITS = 8.0     # +/- ~17 deg
-DMX_HEAD_SWAY_TILT_UNITS = 6.0    # +/- ~6 deg
+# Positions are in coarse DMX units. Pan (replacement unit, measured
+# 2026-10-05): 0-255 = one full turn, ~1.4 deg/unit, higher = clockwise;
+# 0 and 255 alias (255->0 doesn't move). Straight ahead = pan 0 (the base
+# can't be turned -- wiring), so the seam is right at front: every pan move
+# goes one-sided to the right and back (dmx_head._swing), and crossing to
+# the left only happens as a deliberate full spin (DMX_HEAD_SPIN_*).
+# The old unit was ~1.06 deg/unit, so pan swings were scaled x0.75.
+# Tilt ~0.53 deg/unit (6 = level, 176 = straight up), higher = up; tilt
+# swings were doubled vs. the old unit to keep the same angles.
+DMX_HEAD_PAN_CENTER = 0.0
+DMX_HEAD_TILT_CENTER = 6.0   # level on the replacement unit (old unit: 25); tilt moves swing up-only from here
+DMX_HEAD_SWAY_PAN_UNITS = 6.0     # up to ~8 deg right
+DMX_HEAD_SWAY_TILT_UNITS = 12.0   # up to ~6 deg up
 DMX_HEAD_SWAY_BEATS = 4.0         # beats per full pan sway cycle (tilt is 2x as fast)
 DMX_HEAD_SWAY_SPEED = 110         # P/T speed channel while swaying (smooth)
 DMX_HEAD_SCAN_PERIOD_SECONDS = 9.0  # gameplay: one look-around every this many seconds
 DMX_HEAD_SCAN_STOP_SECONDS = 1.1    # hold time at each side (blinks twice)
-DMX_HEAD_SCAN_UNITS = 22.0          # sharp right/left look distance
+DMX_HEAD_SCAN_UNITS = 16.5          # sharp right/left look distance (~23 deg)
 DMX_HEAD_REACT_SPEED = 0          # P/T speed channel during nod/shake (fast)
 DMX_HEAD_REACT_SECONDS = 1.6      # full-color nod/shake duration
 DMX_HEAD_FADE_SECONDS = 0.6       # fade back to the dim uplight color
-DMX_HEAD_NOD_UNITS = 14.0         # tilt swing of a win nod
-DMX_HEAD_SHAKE_UNITS = 22.0       # pan swing of a loss shake
+DMX_HEAD_NOD_UNITS = 28.0         # tilt swing of a win nod (~15 deg up)
+DMX_HEAD_SHAKE_UNITS = 16.5       # pan swing of a loss shake (~23 deg)
 DMX_HEAD_REACT_CYCLES = 3
+DMX_HEAD_SPIN_ENABLED = True      # full 360 spin on round start, winner, and right answers
+DMX_HEAD_SPIN_SECONDS = 1.5       # duration of the spin ramp (3.0 was too slow)
+DMX_HEAD_WIN_BLINK_HZ = 8.0       # right-answer green blink rate during the spin
+DMX_HEAD_WIN_SOLID_SECONDS = 1.0  # solid green after the spin, before fading back
 # True = the nod (win) moves the PAN axis and the shake (loss) moves TILT, for
 # a mounting where the axes read the other way around (2026-09-29).
 DMX_HEAD_SWAP_NOD_SHAKE_AXES = False
@@ -530,6 +574,13 @@ USB_RELAY_RING_OFF_SECONDS = 0.06
 # entirely, which is the actual fix for the WiFi-jitter chase-pattern
 # stutter DDP could never fully avoid -- not just another mitigation.
 WLED_SERIAL_ENABLED = True
+# Marquee heartbeat (drivers/wled_engine.py _heartbeat): the Pi asks WLED for
+# its version once a second over the Adalight link. False = only log when the
+# board stops answering; True = after 6s of silence close the port and
+# re-enumerate its USB device (software unplug/replug), then reconnect --
+# which also reboots the ESP32. Verified answering every second mid-stream
+# 2026-10-03 before turning this on.
+WLED_HEARTBEAT_RESET = True
 #
 # Hardware is a work in progress -- LED counts/segments below will grow as
 # more panels get wired; confirm against the physical rig before trusting
@@ -719,7 +770,43 @@ ACCENT_PRESETS = {
     5: "Fire 2",
     6: "GreenDefault",
     7: "Neon lust",
+    8: "Dropper",
+    9: "Dingy brown sides",
+    10: "Volume",
+    11: "Blue vu",
+    12: "Megablinds",
+    13: "Purple carpet",
+    14: "Blinking edges",
 }
+
+# Presets built around WLED's own sound-reactive effects (re-synced from the
+# board 2026-10-01, MAC-verified): each is one full-strip mirrored segment
+# with its own palette, speed and sliders already dialed in on the board.
+# The engine applies these as-is -- no state.accent_speed override (it would
+# flatten the tuned per-preset speed) -- and they win over the generic
+# accent_sound_enabled "bare GEQ" fallback, which sends no colors/palette
+# and so renders with whatever the previous look left behind.
+ACCENT_AUDIOREACTIVE_PRESETS = {8, 9, 10, 11, 12, 13, 14}
+
+
+def _load_accent_presets_snapshot():
+    """accent_presets.json (written by the admin panel's "Audit outline board
+    -> Sync presets") overrides the hand-copied dicts above, in place, so the
+    maintenance step above no longer has to be done by hand."""
+    import json as _json
+    try:
+        with open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "accent_presets.json"),
+                  "r", encoding="utf-8") as f:
+            d = _json.load(f)
+        ACCENT_PRESETS.clear()
+        ACCENT_PRESETS.update({int(k): str(v) for k, v in d.get("presets", {}).items()})
+        ACCENT_AUDIOREACTIVE_PRESETS.clear()
+        ACCENT_AUDIOREACTIVE_PRESETS.update(int(i) for i in d.get("audioreactive", []))
+    except Exception:
+        pass
+
+
+_load_accent_presets_snapshot()
 
 # Preset id -> WLED segment IDs whose primary color gets replaced when the
 # operator picks an override color for that preset (drivers/accent_engine.py
@@ -826,6 +913,21 @@ ACCENT_QUIZ_CELEBRATION_SOLID_SECONDS = 4.0
 ACCENT_QUIZ_CELEBRATION_DISSOLVE_TT_DS = 20
 ACCENT_QUIZ_WRONG_HOLD_SECONDS = 8.0
 
+# Song-change / medley-hook transition styles on the outline board
+# (drivers/accent_engine.py TRANSITION_STYLES, WLED 16 "bs" blending styles).
+# Times are WLED tenths of a second.
+ACCENT_TRANSITION_FILE = "outline_transition.json"  # {"song": style, "medley": style} -- the remote's pickers
+ACCENT_FX_FAVORITES_FILE = "outline_fx_favorites.json"  # [effect ids] starred on the remote's outline Effect picker
+ACCENT_SONG_TRANSITION_DEFAULT = "dissolve"
+ACCENT_MEDLEY_TRANSITION_DEFAULT = "wipe_fwd"
+ACCENT_DEFAULT_TRANSITION_DS = 7     # the board's own 0.7s fade, restored after each styled change
+ACCENT_STYLED_TRANSITION_DS = 8      # wipe/push/etc. between normal songs
+ACCENT_MEDLEY_TRANSITION_DS = 5      # snappier for ~15s medley hooks
+ACCENT_FLASH_WHITE_S = 0.12          # "Flash white": full-bright white hold before the next look
+ACCENT_FLASH_FADE_DS = 4             # ...then fade from white into it
+ACCENT_STYLED_WINDOW_S = 6.0         # only the first look change this soon after a new track is styled
+ACCENT_PREVIEW_HOLD_S = 2.5          # remote Preview: time on white before transitioning back
+
 # Fastest WLED "sx" speed value -- the show-intro scene's "movie style"
 # marquee chase on the outline strip (2026-09-27 request) wants this at
 # full pace, not whatever state.accent_speed the operator last left it at.
@@ -837,6 +939,13 @@ ACCENT_INTRO_CHASE_SPEED = 255
 # strip" figure this used to hold, which was the user's own spec, never
 # cross-checked against the board (it wasn't reachable over WiFi at the
 # time). Re-verify via /json/info if the strip is ever rebuilt.
+# Segment geometry for the engine's own (raw, non-preset) looks, copied from the board's
+# "Megablinds" preset (2026-10-01): one full-strip segment, MIRRORED, with the effect
+# offset to 152 so the visual runs out from the middle and reads as the display split in
+# half. (The operator said 151; Megablinds -- the stated reference -- has 152. Change here.)
+ACCENT_SEGMENT_OFFSET = 152
+ACCENT_SEGMENT_MIRROR = True
+ACCENT_SEGMENT_REVERSE = False
 ACCENT_TOTAL_LEDS = 423
 
 # Segment split for the "top panel only" vs "all panels" movie-chase
@@ -865,9 +974,91 @@ MARQUEE_DJ_BREATHE_PERIOD_SECONDS = 4.0
 # wled_engine.py's _DJ_PATTERNS list.
 MARQUEE_DJ_WAVE_LENGTH_LEDS = 12     # traveling brightness wave's wavelength, in pixels
 MARQUEE_DJ_WAVE_SPEED_SECONDS = 3.0  # seconds for the wave to shift one full wavelength
-MARQUEE_DJ_CHASE_LAP_SECONDS = 2.0   # seconds per full lap, complement-trail comet pattern
+MARQUEE_DJ_CHASE_LAP_SECONDS = 2.0   # (unused since 2026-10-05: Complement Chase is now a full-loop gradient at MARQUEE_DJ_RAINBOW_SPEED)
 MARQUEE_DJ_BOUNCE_PERIOD_SECONDS = 3.0  # seconds per full there-and-back sweep, bounce pattern
+MARQUEE_TWINKLE_SOFT_SPARK_RATE = 0.02  # "Twinkle Soft": chance per LED per 40 fps frame of a new sparkle
+MARQUEE_TWINKLE_SOFT_DECAY = 0.94       # glow kept per frame (~0.3 s half-life at 100% speed)
+MARQUEE_DJ_BOUNCE_GRADIENT_PERIOD_SECONDS = 8.0  # "Bounce Continuous": out-and-back sweep of the gradient
+# Bounce pivots (2026-10-05): per segment, the position (0-based within the
+# segment, wiring order) of the CENTER of one horizontal edge. Bounce Comet /
+# Bounce Continuous mirror around it, so they turn around at that center and
+# at the opposite edge's center instead of at the wiring seam (a corner).
+# GUESS until checked with the admin "Show bounce centers" button (green =
+# this pivot, blue = the opposite center, red = the segment's first LED).
+MARQUEE_SEGMENT_CENTERS = {"title": 8, "panel4": 15, "panel3": 11, "panel5": 14, "panel6": 2}
+# title: 6 was 2 bulbs off center; 4 was confirmed the WRONG way by the user
+# (2026-10-05) -> 8. Panels: from the overlay photo (MARQUEE_LAYOUT below),
+# each the top edge's center bulb (old guess 3 sat on a side).
+
+# Physical bulb map (2026-10-05, read off a photo of the "Show bounce
+# centers" overlay; units = photo pixels, x right, y DOWN). Per segment, the
+# straight runs in wiring order: (x0, y0, x1, y1, count) -- `count` bulbs
+# evenly spaced from (x0,y0) to (x1,y1) inclusive. Every loop is 3 bulbs
+# per side; title 12 along top/bottom, panels 6. Used by the marquee
+# track-change transitions (wled_engine._bulb_xy) for wipes/shapes.
+MARQUEE_LAYOUT = {
+    "title":  [(1250, 712, 1260, 537, 3), (1195, 470, 275, 452, 12),
+               (230, 518, 225, 658, 3), (290, 725, 1190, 745, 12)],
+    "panel4": [(1225, 808, 1225, 808, 1), (1285, 865, 1280, 1018, 3),
+               (1215, 1070, 815, 1062, 6), (770, 1005, 770, 875, 3),
+               (830, 800, 1170, 805, 5)],
+    "panel3": [(650, 1060, 240, 1068, 6), (190, 995, 190, 835, 3),
+               (270, 797, 665, 800, 6), (712, 880, 712, 1045, 3)],
+    "panel5": [(712, 1150, 707, 1305, 3), (655, 1385, 225, 1385, 6),
+               (195, 1335, 195, 1160, 3), (255, 1115, 685, 1120, 6)],
+    "panel6": [(790, 1115, 1225, 1132, 6), (1275, 1195, 1275, 1360, 3),
+               (1185, 1390, 815, 1385, 6), (765, 1310, 765, 1180, 3)],
+}
+
+# Track-change transition (every song change, manual Next or Auto-DJ), in
+# step with the matrix board wipe: a WHITE band sweeps left -> right
+# clearing the old look to dark (while the matrix slides its old content
+# off), the board holds dark through the crossfade/VO, then a band in the
+# new song's marquee color sweeps left -> right revealing the new look at
+# the same moment the matrix wipes its new content in (TRANSITION_REVEAL_SECONDS).
+MARQUEE_TRANSITION_ENABLED = True
+MARQUEE_TRANSITION_SECONDS = 0.6   # clear-to-dark sweep (= matrix slide-out)
+TRANSITION_REVEAL_SECONDS = 0.6    # reveal sweep, marquee AND matrix together
+# Shapes (drivers/transition_shapes.py):
+#   "wipe_lr"      -- left -> right
+#   "center_out"   -- a box growing from the board's center out to the edges
+#   "edges_in"     -- the reverse: closing in from the frame to the center
+#   "curtain"      -- top -> bottom
+#   "diagonal"     -- top-left corner -> bottom-right corner
+#   "flash"        -- whole board pops white / the new color, then fades
+#   "sparkle_wipe" -- left -> right with a trail of white sparkles behind
+#   "pixel"        -- random-order pixel dissolve (matrix in 4x4 blocks)
+# Plain crossfades (no sweeper) take these in turn:
+TRANSITION_STYLES = ["wipe_lr", "center_out", "edges_in", "curtain",
+                     "diagonal", "flash", "sparkle_wipe", "pixel"]
+# Sweeper-paired styles (2026-10-06): a song change that plays a sweeper
+# takes its style from the sweeper's file-name class (the name minus its
+# trailing number, longest prefix wins), rotating within the class's list.
+# Classes measured from the files: hb = short punchy hits, st/Superfriends =
+# sparkly star sounds, sweep = bright fast whooshes, sweeper = mid sweeps.
+SWEEPER_TRANSITION_STYLES = {
+    "hb": ["flash"],
+    "st": ["sparkle_wipe"],
+    "superfriends": ["sparkle_wipe"],
+    "sweep": ["wipe_lr", "diagonal", "curtain"],
+    "sweeper": ["center_out", "edges_in", "pixel"],
+}
+TRANSITION_SPARKLE_TRAIL = 0.35   # sparkle_wipe: trail length behind the band (board widths)
+TRANSITION_PIXEL_BLOCK = 4        # pixel dissolve: matrix block size in pixels
+MARQUEE_TRANSITION_BAND = 0.12   # half-width of the bright band, as a fraction of board width
+MARQUEE_LOCATE_SECONDS = 20.0
 MARQUEE_DJ_RAINBOW_SPEED = 0.15      # hue cycles/sec, rainbow chase pattern
+# Admin-panel DJ-dance dials (2026-10-05), saved per song as exceptions only
+# (every track starts from these): brightness %, speed % (scales the
+# patterns' clock; twinkle/confetti per-frame rates too), depth % = contrast
+# of Twinkle Base / Confetti (50 = the original look; higher = darker
+# background, crisper sparks), off = marquee dark for that song.
+MARQUEE_DIAL_DEFAULTS = {"marquee_brightness": 100, "marquee_speed": 100, "marquee_depth": 50, "marquee_off": 0}
+MARQUEE_SPEED_RANGE = (25, 300)
+# DMX uplight pattern speed (2026-10-08): the pattern loop runs at the song's
+# tempo divided by one of these -- 1 = full (current tempo), 2 = half, 4 =
+# quarter. Saved per song as an exception only; every track starts at 1.
+DMX_SPEED_DIVISORS = (1, 2, 4)
 
 # Game-mode: an all-white comet-style chase per segment (loops within its
 # own segment, not across the whole strip -- title and panel3 are two
@@ -904,6 +1095,12 @@ LIGHT_PREFS_CACHE_PATH = os.path.join(LIGHT_PREFS_DIR, "light_prefs.csv")
 LIGHT_PREFS_SAVE_DEBOUNCE_SECONDS = 2.5
 # Append-only, timestamped log of every field change (see light_prefs_engine._log_changes).
 LIGHT_PREFS_LOG_PATH = os.path.join(LIGHT_PREFS_DIR, "light_prefs_log.csv")
+# Like songs look alike (drivers/look_matcher.py, 2026-10-07): a song with no
+# hand-made look borrows the whole look of the most similar song the operator
+# did design (genre/decade/energy/slow-dance/BPM/artist); one of the TOP_N
+# closest, fixed per song. Nothing is saved for the borrowing song.
+LOOK_BORROW_ENABLED = True
+LOOK_BORROW_TOP_N = 3
 
 # ==========================================
 # SHOW CURATION: PER-TRACK METADATA (2026-08-12)
@@ -930,6 +1127,10 @@ MUSIC_GENRES = [
     "Rock", "Adult Top 40", "Hip-Hop/Rap", "R&B/Soul",
     "Country", "Dance/Electronic", "Oldies/Classic", "Children's",
 ]
+# Setup page decade checkboxes (2026-10-05), newest first; values match
+# music_metadata_engine's "decade" tag ("1990s"), labels are what's shown.
+MUSIC_DECADES = ["2020s", "2010s", "2000s", "1990s", "1980s", "1970s", "1960s", "1950s"]
+MUSIC_DECADE_LABELS = {"1980s": "80s", "1970s": "70s", "1960s": "60s", "1950s": "50s"}
 
 MUSIC_ENERGY_RANK_MIN = 1
 MUSIC_ENERGY_RANK_MAX = 5
@@ -1025,6 +1226,16 @@ SIMON_HW_LED_PINS = {
     "blue": 12,    # physical pin 32
 }  # common return: GND, physical pin 30 -- LEDs run on 12V through a MOSFET per channel, GPIO only drives the gate
 SIMON_HW_LED_PULSE_SECONDS = 1.0
+
+# Panel-button LEDs outside Simon/trivia (drivers/panel_led_engine.py, 2026-10-09):
+# a pressed button stays lit this long after release, and during ordinary
+# music play the four LEDs run beat-synced patterns, switching pattern every
+# PANEL_LED_PATTERN_BEATS beats (16 = 4 bars). The beat is the tap tempo the
+# DMX uplights use, floored at PANEL_LED_MIN_BEAT_SECONDS so a mis-tap can't
+# make them strobe.
+PANEL_LED_PRESS_LINGER_SECONDS = 0.25
+PANEL_LED_PATTERN_BEATS = 16
+PANEL_LED_MIN_BEAT_SECONDS = 0.25
 
 # Real-game entry via the physical arcade buttons (2026-09-13), separate
 # from the joystick's secret-combo Easter egg above -- see drivers/
@@ -1219,7 +1430,7 @@ DJ_THEME_NAMES = [
 MARQUEE_THEME_NAMES = [
     "Breathe", "Wave", "Twinkle Base", "Call & Response",
     "Complement Chase", "Rainbow Chase", "Bounce Comet", "Confetti",
-    "Movie Chase",
+    "Movie Chase", "Bounce Continuous", "Twinkle Soft",
 ]
 
 # WLED built-in effect ID for the outline/accent board's "sound" checkbox
@@ -1231,7 +1442,11 @@ MARQUEE_THEME_NAMES = [
 # 138 Freqmatrix, 141 Freqpixels, 155 Freqmap, 158 Gravfreq, 198 PS GEQ 2D.
 # Re-verify against /json/eff if this board's WLED version ever changes --
 # same caveat ACCENT_EFFECT_NAMES's own header comment already carries.
-ACCENT_AUDIOREACTIVE_FX_ID = 139  # "GEQ"
+# 2026-10-03: switched from 139 GEQ, which WLED's own effect metadata marks
+# matrix-only (2D) -- the outline is a single 1D strip. Gravcenter is a
+# volume-reactive 1D VU meter from the centre out (drivers/wled_fx_meta.py
+# lists every strip-capable sound effect; the remote's "Sound" filter too).
+ACCENT_AUDIOREACTIVE_FX_ID = 156  # "Gravcenter"
 
 # Game-mode chase pace (seconds per step across fixtures 2-11).
 CHASE_PACE_MID_SECONDS = 0.12
@@ -1810,7 +2025,9 @@ AUTO_ANNOUNCE_TOGGLE_OVERLAY_SECONDS = 1.5
 # ==========================================
 # Gates raw_ding/raw_buzzer/raw_bigwin/raw_coin/raw_buzz_short in
 # inputs/gamepad.py -- lets the operator mute quiz sound effects for a
-# quiet venue without touching the music deck volume.
+# quiet venue without touching the music deck volume. Since 2026-10-07 also
+# the song-change and medley sweepers; the spoken VO is the separate
+# ANNOUNCEMENTS checkbox (state.auto_announce_enabled).
 SFX_ENABLED_BY_DEFAULT = True
 
 # ==========================================
@@ -1885,9 +2102,11 @@ WEB_AUTODJ_SKIP_SECONDS = 10.0
 # Leave the three URLs below blank to disable this entirely -- every QR
 # call site falls back to the LAN-IP URL exactly as before this feature
 # existed (see web/net_info.py::get_admin_url()/get_play_url()).
-TUNNEL_REDIRECT_ADMIN_URL = "https://yannitellphotography.com/trivia/admin.php"
-TUNNEL_REDIRECT_PLAY_URL = "https://yannitellphotography.com/trivia/play.php"
-TUNNEL_REDIRECT_UPDATE_URL = "https://yannitellphotography.com/trivia/update.php"
+# Moved to triviacade.com/play/ 2026-10-10 (cloudflare_redirect/play/); the old
+# yannitellphotography.com/trivia/ pages now just forward here.
+TUNNEL_REDIRECT_ADMIN_URL = "https://triviacade.com/play/admin.php"
+TUNNEL_REDIRECT_PLAY_URL = "https://triviacade.com/play/"
+TUNNEL_REDIRECT_UPDATE_URL = "https://triviacade.com/play/update.php"
 
 # Must match cloudflare_redirect/config.php's SHARED_SECRET exactly --
 # pre-filled here and in that file so they match out of the box; change
@@ -2212,9 +2431,18 @@ MEDLEY_TEMPO_MAX = 140.0
 MEDLEY_MAX_STRETCH = 0.04       # max speed change (pitch shift) applied to any track
 MEDLEY_MAX_TEMPO_DRIFT = 0.015  # max tempo change between consecutive hooks
 MEDLEY_MAX_JUMP = 0.06          # native tempo must be within this of the running tempo
+# Outline speed/brightness carry over between songs; a song that saved neither
+# and inherits a dial above HOT_PCT gets these calm values instead (percent).
+ACCENT_COLOR_MIN_DISTANCE = 90   # outline Fx/Bg colors closer than this (sum of RGB differences) get Bg forced to black/white
+ACCENT_CARRYOVER_HOT_PCT = 65
+ACCENT_CARRYOVER_SPEED_PCT = 50
+ACCENT_CARRYOVER_BRIGHTNESS_PCT = 35
+MEDLEY_OPTIONS_FILE = "medley_options.json"  # {"source": latest|green|yellow, "songs": n} -- the remote's medley radio buttons
+MEDLEY_DEFAULT_SONGS = 10       # song count when nothing is saved (length is set by the song count; MEDLEY_MAX_SECONDS below is off)
+MEDLEY_SOURCES = ("latest", "green", "yellow")  # latest edited clips first | human-edited only | AI-included only
 MEDLEY_MIN_TRACKS = 4           # fewer mixable tracks than this = no medley
 MEDLEY_MAX_TRACKS = 60
-MEDLEY_MAX_SECONDS = 600.0      # ~10 minutes
+MEDLEY_MAX_SECONDS = 0          # optional hard cap on medley length in seconds, 0 = none (operator, 2026-10-01: length is controlled by the song count; was 180)
 MEDLEY_HOOK_TARGET_SECONDS = 15.0  # aim for this hook length (even bar counts; never over the analyzed window)
 MEDLEY_EXTRA_BARS = 3             # bars added to every hook so the exit isn't early (operator, 2026-09-30)
 MEDLEY_MAX_HOOK_SECONDS = 29.0    # hard ceiling on any hook, extra bars included
@@ -2224,7 +2452,9 @@ MEDLEY_EDIT_LEAD_SECONDS = 8.0   # transition editor: after an End tweak, replay
 MEDLEY_EDIT_POST_SECONDS = 6.0   # ...and stop this long into the next hook
 MEDLEY_XFADE_BEATS = 1
 MEDLEY_REVEAL_SECONDS = 3.0       # game: how long the previous statement's answer shows on the LEDs / phones
-MEDLEY_RESULTS_SECONDS = 15.0     # game: end-of-medley leaderboard on the main screen
+MEDLEY_LISTEN_SECONDS = 2.0       # game: TRUE/FALSE stay locked this long into each hook (and through the
+                                  # previous answer's reveal) so a blind instant tap can't win fastest finger
+MEDLEY_RESULTS_SECONDS = 15.0    # game: end-of-medley leaderboard on the main screen
 MEDLEY_BANNER_SCROLL_PX_PER_SEC = 20.0  # "MEDLEY TIME!" on panels 3+4: scroll speed
 MEDLEY_BANNER_BOB_PX = 3               # ...and how far it bobs up/down
 MEDLEY_BANNER_BOB_PERIOD_SECONDS = 1.6
@@ -2237,7 +2467,26 @@ MEDLEY_LONG_PRESS_SECONDS = 1.0   # yellow button hold to start/stop a medley
 # audio/MedleySweepers) | "all" (also the regular audio/sweepers folder).
 MEDLEY_SWEEPER_DIR = resource_path("audio", "MedleySweepers")
 MEDLEY_SWEEPER_MODE_DEFAULT = "medley"
-MEDLEY_SWEEPER_EVERY = 3          # a sweeper every Nth transition
+MEDLEY_SWEEPER_EVERY = 1          # a sweeper every Nth hook change (1 = every one, 2026-10-06)
+# Each medley hook change also runs a light transition (marquee + matrix),
+# paired with that sweeper's class like a normal song change
+# (SWEEPER_TRANSITION_STYLES) but with no dark hold: clear, then reveal.
+# Vocal-drop ending (2026-10-03 demo): if the last song has a precomputed
+# instrumental (audio/MedleyStems/<song file name minus .mp3>.inst.flac, made
+# offline with Demucs), the medley doesn't fade at its out point -- the vocals
+# drop (1-beat crossfade to the instrumental) and the song carries on as a bed
+# for the host's "fastest finger" review: a sweeper fires and the bed ducks a
+# few bars later (live deck-volume duck), the winner screen goes up, and the
+# bed fades after MEDLEY_DROP_BED_SECONDS. The winner screen then HOLDS until
+# ANY panel button, which crossfades back into normal play.
+MEDLEY_STEMS_DIR = resource_path("audio", "MedleyStems")
+MEDLEY_VOCAL_DROP = True
+MEDLEY_DROP_PREFER_LAST = True    # pick a song that has an instrumental as the final hook when one fits
+MEDLEY_DROP_BED_SECONDS = 75.0    # longest bed after the drop (less if the song ends sooner)
+MEDLEY_DROP_SWEEPER_BARS = 2      # sweeper + duck this many bars after the drop
+MEDLEY_DROP_DUCK_DB = -5.0        # live duck of the bed under the host
+MEDLEY_DROP_DUCK_RAMP_SECONDS = 0.6   # live deck-volume ramp, fired with the sweeper
+MEDLEY_DROP_FADE_SECONDS = 5.0    # bed fade-out at its end
 
 # Manual recovery button (drivers/recovery_button.py): a momentary switch
 # between GPIO4 (physical pin 7) and GND (pin 6 or 9), internal pull-up,
@@ -2247,6 +2496,22 @@ MEDLEY_SWEEPER_EVERY = 3          # a sweeper every Nth transition
 RECOVERY_BUTTON_ENABLED = True
 RECOVERY_BUTTON_PIN = 4
 RECOVERY_BUTTON_COOLDOWN_SECONDS = 5.0
+
+# Physical shutdown button (drivers/shutdown_button.py, 2026-10-07): momentary
+# switch between GPIO26 (physical pin 37) and GND (physical pin 39), internal
+# pull-up, active LOW. Held HOLD_SECONDS -> instant blackout (lights, matrix,
+# sound), then after DARK_SECONDS the same graceful teardown + Pi poweroff as
+# the web remote's SHUT DOWN PI.
+SHUTDOWN_BUTTON_ENABLED = True
+SHUTDOWN_BUTTON_PIN = 26
+# 2.0 (was 1.0) since 2026-10-08: the pin sees phantom ~0.8-0.9s LOW pulses
+# (logged during startup), uncomfortably close to a 1s hold.
+SHUTDOWN_BUTTON_HOLD_SECONDS = 2.0
+SHUTDOWN_BUTTON_DARK_SECONDS = 0.5
+# 2026-10-07: false shutdowns ~25s into the boot load (3x in a row), so the
+# button is ignored for the first 90s after the app starts; it must also read
+# released once after that before a press counts.
+SHUTDOWN_BUTTON_STARTUP_IGNORE_SECONDS = 90.0
 
 # How long the deck fades out when the host hits "Reset to Setup" on an
 # unattended-autoplay show (web remote only, live-panel banner) -- no

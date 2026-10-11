@@ -1,6 +1,7 @@
 import time
 import pygame
 from config import RED_FULL, BLACK, FONT_5X7, SCROLL_SPEED_PX_PER_SEC, SCROLL_PAUSE_SECONDS
+from drivers import led_bridge
 
 GLYPH_GAP = 1        # 1px gap between adjacent glyphs
 GLYPH_HEIGHT = 7
@@ -73,7 +74,9 @@ def get_scroll_offset(key, text, box_width, speed=None, pause=None):
         _scroll_state.pop(key, None)
         return 0
 
-    now = time.time()
+    # Panel-frame clock (drivers/led_bridge.py), counted in frames actually
+    # sent: at SCROLL_SPEED_PX_PER_SEC = 20 each panel frame moves exactly 1px.
+    now = led_bridge.frame_time()
     entry = _scroll_state.get(key)
     if entry is None or entry["text"] != text or entry["box_width"] != box_width:
         entry = {"text": text, "box_width": box_width, "start": now}
@@ -87,7 +90,7 @@ def get_scroll_offset(key, text, box_width, speed=None, pause=None):
     if phase < pause:
         return 0
     elif phase < pause + scroll_time:
-        return (phase - pause) * speed
+        return int((phase - pause) * speed + 1e-6)  # whole pixels, floor
     else:
         return scroll_distance
 

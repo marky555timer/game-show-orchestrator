@@ -76,7 +76,7 @@ def play(path, *, block=False):
     whatever's calling it. Returns the subprocess.Popen (or None if aplay
     isn't available), mainly so callers/tests can check .poll()/.returncode."""
     global _current_proc
-    if _APLAY is None:
+    if _APLAY is None or state.blackout_active:
         return None
     proc = subprocess.Popen(
         [_APLAY, "-q", "-D", _DEVICE, path],

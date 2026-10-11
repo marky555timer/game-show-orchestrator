@@ -5,9 +5,12 @@ Each hook gets one statement: "THIS IS <ARTIST>". Across a medley exactly half
 (rounded) are TRUE; a FALSE statement names the most plausible decoy artist
 (same genre / era / energy / tempo neighborhood as the real one). The arcade
 panel (green = TRUE, red = FALSE) and players on the web page answer with ONE
-tap, which locks the answer; answers close when the hook's segment ends.
-Each correct answer is +1 point (added to the player's regular score as a
-bonus and to a medley tally). When the medley ends the leaderboard shows on
+tap, which locks the answer; answers open after a short listen window
+(MEDLEY_LISTEN_SECONDS) and close when the hook's segment ends.
+Each correct answer is +1 point, and the FIRST correct answer to each
+statement (fastest finger) +1 more -- added to the player's regular score as
+a bonus and to a medley tally; ties on the tally go to the quicker total
+answer time. When the medley ends the leaderboard shows on
 the main screen under a "N TOTAL SONGS" headline.
 
 The whole game is OFF whenever the master "suppress questions" flag
@@ -167,25 +170,37 @@ def _grade_current(reveal):
     if q is None:
         return
     state.medley_q = None
-    for pid, ans in q["answers"].items():
-        _credit(pid, ans == q["is_true"])
+    took = dict(q["times"])
+    marks = {pid: ans == q["is_true"] for pid, ans in q["answers"].items()}
     if q["panel"] is not None:
-        _credit(PANEL_ID, q["panel"] == q["is_true"])
+        marks[PANEL_ID] = q["panel"] == q["is_true"]
+    # fastest finger: the first correct answer earns one extra point
+    right = [pid for pid, ok in marks.items() if ok]
+    first = min(right, key=lambda pid: took.get(pid, 1e9)) if right else None
+    for pid, ok in marks.items():
+        _credit(pid, ok, took.get(pid, 0.0), bonus=pid == first)
+    if first is not None:
+        print(f"[MEDLEY GAME] Fastest finger: {state.medley_scores[first]['initials']} "
+              f"({took.get(first, 0.0):.1f}s, +1 bonus).")
     if reveal:
         state.medley_reveal = {"qid": q["qid"], "shown": q["shown"], "real": q["real"], "was_true": q["is_true"],
                                "panel": q["panel"], "answers": dict(q["answers"]),
                                "until": time.time() + config.MEDLEY_REVEAL_SECONDS}
 
 
-def _credit(pid, correct):
+def _credit(pid, correct, took=0.0, bonus=False):
+    """`took` = seconds from the statement going up to the tap; summed over
+    correct answers it breaks ties on the leaderboard (quicker wins)."""
     row = state.medley_scores.setdefault(
         pid, {"initials": "PNL" if pid == PANEL_ID else (state.quiz_players.get(pid, {}).get("initials", "???")),
-              "points": 0, "answered": 0})
+              "points": 0, "answered": 0, "time": 0.0})
     row["answered"] += 1
     if correct:
-        row["points"] += 1
+        pts = 2 if bonus else 1
+        row["points"] += pts
+        row["time"] += took
         if pid != PANEL_ID and pid in state.quiz_players:
-            state.quiz_players[pid]["score"] += 1  # bonus point on the regular scoreboard
+            state.quiz_players[pid]["score"] += pts  # bonus point(s) on the regular scoreboard
 
 
 def begin_hook(i, seg, length):
@@ -214,9 +229,15 @@ def begin_hook(i, seg, length):
                 is_true = True  # no plausible decoy available: fall back to a true statement
         g["qid"] += 1
         g["active"] = True
+        now = time.time()
+        # listen first: answers open after MEDLEY_LISTEN_SECONDS, and not
+        # before the previous answer's reveal has left the LEDs
+        opens = now + config.MEDLEY_LISTEN_SECONDS
+        if state.medley_reveal is not None:
+            opens = max(opens, state.medley_reveal["until"])
         state.medley_q = {"qid": g["qid"], "idx": i, "shown": shown, "real": real, "is_true": is_true,
-                          "deadline": time.time() + length, "started": time.time(),
-                          "answers": {}, "panel": None}
+                          "deadline": now + length, "started": now, "opens": min(opens, now + length),
+                          "answers": {}, "panel": None, "times": {}}
 
 
 def pause():
@@ -226,18 +247,28 @@ def pause():
         state.medley_reveal = None
 
 
-def finish(show_results=True):
+def close_question():
+    """Vocal drop: the last hook is over musically -- grade and reveal it now
+    rather than letting it stay open through the bed."""
+    with _lock:
+        if _game is not None:
+            _grade_current(reveal=True)
+
+
+def finish(show_results=True, hold=False):
     """Medley over: grade the last question and (optionally) queue the
-    main-screen results."""
+    main-screen results. hold=True keeps them up until the medley engine
+    clears them (vocal-drop bed: until the host presses a panel button)."""
     global _game
     with _lock:
         if _game is None:
             return
         _grade_current(reveal=False)
-        rows = sorted(state.medley_scores.values(), key=lambda r: (-r["points"], r["initials"]))
+        # ties: the quicker total answer time on correct answers wins
+        rows = sorted(state.medley_scores.values(), key=lambda r: (-r["points"], r["time"], r["initials"]))
         if show_results and rows:
             state.medley_results = [{"initials": r["initials"], "points": r["points"]} for r in rows[:8]]
-            state.medley_results_until = time.time() + config.MEDLEY_RESULTS_SECONDS
+            state.medley_results_until = float("inf") if hold else time.time() + config.MEDLEY_RESULTS_SECONDS
         state.medley_q = None
         state.medley_reveal = None
         _game = None
@@ -257,7 +288,10 @@ def answer_panel(value):
         q = state.medley_q
         if not enabled() or q is None or time.time() >= q["deadline"] or q["panel"] is not None:
             return False
+        if time.time() < q["opens"]:
+            return False  # still in the listen window: ignored, not locked in
         q["panel"] = bool(value)
+        q["times"][PANEL_ID] = time.time() - q["opens"]
         return True
 
 
@@ -272,7 +306,10 @@ def answer_player(pid, qid, value):
             return {"ok": False, "reason": "unknown player"}
         if pid in q["answers"]:
             return {"ok": False, "reason": "already answered"}
+        if time.time() < q["opens"]:
+            return {"ok": False, "reason": "listen first"}
         q["answers"][pid] = bool(value)
+        q["times"][pid] = time.time() - q["opens"]
         return {"ok": True}
 
 
@@ -288,7 +325,8 @@ def player_view(pid):
         out.update({"active": True, "qid": q["qid"], "artist": q["shown"],
                     "remaining_seconds": max(0.0, q["deadline"] - now),
                     "total_seconds": max(1.0, q["deadline"] - q["started"]),
-                    "answered": q["answers"].get(pid), "index": q["idx"] + 1})
+                    "answered": q["answers"].get(pid), "index": q["idx"] + 1,
+                    "opens_in": max(0.0, q["opens"] - now)})
     if rv is not None and now < rv["until"]:
         mine = rv["answers"].get(pid)
         out["reveal"] = {"shown": rv["shown"], "real": rv["real"], "was_true": rv["was_true"],

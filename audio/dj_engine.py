@@ -418,13 +418,17 @@ class DJEngine:
         `overlap_seconds` is clamped to the sweeper's actual length in case
         a short sweeper file is shorter than the configured overlap.
         """
-        overlap = min(overlap_seconds, sweeper_sound.get_length())
+        # sweeper_sound None = SFX checkbox off (2026-10-07): the VO and its
+        # duck/swell run on their own, starting straight away.
+        overlap = min(overlap_seconds, sweeper_sound.get_length()) if sweeper_sound else 0.0
         announcement_length = announcement_sound.get_length()
 
-        self._play_at_full("sweeper", sweeper_sound, int(MIN_FADE_SECONDS * 1000))
+        if sweeper_sound:
+            self._play_at_full("sweeper", sweeper_sound, int(MIN_FADE_SECONDS * 1000))
 
         def _start_announcement():
-            self.ramp_volume("sweeper", SWEEPER_DUCK_LEVEL, MIN_FADE_SECONDS)
+            if sweeper_sound:
+                self.ramp_volume("sweeper", SWEEPER_DUCK_LEVEL, MIN_FADE_SECONDS)
             self._play_at_full("announcement", announcement_sound, int(MIN_FADE_SECONDS * 1000))
             self.ramp_volume(outgoing_deck, 0.0, crossfade_seconds)
             self.ramp_volume(incoming_deck, DECK_DUCK_LEVEL, crossfade_seconds)
@@ -483,8 +487,13 @@ class DJEngine:
     def stop_announcement(self):
         """Instant mute -- replaces audio_engine.py's stop_station_announcement()
         for the Auto-Voice-OFF hard cutoff (drivers/auto_dj_engine.py::
-        toggle_auto_announce). Safe to call even if nothing is playing."""
+        toggle_auto_announce). Safe to call even if nothing is playing.
+        Voice only since 2026-10-07 -- the sweeper belongs to the SFX
+        checkbox (stop_sweeper)."""
         self._channels["announcement"].stop()
+
+    def stop_sweeper(self):
+        """SFX checkbox switched off: cut a sweeper mid-whoosh."""
         self._channels["sweeper"].stop()
 
 

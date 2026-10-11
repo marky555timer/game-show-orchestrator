@@ -16,11 +16,13 @@ here aren't mutex-protected against the main thread, which is an accepted
 trade-off at human input speed for a live-show control surface."""
 import asyncio
 import io
+import json
 import os
 import queue
 import threading
 import time
 import uuid
+from typing import Optional
 
 import config
 from state import state
@@ -42,12 +44,15 @@ from drivers import tunnel_engine
 from drivers import bluetooth_engine
 from drivers import audio_stream_bridge
 from drivers import factoid_engine
+from drivers import question_audit
 from drivers import joystick_bindings
 from drivers import simon_hardware
 from drivers import accent_engine
 from drivers import light_prefs_engine
 from drivers import relay_engine
 from drivers import medley_game
+from drivers import track_record
+from drivers import wled_fx_meta
 from graphics.animations import deal_panel_animations
 from web.net_info import get_lan_ip, get_play_url
 
@@ -76,7 +81,9 @@ _STATIC_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "static")
 _INDEX_HTML_PATH = os.path.join(_STATIC_DIR, "index.html")
 _PLAY_HTML_PATH = os.path.join(_STATIC_DIR, "play.html")
 _LIBRARY_HTML_PATH = os.path.join(_STATIC_DIR, "library.html")
+_QUESTIONS_HTML_PATH = os.path.join(_STATIC_DIR, "questions.html")
 _SETUP_HTML_PATH = os.path.join(_STATIC_DIR, "setup.html")
+_MEDLEY_EDIT_HTML_PATH = os.path.join(_STATIC_DIR, "medley_edit.html")
 _COUNTDOWN_HTML_PATH = os.path.join(_STATIC_DIR, "countdown.html")
 _JOYASSIGN_HTML_PATH = os.path.join(_STATIC_DIR, "joyassign.html")
 
@@ -101,6 +108,25 @@ if app is not None:
 # docstring. 8192 bytes matches classic Shoutcast's own default interval,
 # the value the widest range of players/car stereos are tested against.
 _ICY_METAINT = 8192
+
+
+def _phone_text(q):
+    """(question, choices) wording for a player's phone from a cached
+    question dict: the long version when it has one that lines up with the
+    choices, otherwise the short (LED) text."""
+    choices = q.get("choices", [])
+    long_choices = q.get("choices_long") or []
+    if q.get("question_long") and len(long_choices) == len(choices):
+        return q["question_long"], long_choices
+    return q.get("question", ""), choices
+
+
+def _phone_active_text():
+    """Same, for the question that is live right now (state.factoid_*)."""
+    if (state.factoid_question_long and state.factoid_long_pair == state.factoid_question
+            and len(state.factoid_choices_long) == len(state.factoid_choices)):
+        return state.factoid_question_long, state.factoid_choices_long
+    return state.factoid_question, state.factoid_choices
 
 
 def _current_stream_title():
@@ -144,8 +170,32 @@ if app is not None:
     class BoolSet(BaseModel):
         enabled: bool
 
+    class DmxSpeedSet(BaseModel):
+        div: int
+
     class AccentSpeedSet(BaseModel):
         speed: int
+
+    class MarqueeDialsSet(BaseModel):
+        brightness: Optional[int] = None
+        speed: Optional[int] = None
+        depth: Optional[int] = None
+        off: Optional[bool] = None
+
+    class AccentColorSet(BaseModel):
+        slot: str            # "fx" (WLED slot 1) or "bg" (slot 2)
+        rgb: str | None = None  # "#rrggbb", or empty/None = back to auto
+
+    class AccentTransitionSet(BaseModel):
+        song: str | None = None     # accent_engine.TRANSITION_STYLES key
+        medley: str | None = None
+
+    class AccentTransitionPreview(BaseModel):
+        style: str
+
+    class AccentFxFavorite(BaseModel):
+        fx: int
+        on: bool
 
     class AccentBrightnessSet(BaseModel):
         brightness: int
@@ -170,6 +220,11 @@ if app is not None:
         channel: int
         value: int
 
+    class DmxHeadHold(BaseModel):
+        pan: Optional[float] = None
+        tilt: Optional[float] = None
+        seconds: float = 120.0
+
     class SimonHwLedTest(BaseModel):
         color: str
 
@@ -189,6 +244,7 @@ if app is not None:
         exclude_slow_dance: bool = False
         exclude_never_charted: bool = False
         allowed_genres: list[str] = []
+        allowed_decades: list[str] = []
         auto_final_round: bool = False
         rounds_estimate: int = 0  # computed client-side from the time-range slider
         suppress_questions: bool = True   # Setup "start as a jukebox" box (pre-checked)
@@ -262,6 +318,20 @@ if app is not None:
         # it grew a Cue button and a "currently cued" indicator on top of
         # search/upload/delete.
         return FileResponse(_LIBRARY_HTML_PATH)
+
+    @app.get("/questions")
+    def questions_page():
+        # Question audit (2026-10-10): every song's trivia questions with an
+        # audit stage (red/amber/lime/green), editor, AI audit + generation
+        # jobs with progress. Backend: drivers/question_audit.py.
+        return FileResponse(_QUESTIONS_HTML_PATH)
+
+    @app.get("/medley-edit")
+    def medley_edit_page():
+        # Per-track medley clip editor (2026-10-01): pick a track's In/Out on a
+        # waveform, quantize to the beat grid, preview locally, save. Opened
+        # from the File Manager's Medley column.
+        return FileResponse(_MEDLEY_EDIT_HTML_PATH)
 
     @app.get("/setup")
     def setup_page():
@@ -638,7 +708,7 @@ if app is not None:
                 now_playing_title, now_playing_artist = title, artist
                 unasked = {q.get("question") for q in state.track_question_queue}
                 song_trivia = [
-                    {"question": q.get("question", ""), "choices": q.get("choices", []),
+                    {"question": _phone_text(q)[0], "choices": _phone_text(q)[1],
                      "correct_index": q.get("correct_index", -1)}
                     for q in factoid_engine.track_engine.get_cached_questions(title, artist)
                     if q.get("question") and q.get("choices") and q.get("question") not in unasked
@@ -654,8 +724,8 @@ if app is not None:
             "mode": "GAME" if state.mode == state.MODE_GAME else "DJ",
             "active": active,
             "locked_globally": state.quiz_locked,
-            "question": state.factoid_question if active else "",
-            "choices": state.factoid_choices if active else [],
+            "question": _phone_active_text()[0] if active else "",
+            "choices": _phone_active_text()[1] if active else [],
             "selected_index": player["selected_index"],
             "locked": player["locked"],
             "correct_index": correct_index,
@@ -802,18 +872,32 @@ if app is not None:
         cued_track = deck_orchestrator.get_cued_track()
         cued_filename = os.path.basename(cued_track["path"]) if cued_track else None
         out = []
+        try:
+            from drivers import medley_engine
+            pool = medley_engine.pool_report()
+        except Exception as e:
+            print(f"[LIBRARY] medley pool report failed: {e}")
+            pool = {}
+        saved_clips = track_record.clips()
         for t in music_library.all_tracks():
             title, artist = t["title"], t["artist"]
             if needle and needle not in title.lower() and needle not in artist.lower():
                 continue
             track_key = sanitize_track_key(title, artist)
+            fname = os.path.basename(t["path"])
+            st = track_record.stats_for(fname)
+            clip = saved_clips.get(fname)
             out.append({
-                "filename": os.path.basename(t["path"]),
+                "filename": fname,
                 "title": title,
                 "artist": artist,
                 "duration": t["duration"],
                 "metadata": _serialize_metadata(track_key),
                 "light_prefs": _serialize_light_prefs(track_key),
+                "medley": pool.get(fname) or {"state": "off", "reason": "unknown", "included": False, "excluded": False},
+                "clip": clip,
+                "last_played": st.get("last_played"),
+                "last_edited": st.get("last_edited"),
             })
         out.sort(key=lambda t: (t["artist"].lower(), t["title"].lower()))
         return {
@@ -860,6 +944,7 @@ if app is not None:
             return {"ok": False, "reason": "nothing to update"}
 
         music_metadata_engine.save_metadata_for(track_key, **fields)
+        track_record.touch_edited(path)
         return {"ok": True, "metadata": _serialize_metadata(track_key)}
 
     class LightPrefsSet(BaseModel):
@@ -929,6 +1014,7 @@ if app is not None:
             return {"ok": False, "reason": "nothing to update"}
 
         light_prefs_engine.save_fixture_look(track_key, **fields)
+        track_record.touch_edited(path)
         return {"ok": True, "light_prefs": _serialize_light_prefs(track_key)}
 
     @app.post("/api/library/tag")
@@ -1100,6 +1186,14 @@ if app is not None:
         abort_game_mode_early()
         return {"ok": True}
 
+    @app.post("/api/game/cancel-question")
+    def game_cancel_question():
+        # Admin CANCEL QUESTION (2026-10-05): drop whatever quiz is showing
+        # (question, grading/scorecard, mystery "Who is this?" teaser,
+        # jukebox "TRIVIA QUESTION?" confirm) and go straight to DJ mode.
+        from inputs.gamepad import cancel_question
+        return {"ok": True, "cancelled": cancel_question()}
+
     def _question_type_label(q):
         if q.get("category") == "true_false":
             return "True/False"
@@ -1150,10 +1244,24 @@ if app is not None:
         st["live"] = state.show_phase == "live"
         if not st["active"]:
             try:
-                st["eligible"] = len(medley_engine.eligible_candidates())
+                st["counts"] = medley_engine.pool_counts()
+                st["eligible"] = st["counts"]["latest"]
             except Exception:
                 st["eligible"] = 0
         return st
+
+    class MedleyOptions(BaseModel):
+        source: str | None = None   # latest | green | yellow
+        songs: int | None = None
+        next_only: bool | None = None
+
+    @app.post("/api/medley/options")
+    def medley_options_set(body: MedleyOptions):
+        from drivers import medley_engine
+        try:
+            return {"ok": True, "options": medley_engine.set_options(body.source, body.songs, body.next_only)}
+        except ValueError as e:
+            return {"ok": False, "error": str(e)}
 
     @app.post("/api/medley/start")
     def medley_start():
@@ -1200,6 +1308,447 @@ if app is not None:
     def medley_edit_resume(body: MedleyEditResume):
         from drivers import medley_engine
         return medley_engine.edit_resume(body.save)
+
+    # ------------------------------------------------------------------
+    # Medley clip editor + audit (2026-10-01)
+    # ------------------------------------------------------------------
+    @app.get("/api/library/audio")
+    def library_audio(filename: str):
+        """The track's audio file for in-browser playback (Range requests
+        supported by FileResponse, so seeking works before the download ends)."""
+        path = _safe_music_path(filename)
+        if path is None or not os.path.isfile(path):
+            return JSONResponse({"ok": False, "reason": "file not found"}, status_code=404)
+        return FileResponse(path)
+
+    def _clip_context(filename):
+        from drivers import medley_engine
+        path = _safe_music_path(filename)
+        if path is None or not os.path.isfile(path):
+            return None
+        name = os.path.basename(path)
+        track = next((t for t in music_library.all_tracks() if t["path"] == path), None)
+        a = medley_engine._load(medley_engine._analysis, config.MEDLEY_ANALYSIS_FILE).get(name)
+        return name, track, a
+
+    @app.get("/api/medley/clip")
+    def medley_clip_get(filename: str):
+        from drivers import medley_engine
+        ctx = _clip_context(filename)
+        if ctx is None:
+            return {"ok": False, "reason": "file not found"}
+        name, track, a = ctx
+        has_grid = bool(a and "bpm" in a)
+        grid_ok = has_grid and a.get("grid_conf", 0) >= config.MEDLEY_MIN_GRID_CONF
+        hook = None
+        if a and a.get("hooks"):
+            h = a["hooks"][0]
+            hook = {"start": h["start"], "end": h["start"] + h["bars"] * 240.0 / h.get("bpm", a["bpm"])}
+        return {
+            "ok": True, "filename": name,
+            "title": track["title"] if track else name, "artist": track["artist"] if track else "",
+            "duration": track["duration"] if track else (a or {}).get("duration"),
+            "bpm": a.get("bpm") if has_grid else None,
+            "beat_phase": a.get("beat_phase") if has_grid else None,
+            "grid_conf": a.get("grid_conf") if has_grid else None,
+            "grid_ok": grid_ok, "hook": hook,
+            "clip": track_record.get_clip(name),
+            "pool": medley_engine.pool_report().get(name),
+            "live": state.show_phase == "live",
+        }
+
+    class MedleyClipSave(BaseModel):
+        filename: str
+        start: float
+        end: float
+
+    @app.post("/api/medley/clip")
+    def medley_clip_save(body: MedleyClipSave):
+        ctx = _clip_context(body.filename)
+        if ctx is None:
+            return {"ok": False, "reason": "file not found"}
+        name, track, a = ctx
+        dur = (track or {}).get("duration") or (a or {}).get("duration") or 0
+        if not (0 <= body.start < body.end <= dur + 0.5):
+            return {"ok": False, "reason": "in/out must satisfy 0 <= in < out <= track length"}
+        if body.end - body.start < 2.0:
+            return {"ok": False, "reason": "clip must be at least 2 seconds"}
+        if body.end - body.start > 90.0:
+            return {"ok": False, "reason": "clip can be at most 90 seconds"}
+        clip = track_record.save_clip(name, body.start, body.end, (a or {}).get("bpm"))
+        return {"ok": True, "clip": clip}
+
+    class FilenameBody(BaseModel):
+        filename: str
+
+    @app.post("/api/medley/clip/delete")
+    def medley_clip_delete(body: FilenameBody):
+        return {"ok": track_record.delete_clip(os.path.basename(body.filename))}
+
+    class MedleyPoolSet(BaseModel):
+        filename: str
+        mode: str  # "include" | "exclude" | "auto"
+
+    @app.post("/api/medley/pool")
+    def medley_pool_set(body: MedleyPoolSet):
+        from drivers import medley_engine
+        if body.mode not in ("include", "exclude", "auto"):
+            return {"ok": False, "reason": "mode must be include, exclude or auto"}
+        path = _safe_music_path(body.filename)
+        if path is None or not os.path.isfile(path):
+            return {"ok": False, "reason": "file not found"}
+        name = os.path.basename(path)
+        medley_engine.set_pool_override(name, body.mode)
+        track_record.touch_edited(name)
+        return {"ok": True, "pool": medley_engine.pool_report().get(name)}
+
+    # ---- question audit (drivers/question_audit.py). Plain `def` handlers
+    # run in FastAPI's threadpool, so the ones that wait on the AI
+    # (generate/audit one) don't stall the server.
+    @app.get("/api/questions/overview")
+    def questions_overview():
+        return {"ok": True, **question_audit.overview(), "job": question_audit.job_status()}
+
+    @app.get("/api/questions/song")
+    def questions_song(key: str):
+        return {"ok": True, **question_audit.song_detail(key)}
+
+    @app.get("/api/questions/job")
+    def questions_job():
+        return {"ok": True, "job": question_audit.job_status()}
+
+    class QuestionJobStart(BaseModel):
+        scope: str = "unaudited"   # audit: "unaudited" | "amber"
+        percent: float = 100       # share of the waiting songs, picked at random
+
+    @app.get("/api/questions/audit/estimate")
+    def questions_audit_estimate(scope: str = "unaudited"):
+        return question_audit.audit_estimate(scope)
+
+    @app.post("/api/questions/generate/start")
+    def questions_generate_start(wording_only: bool = False):
+        return question_audit.start_generate(wording_only=wording_only)
+
+    @app.post("/api/questions/audit/start")
+    def questions_audit_start(body: QuestionJobStart):
+        return question_audit.start_audit(body.scope, body.percent)
+
+    @app.post("/api/questions/job/stop")
+    def questions_job_stop():
+        return {"ok": question_audit.stop_job()}
+
+    # Offline audit done in Claude Code (subscription, no API credits).
+    @app.get("/api/questions/offline/export")
+    def questions_offline_export(songs: int = 35, seed: int | None = None):
+        return question_audit.export_batch(max(1, min(songs, 300)), seed)
+
+    class OfflineImport(BaseModel):
+        results: list[dict]
+
+    @app.post("/api/questions/offline/import")
+    def questions_offline_import(body: OfflineImport):
+        return question_audit.import_results(body.results)
+
+    class QuestionSave(BaseModel):
+        key: str
+        qid: str | None = None
+        type: str = "mc"
+        question: str = ""
+        question_long: str = ""
+        choices: list[str] = []
+        choices_long: list[str] = []
+        correct_index: int = -1
+        correction: str = ""
+        headline: str = ""
+        full: str = ""
+        verify: bool = False
+
+    @app.post("/api/questions/save")
+    def questions_save(body: QuestionSave):
+        d = body.model_dump()
+        return question_audit.save_question(d.pop("key"), d)
+
+    class QuestionRef(BaseModel):
+        key: str
+        qid: str
+        flag: bool = True    # verify: True = verified, False = clear it
+        deep: bool = False   # audit-one: use the bigger model
+
+    @app.post("/api/questions/verify")
+    def questions_verify(body: QuestionRef):
+        return question_audit.set_verified(body.key, body.qid, body.flag)
+
+    @app.post("/api/questions/delete")
+    def questions_delete(body: QuestionRef):
+        return question_audit.delete_question(body.key, body.qid)
+
+    @app.post("/api/questions/audit-one")
+    def questions_audit_one(body: QuestionRef):
+        try:
+            return {"ok": True, "question": question_audit.audit_question(body.key, body.qid, deep=body.deep)}
+        except question_audit.AIError as e:
+            return {"ok": False, "reason": f"AI audit failed: {e}"}
+        except ValueError as e:
+            return {"ok": False, "reason": str(e)}
+
+    class QuestionAiAdd(BaseModel):
+        key: str
+
+    @app.post("/api/questions/ai-add")
+    def questions_ai_add(body: QuestionAiAdd):
+        return question_audit.ai_add_question(body.key)
+
+    class QuestionWording(BaseModel):
+        key: str
+        question: str = ""
+        choices: list[str] = []
+        tf: bool = False
+
+    @app.post("/api/questions/make-short")
+    def questions_make_short(body: QuestionWording):
+        # Long (phone) wording in -> LED wording out. Not saved.
+        try:
+            return {"ok": True, **question_audit.generate_short(
+                question_audit.song_ref(body.key), body.question, body.choices, body.tf)}
+        except question_audit.AIError as e:
+            return {"ok": False, "reason": str(e)}
+
+    @app.post("/api/questions/make-long")
+    def questions_make_long(body: QuestionWording):
+        try:
+            return {"ok": True, **question_audit.generate_long(
+                question_audit.song_ref(body.key), body.question, body.choices)}
+        except question_audit.AIError as e:
+            return {"ok": False, "reason": str(e)}
+
+    # ---- library audit: compare the library against every per-track store
+    _audit_job = {"running": False, "what": "", "done": 0, "total": 0, "error": None}
+
+    @app.get("/api/library/audit")
+    def library_audit():
+        res = track_record.audit(
+            music_library.all_tracks(), music_metadata_engine.get_metadata_for,
+            light_prefs_engine.get_prefs_for, sanitize_track_key)
+        return {"ok": True, **res, "job": dict(_audit_job)}
+
+    @app.get("/api/library/audit/status")
+    def library_audit_status():
+        return {"ok": True, **_audit_job}
+
+    class AuditFix(BaseModel):
+        what: str  # "tags" | "medley_analysis" | "cues"
+
+    @app.post("/api/library/audit/fix")
+    def library_audit_fix(body: AuditFix):
+        if body.what == "tags":
+            if not music_metadata_engine.start_tagging_job():
+                return {"ok": False, "reason": "a tagging pass is already running"}
+            return {"ok": True, "started": "tags"}
+        if body.what not in ("medley_analysis", "cues"):
+            return {"ok": False, "reason": "unknown fix"}
+        if _audit_job["running"]:
+            return {"ok": False, "reason": f"{_audit_job['what']} is already running"}
+        res = track_record.audit(
+            music_library.all_tracks(), music_metadata_engine.get_metadata_for,
+            light_prefs_engine.get_prefs_for, sanitize_track_key)
+        todo = list(res["categories"][body.what]["files"])
+        _audit_job.update(running=True, what=body.what, done=0, total=len(todo), error=None)
+
+        def worker():
+            try:
+                if body.what == "medley_analysis":
+                    from drivers import medley_analysis as eng
+                    cache_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+                                              config.MEDLEY_ANALYSIS_FILE)
+                else:
+                    from drivers import track_cue_engine as eng
+                    cache_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+                                              config.TRACK_CUES_FILE)
+                cache = eng.load_cache(cache_path)
+                for i, name in enumerate(todo, 1):
+                    path = _safe_music_path(name)
+                    try:
+                        r = eng.analyze(path)
+                    except Exception as e:
+                        r = {"error": str(e)[:200]}
+                    r["sig"] = eng._sig(path)
+                    cache[name] = r
+                    _audit_job["done"] = i
+                    if i % 10 == 0:
+                        eng.save_cache(cache_path, cache)
+                eng.save_cache(cache_path, cache)
+            except Exception as e:
+                _audit_job["error"] = str(e)[:200]
+            finally:
+                _audit_job["running"] = False
+
+        threading.Thread(target=worker, name=f"audit-{body.what}", daemon=True).start()
+        return {"ok": True, "started": body.what, "total": len(todo)}
+
+    # ---- outline (accent) WLED board audit
+    def _accent_fetch(host):
+        import json as _json
+        import urllib.request
+
+        def get(path):
+            with urllib.request.urlopen(f"http://{host}{path}", timeout=6) as r:
+                return _json.loads(r.read().decode("utf-8", "replace"))
+
+        info = get("/json/info")
+        if str(info.get("mac", "")).lower() != config.ACCENT_WLED_MAC.lower():
+            raise ValueError(f"that board's MAC is {info.get('mac')}, not the outline board ({config.ACCENT_WLED_MAC})")
+        presets = get("/presets.json")
+        eff, pal, fxdata = get("/json/eff"), get("/json/pal"), get("/json/fxdata")
+        try:
+            cfg = get("/json/cfg")
+            ar = (cfg.get("um") or {}).get("AudioReactive") or {}
+        except Exception:
+            ar = {}
+        out = []
+        for k in sorted((k for k in presets if k != "0"), key=int):
+            p = presets[k]
+            seg = next((x for x in (p.get("seg") or []) if x and x.get("stop", 0) > 0), {})
+            fx = seg.get("fx")
+            flags = ""
+            if isinstance(fx, int) and fx < len(fxdata):
+                parts = str(fxdata[fx]).split(";")
+                flags = parts[3] if len(parts) > 3 else ""
+            out.append({
+                "id": int(k), "name": p.get("n", ""), "fx": fx,
+                "fx_name": eff[fx] if isinstance(fx, int) and fx < len(eff) else None,
+                "pal_name": pal[seg["pal"]] if isinstance(seg.get("pal"), int) and seg["pal"] < len(pal) else None,
+                "audioreactive": ("v" in flags) or ("f" in flags),
+                "segments": sum(1 for x in (p.get("seg") or []) if x and x.get("stop", 0) > 0),
+                "bri": p.get("bri"),
+            })
+        return {"info": info, "presets": out, "audioreactive_usermod": ar}
+
+    @app.get("/api/accent/audit")
+    def accent_audit(host: str = ""):
+        host = host.strip()
+        if not host:
+            return {"ok": False, "error": "enter the outline board's IP address (WLED app > Info > IP)"}
+        try:
+            data = _accent_fetch(host)
+        except Exception as e:
+            return {"ok": False, "error": f"couldn't audit {host}: {e}"}
+        known = config.ACCENT_PRESETS
+        rows = []
+        for p in data["presets"]:
+            if p["id"] not in known:
+                p["status"] = "new"
+            elif known[p["id"]] != p["name"]:
+                p["status"] = f"renamed (was '{known[p['id']]}')"
+            else:
+                p["status"] = "in sync"
+            p["marked_audioreactive"] = p["id"] in config.ACCENT_AUDIOREACTIVE_PRESETS
+            rows.append(p)
+        live_ids = {p["id"] for p in data["presets"]}
+        missing = [{"id": i, "name": n} for i, n in sorted(known.items()) if i not in live_ids]
+        leds = (data["info"].get("leds") or {}).get("count")
+        ar = data["audioreactive_usermod"]
+        return {
+            "ok": True, "host": host, "presets": rows, "missing_on_board": missing,
+            "leds": leds, "leds_expected": config.ACCENT_TOTAL_LEDS,
+            "audioreactive": {"enabled": ar.get("enabled"), "analog_pin": (ar.get("analogmic") or {}).get("pin")},
+            "in_sync": all(r["status"] == "in sync" and r["marked_audioreactive"] == r["audioreactive"] for r in rows)
+                       and not missing,
+        }
+
+    _ACCENT_SNAPSHOT_PATH = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "accent_presets.json")
+
+    def _accent_saved_host():
+        import json as _json
+        try:
+            with open(_ACCENT_SNAPSHOT_PATH, "r", encoding="utf-8") as f:
+                return str(_json.load(f).get("host") or "")
+        except Exception:
+            return ""
+
+    def _accent_is_board(host, timeout):
+        """True if `host` answers WLED's /json/info with the outline board's MAC."""
+        import json as _json
+        import urllib.request
+        try:
+            with urllib.request.urlopen(f"http://{host}/json/info", timeout=timeout) as r:
+                return str(_json.loads(r.read().decode("utf-8", "replace")).get("mac", "")).lower() == config.ACCENT_WLED_MAC.lower()
+        except Exception:
+            return False
+
+    def _accent_find_host(hint=""):
+        """Finds the outline board on the LAN without being told its IP: the
+        hint / last-known host first, then its mDNS name, then a parallel scan
+        of this machine's /24 for a WLED with the right MAC (the board's DHCP
+        address moves around). Returns the host or None."""
+        from concurrent.futures import ThreadPoolExecutor
+        mac6 = config.ACCENT_WLED_MAC[-6:].lower()
+        quick = [h for h in (hint.strip(), _accent_saved_host(), f"wled-{mac6}.local") if h]
+        for h in dict.fromkeys(quick):
+            if _accent_is_board(h, 2.5):
+                return h
+        prefix = get_lan_ip().rsplit(".", 1)[0]
+        ips = [f"{prefix}.{i}" for i in range(1, 255)]
+        with ThreadPoolExecutor(max_workers=64) as ex:
+            for ip, ok in zip(ips, ex.map(lambda ip: _accent_is_board(ip, 1.2), ips)):
+                if ok:
+                    return ip
+        return None
+
+    def _accent_write_snapshot(data, host):
+        """Writes accent_presets.json and refreshes config's dicts in place.
+        Returns what changed vs. the previous list."""
+        import json as _json
+        before = dict(config.ACCENT_PRESETS)
+        snap = {"presets": {str(p["id"]): p["name"] for p in data["presets"]},
+                "audioreactive": [p["id"] for p in data["presets"] if p["audioreactive"]],
+                "host": host, "synced_at": time.time()}
+        with open(_ACCENT_SNAPSHOT_PATH + ".tmp", "w", encoding="utf-8") as f:
+            _json.dump(snap, f, indent=1, sort_keys=True)
+        os.replace(_ACCENT_SNAPSHOT_PATH + ".tmp", _ACCENT_SNAPSHOT_PATH)
+        config._load_accent_presets_snapshot()
+        after = config.ACCENT_PRESETS
+        return {"presets": len(after), "audioreactive": sorted(config.ACCENT_AUDIOREACTIVE_PRESETS),
+                "added": [{"id": i, "name": n} for i, n in sorted(after.items()) if i not in before],
+                "renamed": [{"id": i, "was": before[i], "now": n} for i, n in sorted(after.items()) if i in before and before[i] != n],
+                "removed": [{"id": i, "name": n} for i, n in sorted(before.items()) if i not in after]}
+
+    class AccentImport(BaseModel):
+        host: str = ""
+
+    @app.post("/api/accent/presets/import")
+    def accent_presets_import(body: AccentImport):
+        """One-tap "Import latest WLED presets": finds the outline board (no IP
+        needed), reads its /presets.json, and adopts the list -- dropdowns, the
+        per-song picker and the sound-reactive flags all follow."""
+        host = _accent_find_host(body.host)
+        if not host:
+            return {"ok": False, "error": "Couldn't find the outline board on the network. Its WiFi may be off - "
+                                          "type its IP (WLED app > Info) into the box under 'Audit outline board presets' and try again."}
+        data, err = None, None
+        for _attempt in range(4):       # the board's web server stalls now and then; just ask again
+            try:
+                data = _accent_fetch(host)
+                break
+            except Exception as e:
+                err = e
+                time.sleep(1.0)
+        if data is None:
+            return {"ok": False, "error": f"Found the board at {host} but couldn't read its presets ({err}). Try again in a moment."}
+        return {"ok": True, "host": host, **_accent_write_snapshot(data, host)}
+
+    class AccentSync(BaseModel):
+        host: str
+
+    @app.post("/api/accent/audit/sync")
+    def accent_audit_sync(body: AccentSync):
+        """Writes accent_presets.json from the board's own presets and updates
+        config.ACCENT_PRESETS / ACCENT_AUDIOREACTIVE_PRESETS in place (the
+        engine and dropdowns read those dicts), replacing the old hand-copy."""
+        try:
+            data = _accent_fetch(body.host.strip())
+        except Exception as e:
+            return {"ok": False, "error": f"couldn't read {body.host}: {e}"}
+        return {"ok": True, **_accent_write_snapshot(data, body.host.strip())}
 
     @app.post("/api/medley/sweepers")
     def medley_sweepers():
@@ -1351,7 +1900,7 @@ if app is not None:
         "marquee_color_index", "marquee_theme_index", "marquee_gradient_mode",
         "accent_color_index", "accent_theme_index", "accent_gradient_mode",
         "accent_palette_index", "accent_preset_id", "accent_preset_color_index",
-        "accent_speed", "accent_brightness",
+        "accent_speed", "accent_brightness", "accent_fx_rgb", "accent_bg_rgb",
     )
     _lighting_clipboard = {"snapshot": None}  # single key mutated in place -- no rebinding, so no nonlocal/global needed
 
@@ -1409,6 +1958,53 @@ if app is not None:
             result["palette_index"] = state.accent_palette_index
         return result
 
+    def _hex(v):
+        return None if v is None else "#%02x%02x%02x" % tuple(v)
+
+    def _accent_colors_status():
+        """What the outline's two WLED color slots are: the operator's custom
+        pick (None = auto) and what the show is actually sending right now."""
+        sent = state.accent_colors_sent
+        return {"fx_custom": None if state.accent_fx_rgb < 0 else "#%06x" % state.accent_fx_rgb,
+                "bg_custom": None if state.accent_bg_rgb < 0 else "#%06x" % state.accent_bg_rgb,
+                "fx_sent": _hex(sent[0]) if sent else None, "bg_sent": _hex(sent[1]) if sent else None}
+
+    @app.post("/api/accent/color/set")
+    def accent_color_set(body: AccentColorSet):
+        if body.slot not in ("fx", "bg"):
+            return {"ok": False, "error": "slot must be fx or bg"}
+        val = -1
+        if body.rgb:
+            try:
+                val = int(body.rgb.lstrip("#"), 16) & 0xFFFFFF
+            except ValueError:
+                return {"ok": False, "error": "rgb must be #rrggbb"}
+        setattr(state, f"accent_{body.slot}_rgb", val)
+        light_prefs_engine.mark_dirty()
+        return {"ok": True, "accent_colors": _accent_colors_status()}
+
+    @app.get("/api/accent/transition")
+    def accent_transition_get():
+        return {"ok": True, **accent_engine.transition_options(),
+                "styles": [[k, label] for k, label, _ in accent_engine.TRANSITION_STYLES]}
+
+    @app.post("/api/accent/transition")
+    def accent_transition_set(body: AccentTransitionSet):
+        try:
+            return {"ok": True, **accent_engine.set_transition_options(body.song, body.medley)}
+        except ValueError as e:
+            return {"ok": False, "error": str(e)}
+
+    @app.post("/api/accent/transition/preview")
+    def accent_transition_preview(body: AccentTransitionPreview):
+        if not accent_engine.available():
+            return {"ok": False, "error": "outline board not connected"}
+        try:
+            accent_engine.preview_transition(body.style)
+        except ValueError as e:
+            return {"ok": False, "error": str(e)}
+        return {"ok": True}
+
     @app.get("/api/dj-look/status")
     def dj_look_status():
         # Sync source for the admin panel's swatch pickers/dropdowns/
@@ -1418,12 +2014,15 @@ if app is not None:
             "ok": True,
             "selected_feature": state.dj_selected_feature,
             "dmx": {"color_index": state.dmx_color_index, "theme_index": state.dmx_theme_index,
-                    "gradient_mode": state.dmx_gradient_mode},
+                    "gradient_mode": state.dmx_gradient_mode, "speed_div": state.dmx_speed_div},
+            "panel_leds_fx": state.panel_leds_fx,
             "marquee": {"color_index": state.marquee_color_index, "theme_index": state.marquee_theme_index,
                         "gradient_mode": state.marquee_gradient_mode},
             "outline": {"color_index": state.accent_color_index, "theme_index": state.accent_theme_index,
                         "gradient_mode": state.accent_gradient_mode, "palette_index": state.accent_palette_index},
             "blank_lower_marquees": state.blank_lower_marquees,
+            "marquee_dials": _marquee_dials_status(),
+            "accent_colors": _accent_colors_status(),
             "accent_speed": state.accent_speed,
             "accent_brightness": state.accent_brightness,
             "accent_sound_enabled": state.accent_sound_enabled,
@@ -1431,6 +2030,25 @@ if app is not None:
             "accent_preset_id": state.accent_preset_id,
             "accent_preset_color_index": state.accent_preset_color_index,
         }
+
+    _FAV_PATH = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+                             config.ACCENT_FX_FAVORITES_FILE)
+
+    def _outline_favorites():
+        try:
+            with open(_FAV_PATH, encoding="utf-8") as f:
+                return sorted({int(x) for x in json.load(f)})
+        except (OSError, ValueError, TypeError):
+            return []
+
+    @app.post("/api/accent/fx-favorite")
+    def accent_fx_favorite(body: AccentFxFavorite):
+        favs = set(_outline_favorites())
+        (favs.add if body.on else favs.discard)(body.fx)
+        with open(_FAV_PATH + ".tmp", "w", encoding="utf-8") as f:
+            json.dump(sorted(favs), f)
+        os.replace(_FAV_PATH + ".tmp", _FAV_PATH)
+        return {"ok": True, "favorites": sorted(favs)}
 
     @app.get("/api/dj-look/options")
     def dj_look_options():
@@ -1445,6 +2063,12 @@ if app is not None:
             "dmx_theme_names": config.DJ_THEME_NAMES,
             "marquee_theme_names": config.MARQUEE_THEME_NAMES,
             "outline_theme_names": config.ACCENT_EFFECT_NAMES,
+            # Per effect (same index): [dims, sound] from WLED 16.0.1's own
+            # effect metadata, or null for an empty RSVD slot -- drives the
+            # remote's Strip / Sound / Favorites filters.
+            "outline_theme_meta": [list(wled_fx_meta.FX_META[i]) if i in wled_fx_meta.FX_META else None
+                                   for i in range(len(config.ACCENT_EFFECT_NAMES))],
+            "outline_favorites": _outline_favorites(),
             # PLACEHOLDER list, not yet verified against this board's own
             # /json/pal -- see config.ACCENT_PALETTE_NAMES' header comment.
             "outline_palette_names": config.ACCENT_PALETTE_NAMES,
@@ -1457,9 +2081,57 @@ if app is not None:
             "outline_preset_override_ids": sorted(config.ACCENT_PRESET_OVERRIDE_TARGETS),
         }
 
+    def _marquee_dials_status():
+        return {"brightness": state.marquee_brightness, "speed": state.marquee_speed,
+                "depth": state.marquee_depth, "off": state.marquee_off,
+                "speed_range": list(config.MARQUEE_SPEED_RANGE)}
+
+    @app.post("/api/marquee/dials/set")
+    def marquee_dials_set(body: MarqueeDialsSet):
+        # Marquee DJ-dance brightness/speed/depth/off (2026-10-05) -- saved
+        # per song as exceptions, like the lower-marquee checkbox.
+        lo, hi = config.MARQUEE_SPEED_RANGE
+        if body.brightness is not None:
+            state.marquee_brightness = max(0, min(100, body.brightness))
+        if body.speed is not None:
+            state.marquee_speed = max(lo, min(hi, body.speed))
+        if body.depth is not None:
+            state.marquee_depth = max(0, min(100, body.depth))
+        if body.off is not None:
+            state.marquee_off = body.off
+        light_prefs_engine.mark_dirty()
+        return {"ok": True, "marquee_dials": _marquee_dials_status()}
+
+    @app.post("/api/dmx/speed/set")
+    def dmx_speed_set(body: DmxSpeedSet):
+        # DMX uplight pattern at full / 1/2 / 1/4 of the song's tempo
+        # (2026-10-08) -- saved per song as an exception, like the marquee dials.
+        if body.div not in config.DMX_SPEED_DIVISORS:
+            return {"ok": False, "error": f"div must be one of {list(config.DMX_SPEED_DIVISORS)}"}
+        state.dmx_speed_div = body.div
+        light_prefs_engine.mark_dirty()
+        return {"ok": True, "speed_div": state.dmx_speed_div}
+
+    @app.post("/api/panel-leds/fx")
+    def panel_leds_fx_set(body: BoolSet):
+        # Arcade-button LED animation during music play (2026-10-09,
+        # drivers/panel_led_engine.py) -- saved per song as an exception
+        # ("off"); every new song starts with it on. Press feedback is
+        # never turned off by this.
+        state.panel_leds_fx = body.enabled
+        light_prefs_engine.mark_dirty()
+        return {"ok": True, "panel_leds_fx": state.panel_leds_fx}
+
+    @app.post("/api/marquee/locate")
+    def marquee_locate():
+        # Calibration overlay for the bounce patterns' center points.
+        state.marquee_locate_until = time.time() + config.MARQUEE_LOCATE_SECONDS
+        return {"ok": True, "seconds": config.MARQUEE_LOCATE_SECONDS}
+
     @app.post("/api/marquee/blank-lower/set")
     def marquee_blank_lower_set(body: BoolSet):
         state.blank_lower_marquees = body.enabled
+        light_prefs_engine.mark_dirty()  # saves this song's exception (or clears it) with its other look prefs
         return {"ok": True, "blank_lower_marquees": state.blank_lower_marquees}
 
     @app.post("/api/accent/sound/set")
@@ -1564,6 +2236,47 @@ if app is not None:
     def usb_relay_test_4():
         print("[WEB REMOTE] Test USB Relay 4 requested via web remote.")
         relay_engine.pulse(4)
+        return {"ok": True}
+
+    @app.get("/api/dmx/head-status")
+    def dmx_head_status():
+        # Read-only diagnostic (2026-10-05): the moving head's 14 channels as
+        # last rendered, so "is it us or the fixture?" can be answered
+        # without a DMX tester.
+        base = config.DMX_HEAD_BASE_CHANNEL
+        return {
+            "dmx_active": dmx.active,
+            "port": dmx.port,
+            "base": base,
+            "channels": list(dmx.dmx_data[base:base + 14]),
+        }
+
+    @app.get("/api/blackout")
+    def blackout_status():
+        return {"active": state.blackout_active}
+
+    @app.post("/api/blackout/toggle")
+    def blackout_toggle():
+        # Admin instant blackout/mute -- see drivers/blackout_engine.py.
+        from drivers import blackout_engine
+        active = blackout_engine.toggle()
+        print(f"[WEB REMOTE] Blackout {'ON' if active else 'OFF'}.")
+        return {"ok": True, "active": active}
+
+    @app.post("/api/dmx/head-hold")
+    def dmx_head_hold(body: DmxHeadHold):
+        # Calibration aid: parks the head at a raw pan/tilt (0-255, None =
+        # configured center) for `seconds`; seconds <= 0 releases it.
+        from drivers import dmx_head
+        dmx_head.hold(body.pan, body.tilt, body.seconds)
+        print(f"[WEB REMOTE] DMX head hold: pan={body.pan} tilt={body.tilt} for {body.seconds}s")
+        return {"ok": True, "pan": body.pan, "tilt": body.tilt, "seconds": body.seconds}
+
+    @app.post("/api/dmx/head-spin")
+    def dmx_head_spin():
+        from drivers import dmx_head
+        dmx_head.spin()
+        print("[WEB REMOTE] DMX head spin requested.")
         return {"ok": True}
 
     @app.post("/api/dmx/raw-set")
@@ -1859,6 +2572,7 @@ if app is not None:
         state.show_exclude_slow_dance = bool(body.exclude_slow_dance)
         state.show_exclude_never_charted = bool(body.exclude_never_charted)
         state.show_allowed_genres = [g for g in body.allowed_genres if g in config.MUSIC_GENRES]
+        state.show_allowed_decades = [d for d in body.allowed_decades if d in config.MUSIC_DECADES]
         state.show_suppress_questions = bool(body.suppress_questions)
         state.show_skip_intro = bool(body.skip_intro)
         state.show_final_round_number = (
@@ -1883,6 +2597,8 @@ if app is not None:
             "exclude_slow_dance": state.show_exclude_slow_dance,
             "exclude_never_charted": state.show_exclude_never_charted,
             "allowed_genres": state.show_allowed_genres,
+            "allowed_decades": state.show_allowed_decades,
+            "music_decades": [{"value": d, "label": config.MUSIC_DECADE_LABELS.get(d, d)} for d in config.MUSIC_DECADES],
             "suppress_questions": state.show_suppress_questions,
             "skip_intro": state.show_skip_intro,
             "auto_final_round": state.show_final_round_number is not None,
@@ -2012,9 +2728,13 @@ if app is not None:
 
     @app.post("/api/sfx/toggle")
     def sfx_toggle():
-        # Operator page "Game SFX" checkbox -- mutes ding/buzzer/bigwin/
-        # coin/buzz_short (inputs/gamepad.py) without touching music volume.
+        # Operator page "SFX" checkbox -- mutes the song-change and medley
+        # sweepers (2026-10-07) plus the game sounds ding/buzzer/bigwin/
+        # coin/buzz_short (inputs/gamepad.py), without touching music volume
+        # or the spoken announcements (that's the ANNOUNCEMENTS checkbox).
         state.sfx_enabled = not state.sfx_enabled
+        if not state.sfx_enabled:
+            deck_orchestrator.dj_engine.stop_sweeper()
         print(f"[WEB REMOTE] Game SFX -> {state.sfx_enabled}")
         return {"ok": True, "sfx_enabled": state.sfx_enabled}
 

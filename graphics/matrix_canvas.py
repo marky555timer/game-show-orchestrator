@@ -1387,6 +1387,10 @@ _SLIDE_OUT_SECONDS = 0.6
 _board_wipe_started_at = 0.0
 _board_wipe_hold_seconds = 0.0
 _board_wipe_snapshots = {}
+# Reveal (2026-10-05): when the black hold ends, the new content wipes in
+# left -> right over config.TRANSITION_REVEAL_SECONDS instead of popping on,
+# in step with the marquee's color sweep (drivers/wled_engine.py).
+_board_reveal_started_at = 0.0
 
 
 def trigger_board_wipe(hold_seconds):
@@ -1405,11 +1409,12 @@ def trigger_board_wipe(hold_seconds):
 def _render_board_wipe(t):
     """Returns True if the wipe is still overriding this frame's rendering
     (caller should skip its own mode dispatch entirely when this is True)."""
-    global _board_wipe_started_at
+    global _board_wipe_started_at, _board_reveal_started_at
     if _board_wipe_started_at == 0.0:
         return False
     elapsed = t - _board_wipe_started_at
     if elapsed >= _board_wipe_hold_seconds:
+        _board_reveal_started_at = _board_wipe_started_at + _board_wipe_hold_seconds
         _board_wipe_started_at = 0.0
         return False
 
@@ -1750,6 +1755,36 @@ def _draw_medley_banner(t, row_panel=3):
         draw_bitmap_text(matrix_surface, text, x0 - offset + k * span, y, color=RED_FULL, clip_rect=(x0, y0, w, h))
 
 
+def _draw_medley_progress(t):
+    """Songs-remaining countdown along the bottom pixel row of panels 1+2 (the
+    7px font leaves that row free in both text lines): one segment per song,
+    anchored at the left. The bar starts full and shrinks toward the left as
+    songs finish; its right-hand end is the song playing now (pulsing white),
+    the green segments before it are the songs still to come. Drawn over
+    whatever else panels 1+2 show."""
+    n = state.medley_count
+    if n <= 0:
+        return
+    tx, ty, tw, th = TOP_COMBINED
+    y = ty + th - 1
+    gap = 1 if n * 2 <= tw else 0
+    seg_w = max(1, (tw - gap * (n - 1)) // n)
+    x0 = tx + (tw - (seg_w * n + gap * (n - 1))) // 2
+    cur = state.medley_pos - 1            # index of the hook playing now (-1 = not started)
+    left = n - max(0, cur)                # songs left, counting the one playing
+    pulse = 120 + int(135 * (0.5 + 0.5 * math.sin(t * 6.0)))
+    last_song = cur >= 0 and left == 1
+    blink_on = int(t * 3.0) % 2 == 0          # last song: the one remaining element blinks on/off
+    for k in range(left):
+        if last_song:
+            if not blink_on:
+                continue
+            color = (255, 255, 255)
+        else:
+            color = (pulse, pulse, pulse) if (cur >= 0 and k == left - 1) else (0, 200, 0)
+        matrix_surface.fill(color, (x0 + k * (seg_w + gap), y, seg_w, 1))
+
+
 def _medley_panel_choice(t, panel_id, label, picked, flash):
     x0, y0, w, h = PANELS[panel_id]
     matrix_surface.fill(BLACK, (x0, y0, w, h))
@@ -1779,20 +1814,25 @@ def _draw_medley_game(t):
     else:
         draw_marquee(matrix_surface, "medley_q1", "THIS IS", (tx, ty, tw, LINE_H), align="center", scroll=False)
         draw_marquee(matrix_surface, "medley_q2", q["shown"].upper() + "?", (tx, ty + LINE_H, tw, LINE_H), align="center")
-        _medley_panel_choice(t, 3, "TRUE", q["panel"] is True, flash=False)
-        _medley_panel_choice(t, 4, "FALSE", q["panel"] is False, flash=False)
+        if now < q["opens"]:   # listen window: no TRUE / FALSE yet
+            matrix_surface.fill(BLACK, PANELS[3])
+            matrix_surface.fill(BLACK, PANELS[4])
+        else:
+            _medley_panel_choice(t, 3, "TRUE", q["panel"] is True, flash=False)
+            _medley_panel_choice(t, 4, "FALSE", q["panel"] is False, flash=False)
     _draw_medley_banner(t, row_panel=5)
     return True
 
 
 def _draw_medley_results(t):
-    """End of a medley with the game on: "N TOTAL SONGS" on panels 1+2, the
-    medley leaderboard (top 4) on panels 3-6."""
+    """End of a medley with the game on: "N TOTAL SONGS" + "WINNER <initials>"
+    on panels 1+2, the medley leaderboard (top 4) on panels 3-6."""
     tx, ty, tw, th = TOP_COMBINED
     matrix_surface.fill(BLACK, TOP_COMBINED)
-    draw_marquee(matrix_surface, "medley_res1", f"{state.medley_songs_total} TOTAL SONGS", (tx, ty, tw, LINE_H), align="center", scroll=False)
-    draw_marquee(matrix_surface, "medley_res2", "MEDLEY SCORES", (tx, ty + LINE_H, tw, LINE_H), align="center", scroll=False)
     rows = state.medley_results[:4]
+    draw_marquee(matrix_surface, "medley_res1", f"{state.medley_songs_total} TOTAL SONGS", (tx, ty, tw, LINE_H), align="center", scroll=False)
+    draw_marquee(matrix_surface, "medley_res2", f"WINNER {rows[0]['initials']}" if rows else "MEDLEY SCORES",
+                 (tx, ty + LINE_H, tw, LINE_H), align="center", scroll=False)
     for k, pid in enumerate((3, 4, 5, 6)):
         x0, y0, w, h = PANELS[pid]
         matrix_surface.fill(BLACK, (x0, y0, w, h))
@@ -1812,6 +1852,63 @@ def _draw_trivia_confirm():
     draw_marquee(matrix_surface, "trivia_confirm_no", "NO", PANELS[4], align="center", scroll=False)
 
 
+_reveal_cells = []      # (rect, pos) per block for the running reveal
+_reveal_cells_for = None
+
+
+def _reveal_cells_build(style):
+    """Blocks (2x2 px; config.TRANSITION_PIXEL_BLOCK for the pixel
+    dissolve) with their order along the style's sweep, from the same
+    drivers/transition_shapes.pos() the marquee uses."""
+    import random
+    from drivers import transition_shapes
+    size = config.TRANSITION_PIXEL_BLOCK if style == "pixel" else 2
+    cells = []
+    for by in range(0, MATRIX_HEIGHT, size):
+        for bx in range(0, MATRIX_WIDTH, size):
+            x = (bx + size / 2) / MATRIX_WIDTH
+            y = (by + size / 2) / MATRIX_HEIGHT
+            cells.append(((bx, by, size, size),
+                          transition_shapes.pos(style, x, y, random.random())))
+    return cells
+
+
+def _apply_board_reveal(t):
+    """Masks the not-yet-revealed part of this frame's fresh content black
+    while the post-wipe reveal runs, in state.transition_style's order
+    (drivers/transition_shapes.py) -- the "flash" style fades the whole
+    board up instead."""
+    global _board_reveal_started_at, _reveal_cells, _reveal_cells_for
+    if _board_reveal_started_at == 0.0:
+        return
+    p = (t - _board_reveal_started_at) / config.TRANSITION_REVEAL_SECONDS
+    if p >= 1.0 or state.show_phase != "live":
+        _board_reveal_started_at = 0.0
+        return
+    style = state.transition_style
+    # p < 0 (a medley hook's reveal scheduled ahead): everything masked.
+    if style == "flash":
+        veil = pygame.Surface((MATRIX_WIDTH, MATRIX_HEIGHT))
+        veil.fill(BLACK)
+        veil.set_alpha(int(255 * min(1.0, 1.0 - p)))
+        matrix_surface.blit(veil, (0, 0))
+        return
+    key = (_board_reveal_started_at, style)
+    if _reveal_cells_for != key:
+        _reveal_cells, _reveal_cells_for = _reveal_cells_build(style), key
+    for rect, d in _reveal_cells:
+        if d > p:
+            pygame.draw.rect(matrix_surface, BLACK, rect)
+
+
+def start_reveal_at(ts):
+    """Medley hook change (drivers/medley_engine._hook_fx): the board goes
+    black now and reveals in state.transition_style's shape from `ts`,
+    in step with the marquee -- no slide-out/hold like a song change."""
+    global _board_reveal_started_at
+    _board_reveal_started_at = ts
+
+
 def update_matrix_canvas():
     _render_matrix_canvas_content()
     if state.medley_results and time.time() < state.medley_results_until:
@@ -1819,6 +1916,12 @@ def update_matrix_canvas():
     elif state.medley_active:
         if not _draw_medley_game(time.time()):
             _draw_medley_banner(time.time())
+        _draw_medley_progress(time.time())
+    # After the medley overlays so a hook change's reveal covers them too.
+    _apply_board_reveal(time.time())
+    if state.blackout_active:
+        matrix_surface.fill(BLACK)  # admin blackout (drivers/blackout_engine.py)
+        return
     if state.trivia_confirm_active:
         _draw_trivia_confirm()
     if state.cpu_temp_overlay_active:
@@ -1872,6 +1975,50 @@ def _render_matrix_canvas_content():
         _render_quiz_mode(t)
 
 
+_preview_src = pygame.Surface((MATRIX_WIDTH, MATRIX_HEIGHT))
+_preview_scaled = pygame.Surface((MATRIX_WIDTH * PIXEL_SCALE, MATRIX_HEIGHT * PIXEL_SCALE))
+_preview_grid = pygame.Surface(_preview_scaled.get_size(), pygame.SRCALPHA)
+_preview_grid.fill((0, 0, 0, 0))
+for _i in range(MATRIX_WIDTH):
+    _preview_grid.fill((5, 0, 0, 255), (_i * PIXEL_SCALE, 0, GAP, _preview_grid.get_height()))
+for _j in range(MATRIX_HEIGHT):
+    _preview_grid.fill((5, 0, 0, 255), (0, _j * PIXEL_SCALE, _preview_grid.get_width(), GAP))
+
+_DRM_DIR = "/sys/class/drm"
+_preview_checked_at = -1e9
+_preview_on = True
+
+
+def _preview_visible():
+    """True if a screen is plugged in (any HDMI/DSI connector reports
+    "connected"), re-checked every few seconds so plugging a monitor in
+    brings the preview back on its own. Always True off the Pi (no DRM
+    sysfs, e.g. the Windows dev box) or with config.SIMULATOR_SKIP_WHEN_HEADLESS
+    off."""
+    global _preview_checked_at, _preview_on
+    now = time.monotonic()
+    if now - _preview_checked_at < 5.0:
+        return _preview_on
+    _preview_checked_at = now
+    visible = True
+    if config.SIMULATOR_SKIP_WHEN_HEADLESS and os.path.isdir(_DRM_DIR):
+        visible = False
+        for name in os.listdir(_DRM_DIR):
+            if "-" not in name or "Writeback" in name:
+                continue
+            try:
+                with open(os.path.join(_DRM_DIR, name, "status")) as f:
+                    if f.read().strip() == "connected":
+                        visible = True
+                        break
+            except OSError:
+                pass
+    if visible != _preview_on:
+        print(f"[CANVAS] Desktop preview {'ON (monitor connected)' if visible else 'OFF (no monitor -- LED panels unaffected)'}.")
+        _preview_on = visible
+    return visible
+
+
 def render_led_grid():
     # Physical rig: matrix_surface is fully drawn by this point (called
     # right after update_matrix_canvas() in main.py's loop) -- fire it at
@@ -1879,20 +2026,23 @@ def render_led_grid():
     # on-screen simulator window.
     led_bridge.send_frame(matrix_surface)
 
-    screen.fill((5, 0, 0))
-    for y in range(MATRIX_HEIGHT):
-        for x in range(MATRIX_WIDTH):
-            color = matrix_surface.get_at((x, y))
-            if color == (0, 0, 0, 255):
-                color = RED_OFF
+    # 2026-10-08 CPU survey: the preview below was ~80% of the app's CPU
+    # while drawn to a desktop with no monitor attached. Skip it entirely
+    # when headless -- the real panels were already fed on the line above.
+    if not _preview_visible():
+        return
 
-            rect = (
-                x * PIXEL_SCALE + GAP,
-                y * PIXEL_SCALE + GAP,
-                PIXEL_SCALE - GAP,
-                PIXEL_SCALE - GAP
-            )
-            pygame.draw.rect(screen, color, rect)
+    screen.fill((5, 0, 0))
+    # Same picture as the old per-pixel get_at()/draw.rect() loop (4.1ms ->
+    # 0.09ms per frame on the Pi): unlit pixels take RED_OFF, every pixel
+    # becomes a PIXEL_SCALE block, and a prebuilt grid paints the GAP seams.
+    _preview_src.blit(matrix_surface, (0, 0))
+    pixels = pygame.PixelArray(_preview_src)
+    pixels.replace(BLACK, RED_OFF)
+    del pixels
+    pygame.transform.scale(_preview_src, _preview_scaled.get_size(), _preview_scaled)
+    screen.blit(_preview_scaled, (0, 0))
+    screen.blit(_preview_grid, (0, 0))
 
     # Physical panel seam overlay -- one border per real 32x16 panel.
     seam_color = (80, 0, 0)

@@ -475,9 +475,8 @@ def _poll_setup_hardware(pressed_colors, now):
 
 
 def _close_trivia_confirm():
+    # LEDs follow state.trivia_confirm_active via inputs/gamepad.py::_sync_panel_leds()
     state.trivia_confirm_active = False
-    simon_hardware.set_led("green", False)
-    simon_hardware.set_led("red", False)
 
 
 def _poll_trivia_confirm(pressed_colors):
@@ -550,7 +549,7 @@ def poll_hardware(now):
     simon_hardware.read_buttons()'s level snapshot (a color must go
     False->True for a press, True->False for a release, between polls) so
     holding a button down can't fire a repeated press or a double entry."""
-    global _prev_hw_buttons
+    global _prev_hw_buttons, _yellow_down_at
     if state.trivia_confirm_active and now >= state.trivia_confirm_until:
         _close_trivia_confirm()  # confirm timed out untouched
     buttons = simon_hardware.read_buttons()
@@ -560,6 +559,12 @@ def poll_hardware(now):
     pressed_colors = [c for c, is_down in buttons.items() if is_down and not _prev_hw_buttons.get(c)]
     released_colors = [c for c, is_down in buttons.items() if not is_down and _prev_hw_buttons.get(c)]
     _prev_hw_buttons = buttons
+
+    from drivers import panel_led_engine  # press feedback LEDs (gamepad._sync_panel_leds draws them)
+    for color in pressed_colors:
+        panel_led_engine.note_press(color)
+    for color in released_colors:
+        panel_led_engine.note_release(color, now)
 
     for color in released_colors:
         release(color)
@@ -572,7 +577,13 @@ def poll_hardware(now):
         return
 
     if state.medley_active:
-        from drivers import medley_game
+        from drivers import medley_engine, medley_game
+        if medley_engine.in_bed_hold():
+            # vocal-drop bed (winner screen up): ANY button ends it and goes
+            # back to normal play; a yellow press must not also audition
+            _yellow_down_at = 0.0
+            medley_engine.end_bed(f"{pressed_colors[0]} button")
+            return
         if medley_game.enabled() and ("green" in pressed_colors or "red" in pressed_colors):
             # Dance Medley game: green = TRUE, red = FALSE (one tap, first tap
             # counts). Red no longer leaves the medley while the game is on --
@@ -637,7 +648,9 @@ def poll_hardware(now):
     #                              yellow LONG (hold) = start/stop DANCE MEDLEY,
     #                              red during a medley = leave it (reject),
     #                              EXCEPT while the medley GAME is on (questions not
-    #                              suppressed): green = TRUE, red = FALSE answers
+    #                              suppressed): green = TRUE, red = FALSE answers;
+    #                              vocal-drop bed (winner screen held): ANY = end
+    #                              the bed, back to normal play
     # The last group is the ONLY place blue/yellow/red act as features; the
     # branches above it return first, so none of them fire during gameplay.
     #
@@ -661,8 +674,7 @@ def poll_hardware(now):
             # already on.
             state.trivia_confirm_active = True
             state.trivia_confirm_until = now + config.JUKEBOX_TRIVIA_CONFIRM_TIMEOUT_SECONDS
-            simon_hardware.set_led("green", True)
-            simon_hardware.set_led("red", True)
+            # green/red light via inputs/gamepad.py::_sync_panel_leds()
         elif "yellow" in pressed_colors:
             pass  # handled by _poll_yellow_hold(): short = audition, long = medley
         elif "red" in pressed_colors:

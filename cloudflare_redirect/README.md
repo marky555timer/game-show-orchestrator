@@ -1,12 +1,19 @@
 # Trivia Night static QR redirector
 
+**Live location (2026-10-10):** `play/` is deployed at
+`https://triviacade.com/play/` (Hostinger, `public_html/play/`). Guests use
+`triviacade.com/play`, the operator uses `triviacade.com/play/admin.php`.
+`yannitell_legacy/` holds the two tiny forwarders that replaced
+`yannitellphotography.com/trivia/play.php` and `admin.php`, so old QR codes
+and bookmarks still land on the new address.
+
 Deploys to your own static/PHP-capable web server. Its job: give the show's
 QR codes a URL that **never changes**, even though the local show machine's
 actual public address (a Cloudflare Tunnel quick-tunnel URL) changes every
 time the app restarts.
 
 ```
-Guest scans QR  --->  https://yourdomain.com/trivia/play.php   (this directory, never changes)
+Guest scans QR  --->  https://triviacade.com/play/            (play/, never changes)
                                     |
                                     | 302 redirect to whatever's on file
                                     v
@@ -22,7 +29,7 @@ while it's running.
 
 ## What's in here
 
-- `play.php` — **guest-facing QR target.** Redirects to `<tunnel>/play`.
+- `index.php` / `play.php` — **guest-facing QR target.** Redirects to `<tunnel>/play`.
 - `admin.php` — **operator-facing QR target.** Redirects to `<tunnel>/`.
 - `update.php` — the local app POSTs here to report its current tunnel URL.
 - `config.php` — the shared secret + staleness settings.

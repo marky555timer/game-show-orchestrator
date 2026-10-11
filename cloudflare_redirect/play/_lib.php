@@ -7,6 +7,9 @@ require __DIR__ . '/config.php';
  * URL on file yet, or it's older than STALE_AFTER_SECONDS.
  */
 function trivia_redirect_to_current($suffix) {
+    // The tunnel URL changes on every show-machine restart: never let a
+    // browser or the host's CDN (Hostinger hcdn) cache this answer.
+    header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
     if (!file_exists(STATE_FILE)) {
         trivia_show_offline();
     }
@@ -31,20 +34,22 @@ function trivia_show_offline() {
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Trivia Night</title>
+<title>Triviacade</title>
 <style>
   body {
     margin: 0; padding: 60px 20px; text-align: center;
-    background: #0b0b0d; color: #f2f2f2;
+    background: #130F2A; color: #F1EEFF;
     font-family: -apple-system, Segoe UI, Roboto, sans-serif;
   }
-  h1 { color: #ff3b30; font-size: 1.3rem; }
-  p { color: #999; }
+  h1 { color: #FFB21E; font-size: 1.3rem; }
+  p { color: #B9B2DE; }
+  a { color: #46E6FF; }
 </style>
 </head>
 <body>
   <h1>No show running right now</h1>
-  <p>Check back once trivia night starts!</p>
+  <p>Check back once the game starts!</p>
+  <p><a href="/">triviacade.com</a></p>
 </body>
 </html>
 HTML;

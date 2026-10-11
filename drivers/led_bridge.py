@@ -37,6 +37,7 @@ a flickering display (frames arriving at the rig irregularly instead of a
 steady stream).
 """
 import socket
+import threading
 import time
 
 import numpy as np
@@ -107,6 +108,14 @@ _NEVER_READY_TIMEOUT_S = 6.0
 # The orchestrator's own render loop stays at 40Hz; only the wire is capped.
 _MAX_SEND_HZ = 20.0
 _MIN_SEND_INTERVAL_S = 1.0 / _MAX_SEND_HZ
+# Even send rhythm (2026-10-08): send on every 2nd render tick (40fps loop ->
+# 20/s), so panel frames follow the loop's own cadence. The old "at least 50ms
+# since the last send" rule turned every slightly-early tick into a 75ms gap
+# (scroll hitches), and a fixed 50ms wall-clock grid skipped a slot whenever
+# the loop's real tick ran a hair over 25ms (a rhythmic 2px scoot). The
+# spacing floor keeps sends from bunching after a stalled frame.
+_SEND_EVERY_TICKS = 2
+_MIN_SEND_SPACING_S = 0.040
 
 _sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 _sock.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
@@ -116,8 +125,69 @@ _last_scan_time = 0.0
 _connect_time = 0.0  # for the "(booting)" status label only, not routing
 _last_heartbeat_time = 0.0
 _last_send_time = 0.0
+_ticks_since_send = 0
+_frames_sent = 0  # drives frame_time()
 _udp_unreachable = False  # logs only on the down/up transition, not every throttled send
 _last_ready_state = None  # None=unknown yet, else bool -- for transition-only logging
+
+# Serial sender thread (2026-10-08 CPU survey, same shape as wled_engine.py's
+# and dmx_driver.py's): the main loop hands over the finished frame and moves
+# on; this thread does the blocking USB write (which releases the GIL), so a
+# slow or stuck write can never stall the render loop. One slot, latest frame
+# wins -- never a backlog. Wire format, checksum, the _MAX_SEND_HZ cap and the
+# heartbeat/readiness logic are all unchanged; only WHERE write() runs moved.
+_tx_lock = threading.Lock()  # held around every write AND every close of _serial_link
+_tx_cond = threading.Condition()
+_tx_pending = None  # bytes of the newest frame not yet written
+_tx_error = None  # (exception, link) from the sender, handled on the main thread
+_tx_thread = None
+
+
+def _sender_loop():
+    global _tx_pending, _tx_error
+    while True:
+        with _tx_cond:
+            while _tx_pending is None:
+                _tx_cond.wait()
+            frame, _tx_pending = _tx_pending, None
+        with _tx_lock:
+            link = _serial_link
+            if link is None or _tx_error is not None:
+                continue
+            try:
+                link.write(frame)
+            except Exception as e:
+                _tx_error = (e, link)
+
+
+def _queue_serial(frame):
+    global _tx_pending, _tx_thread
+    if _tx_thread is None:
+        _tx_thread = threading.Thread(target=_sender_loop, name="led-bridge-tx", daemon=True)
+        _tx_thread.start()
+    with _tx_cond:
+        _tx_pending = frame
+        _tx_cond.notify()
+
+
+def _handle_tx_error():
+    """Main thread: the same close-and-fall-back-to-UDP handling the inline
+    write used to do, for a failure the sender thread reported."""
+    global _serial_link, _tx_error
+    if _tx_error is None:
+        return
+    e, link = _tx_error
+    with _tx_lock:
+        if link is _serial_link and _serial_link is not None:
+            print(f"[LED BRIDGE] Serial write failed ({e}); falling back to WiFi UDP.")
+            device = _serial_link.port
+            try:
+                _serial_link.close()
+            except Exception:
+                pass
+            serial_ports.release(device)
+            _serial_link = None
+        _tx_error = None
 
 
 def _find_esp32_port():
@@ -145,6 +215,14 @@ def _find_esp32_port():
     non_rejected = [d for d in candidates if d not in rejected]
     if non_rejected:
         return non_rejected[0]
+    if candidates:
+        # Diagnostic (2026-10-08: stuck re-trying a known-wrong port for
+        # minutes while a third board sat unused) -- who holds what.
+        all_esp = [p.device for p in serial.tools.list_ports.comports()
+                   if (p.vid, p.pid) in config.ESP32_USB_SERIAL_VID_PIDS]
+        print(f"[LED BRIDGE] Only rejected ports free -- ESP32 ports {all_esp}, "
+              f"held {{{', '.join(f'{d}: {serial_ports.held_by(d)}' for d in all_esp)}}}, "
+              f"rejected {sorted(rejected)}.")
     return candidates[0] if candidates else None
 
 
@@ -193,13 +271,14 @@ def _check_never_ready():
     device = _serial_link.port
     print(f"[LED BRIDGE] No heartbeat from {device} after {_NEVER_READY_TIMEOUT_S:.0f}s -- "
           f"probably the wrong board (see config.ESP32_USB_SERIAL_VID_PIDS). Releasing it.")
-    try:
-        _serial_link.close()
-    except Exception:
-        pass
-    serial_ports.release(device)
-    serial_ports.reject(device)
-    _serial_link = None
+    with _tx_lock:
+        try:
+            _serial_link.close()
+        except Exception:
+            pass
+        serial_ports.release(device)
+        serial_ports.reject(device)
+        _serial_link = None
     _last_scan_time = time.monotonic()
 
 
@@ -237,6 +316,21 @@ def _serial_ready():
     return ready
 
 
+def _send_due(now):
+    return (_ticks_since_send + 1 >= _SEND_EVERY_TICKS
+            and now - _last_send_time >= _MIN_SEND_SPACING_S)
+
+
+def frame_time():
+    """Animation clock counted in PANEL FRAMES, in seconds (frames sent x
+    1/20 s): consecutive panel frames are always exactly 50ms apart in this
+    clock, so motion at 20px/s (scrolling text) moves exactly 1px per frame
+    the panels show -- no pause, no skip -- however the real loop timing
+    wobbles. Called while drawing a tick that WILL be sent, it already
+    returns that frame's time."""
+    return (_frames_sent + (1 if _send_due(time.monotonic()) else 0)) * _MIN_SEND_INTERVAL_S
+
+
 def current_transport():
     """For the operator overlay panel (graphics/overlay_panel.py)."""
     if _serial_link is None:
@@ -267,11 +361,14 @@ def send_frame(matrix_surface):
     Safe to call at the full 40Hz render rate -- sending is internally
     throttled to what the rig can actually display (see _MAX_SEND_HZ).
     """
-    global _serial_link, _last_send_time
+    global _serial_link, _last_send_time, _ticks_since_send, _frames_sent
 
     now = time.monotonic()
-    if now - _last_send_time < _MIN_SEND_INTERVAL_S:
+    if not _send_due(now):
+        _ticks_since_send += 1
         return
+    _ticks_since_send = 0
+    _frames_sent += 1
     _last_send_time = now
 
     pixels = pygame.surfarray.pixels_red(matrix_surface)  # locks the surface
@@ -287,24 +384,15 @@ def send_frame(matrix_surface):
         checksum ^= b
     payload.append(checksum)
 
+    _handle_tx_error()
     _check_never_ready()
     if _serial_link is None and time.monotonic() - _last_scan_time >= _SERIAL_RESCAN_INTERVAL_S:
         _try_connect_serial()
 
     _drain_heartbeat()
     if _serial_ready():
-        try:
-            _serial_link.write(bytes(payload))
-            return
-        except Exception as e:
-            print(f"[LED BRIDGE] Serial write failed ({e}); falling back to WiFi UDP.")
-            device = _serial_link.port
-            try:
-                _serial_link.close()
-            except Exception:
-                pass
-            serial_ports.release(device)
-            _serial_link = None
+        _queue_serial(bytes(payload))  # written by the led-bridge-tx thread
+        return
 
     global _udp_unreachable
     try:

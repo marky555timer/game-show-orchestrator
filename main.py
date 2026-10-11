@@ -32,7 +32,9 @@ from drivers import power_monitor
 from drivers import wled_engine
 from drivers import simon_hardware
 from drivers import recovery_button
+from drivers import shutdown_button
 from drivers import accent_engine
+from drivers import blackout_engine
 from drivers import relay_engine
 from drivers.factoid_engine import save_track_cache
 from graphics.matrix_canvas import update_matrix_canvas, render_led_grid
@@ -68,6 +70,7 @@ def main():
     tunnel_engine.start()
     simon_hardware.init()
     recovery_button.init()
+    shutdown_button.init()
     accent_engine.init()
     relay_engine.init()
 
@@ -169,6 +172,8 @@ def main():
 
             # 2. Render the full 176-channel DMX frame (DJ uplighting themes,
             # game-mode chase, Fixture 1 win/loss/reset)
+            shutdown_button.poll(time.time())  # GPIO26 hold -> blackout + Pi poweroff
+            blackout_engine.update(time.time())  # freezes the show clock while blacked out
             lighting_engine.update(time.time())
             _stage_t5 = time.perf_counter()
 
@@ -231,6 +236,7 @@ def main():
     dmx.blackout()
     simon_hardware.cleanup()
     recovery_button.cleanup()
+    shutdown_button.cleanup()
     accent_engine.cleanup()
     relay_engine.cleanup()
     sfx_engine.cleanup()

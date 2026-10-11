@@ -37,7 +37,18 @@
   .btn.medley.on { background: #111; color: #ffd400; border-color: #ffd400; }
   #medley-status { margin-top: 8px; font-size: .85rem; color: #ffe266; line-height: 1.35; }
   /* Medley mode: the per-song controls are removed until the operator exits */
-  body.medley-on #live-panel, body.medley-on #audition-btn, body.medley-on #jukebox-btn { display: none !important; }
+  body.medley-on #audition-btn, body.medley-on #jukebox-btn, body.medley-on #medley-options { display: none !important; }
+  .mo-n { color: #999; font-size: .75rem; }
+  .wled-slot { flex: 1; padding: 8px 4px; border: 2px solid #444; border-radius: 10px; background: #1a1a1a; color: #ddd; font-weight: 700; cursor: pointer; }
+  .wled-slot.sel { border-color: #fff; }
+  .wled-slot .chip { display: inline-block; width: 18px; height: 18px; border-radius: 50%; vertical-align: middle; margin-right: 6px; border: 1px solid #777; }
+  .wled-slot small { display: block; font-weight: 400; color: #999; font-size: .7rem; }
+  #wled-wheel { touch-action: none; border-radius: 50%; cursor: crosshair; max-width: 100%; }
+  #wled-val { width: 100%; }
+  .wled-dot { width: 34px; height: 34px; border-radius: 50%; border: 2px solid #555; padding: 0; cursor: pointer; font-weight: 800; }
+  /* ...except Volume (operator, 2026-10-01): keep the live panel up but show only its Volume section */
+  body.medley-on #live-panel { display: block !important; }
+  body.medley-on #live-panel > :not(#volume-section) { display: none !important; }
   body.medley-on #medley-btn { padding: 26px 14px; font-size: 1.25rem; }
   .btn.big { width: 100%; padding: 18px 14px; font-size: 1.1rem; }
   .timer { font-size: 1.6rem; font-variant-numeric: tabular-nums; }
@@ -162,16 +173,6 @@
   details.advanced-group[open] summary::before { content: '\25be\a0'; }
   details.advanced-group[open] summary { margin-bottom: 10px; }
 
-  /* Simon hardware test (2026-09-11): dim by default, lights up green the
-     instant that color's physical switch reads pressed (polled while the
-     Advanced panel is open -- see simonHwStartPolling()). */
-  .simon-hw-sw {
-    display: inline-block; padding: 4px 10px; border-radius: 6px;
-    font-size: .75rem; font-weight: 700; letter-spacing: .04em;
-    background: #222; color: #777;
-  }
-  .simon-hw-sw.pressed { background: #2e7d32; color: #fff; }
-
   /* DJ-look section headers (DMX Uplighting / Marquee / Outline) get extra
      breathing room and a divider line -- these three are dense (dropdown +
      swatches + gradient buttons + checkboxes each) and sat too close
@@ -210,6 +211,7 @@
       <a href="/library">File Manager</a>
       <a href="/setup">Setup</a>
       <a href="/joyassign">Joy Assign</a>
+      <a href="/questions">Questions</a>
     </div>
   </div>
   <h1>Game Show Orchestrator &mdash; Remote</h1>
@@ -217,6 +219,17 @@
   <section id="medley-bar" style="display:none">
     <button class="btn medley big" id="medley-btn" onclick="toggleMedley()">DANCE MEDLEY</button>
     <div id="medley-status"></div>
+    <!-- Medley options (2026-10-01): which songs a medley draws from + how many. Hidden while one runs. -->
+    <div id="medley-options" style="margin-top:10px;font-size:.88rem">
+      <label style="display:block;margin:4px 0"><input type="radio" name="medley-source" value="latest" onchange="medleyOptionsSave()"> Latest edited <span class="mo-n" id="mo-n-latest"></span><br><span style="color:#999;font-size:.75rem;margin-left:22px">human-edited songs first, newest edits leading; AI-included fill any gaps</span></label>
+      <label style="display:block;margin:4px 0"><input type="radio" name="medley-source" value="green" onchange="medleyOptionsSave()"> Human-edited only (green) <span class="mo-n" id="mo-n-green"></span></label>
+      <label style="display:block;margin:4px 0"><input type="radio" name="medley-source" value="yellow" onchange="medleyOptionsSave()"> AI-included only (yellow) <span class="mo-n" id="mo-n-yellow"></span></label>
+      <label style="display:block;margin:8px 0 2px"><input type="checkbox" id="medley-next-only" onchange="medleyOptionsSave()"> Next track plays medley songs only
+        <br><span style="color:#999;font-size:.75rem;margin-left:22px">for dressing your hottest tracks with lighting; each lighting change stamps Last edited</span></label>
+      <label style="display:block;margin:8px 0 2px">Songs in the medley
+        <input type="number" id="medley-songs" min="4" max="60" step="1" value="10" style="width:64px;margin-left:6px" onchange="medleyOptionsSave()">
+        <span style="color:#999;font-size:.75rem">(sets the medley length &mdash; hooks run ~15-20s each)</span></label>
+    </div>
     <button class="btn editbtn" id="medley-edit-btn" style="display:none;margin-top:10px" onclick="editBegin()">EDIT TRANSITION</button>
     <div id="medley-edit" style="display:none; margin-top:10px">
       <div style="font-size:.75rem;color:#ff8a80;letter-spacing:.06em">EDITING THIS TRANSITION</div>
@@ -344,6 +357,8 @@
 
     <section>
       <button class="btn primary big" onclick="transportNext()">NEXT TRACK</button>
+      <button class="btn big" style="margin-top:8px" onclick="transportPrev()">&laquo; PREVIOUS TRACK</button>
+      <button class="btn danger big" style="margin-top:8px" onclick="cancelQuestion()">CANCEL QUESTION</button>
       <button class="btn big" style="margin-top:8px" onclick="reconnectGamepad()">RECONNECT GAMEPAD</button>
 
       <div class="row" style="align-items:center;margin-top:14px">
@@ -353,14 +368,12 @@
         </label>
         <label style="display:flex;align-items:center;gap:6px;font-weight:700;margin-left:8px">
           <input type="checkbox" id="sfx-checkbox" onchange="sfxToggle()">
-          GAME SFX
+          SFX (SWEEPERS + GAME)
         </label>
       </div>
-
-      <button class="btn" style="margin-top:10px" onclick="transportPrev()">&laquo; Previous Track</button>
     </section>
 
-    <section>
+    <section id="volume-section">
       <h2>Volume</h2>
       <input type="range" id="volume-slider" min="0" max="100" value="100" oninput="volumeSlide(this.value)">
       <div class="volume-value" id="volume-value">100%</div>
@@ -427,7 +440,7 @@
       </div>
     </section>
 
-    <details class="advanced-group" id="advanced-panel" ontoggle="simonHwOnAdvancedToggle()">
+    <details class="advanced-group" id="advanced-panel" ontoggle="advancedOnToggle()">
       <summary>Advanced / Show Configuration</summary>
 
       <!-- DJ-look controls (2026-09-17): DMX/marquee/outline each pick
@@ -437,7 +450,7 @@
            pattern names, gradient modes) are fetched once from
            /api/dj-look/options rather than hardcoded here, and current
            selections sync from /api/dj-look/status while this panel is
-           open (djLookPoll(), same cadence as simonHwPoll/accentPoll). -->
+           open (djLookPoll(), see advancedOnToggle()). -->
       <!-- Outline Strip listed first (2026-09-26): it's now the color
            "master" for a song's look -- DMX and marquee get picked as
            complements to whatever the outline is showing, not the other
@@ -448,8 +461,21 @@
            220 entries as of 2026-09-18, verified live against the board's
            own /json/eff) -- deliberately not curated/trimmed down, per
            request ("let's go with what's default in WLED"). -->
-      <label style="font-size:.85rem;font-weight:700">Effect
-        <select id="outline-theme-select" onchange="pickDjTheme('outline', this.value)"></select>
+      <!-- Effect filters (2026-10-03): Strip hides WLED's matrix-only (2D)
+           effects and empty RSVD slots; Sound = WLED's own volume (♪) /
+           frequency (♫) reactive marks; ★ = operator favorites (starred with
+           the button beside the list). Data: drivers/wled_fx_meta.py. -->
+      <div style="display:flex;gap:4px;flex-wrap:wrap;margin:4px 0 2px" id="outline-fx-filters">
+        <button type="button" class="btn small" data-f="strip" onclick="outlineFxFilter('strip')">Strip</button>
+        <button type="button" class="btn small" data-f="sound" onclick="outlineFxFilter('sound')">&#9834; Sound</button>
+        <button type="button" class="btn small" data-f="fav" onclick="outlineFxFilter('fav')">&#9733; Favorites</button>
+        <button type="button" class="btn small" data-f="all" onclick="outlineFxFilter('all')">All</button>
+      </div>
+      <label style="font-size:.85rem;font-weight:700">Effect <span id="outline-fx-count" style="font-weight:400;opacity:.7"></span>
+        <span style="display:flex;gap:6px;align-items:center">
+          <select id="outline-theme-select" style="flex:1" onchange="_fxCur = Number(this.value); pickDjTheme('outline', this.value); outlineFxStarShow()"></select>
+          <button type="button" class="btn small" id="outline-fx-star" title="Add/remove this effect from Favorites" onclick="outlineFxStar()">&#9734;</button>
+        </span>
       </label>
       <!-- Gradient palette (2026-09-26) -- WLED's own built-in multi-color
            palettes (config.ACCENT_PALETTE_NAMES), as an alternative to a
@@ -461,7 +487,18 @@
       <label style="display:block;font-size:.85rem;font-weight:700;margin-top:6px">Gradient Palette
         <select id="outline-palette-select" onchange="pickAccentPalette(this.value)"></select>
       </label>
-      <div id="outline-color-swatches" class="color-swatch-picker"></div>
+      <!-- WLED-style outline color picker (2026-10-02), replacing the swatch row: slot 1 "Fx" and
+           slot 2 "Bg" are separate, each shows what the show is actually sending, "auto" = the
+           show's own pick (Fx = the song's swatch color, Bg = black). Saved per song once touched. -->
+      <div style="font-size:.85rem;font-weight:700;margin-top:6px">Outline colors</div>
+      <div style="display:flex;gap:8px;margin:6px 0">
+        <button type="button" class="wled-slot sel" id="wled-slot-fx" onclick="wledPickSlot('fx')"><span class="chip"></span>Fx (1)<small>auto</small></button>
+        <button type="button" class="wled-slot" id="wled-slot-bg" onclick="wledPickSlot('bg')"><span class="chip"></span>Bg (2)<small>auto</small></button>
+      </div>
+      <div style="text-align:center"><canvas id="wled-wheel" width="260" height="260"></canvas></div>
+      <input type="range" id="wled-val" min="0" max="100" value="100" title="Brightness of this color">
+      <div class="color-swatch-picker" id="wled-dots" style="justify-content:center"></div>
+      <div style="text-align:center"><button type="button" class="btn small" onclick="wledAuto()">Auto (let the show choose)</button></div>
       <div id="outline-gradient-picker" class="gradient-mode-picker"></div>
       <!-- The board's own saved WLED presets (config.ACCENT_PRESETS) -- a
            preset replaces the effect/color above for this song until
@@ -481,14 +518,33 @@
       <label style="display:block;font-size:.85rem;font-weight:700;margin-top:6px">Brightness
         <input type="range" id="accent-brightness-slider" min="0" max="255" value="180" oninput="accentBrightnessSet(this.value)">
       </label>
+      <!-- Transition styles (2026-10-03): how the outline changes look when a
+           new song / medley hook starts (WLED 16 blending styles, see
+           accent_engine.TRANSITION_STYLES). Global, not per song. -->
+      <div style="font-size:.85rem;font-weight:700;margin-top:6px">Transition</div>
+      <div style="display:grid;grid-template-columns:auto 1fr auto;gap:4px 6px;align-items:center;font-size:.8rem">
+        <span>Songs</span><select id="outline-trans-song" onchange="outlineTransSave()"></select>
+        <button type="button" class="btn small" onclick="outlineTransPreview('song')">Preview</button>
+        <span>Medley</span><select id="outline-trans-medley" onchange="outlineTransSave()"></select>
+        <button type="button" class="btn small" onclick="outlineTransPreview('medley')">Preview</button>
+      </div>
       <label style="display:flex;align-items:center;gap:6px;font-size:.85rem;font-weight:700;margin-top:6px">
         <input type="checkbox" id="accent-sound-checkbox" onchange="accentSoundToggle()">
-        Sound-reactive (let the strip's own AudioReactive effect run)
+        Sound-reactive fallback (Gravcenter VU meter &mdash; pick an audio-reactive WLED Preset above for a tuned look)
       </label>
       <label style="display:flex;align-items:center;gap:6px;font-size:.85rem;font-weight:700;margin-top:6px">
         <input type="checkbox" id="accent-orchestrator-checkbox" checked onchange="accentOrchestratorToggle()">
         Show controls outline strip (uncheck to design presets live in WLED's own app)
       </label>
+      <!-- Outline-board audit (2026-10-01): compares the board's own saved presets
+           (WLED /presets.json) with config.ACCENT_PRESETS, flags which are
+           sound-reactive, and "Sync presets" rewrites accent_presets.json so
+           new presets show up in the dropdowns without hand-editing config.py.
+           Needs the board's WiFi IP (WLED app > Info). -->
+      <div style="margin-top:8px">
+        <button class="btn small" id="accent-import-btn" onclick="accentImport()">Import latest WLED presets</button>
+        <span id="accent-import-out" style="font-size:.78rem;color:#bbb;margin-left:6px"></span>
+      </div>
 
       <div class="dj-look-subhead">DMX Uplighting</div>
       <label style="font-size:.85rem;font-weight:700">Pattern
@@ -496,6 +552,25 @@
       </label>
       <div id="dmx-color-swatches" class="color-swatch-picker"></div>
       <div id="dmx-gradient-picker" class="gradient-mode-picker"></div>
+      <!-- DMX pattern speed (2026-10-08): saved per song as an exception;
+           every new song starts at full tempo. -->
+      <div style="font-size:.85rem;font-weight:700;margin-top:6px">Speed
+        <label style="font-weight:400;margin-left:8px"><input type="radio" name="dmx-speed" value="1" checked onchange="dmxSpeed(1)"> Full</label>
+        <label style="font-weight:400;margin-left:8px"><input type="radio" name="dmx-speed" value="2" onchange="dmxSpeed(2)"> 1/2</label>
+        <label style="font-weight:400;margin-left:8px"><input type="radio" name="dmx-speed" value="4" onchange="dmxSpeed(4)"> 1/4</label>
+      </div>
+      <button type="button" class="btn small" style="margin-top:4px" onclick="api('/api/dmx/head-spin', {method: 'POST'})"
+              title="One full 360-degree look-around on the moving head (also happens automatically on round start and winner)">Spin mover</button>
+
+      <!-- Panel-button LEDs (2026-10-09): beat-synced patterns on the four
+           arcade buttons during music play. Saved per song as an exception;
+           every new song starts with it on. Presses always light regardless. -->
+      <div class="dj-look-subhead">Panel Buttons</div>
+      <label style="font-size:.85rem;font-weight:700">
+        <input type="checkbox" id="panel-leds-fx-checkbox" checked
+               onchange="api('/api/panel-leds/fx', {method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({enabled: this.checked})})">
+        Animate button lights for this song
+      </label>
 
       <div class="dj-look-subhead">Marquee (Panel-Edge Lights)</div>
       <label style="font-size:.85rem;font-weight:700">Pattern
@@ -507,6 +582,25 @@
         <input type="checkbox" id="marquee-blank-lower-checkbox" checked onchange="marqueeBlankLowerToggle()">
         Blank lower marquees (panels 3-6) during normal DJ dancing
       </label>
+      <!-- Marquee dials (2026-10-05): saved per song as exceptions; every
+           new song starts at 100% / 100% / 50% / on. -->
+      <label style="display:flex;align-items:center;gap:6px;font-size:.85rem;font-weight:700;margin-top:6px">
+        <input type="checkbox" id="marquee-off-checkbox" onchange="marqueeDials({off: this.checked})">
+        Marquee OFF for this song
+      </label>
+      <label style="display:block;font-size:.85rem;font-weight:700;margin-top:6px">Brightness <span id="marquee-bri-val"></span>
+        <input type="range" id="marquee-bri-slider" min="0" max="100" value="100" oninput="marqueeDials({brightness: +this.value})">
+      </label>
+      <label style="display:block;font-size:.85rem;font-weight:700;margin-top:6px">Speed <span id="marquee-speed-val"></span>
+        <input type="range" id="marquee-speed-slider" min="25" max="300" step="5" value="100" oninput="marqueeDials({speed: +this.value})">
+      </label>
+      <label style="display:block;font-size:.85rem;font-weight:700;margin-top:6px">Depth <span id="marquee-depth-val"></span>
+        <small style="font-weight:400;color:#999">(contrast &mdash; Twinkles &amp; Confetti)</small>
+        <input type="range" id="marquee-depth-slider" min="0" max="100" value="50" oninput="marqueeDials({depth: +this.value})">
+      </label>
+      <button type="button" class="btn small" style="margin-top:4px" onclick="marqueeDials({brightness: 100, speed: 100, depth: 50, off: false}, true)">Reset marquee dials</button>
+      <button type="button" class="btn small" style="margin-top:4px" onclick="api('/api/marquee/locate', {method: 'POST'})"
+              title="20 s: green = bounce center, blue = opposite center, red = first wired bulb">Show bounce centers</button>
 
       <!-- Cross-fixture lighting controls (2026-09-27): "Propagate Colors"
            pushes the outline strip's current primary swatch onto DMX/
@@ -549,71 +643,13 @@
         <button class="btn primary" onclick="announcementTextSave()">Save</button>
       </div>
 
-      <div class="subhead">Special Events</div>
-      <button class="btn" onclick="westminsterTest()">Test Westminster Clock</button>
-
-      <div class="subhead">DMX Relay Test</div>
-      <div class="row">
-        <button class="btn" onclick="relayTest(1)">Test Relay 1</button>
-        <button class="btn" onclick="relayTest(2)">Test Relay 2</button>
-        <button class="btn" onclick="relayTest(3)">Test Relay 3</button>
-      </div>
-
-      <div class="subhead">USB Relay Test (4-channel board)</div>
-      <div class="row">
-        <button class="btn" onclick="usbRelayTest(1)">Test Relay 1</button>
-        <button class="btn" onclick="usbRelayTest(2)">Test Relay 2</button>
-        <button class="btn" onclick="usbRelayTest(3)">Test Relay 3</button>
-        <button class="btn" onclick="usbRelayTest(4)">Test Relay 4</button>
-      </div>
-
-      <div class="subhead">Raw DMX Injection</div>
-      <div class="row" style="align-items:center;gap:8px">
-        <label style="font-weight:700;font-size:.85rem">Ch:</label>
-        <input type="number" id="raw-dmx-channel" min="1" max="512" step="1" style="width:70px" placeholder="177">
-        <label style="font-weight:700;font-size:.85rem">Val:</label>
-        <input type="number" id="raw-dmx-value" min="0" max="255" step="1" style="width:70px" placeholder="255">
-        <button class="btn" onclick="rawDmxSend()">Send</button>
-      </div>
-
-      <div class="subhead">Simon Hardware Test</div>
-      <div id="simon-hw-unavailable" style="display:none;color:#999;font-size:.8rem;margin-bottom:6px;">
-        GPIO not available on this host (RPi.GPIO not installed, or not running on the Pi).
-      </div>
-      <div class="row" style="flex-wrap:wrap;gap:8px">
-        <button class="btn" style="flex:1;min-width:70px" onclick="simonHwLedTest('green')">Green LED</button>
-        <button class="btn" style="flex:1;min-width:70px" onclick="simonHwLedTest('red')">Red LED</button>
-        <button class="btn" style="flex:1;min-width:70px" onclick="simonHwLedTest('yellow')">Yellow LED</button>
-        <button class="btn" style="flex:1;min-width:70px" onclick="simonHwLedTest('blue')">Blue LED</button>
-      </div>
-      <div class="row" style="margin-top:8px;gap:8px;align-items:center;flex-wrap:wrap">
-        <span style="font-weight:700;font-size:.8rem">Switches:</span>
-        <span id="simon-hw-sw-green" class="simon-hw-sw">GREEN</span>
-        <span id="simon-hw-sw-red" class="simon-hw-sw">RED</span>
-        <span id="simon-hw-sw-yellow" class="simon-hw-sw">YELLOW</span>
-        <span id="simon-hw-sw-blue" class="simon-hw-sw">BLUE</span>
-      </div>
-
-      <div class="subhead">Outline Strip (Accent) Test</div>
-      <div id="accent-unavailable" style="display:none;color:#999;font-size:.8rem;margin-bottom:6px;">
-        Serial port not available (not running on the Pi, or the board isn't wired up).
-      </div>
-      <div class="row" style="gap:8px;align-items:center">
-        <button class="btn" onclick="accentNextEffect()">Next Effect</button>
-        <span id="accent-current-effect" style="font-size:.85rem;color:#999"></span>
-      </div>
-      <div style="font-size:.75rem;color:#999;margin-top:8px">
-        Normally follows the current DJ color/theme automatically. These force the "movie marquee" chase for testing -- click Resume Auto Sync to hand control back.
-      </div>
-      <div class="row" style="gap:8px;margin-top:4px;flex-wrap:wrap">
-        <button class="btn" onclick="accentMovieChase(false)">Movie Chase (Top)</button>
-        <button class="btn" onclick="accentMovieChase(true)">Movie Chase (All)</button>
-        <button class="btn" onclick="accentResumeAuto()">Resume Auto Sync</button>
-      </div>
     </details>
 
     <section>
       <h2>Application</h2>
+      <!-- Instant blackout/mute (2026-10-06): no confirm -- it has to be
+           instant, and a second press puts everything back. -->
+      <button class="btn danger big" id="blackout-btn" style="margin-bottom:12px" onclick="toggleBlackout()">BLACKOUT + MUTE</button>
       <button class="btn danger" onclick="openRestartAppModal()">RESTART APP</button>
 
       <div class="subhead">Administrator</div>
@@ -719,7 +755,7 @@ function renderRoster(roster) {
 // a single flaky call among otherwise-healthy ones gets reset by its
 // neighbors succeeding, so this doesn't false-trigger on an ordinary
 // one-off dropped request.
-const _ADMIN_FALLBACK_URL = 'https://yannitellphotography.com/trivia/admin.php';
+const _ADMIN_FALLBACK_URL = 'https://triviacade.com/play/admin.php';
 const _API_FAIL_REDIRECT_THRESHOLD = 5;
 let _apiFailStreak = 0;
 let _apiFailRedirecting = false;
@@ -775,9 +811,29 @@ async function refreshNowPlaying() {
   document.getElementById('np-tags').innerHTML = d.title ? _tagSummaryHtml(d.metadata) : '';
 }
 
+let _medleyOptsBusyUntil = 0;
+async function medleyOptionsSave() {
+  _medleyOptsBusyUntil = Date.now() + 3000;   // don't let the status poll overwrite what was just picked
+  const src = document.querySelector('input[name=medley-source]:checked');
+  const songs = parseInt(document.getElementById('medley-songs').value, 10);
+  const d = await api('/api/medley/options', { method: 'POST', headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({ source: src ? src.value : null, songs: isNaN(songs) ? null : songs,
+      next_only: document.getElementById('medley-next-only').checked }) });
+  if (d && d.ok) { document.getElementById('medley-songs').value = d.options.songs; _medleyOptsBusyUntil = 0; }
+  else if (d) showToast(d.error || 'Could not save');
+}
+
 async function refreshMedley() {
   const d = await api('/api/medley/status');
   if (!d) return;
+  if (d.options && Date.now() > _medleyOptsBusyUntil) {
+    const r = document.querySelector('input[name=medley-source][value=' + d.options.source + ']');
+    if (r && !r.checked) r.checked = true;
+    const inp = document.getElementById('medley-songs');
+    if (document.activeElement !== inp) inp.value = d.options.songs;
+    document.getElementById('medley-next-only').checked = !!d.options.next_only;
+  }
+  if (d.counts) for (const k of ['latest', 'green', 'yellow']) document.getElementById('mo-n-' + k).textContent = '(' + d.counts[k] + ' songs)';
   document.getElementById('medley-bar').style.display = d.live ? '' : 'none';
   const btn = document.getElementById('medley-btn');
   const st = document.getElementById('medley-status');
@@ -802,7 +858,7 @@ async function refreshMedley() {
     }
     btn.textContent = 'EXIT MEDLEY MODE';
     if (d.starting) {
-      st.textContent = 'Building the mix... ' + d.total + ' hooks planned';
+      st.textContent = 'Building the mix... ' + d.total + ' hooks planned' + (d.total < d.requested ? ' (only ' + d.total + ' of ' + d.requested + ' songs fit by tempo)' : '');
     } else {
       let t = 'Track ' + d.index + ' of ' + d.total + ' \u00b7 ' + d.remaining + ' to go';
       if (d.current) t += '\nNow: ' + d.current.artist + ' \u2014 ' + d.current.title + ' (' + d.current.tempo + ' BPM)';
@@ -936,7 +992,7 @@ async function djLookLoadOptions() {
   DJ_LOOK_OPTIONS = d;
   populateThemeSelect('dmx-theme-select', d.dmx_theme_names);
   populateThemeSelect('marquee-theme-select', d.marquee_theme_names);
-  populateThemeSelect('outline-theme-select', d.outline_theme_names);
+  outlineFxRender();
   document.getElementById('outline-preset-select').innerHTML =
     '<option value="-1">&mdash; none (use effect/color) &mdash;</option>' +
     d.outline_presets.map(p => `<option value="${p.id}">${p.id}: ${_escapeHtml(p.name)}</option>`).join('');
@@ -944,6 +1000,169 @@ async function djLookLoadOptions() {
     '<option value="-1">&mdash; none (use solid color below) &mdash;</option>' +
     d.outline_palette_names.map((name, i) => `<option value="${i}">${_escapeHtml(name)}</option>`).join('');
 }
+
+// ---- Outline effect list filters: Strip (no matrix-only/RSVD), Sound (♪ volume / ♫ frequency), ★ Favorites, All.
+let _fxFilter = 'strip', _fxCur = 0;
+try { _fxFilter = localStorage.getItem('outlineFxFilter') || 'strip'; } catch (e) {}
+function _fxKeep(i, f) {
+  const m = DJ_LOOK_OPTIONS.outline_theme_meta[i], favs = DJ_LOOK_OPTIONS.outline_favorites;
+  if (!m) return false;                                   // empty RSVD slot
+  const strip = /[01]/.test(m[0]);
+  if (f === 'strip') return strip;
+  if (f === 'sound') return strip && !!m[1];
+  if (f === 'fav') return favs.includes(i);
+  return true;
+}
+function outlineFxRender() {
+  if (!DJ_LOOK_OPTIONS) return;
+  const d = DJ_LOOK_OPTIONS, sel = document.getElementById('outline-theme-select');
+  let shown = 0;
+  sel.innerHTML = d.outline_theme_names.map((name, i) => {
+    if (!_fxKeep(i, _fxFilter) && i !== _fxCur) return '';
+    if (_fxKeep(i, _fxFilter)) shown++;
+    const m = d.outline_theme_meta[i] || ['', ''];
+    const tag = (d.outline_favorites.includes(i) ? '★ ' : '') + _escapeHtml(name)
+      + (m[1] === 'f' ? ' ♫' : m[1] === 'v' ? ' ♪' : '') + (/[01]/.test(m[0]) ? '' : ' (matrix only)');
+    return `<option value="${i}">${tag}</option>`;
+  }).join('');
+  sel.value = _fxCur;
+  document.getElementById('outline-fx-count').textContent = `(${shown} shown)`;
+  document.querySelectorAll('#outline-fx-filters button').forEach(b => b.classList.toggle('primary', b.dataset.f === _fxFilter));
+  outlineFxStarShow();
+}
+function outlineFxSync(idx) {
+  idx = Number(idx);
+  if (idx === _fxCur) { _setSelectIfNotFocused('outline-theme-select', idx); return; }
+  _fxCur = idx;
+  if (document.activeElement !== document.getElementById('outline-theme-select')) outlineFxRender();
+}
+function outlineFxFilter(f) {
+  _fxFilter = f;
+  try { localStorage.setItem('outlineFxFilter', f); } catch (e) {}
+  outlineFxRender();
+}
+function outlineFxStarShow() {
+  if (!DJ_LOOK_OPTIONS) return;
+  const i = Number(document.getElementById('outline-theme-select').value);
+  document.getElementById('outline-fx-star').innerHTML = DJ_LOOK_OPTIONS.outline_favorites.includes(i) ? '&#9733;' : '&#9734;';
+}
+async function outlineFxStar() {
+  const i = Number(document.getElementById('outline-theme-select').value);
+  const on = !DJ_LOOK_OPTIONS.outline_favorites.includes(i);
+  const d = await api('/api/accent/fx-favorite', { method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ fx: i, on }) });
+  if (d && d.ok) { DJ_LOOK_OPTIONS.outline_favorites = d.favorites; _fxCur = i; outlineFxRender(); }
+}
+
+// ---- WLED-style outline color picker: slot buttons, hue/sat wheel, value slider, WLED's quick dots.
+let _wled = { slot: 'fx', h: 0, s: 0, v: 1, busy: 0, last: 0, colors: null, pend: null };
+function _hsv2hex(h, s, v) {
+  const f = n => { const k = (n + h / 60) % 6; return v - v * s * Math.max(0, Math.min(k, 4 - k, 1)); };
+  return '#' + [f(5), f(3), f(1)].map(x => Math.round(x * 255).toString(16).padStart(2, '0')).join('');
+}
+function _hex2hsv(hex) {
+  const r = parseInt(hex.slice(1, 3), 16) / 255, g = parseInt(hex.slice(3, 5), 16) / 255, b = parseInt(hex.slice(5, 7), 16) / 255;
+  const mx = Math.max(r, g, b), mn = Math.min(r, g, b), d = mx - mn;
+  let h = 0;
+  if (d) h = mx === r ? ((g - b) / d + 6) % 6 : mx === g ? (b - r) / d + 2 : (r - g) / d + 4;
+  return { h: h * 60, s: mx ? d / mx : 0, v: mx };
+}
+function wledDrawWheel() {
+  const c = document.getElementById('wled-wheel'); if (!c) return;
+  const ctx = c.getContext('2d'), n = c.width, R = n / 2, img = ctx.createImageData(n, n);
+  for (let y = 0; y < n; y++) for (let x = 0; x < n; x++) {
+    const dx = x - R, dy = y - R, rad = Math.hypot(dx, dy), i = (y * n + x) * 4;
+    if (rad > R - 1) continue;
+    const hex = _hsv2hex((Math.atan2(dy, dx) * 180 / Math.PI + 450) % 360, rad / R, 1);
+    img.data[i] = parseInt(hex.slice(1, 3), 16); img.data[i + 1] = parseInt(hex.slice(3, 5), 16); img.data[i + 2] = parseInt(hex.slice(5, 7), 16); img.data[i + 3] = 255;
+  }
+  ctx.putImageData(img, 0, 0);
+  const a = (_wled.h - 90) * Math.PI / 180, px = R + Math.cos(a) * _wled.s * R, py = R + Math.sin(a) * _wled.s * R;
+  ctx.lineWidth = 3; ctx.strokeStyle = '#000'; ctx.fillStyle = '#fff';
+  ctx.beginPath(); ctx.arc(px, py, 9, 0, 7); ctx.fill(); ctx.stroke();
+}
+function wledSend() {
+  _wled.busy = Date.now();
+  const now = Date.now();
+  if (now - _wled.last < 120) { clearTimeout(_wled.pend); _wled.pend = setTimeout(wledSend, 130); return; }
+  _wled.last = now;
+  api('/api/accent/color/set', { method: 'POST', headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({ slot: _wled.slot, rgb: _hsv2hex(_wled.h, _wled.s, _wled.v) }) }).then(d => { if (d && d.ok) wledSync(d.accent_colors, true); });
+}
+function wledPickSlot(slot) {
+  _wled.slot = slot; _wled.busy = 0;
+  if (_wled.colors) wledSync(_wled.colors, false, true);
+}
+function wledAuto() {
+  api('/api/accent/color/set', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ slot: _wled.slot, rgb: '' }) })
+    .then(d => { if (d && d.ok) { _wled.busy = 0; wledSync(d.accent_colors, false, true); } });
+}
+function wledSync(c, fromSend, force) {
+  if (!c) return;
+  _wled.colors = c;
+  for (const s of ['fx', 'bg']) {
+    const btn = document.getElementById('wled-slot-' + s); if (!btn) return;
+    const shown = c[s + '_sent'] || c[s + '_custom'] || '#000000';
+    btn.querySelector('.chip').style.background = shown;
+    btn.querySelector('small').textContent = c[s + '_custom'] ? 'custom ' + c[s + '_custom']
+      : (c[s + '_sent'] ? 'auto ' + c[s + '_sent'] : 'auto (preset/other look)');
+    btn.classList.toggle('sel', s === _wled.slot);
+  }
+  if (!force && (Date.now() - _wled.busy < 2500 || fromSend)) return;   // don't fight a drag in progress
+  const cur = c[_wled.slot + '_custom'] || c[_wled.slot + '_sent'] || '#000000';
+  const hsv = _hex2hsv(cur); Object.assign(_wled, hsv);
+  document.getElementById('wled-val').value = Math.round(hsv.v * 100);
+  wledDrawWheel();
+}
+function wledInit() {
+  const c = document.getElementById('wled-wheel'); if (!c || c.dataset.ready) return; c.dataset.ready = '1';
+  const pick = e => {
+    const r = c.getBoundingClientRect(), x = (e.clientX - r.left) / r.width * c.width - c.width / 2, y = (e.clientY - r.top) / r.height * c.height - c.height / 2;
+    _wled.s = Math.min(1, Math.hypot(x, y) / (c.width / 2)); _wled.h = (Math.atan2(y, x) * 180 / Math.PI + 450) % 360;
+    if (_wled.v < 0.05) { _wled.v = 1; document.getElementById('wled-val').value = 100; }
+    wledDrawWheel(); wledSend();
+  };
+  let down = false;
+  c.addEventListener('pointerdown', e => { down = true; c.setPointerCapture(e.pointerId); pick(e); });
+  c.addEventListener('pointermove', e => { if (down) pick(e); });
+  c.addEventListener('pointerup', () => { down = false; });
+  document.getElementById('wled-val').addEventListener('input', e => { _wled.v = e.target.value / 100; wledSend(); });
+  // WLED's own quick-color dots, plus black and R(andom)
+  const dots = [['#ff3020', 'Red'], ['#ffa030', 'Orange'], ['#ffc840', 'Yellow'], ['#ffe0a0', 'Warm white'], ['#ffffff', 'White'], ['#000000', 'Black'],
+                ['#ff30ff', 'Magenta'], ['#0000ff', 'Blue'], ['#70ffd0', 'Cyan'], ['#70ff30', 'Green'], ['rand', 'Random']];
+  document.getElementById('wled-dots').innerHTML = dots.map(([h, n]) => h === 'rand'
+    ? `<button type="button" class="wled-dot" style="background:conic-gradient(red,yellow,lime,cyan,blue,magenta,red);color:#fff;text-shadow:0 0 3px #000" title="${n}" onclick="wledQuick('rand')">R</button>`
+    : `<button type="button" class="wled-dot" style="background:${h}" title="${n}" onclick="wledQuick('${h}')"></button>`).join('');
+  wledDrawWheel();
+}
+function wledQuick(hex) {
+  if (hex === 'rand') hex = _hsv2hex(Math.random() * 360, 1, 1);
+  Object.assign(_wled, _hex2hsv(hex)); document.getElementById('wled-val').value = Math.round(_wled.v * 100);
+  _wled.busy = 0; wledDrawWheel(); wledSend();
+}
+document.addEventListener('DOMContentLoaded', wledInit);
+
+// Outline transition pickers (accent_engine.TRANSITION_STYLES)
+async function outlineTransLoad() {
+  const d = await api('/api/accent/transition');
+  if (!d || !d.ok) return;
+  for (const slot of ['song', 'medley']) {
+    const sel = document.getElementById('outline-trans-' + slot);
+    sel.innerHTML = d.styles.map(([k, label]) => `<option value="${k}">${label}</option>`).join('');
+    sel.value = d[slot];
+  }
+}
+function outlineTransSave() {
+  api('/api/accent/transition', { method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ song: document.getElementById('outline-trans-song').value,
+                           medley: document.getElementById('outline-trans-medley').value }) });
+}
+async function outlineTransPreview(slot) {
+  const d = await api('/api/accent/transition/preview', { method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ style: document.getElementById('outline-trans-' + slot).value }) });
+  if (d && !d.ok) alert(d.error);
+}
+document.addEventListener('DOMContentLoaded', outlineTransLoad);
 
 function pickAccentPalette(paletteIndex) {
   api('/api/dj-look/outline', {
@@ -1091,15 +1310,18 @@ function djLookPoll() {
     _setSelectIfNotFocused('dmx-theme-select', d.dmx.theme_index);
     renderColorSwatchPicker('dmx-color-swatches', 'dmx', d.dmx.color_index);
     renderGradientPicker('dmx-gradient-picker', 'dmx', d.dmx.gradient_mode);
+    dmxSpeedSync(d.dmx.speed_div);
+    _setCheckedIfNotFocused('panel-leds-fx-checkbox', d.panel_leds_fx);
 
     _setSelectIfNotFocused('marquee-theme-select', d.marquee.theme_index);
     renderColorSwatchPicker('marquee-color-swatches', 'marquee', d.marquee.color_index);
     renderGradientPicker('marquee-gradient-picker', 'marquee', d.marquee.gradient_mode);
     _setCheckedIfNotFocused('marquee-blank-lower-checkbox', d.blank_lower_marquees);
+    if (d.marquee_dials) marqueeDialsSync(d.marquee_dials, false);
 
-    _setSelectIfNotFocused('outline-theme-select', d.outline.theme_index);
+    outlineFxSync(d.outline.theme_index);
     _setSelectIfNotFocused('outline-palette-select', d.outline.palette_index);
-    renderColorSwatchPicker('outline-color-swatches', 'outline', d.outline.color_index);
+    wledSync(d.accent_colors);
     renderGradientPicker('outline-gradient-picker', 'outline', d.outline.gradient_mode);
     _setSelectIfNotFocused('outline-preset-select', d.accent_preset_id);
     renderAccentPresetColorPicker(d.accent_preset_id, d.accent_preset_color_index);
@@ -1111,6 +1333,53 @@ function djLookPoll() {
     _setSelectIfNotFocused('accent-speed-slider', d.accent_speed);
     _setSelectIfNotFocused('accent-brightness-slider', d.accent_brightness);
   });
+}
+
+// DMX pattern speed radios: full / 1/2 / 1/4 tempo (saved per song).
+let _dmxSpeedSentAt = 0;
+function dmxSpeed(div) {
+  _dmxSpeedSentAt = Date.now();
+  api('/api/dmx/speed/set', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({div}) });
+}
+function dmxSpeedSync(div) {
+  if (Date.now() - _dmxSpeedSentAt < 1000) return;  // don't fight a fresh click
+  const el = document.querySelector(`input[name="dmx-speed"][value="${div || 1}"]`);
+  if (el && !el.checked) el.checked = true;
+}
+
+// Marquee brightness/speed/depth/off (saved per song). Slider drags are
+// throttled to one request per ~120 ms, the last value always sent.
+let _mqPend = {}, _mqTimer = null, _mqLast = 0;
+function marqueeDials(change, force) {
+  Object.assign(_mqPend, change);
+  marqueeDialsLabels();
+  const send = () => {
+    _mqTimer = null; _mqLast = Date.now();
+    const body = _mqPend; _mqPend = {};
+    api('/api/marquee/dials/set', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(body) })
+      .then(d => { if (d && d.ok && force) marqueeDialsSync(d.marquee_dials, true); });
+  };
+  if (force || Date.now() - _mqLast > 120) { clearTimeout(_mqTimer); send(); }
+  else if (!_mqTimer) _mqTimer = setTimeout(send, 130);
+}
+function marqueeDialsLabels() {
+  const v = id => document.getElementById(id).value;
+  document.getElementById('marquee-bri-val').textContent = v('marquee-bri-slider') + '%';
+  document.getElementById('marquee-speed-val').textContent = v('marquee-speed-slider') + '%';
+  document.getElementById('marquee-depth-val').textContent = v('marquee-depth-slider') + '%';
+}
+function marqueeDialsSync(m, force) {
+  const set = (id, val) => force ? (document.getElementById(id).value = val) : _setSelectIfNotFocused(id, val);
+  set('marquee-bri-slider', m.brightness);
+  set('marquee-speed-slider', m.speed);
+  set('marquee-depth-slider', m.depth);
+  if (force) document.getElementById('marquee-off-checkbox').checked = m.off;
+  else _setCheckedIfNotFocused('marquee-off-checkbox', m.off);
+  marqueeDialsLabels();
+}
+
+function cancelQuestion() {
+  api('/api/game/cancel-question', { method: 'POST' });
 }
 
 function marqueeBlankLowerToggle() {
@@ -1209,86 +1478,18 @@ async function announcementTextSave() {
   // matches the same confirmation pattern previewAnnouncement() used to.
   showToast(`"${data.filename}" caption saved: "${data.text}"`);
 }
-function westminsterTest() {
-  api('/api/westminster/test', { method: 'POST' }).then(() => showToast('Westminster clock triggered.'));
-}
-
-function relayTest(num) {
-  api(`/api/dmx/relay${num}-test`, { method: 'POST' }).then(() => showToast(`Relay ${num} pulsed.`));
-}
-
-function usbRelayTest(num) {
-  api(`/api/usb-relay/test-${num}`, { method: 'POST' }).then(() => showToast(`USB Relay ${num} pulsed.`));
-}
-
-function rawDmxSend() {
-  const channel = parseInt(document.getElementById('raw-dmx-channel').value, 10);
-  const value = parseInt(document.getElementById('raw-dmx-value').value, 10);
-  if (!channel || channel < 1 || channel > 512 || isNaN(value)) {
-    showToast('Enter a channel (1-512) and a value (0-255).');
-    return;
-  }
-  api('/api/dmx/raw-set', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({channel, value}) })
-    .then(() => showToast(`Ch ${channel} = ${value}`));
-}
-
-// Simon hardware bring-up/test (2026-09-11): drivers/simon_hardware.py.
-// Live switch status only needs to poll while the Advanced panel is
-// actually open (ontoggle on #advanced-panel), same "don't poll what
-// nobody's looking at" restraint as the Joy Assign capture poll.
-const SIMON_HW_COLORS = ['green', 'red', 'yellow', 'blue'];
-let _simonHwPollTimer = null;
-
-function simonHwLedTest(color) {
-  api('/api/simon-hw/led-test', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({color}) })
-    .then(data => { if (!data.ok) showToast(data.reason || `${color} LED test unavailable.`); });
-}
-
-function simonHwPoll() {
-  api('/api/simon-hw/status').then(data => {
-    document.getElementById('simon-hw-unavailable').style.display = data.available ? 'none' : '';
-    SIMON_HW_COLORS.forEach(color => {
-      const el = document.getElementById(`simon-hw-sw-${color}`);
-      if (el) el.classList.toggle('pressed', !!(data.buttons && data.buttons[color]));
-    });
-  });
-}
-
-function accentNextEffect() {
-  api('/api/accent/next-effect', { method: 'POST' }).then(data => {
-    if (!data.ok) { showToast('Outline strip unavailable.'); return; }
-    document.getElementById('accent-current-effect').textContent = `Effect ${data.effect}`;
-  });
-}
-
-function accentPoll() {
-  api('/api/accent/status').then(data => {
-    document.getElementById('accent-unavailable').style.display = data.available ? 'none' : '';
-    if (data.available) document.getElementById('accent-current-effect').textContent = `Effect ${data.current_effect}`;
-  });
-}
-
-function accentMovieChase(allPanels) {
-  api('/api/accent/movie-chase', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({all_panels: allPanels}) })
-    .then(data => { if (!data.ok) showToast('Outline strip unavailable.'); });
-}
-
-function accentResumeAuto() {
-  api('/api/accent/resume-auto', { method: 'POST' }).then(() => showToast('Accent strip: resumed auto sync.'));
-}
-
-function simonHwOnAdvancedToggle() {
+// Advanced panel: live-sync the lighting controls only while it's open.
+let _advancedPollTimer = null;
+function advancedOnToggle() {
   const panel = document.getElementById('advanced-panel');
   if (panel.open) {
-    if (!_simonHwPollTimer) {
-      simonHwPoll();
-      accentPoll();
+    if (!_advancedPollTimer) {
       djLookPoll();
-      _simonHwPollTimer = setInterval(() => { simonHwPoll(); accentPoll(); djLookPoll(); }, 300);
+      _advancedPollTimer = setInterval(djLookPoll, 300);
     }
-  } else if (_simonHwPollTimer) {
-    clearInterval(_simonHwPollTimer);
-    _simonHwPollTimer = null;
+  } else if (_advancedPollTimer) {
+    clearInterval(_advancedPollTimer);
+    _advancedPollTimer = null;
   }
 }
 
@@ -1303,6 +1504,25 @@ async function startPriceGame() {
 }
 
 let _toastTimer = null;
+async function accentImport() {
+  const btn = document.getElementById('accent-import-btn'), out = document.getElementById('accent-import-out');
+  let host = '';
+  try { host = localStorage.getItem('accentAuditHost') || ''; } catch (e) {}
+  btn.disabled = true; out.style.color = '#bbb'; out.textContent = 'Looking for the outline board...';
+  const d = await api('/api/accent/presets/import', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ host }) });
+  btn.disabled = false;
+  if (!d || !d.ok) { out.style.color = '#ff8080'; out.textContent = (d && d.error) || 'Import failed.'; return; }
+  try { localStorage.setItem('accentAuditHost', d.host); } catch (e) {}
+  const bits = [];
+  if (d.added.length) bits.push('new: ' + d.added.map(p => p.name).join(', '));
+  if (d.renamed.length) bits.push('renamed: ' + d.renamed.map(p => p.was + ' \u2192 ' + p.now).join(', '));
+  if (d.removed.length) bits.push('removed: ' + d.removed.map(p => p.name).join(', '));
+  out.style.color = '#6fdc8c';
+  out.textContent = d.presets + ' presets imported (' + d.audioreactive.length + ' sound-reactive)' + (bits.length ? ' \u2014 ' + bits.join('; ') : ' \u2014 no changes');
+  showToast('Presets imported');
+  djLookLoadOptions();
+}
+
 function showToast(msg) {
   const el = document.getElementById('toast');
   el.textContent = msg;
@@ -1527,7 +1747,26 @@ async function refreshGamepadStatus() {
   renderRoster(d.round_roster);
 }
 
+function renderBlackout(active) {
+  const b = document.getElementById('blackout-btn');
+  if (!b) return;
+  b.textContent = active ? 'BLACKOUT ON \u2014 PRESS TO RESUME' : 'BLACKOUT + MUTE';
+  b.style.background = active ? '#fff' : '';
+  b.style.color = active ? '#000' : '';
+}
+
+async function toggleBlackout() {
+  const d = await api('/api/blackout/toggle', {method: 'POST'});
+  if (d) renderBlackout(d.active);
+}
+
+async function refreshBlackout() {
+  const d = await api('/api/blackout');
+  if (d) renderBlackout(d.active);
+}
+
 function refreshAll() {
+  refreshBlackout();
   refreshNowPlaying();
   refreshAutoDj();
   refreshHostPreview();

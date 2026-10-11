@@ -51,6 +51,7 @@
       <a href="/library">File Manager</a>
       <a href="/setup">Setup</a>
       <a href="/joyassign">Joy Assign</a>
+      <a href="/questions">Questions</a>
     </div>
   </div>
   <h1>Game Starting Soon</h1>
@@ -74,7 +75,7 @@
 // This page only fires one api() call per 2s cycle (vs index.html's 5 per
 // 1.5s), so 5 straight failures here takes ~10s -- still fine, since a
 // countdown page has no reason to be more trigger-happy than that.
-const _ADMIN_FALLBACK_URL = 'https://yannitellphotography.com/trivia/admin.php';
+const _ADMIN_FALLBACK_URL = 'https://triviacade.com/play/admin.php';
 const _API_FAIL_REDIRECT_THRESHOLD = 5;
 let _apiFailStreak = 0;
 let _apiFailRedirecting = false;

@@ -299,6 +299,20 @@ def enter_game_from_mystery():
     return True
 
 
+def cancel():
+    """Admin CANCEL QUESTION: drop a pending or running "Who is this?"
+    teaser without grading it. Returns True if one was cancelled."""
+    global _pending_mystery
+    had = state.mystery_active or _pending_mystery is not None
+    _pending_mystery = None
+    state.mystery_active = False
+    state.mystery_resolved = False
+    state.mystery_identify_question = None
+    state.mystery_reveal_until = 0.0
+    lighting_engine.release_mystery_blackout()
+    return had
+
+
 def end_mystery_after_grade():
     """Post-grade hook (inputs/gamepad.py::_maybe_advance_from_mystery_
     grade(), called the instant ANY grading path -- physical panel button,

@@ -1,0 +1,570 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Game Show Remote &mdash; Questions</title>
+<style>
+  :root {
+    color-scheme: dark;
+    --grey: #8b9099; --amber: #e07b00; --red: #ff3b30; --lime: #b5d333; --green: #34c759;
+    --bg: #0b0b0d; --panel: #17171a; --raised: #202024; --line: #2a2a2e; --text: #f2f2f2; --dim: #999;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; padding: 16px 16px 64px; background: var(--bg); color: var(--text);
+         font-family: -apple-system, Segoe UI, Roboto, sans-serif; }
+  h1 { font-size: 1.1rem; text-transform: uppercase; letter-spacing: .08em; color: #ff3b30; margin: 0 0 14px; }
+  h2 { font-size: .8rem; text-transform: uppercase; letter-spacing: .06em; color: var(--dim); margin: 0 0 10px; }
+  section { background: var(--panel); border-radius: 10px; padding: 14px; margin-bottom: 14px; }
+  button { cursor: pointer; font-family: inherit; }
+  .btn { padding: 10px 14px; border-radius: 8px; border: 1px solid #333; background: var(--raised); color: var(--text); font-size: .9rem; }
+  .btn.primary { background: #ff3b30; border-color: #ff3b30; color: #fff; font-weight: 700; }
+  .btn.good { background: #123d1f; border-color: var(--green); color: #c9f7d6; font-weight: 700; }
+  .btn.deep { background: #3a2200; border-color: var(--amber); color: #ffd9a3; font-weight: 700; }
+  .btn.danger { background: #4a0f0f; border-color: #ff3b30; color: #ffb6b6; }
+  .btn.small { padding: 6px 10px; font-size: .8rem; }
+  .btn:disabled { opacity: .45; cursor: default; }
+  .row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+  input[type=text], textarea, select {
+    width: 100%; padding: 9px 11px; border-radius: 8px; border: 1px solid #333;
+    background: var(--raised); color: var(--text); font-size: .95rem; font-family: inherit;
+  }
+  textarea { resize: vertical; min-height: 64px; }
+  .nav-bar { display: flex; align-items: center; gap: 10px; margin-bottom: 4px; position: relative; }
+  .hamburger-btn { background: none; border: 1px solid #333; border-radius: 8px; color: var(--text); font-size: 1.2rem; line-height: 1; padding: 6px 12px; }
+  .nav-menu { display: none; position: absolute; top: 42px; left: 0; background: var(--panel); border: 1px solid #333; border-radius: 8px; z-index: 300; overflow: hidden; min-width: 170px; }
+  .nav-menu.open { display: block; }
+  .nav-menu a { display: block; padding: 12px 16px; color: var(--text); text-decoration: none; font-size: .9rem; border-bottom: 1px solid var(--line); }
+  .nav-menu a:last-child { border-bottom: none; }
+  .nav-menu a.active { color: #ff3b30; font-weight: 700; }
+
+  /* legend / filter chips */
+  .legend { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 8px; }
+  .lg { display: flex; align-items: center; gap: 8px; padding: 9px 10px; border-radius: 8px; border: 2px solid var(--line);
+        background: var(--raised); color: var(--text); text-align: left; font-size: .8rem; line-height: 1.2; }
+  .lg b { font-size: 1.15rem; min-width: 1.6em; }
+  .lg .dot { width: 14px; height: 14px; border-radius: 50%; flex: none; }
+  .lg.on { border-color: #fff; }
+  .dot.grey, .stripe.grey { background: var(--grey); } .dot.amber, .stripe.amber { background: var(--amber); }
+  .dot.red, .stripe.red { background: var(--red); } .dot.lime, .stripe.lime { background: var(--lime); }
+  .dot.green, .stripe.green { background: var(--green); }
+
+  /* bars */
+  .bars { display: grid; gap: 10px; margin: 14px 0; }
+  .bar-label { display: flex; justify-content: space-between; font-size: .8rem; color: #ccc; margin-bottom: 4px; }
+  .bar { height: 10px; border-radius: 6px; background: var(--line); overflow: hidden; }
+  .bar > i { display: block; height: 100%; width: 0; background: #ff3b30; transition: width .3s; }
+  .bar.grey > i { background: var(--grey); } .bar.lime > i { background: var(--lime); } .bar.green > i { background: var(--green); }
+  .bar.amber > i { background: var(--amber); }
+
+  /* job panel */
+  #job { display: none; border: 1px solid var(--amber); }
+  #job.show { display: block; }
+  #job .bar { height: 16px; }
+  #job .meta { font-size: .8rem; color: #ccc; margin-top: 6px; line-height: 1.5; }
+  #job .log { font-size: .75rem; color: var(--dim); margin-top: 6px; white-space: pre-wrap; }
+  #job .err { color: #ff8a80; }
+
+  /* song list */
+  .song { display: flex; align-items: stretch; gap: 0; background: var(--panel); border-radius: 10px; margin-bottom: 8px; overflow: hidden; cursor: pointer; }
+  .stripe { width: 8px; flex: none; }
+  .s-body { flex: 1; padding: 10px 12px; min-width: 0; display: flex; justify-content: space-between; gap: 10px; align-items: center; }
+  .s-title { font-weight: 600; font-size: .95rem; overflow-wrap: anywhere; }
+  .s-artist { color: var(--dim); font-size: .82rem; overflow-wrap: anywhere; }
+  .s-tags { font-size: .72rem; color: #ffb36b; margin-top: 2px; }
+  .chips { display: flex; gap: 4px; align-items: center; flex: none; flex-wrap: wrap; justify-content: flex-end; max-width: 45%; }
+  .chip { min-width: 22px; text-align: center; padding: 2px 6px; border-radius: 10px; font-size: .75rem; font-weight: 700; color: #111; }
+  .chip.amber { background: var(--amber); } .chip.red { background: var(--red); color: #fff; }
+  .chip.lime { background: var(--lime); } .chip.green { background: var(--green); }
+  .chip.n { background: var(--raised); color: #ddd; border: 1px solid #333; }
+  .empty { color: var(--dim); text-align: center; padding: 24px 0; font-size: .9rem; }
+
+  /* editor overlay */
+  #editor { display: none; position: fixed; inset: 0; background: var(--bg); z-index: 200; overflow-y: auto; padding: 14px 14px 80px; }
+  #editor.open { display: block; }
+  .ed-head { display: flex; gap: 10px; align-items: flex-start; margin-bottom: 12px; position: sticky; top: 0; background: var(--bg); padding: 4px 0 8px; z-index: 5; }
+  .ed-head h3 { margin: 0; font-size: 1.05rem; overflow-wrap: anywhere; }
+  .ed-head .sub { color: var(--dim); font-size: .85rem; }
+  .qcard { background: var(--panel); border-radius: 10px; margin-bottom: 14px; overflow: hidden; border: 1px solid var(--line); }
+  .qcard .qtop { padding: 10px 12px; display: flex; gap: 10px; align-items: flex-start; }
+  .qcard.grey .qtop, .qcard.new .qtop { background: #26282c; }
+  .qcard.amber .qtop { background: #3b2400; } .qcard.red .qtop { background: #3a1210; }
+  .qcard.lime .qtop { background: #2a3208; } .qcard.green .qtop { background: #10321a; }
+  .qtop .dot { width: 16px; height: 16px; border-radius: 50%; margin-top: 2px; flex: none; }
+  .qstage { font-weight: 700; font-size: .9rem; }
+  .qaction { font-size: .8rem; color: #ddd; }
+  .qnote { font-size: .8rem; color: #ccc; margin-top: 4px; overflow-wrap: anywhere; }
+  .qmeta { font-size: .72rem; color: var(--dim); margin-top: 3px; }
+  .qbody { padding: 12px; display: grid; gap: 10px; }
+  .fl { font-size: .72rem; text-transform: uppercase; letter-spacing: .05em; color: var(--dim); margin-bottom: 4px; display: flex; justify-content: space-between; gap: 8px; }
+  .fl .cnt.over { color: #ff6b60; font-weight: 700; }
+  .pair { display: grid; grid-template-columns: 1fr; gap: 8px; }
+  .ch-grid { display: grid; grid-template-columns: 28px 1fr 1fr; gap: 6px 8px; align-items: center; }
+  .ch-grid .hd { font-size: .7rem; text-transform: uppercase; color: var(--dim); }
+  .ch-grid input[type=radio] { width: 20px; height: 20px; accent-color: var(--green); }
+  .tfpick { display: flex; gap: 10px; }
+  .tfpick label { flex: 1; padding: 10px; border: 2px solid var(--line); border-radius: 8px; text-align: center; background: var(--raised); }
+  .tfpick input { margin-right: 6px; accent-color: var(--green); }
+  .qbtns { display: flex; flex-wrap: wrap; gap: 8px; }
+  .qmsg { font-size: .82rem; min-height: 1.2em; }
+  .qmsg.bad { color: #ff8a80; } .qmsg.ok { color: #8be3a4; }
+  details.sub { font-size: .8rem; color: #ccc; }
+  details.sub summary { cursor: pointer; color: var(--dim); }
+  .orig { background: var(--raised); border-radius: 8px; padding: 8px 10px; margin-top: 6px; font-size: .8rem; }
+  .hist div { padding: 3px 0; border-bottom: 1px solid var(--line); }
+  .dirty-tag { color: #ffd166; font-size: .75rem; font-weight: 700; }
+  .addbar { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; }
+  .toast { position: fixed; bottom: 18px; left: 50%; transform: translateX(-50%); background: #333; color: #fff; padding: 10px 16px;
+           border-radius: 8px; opacity: 0; transition: opacity .2s; pointer-events: none; z-index: 500; max-width: 90%; font-size: .9rem; }
+  .toast.show { opacity: 1; }
+  .modal-bg { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.75); z-index: 400; align-items: center; justify-content: center; padding: 16px; }
+  .modal-bg.open { display: flex; }
+  .modal { background: var(--panel); border: 1px solid var(--amber); border-radius: 12px; padding: 18px; width: 100%; max-width: 420px; }
+  .modal h3 { margin: 0 0 4px; font-size: 1.05rem; }
+  .modal .sub { color: var(--dim); font-size: .85rem; margin-bottom: 14px; }
+  .pct-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 12px; }
+  .pct-grid button { padding: 12px 0; border-radius: 8px; border: 2px solid var(--line); background: var(--raised); color: var(--text); font-size: 1rem; font-weight: 700; }
+  .pct-grid button.on { border-color: var(--amber); background: #3b2400; }
+  .modal input[type=range] { width: 100%; accent-color: var(--amber); }
+  .est { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 12px 0 6px; }
+  .est div { background: var(--raised); border-radius: 8px; padding: 10px; text-align: center; }
+  .est b { display: block; font-size: 1.25rem; }
+  .est span { font-size: .75rem; color: var(--dim); }
+  .modal .fine { font-size: .75rem; color: var(--dim); margin-bottom: 14px; line-height: 1.4; }
+  @media (min-width: 700px) { .pair { grid-template-columns: 1fr 1fr; } body { max-width: 900px; margin: 0 auto; } }
+</style>
+</head>
+<body>
+  <div class="nav-bar">
+    <button class="hamburger-btn" onclick="toggleNavMenu()">&#9776;</button>
+    <div class="nav-menu" id="nav-menu">
+      <a href="/">Remote</a>
+      <a href="/library">File Manager</a>
+      <a href="/setup">Setup</a>
+      <a href="/joyassign">Joy Assign</a>
+      <a href="/questions" class="active">Questions</a>
+    </div>
+  </div>
+  <h1>Question Audit</h1>
+
+  <section>
+    <h2>Songs by status <span style="text-transform:none;letter-spacing:0">(tap one to filter)</span></h2>
+    <div class="legend" id="legend"></div>
+    <details class="sub" style="margin-top:10px">
+      <summary>What do the colours mean?</summary>
+      <div style="margin-top:6px;line-height:1.5">
+        <b style="color:var(--grey)">Grey</b> &mdash; the song has fewer than 3 questions; they need to be generated or written.<br>
+        <b style="color:var(--amber)">Deep amber</b> &mdash; the AI audit found an error and corrected it (or couldn't confirm a fact). Needs deep verification or your own research.<br>
+        <b style="color:var(--red)">Red</b> &mdash; questions exist but nobody has checked them. Possible errors.<br>
+        <b style="color:var(--lime)">Yellow-green</b> &mdash; a bigger AI answered every question blind and agreed. Check it yourself if you wish.<br>
+        <b style="color:var(--green)">Green</b> &mdash; you verified every question.<br>
+        A song shows the colour of its most urgent question. Anything you edit by hand drops back to red until you verify it.
+      </div>
+    </details>
+
+    <div class="bars" id="bars"></div>
+
+    <div class="row" id="actions">
+      <button class="btn primary" id="btn-gen" onclick="startGenerate()">Generate questions</button>
+      <button class="btn primary" id="btn-audit" onclick="startAudit('unaudited')">Start AI audit</button>
+      <button class="btn deep" id="btn-deep" onclick="startAudit('amber')">Deep-check amber</button>
+    </div>
+  </section>
+
+  <section id="job">
+    <h2 id="job-title">Working&hellip;</h2>
+    <div class="bar"><i id="job-fill"></i></div>
+    <div class="meta" id="job-meta"></div>
+    <div class="row" style="margin-top:10px"><button class="btn small danger" id="btn-stop" onclick="stopJob()">Stop</button></div>
+    <div class="log" id="job-log"></div>
+  </section>
+
+  <div class="row" style="margin-bottom:10px">
+    <div style="flex:1;min-width:180px"><input type="text" id="search" placeholder="Search title or artist" oninput="renderList()"></div>
+    <label style="font-size:.8rem;color:var(--dim)"><input type="checkbox" id="only-lib" checked onchange="renderList()"> Library songs only</label>
+  </div>
+  <div id="list"></div>
+
+  <div id="editor">
+    <div class="ed-head">
+      <button class="btn" onclick="closeEditor()">&larr; Back</button>
+      <div><h3 id="ed-title"></h3><div class="sub" id="ed-sub"></div></div>
+    </div>
+    <div id="ed-note"></div>
+    <div id="ed-cards"></div>
+    <div class="addbar" id="ed-add"></div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <div class="modal-bg" id="pct-modal">
+    <div class="modal">
+      <h3 id="pm-title">How much should be audited?</h3>
+      <div class="sub" id="pm-sub"></div>
+      <div class="pct-grid" id="pm-presets"></div>
+      <input type="range" id="pm-range" min="1" max="100" step="1" value="5" oninput="pmSet(+this.value)">
+      <div class="est">
+        <div><b id="pm-songs"></b><span>songs, picked at random</span></div>
+        <div><b id="pm-qs"></b><span>questions</span></div>
+        <div><b id="pm-time"></b><span>about how long</span></div>
+        <div><b id="pm-cost"></b><span>estimated cost</span></div>
+      </div>
+      <div class="fine" id="pm-fine"></div>
+      <div class="row" style="justify-content:flex-end">
+        <button class="btn" onclick="pmClose()">Cancel</button>
+        <button class="btn primary" id="pm-go" onclick="pmGo()">Start</button>
+      </div>
+    </div>
+  </div>
+
+<script>
+const COLORS = ['grey', 'amber', 'red', 'lime', 'green'];
+const LEGEND = {
+  grey:  'Needs questions', amber: 'Error found / unsure', red: 'Not audited',
+  lime:  'AI self-verified', green: 'Human verified',
+};
+let OV = null, filter = '', song = null, jobWas = 'idle', pollTimer = null;
+
+function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function toggleNavMenu() { document.getElementById('nav-menu').classList.toggle('open'); }
+document.addEventListener('click', e => {
+  if (!e.target.closest('.nav-menu') && !e.target.closest('.hamburger-btn')) document.getElementById('nav-menu').classList.remove('open');
+});
+let toastT;
+function toast(msg) {
+  const t = document.getElementById('toast'); t.textContent = msg; t.classList.add('show');
+  clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove('show'), 3200);
+}
+async function api(path, body) {
+  try {
+    const r = await fetch(path, body === undefined ? {} : {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(body)});
+    return await r.json();
+  } catch (e) { return {ok: false, reason: 'Could not reach the Pi: ' + e}; }
+}
+function when(ts) { return ts ? new Date(ts * 1000).toLocaleString([], {month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit'}) : ''; }
+
+/* ---------------- overview ---------------- */
+async function loadOverview() {
+  const d = await api('/api/questions/overview');
+  if (!d.ok) { toast(d.reason || 'Could not load'); return; }
+  OV = d; renderSummary(); renderList(); renderJob(d.job);
+  if (d.job && d.job.state === 'running') startPolling();
+}
+function pct(a, b) { return b > 0 ? Math.min(100, Math.round(100 * a / b)) : 0; }
+function bar(label, a, b, cls) {
+  return `<div><div class="bar-label"><span>${label}</span><span>${a} / ${b} &middot; ${pct(a, b)}%</span></div>
+          <div class="bar ${cls || ''}"><i style="width:${pct(a, b)}%"></i></div></div>`;
+}
+function renderSummary() {
+  const s = OV.stats, bc = s.by_color;
+  document.getElementById('legend').innerHTML = COLORS.map(c =>
+    `<button class="lg ${filter === c ? 'on' : ''}" onclick="setFilter('${c}')"><span class="dot ${c}"></span><b>${bc[c] || 0}</b><span>${LEGEND[c]}</span></button>`).join('');
+  const q = s.questions, audited = q - s.unaudited;
+  document.getElementById('bars').innerHTML =
+    bar('Library songs with all ' + OV.target + ' questions', s.songs_full, s.library_songs, 'grey') +
+    bar('Questions with short LED wording', s.long_done, q, '') +
+    bar('Questions AI-audited', audited, q, 'lime') +
+    bar('Questions human-verified', s.verified, q, 'green');
+  const missing = OV.songs.filter(x => x.in_library && x.can_generate && !x.unknown && x.n < OV.target).reduce((a, x) => a + OV.target - x.n, 0);
+  const noLong = q - s.long_done;
+  const running = OV.job && OV.job.state === 'running';
+  const g = document.getElementById('btn-gen'), a = document.getElementById('btn-audit'), d = document.getElementById('btn-deep');
+  g.textContent = `Generate questions (${missing} new, ${noLong} LED wordings)`;
+  a.textContent = `Start AI audit (${s.unaudited} questions)`;
+  d.textContent = `Deep-check amber with ${OV.models.deep} (${s.amber})`;
+  g.disabled = running || (!missing && !noLong);
+  a.disabled = running || !s.unaudited;
+  d.disabled = running || !s.amber;
+}
+function setFilter(c) { filter = filter === c ? '' : c; renderSummary(); renderList(); }
+function renderList() {
+  if (!OV) return;
+  const needle = document.getElementById('search').value.trim().toLowerCase();
+  const onlyLib = document.getElementById('only-lib').checked;
+  const rows = OV.songs.filter(x => (!filter || x.color === filter) && (!onlyLib || x.in_library) &&
+    (!needle || (x.title + ' ' + x.artist).toLowerCase().includes(needle)));
+  const el = document.getElementById('list');
+  if (!rows.length) { el.innerHTML = '<div class="empty">No songs match.</div>'; return; }
+  el.innerHTML = rows.slice(0, 400).map(x => {
+    const chips = ['amber', 'red', 'lime', 'green'].filter(c => x.counts[c]).map(c => `<span class="chip ${c}">${x.counts[c]}</span>`).join('');
+    const tags = [x.unknown ? "AI doesn't know this song" : '', x.in_library ? '' : 'not in library'].filter(Boolean).join(' · ');
+    return `<div class="song" onclick="openSong(decodeURIComponent('${encodeURIComponent(x.key).replace(/'/g, '%27')}'))">
+      <div class="stripe ${x.color}"></div>
+      <div class="s-body"><div><div class="s-title">${esc(x.title)}</div><div class="s-artist">${esc(x.artist)}</div>${tags ? `<div class="s-tags">${esc(tags)}</div>` : ''}</div>
+      <div class="chips">${chips}<span class="chip n">${x.n}/${OV.target}</span></div></div></div>`;
+  }).join('') + (rows.length > 400 ? `<div class="empty">Showing the first 400 of ${rows.length} &mdash; narrow it with search or a colour.</div>` : '');
+}
+
+/* ---------------- jobs ---------------- */
+function startPolling() { if (!pollTimer) pollTimer = setInterval(pollJob, 1500); }
+async function pollJob() {
+  const d = await api('/api/questions/job');
+  if (!d.ok) return;
+  renderJob(d.job);
+  if (d.job.state !== 'running') { clearInterval(pollTimer); pollTimer = null; loadOverview(); }
+  else if (Math.random() < 0.15) loadOverview();
+}
+function renderJob(j) {
+  const box = document.getElementById('job');
+  if (!j || j.state === 'idle') { box.classList.remove('show'); return; }
+  box.classList.add('show');
+  const running = j.state === 'running';
+  const names = {generate: 'Generating questions', audit: 'AI audit (' + OV.models.audit + ')', 'deep audit': 'Deep check (' + OV.models.deep + ')'};
+  const stateTxt = {running: '', done: ' - finished', stopped: ' - stopped', error: ' - stopped with an error'}[j.state] || '';
+  document.getElementById('job-title').textContent = (names[j.kind] || j.kind) + stateTxt;
+  document.getElementById('job-fill').style.width = pct(j.done, j.total) + '%';
+  document.getElementById('btn-stop').style.display = running ? '' : 'none';
+  let m = `${j.done} of ${j.total} (${pct(j.done, j.total)}%)`;
+  if (j.kind === 'generate') {
+    m += ` &middot; step: ${esc(j.phase || '')} &middot; new questions: ${j.new_questions || 0}`;
+    if (j.skipped_songs) m += ` &middot; <b>${j.skipped_songs}</b> songs the AI doesn't know`;
+  } else if (j.results) {
+    if (j.song_count) m += ` &middot; ${j.song_count} songs (${j.percent}%)`;
+    m += ` &middot; <span style="color:var(--lime)">${j.results.audited_ok || 0} verified</span> &middot; <span style="color:var(--amber)">${j.results.audited_corrected || 0} corrected</span> &middot; <span style="color:var(--amber)">${j.results.audited_flagged || 0} flagged</span>`;
+  }
+  if (running && j.current) m += `<br>Now: ${esc(j.current)}`;
+  if (j.errors) m += `<br><span class="err">${j.errors} failed calls${j.last_error ? ' &mdash; last: ' + esc(j.last_error) : ''}</span>`;
+  if (!running && j.state === 'error' && j.last_error) m += `<br><span class="err">${esc(j.last_error)}</span>`;
+  const t = j.tokens || {}; const tk = Object.keys(t).map(k => `${k}: ${(t[k].in + t[k].out).toLocaleString()} tokens`).join(' &middot; ');
+  if (tk) m += `<br>${tk} this session`;
+  document.getElementById('job-meta').innerHTML = m;
+  document.getElementById('job-log').textContent = (j.log || []).join('\n');
+}
+async function startGenerate() {
+  const d = await api('/api/questions/generate/start', {});
+  if (!d.ok) { toast(d.reason); return; }
+  toast(`Started: ${d.new_questions} new questions, ${d.long_versions} LED wordings`);
+  await loadOverview(); startPolling();
+}
+let PM = null;
+async function startAudit(scope) {
+  const d = await api('/api/questions/audit/estimate?scope=' + scope);
+  if (!d.ok) { toast(d.reason); return; }
+  if (!d.songs) { toast('Nothing is waiting for that audit.'); return; }
+  PM = d;
+  const deep = scope === 'amber';
+  document.getElementById('pm-title').textContent = deep ? 'How many amber songs should Opus re-check?' : 'How much of the library should be audited?';
+  document.getElementById('pm-sub').textContent = `${d.songs} songs (${d.questions} questions) are waiting. Songs are picked at random, so a small run is a fair sample of the whole library. All of a picked song's questions are checked.`;
+  document.getElementById('pm-presets').innerHTML = [1, 5, 10, 25, 50, 100].map(p => `<button data-p="${p}" onclick="pmSet(${p})">${p}%</button>`).join('');
+  document.getElementById('pm-fine').textContent = `${d.model}. Estimate: about ${(d.per_question_usd * 100).toFixed(1)}¢ per question` +
+    (d.measured ? ', based on your last run.' : ' (a starting guess; it gets updated with real numbers after your first run).') +
+    ' You can press Stop at any time and keep what is done.';
+  pmSet(d.songs <= 20 ? 100 : 5);
+  document.getElementById('pct-modal').classList.add('open');
+}
+function fmtTime(s) { s = Math.max(1, Math.round(s)); if (s < 90) return s + ' sec'; const m = Math.round(s / 60); return m < 90 ? m + ' min' : (m / 60).toFixed(1) + ' hr'; }
+function pmSet(p) {
+  PM.percent = p;
+  document.getElementById('pm-range').value = p;
+  document.querySelectorAll('#pm-presets button').forEach(b => b.classList.toggle('on', +b.dataset.p === p));
+  const songs = Math.max(1, Math.round(PM.songs * p / 100));
+  const qs = Math.round(PM.questions * songs / PM.songs);
+  document.getElementById('pm-songs').textContent = songs;
+  document.getElementById('pm-qs').textContent = qs;
+  document.getElementById('pm-time').textContent = fmtTime(qs * PM.per_question_sec);
+  const usd = qs * PM.per_question_usd;
+  document.getElementById('pm-cost').textContent = usd < 1 ? Math.max(1, Math.round(usd * 100)) + '¢' : '$' + usd.toFixed(2);
+  document.getElementById('pm-go').textContent = `Audit ${songs} song${songs === 1 ? '' : 's'}`;
+}
+function pmClose() { document.getElementById('pct-modal').classList.remove('open'); }
+async function pmGo() {
+  pmClose();
+  const d = await api('/api/questions/audit/start', {scope: PM.scope, percent: PM.percent});
+  if (!d.ok) { toast(d.reason); return; }
+  toast(`Auditing ${d.questions} questions from ${d.songs} songs`);
+  await loadOverview(); startPolling();
+}
+async function stopJob() { await api('/api/questions/job/stop', {}); toast('Stopping after the current items...'); }
+
+/* ---------------- editor ---------------- */
+async function openSong(key) {
+  const d = await api('/api/questions/song?key=' + encodeURIComponent(key));
+  if (!d.ok) { toast(d.reason || 'Could not open'); return; }
+  song = d; renderEditor();
+  document.getElementById('editor').classList.add('open');
+  document.getElementById('editor').scrollTop = 0;
+}
+function closeEditor() {
+  if (document.querySelector('#ed-cards .qcard[data-dirty="1"]') && !confirm('You have unsaved changes. Leave without saving?')) return;
+  document.getElementById('editor').classList.remove('open'); song = null; loadOverview();
+}
+function renderEditor() {
+  document.getElementById('ed-title').textContent = song.title;
+  document.getElementById('ed-sub').textContent = song.artist + (song.in_library ? '' : ' (not in the library)');
+  document.getElementById('ed-note').innerHTML = song.unknown ? `<div class="qnote" style="margin-bottom:10px;color:#ffb36b">The AI said it doesn't know this song well enough to write questions. Add them by hand.</div>` : '';
+  const box = document.getElementById('ed-cards'); box.innerHTML = '';
+  song.questions.forEach(q => box.appendChild(buildCard(q)));
+  renderAddBar();
+}
+function renderAddBar() {
+  const n = document.querySelectorAll('#ed-cards .qcard').length;
+  const bar = document.getElementById('ed-add');
+  bar.innerHTML = n >= song.target ? '' :
+    `<button class="btn" onclick="addBlank('mc')">+ Write a multiple-choice question</button>
+     <button class="btn" onclick="addBlank('tf')">+ Write a true/false question</button>
+     <button class="btn primary" id="btn-ai-add" onclick="aiAdd()">AI: write one for me</button>`;
+}
+function addBlank(type) {
+  const q = {qid: null, type, question: '', question_long: '', choices: type === 'tf' ? ['True', 'False'] : ['', '', '', ''],
+             choices_long: type === 'tf' ? ['True', 'False'] : ['', '', '', ''], correct_index: -1, correction: '', headline: '', full: '',
+             audit: {color: 'grey', label: 'New question - not saved yet', action: 'Write it, then Save', note: '', history: []}};
+  const c = buildCard(q, true); document.getElementById('ed-cards').appendChild(c);
+  c.scrollIntoView({behavior: 'smooth', block: 'center'}); renderAddBar();
+}
+async function aiAdd() {
+  const b = document.getElementById('btn-ai-add'); b.disabled = true; b.textContent = 'Asking the AI...';
+  const d = await api('/api/questions/ai-add', {key: song.key});
+  if (!d.ok) toast(d.reason);
+  await openSong(song.key);
+}
+function field(label, id, inner, cnt) { return `<div><div class="fl"><span>${label}</span>${cnt ? `<span class="cnt" id="${id}-cnt"></span>` : ''}</div>${inner}</div>`; }
+
+function buildCard(q, isNew) {
+  const c = document.createElement('div');
+  const col = q.audit.color;
+  c.className = 'qcard ' + (isNew ? 'new' : col);
+  c.dataset.qid = q.qid || ''; c.dataset.type = q.type;
+  const id = 'q' + Math.random().toString(36).slice(2, 8);
+  const tf = q.type === 'tf';
+  const a = q.audit;
+  let chHtml;
+  if (tf) {
+    chHtml = `<div class="tfpick"><label><input type="radio" name="${id}-ok" value="0" ${q.correct_index === 0 ? 'checked' : ''}>True is correct</label>
+              <label><input type="radio" name="${id}-ok" value="1" ${q.correct_index === 1 ? 'checked' : ''}>False is correct</label></div>`;
+  } else {
+    const n = Math.max(4, q.choices.length);
+    let rows = '<div class="hd"></div><div class="hd">Phone (long)</div><div class="hd">LED (short, <span>24</span> max)</div>';
+    for (let i = 0; i < n; i++) {
+      rows += `<input type="radio" name="${id}-ok" value="${i}" ${q.correct_index === i ? 'checked' : ''} title="correct answer">
+               <input type="text" data-role="cl" value="${esc((q.choices_long || [])[i] || '')}" placeholder="Choice ${i + 1}">
+               <input type="text" data-role="cs" maxlength="60" value="${esc(q.choices[i] || '')}" placeholder="Choice ${i + 1}">`;
+    }
+    chHtml = `<div class="ch-grid">${rows}</div><div class="fl" style="margin-top:6px"><span>Tap the circle next to the correct answer</span></div>`;
+  }
+  let orig = '';
+  if (a.original) {
+    const o = a.original;
+    orig = `<details class="sub"><summary>What it said before the AI corrected it</summary><div class="orig">
+      <b>${esc(o.question)}</b><br>${esc((o.choices || []).join(' | '))}<br>Marked correct: <b>${esc((o.choices || [])[o.correct_index])}</b>
+      ${o.correction ? '<br>Correction: ' + esc(o.correction) : ''}${o.full ? '<br>Factoid: ' + esc(o.full) : ''}</div></details>`;
+  }
+  const hist = (a.history || []).length ? `<details class="sub"><summary>History (${a.history.length})</summary><div class="hist">${
+    a.history.slice().reverse().map(h => `<div>${esc(when(h.ts))} &middot; <b>${esc(h.who)}</b> &middot; ${esc(h.action)}${h.note ? ' &mdash; ' + esc(h.note) : ''}</div>`).join('')}</div></details>` : '';
+  c.innerHTML = `
+    <div class="qtop"><span class="dot ${isNew ? 'grey' : col}"></span><div style="flex:1;min-width:0">
+      <div class="qstage">${esc(a.label)} <span class="dirty-tag" data-role="dirty"></span></div>
+      <div class="qaction">${esc(a.action)}</div>
+      ${a.note ? `<div class="qnote">${esc(a.note)}</div>` : ''}
+      <div class="qmeta">${esc((q.category || '').replace('_', ' '))}${a.by ? ' &middot; ' + esc(a.by) : ''}${a.ts ? ' &middot; ' + esc(when(a.ts)) : ''}${a.deep ? ' &middot; deep-checked' : ''}${q.source === 'fallback' ? ' &middot; <b>offline fallback question</b>' : ''}</div>
+      ${orig}${hist}</div></div>
+    <div class="qbody">
+      <div class="pair">
+        ${field('Question - phones (long)', id + '-ql', `<textarea data-role="ql" rows="3">${esc(q.question_long || '')}</textarea>`, false)}
+        ${field('Question - LED sign (short, max 100)', id + '-qs', `<textarea data-role="qs" rows="3" maxlength="140">${esc(q.question || '')}</textarea>`, true)}
+      </div>
+      <div class="qbtns">
+        <button class="btn small" data-act="mkshort">&darr; Generate short (LED) from long</button>
+        <button class="btn small" data-act="mklong">&uarr; Generate long (phone) from short</button>
+      </div>
+      ${chHtml}
+      ${tf ? field('Correction shown when the statement is False (max 100)', id + '-co', `<input type="text" data-role="co" maxlength="100" value="${esc(q.correction || '')}">`, false) : ''}
+      <details class="sub"><summary>Headline and factoid</summary><div style="display:grid;gap:8px;margin-top:8px">
+        ${field('Headline (LED teaser, max 40)', id + '-hl', `<input type="text" data-role="hl" maxlength="40" value="${esc(q.headline || '')}">`, false)}
+        ${field('Factoid (max 200)', id + '-fu', `<textarea data-role="fu" rows="3" maxlength="200">${esc(q.full || '')}</textarea>`, false)}
+      </div></details>
+      <div class="qbtns">
+        <button class="btn primary small" data-act="save">Save</button>
+        <button class="btn good small" data-act="saveverify">&#10003; Save &amp; mark verified</button>
+        ${q.qid ? `<button class="btn small" data-act="audit">AI audit (${OV.models.audit})</button>
+                   <button class="btn deep small" data-act="deep">Deep verify (${OV.models.deep})</button>
+                   ${a.stage === 'verified' ? '<button class="btn small" data-act="unverify">Clear verification</button>' : ''}
+                   <button class="btn danger small" data-act="del">Delete</button>` : `<button class="btn small" data-act="cancel">Cancel</button>`}
+      </div>
+      <div class="qmsg" data-role="msg"></div>
+    </div>`;
+  const $ = r => c.querySelector(`[data-role="${r}"]`);
+  const dirty = () => { c.dataset.dirty = '1'; $('dirty').textContent = '- unsaved changes'; };
+  c.addEventListener('input', () => { dirty(); counts(); });
+  c.addEventListener('change', dirty);
+  function counts() {
+    const n = $('qs').value.trim().length, el = c.querySelector(`#${id}-qs-cnt`);
+    el.textContent = n + ' / 100'; el.className = 'cnt' + (n > 100 ? ' over' : '');
+    c.querySelectorAll('[data-role="cs"]').forEach(i => { i.style.borderColor = i.value.trim().length > 24 ? '#ff6b60' : ''; });
+  }
+  counts();
+  const msg = (t, bad) => { const m = $('msg'); m.textContent = t || ''; m.className = 'qmsg ' + (t ? (bad ? 'bad' : 'ok') : ''); };
+  const busy = (on, label) => c.querySelectorAll('button').forEach(b => { b.disabled = on; });
+  const collect = verify => {
+    let correct = parseInt((c.querySelector('input[type=radio]:checked') || {}).value, 10);
+    if (isNaN(correct)) correct = -1;
+    const p = {key: song.key, qid: q.qid || null, type: q.type, question: $('qs').value, question_long: $('ql').value,
+               correction: tf ? $('co').value : '', headline: $('hl').value, full: $('fu').value, verify: !!verify};
+    if (tf) { p.correct_index = correct; p.choices = ['True', 'False']; p.choices_long = ['True', 'False']; }
+    else {
+      const cs = [...c.querySelectorAll('[data-role="cs"]')].map(i => i.value), cl = [...c.querySelectorAll('[data-role="cl"]')].map(i => i.value);
+      const keep = cs.map((s, i) => (s.trim() || cl[i].trim()) ? i : -1).filter(i => i >= 0);
+      p.choices = keep.map(i => cs[i]); p.choices_long = keep.map(i => cl[i]); p.correct_index = keep.indexOf(correct);
+    }
+    return p;
+  };
+  const replaceWith = nq => { const n = buildCard(nq); c.replaceWith(n); renderAddBar(); n.querySelector('[data-role="msg"]').textContent = ''; };
+  async function save(verify) {
+    busy(true); const d = await api('/api/questions/save', collect(verify)); busy(false);
+    if (!d.ok) { msg(d.reason, true); return; }
+    toast(verify ? 'Saved and marked verified' : 'Saved'); replaceWith(d.question);
+  }
+  c.addEventListener('click', async ev => {
+    const act = ev.target.dataset && ev.target.dataset.act; if (!act) return;
+    if (act === 'save') return save(false);
+    if (act === 'saveverify') return save(true);
+    if (act === 'cancel') { c.remove(); renderAddBar(); return; }
+    if (act === 'mkshort' || act === 'mklong') {
+      const p = collect(false); msg('Asking the AI...'); busy(true);
+      let d;
+      if (act === 'mkshort') {
+        if (!p.question_long.trim()) {
+          // Only a full sentence so far (sitting in the LED box): it becomes the phone wording.
+          if (!p.question.trim()) { busy(false); return msg('Write the question first.', true); }
+          $('ql').value = p.question; p.question_long = p.question;
+          c.querySelectorAll('[data-role="cs"]').forEach((el, i) => { const cl = c.querySelectorAll('[data-role="cl"]')[i]; if (cl && !cl.value.trim()) cl.value = el.value; });
+          p.choices_long = p.choices.slice();
+        }
+        d = await api('/api/questions/make-short', {key: song.key, question: p.question_long, choices: tf ? ['True', 'False'] : p.choices_long.map((s, i) => s.trim() || p.choices[i]), tf});
+      } else {
+        if (!p.question.trim()) { busy(false); return msg('Write the short question first.', true); }
+        d = await api('/api/questions/make-long', {key: song.key, question: p.question, choices: p.choices});
+      }
+      busy(false);
+      if (!d.ok) return msg(d.reason, true);
+      if (act === 'mkshort') {
+        $('qs').value = d.question;
+        if (!tf) { const keepIdx = [...c.querySelectorAll('[data-role="cs"]')].map((_, i) => i).filter(i => (c.querySelectorAll('[data-role="cs"]')[i].value.trim() || c.querySelectorAll('[data-role="cl"]')[i].value.trim())); keepIdx.forEach((rowI, k) => { c.querySelectorAll('[data-role="cs"]')[rowI].value = d.choices[k] || ''; }); }
+        msg('Short version written - check it, then Save.');
+      } else {
+        $('ql').value = d.question_long;
+        if (!tf) { const rows = [...c.querySelectorAll('[data-role="cs"]')].map((el, i) => i).filter(i => c.querySelectorAll('[data-role="cs"]')[i].value.trim()); rows.forEach((rowI, k) => { c.querySelectorAll('[data-role="cl"]')[rowI].value = d.choices_long[k] || ''; }); }
+        msg('Long version written - check it, then Save.');
+      }
+      dirty(); counts(); return;
+    }
+    if (act === 'audit' || act === 'deep') {
+      if (c.dataset.dirty === '1') return msg('Save your changes first - the AI audits what is saved.', true);
+      msg(act === 'deep' ? 'Deep verifying - this can take up to a minute...' : 'Auditing - about 15 seconds...'); busy(true);
+      const d = await api('/api/questions/audit-one', {key: song.key, qid: q.qid, deep: act === 'deep'});
+      busy(false); if (!d.ok) return msg(d.reason, true);
+      toast('Audit finished'); replaceWith(d.question); return;
+    }
+    if (act === 'unverify') { const d = await api('/api/questions/verify', {key: song.key, qid: q.qid, flag: false}); if (d.ok) replaceWith(d.question); else msg(d.reason, true); return; }
+    if (act === 'del') {
+      if (!confirm('Delete this question? (A copy is kept in track_cache_deleted.jsonl on the Pi.)')) return;
+      const d = await api('/api/questions/delete', {key: song.key, qid: q.qid});
+      if (d.ok) { c.remove(); renderAddBar(); toast('Deleted'); } else msg(d.reason || 'Could not delete', true);
+    }
+  });
+  return c;
+}
+
+loadOverview();
+</script>
+</body>
+</html>

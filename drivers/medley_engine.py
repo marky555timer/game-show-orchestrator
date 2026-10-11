@@ -19,7 +19,9 @@ Pipeline
 
 Announcements are always off during a medley. Sweepers are optional:
 config.MEDLEY_SWEEPER_MODE = "off" | "medley" (audio/MedleySweepers only) |
-"all" (medley + the regular sweepers folder).
+"all" (medley + the regular sweepers folder). With sweepers on, one plays at
+every hook change (config.MEDLEY_SWEEPER_EVERY), dealt like a shuffled deck,
+and every hook change runs a light transition paired with it (_hook_fx).
 """
 import glob
 import json
@@ -80,48 +82,112 @@ def _tempo_options(bpm):
     return out
 
 
+def _exclusion_reason(name, key, a, meta, include, exclude, has_clip):
+    """Why a track is NOT in the medley pool, or None if it is. Shared by
+    eligible_candidates() and pool_report() so the File Manager's explanation
+    can never drift from what the planner actually does."""
+    if not a or "bpm" not in a or not a.get("hooks"):
+        return "no beat analysis yet"
+    if name.lower() in exclude or key in exclude:
+        return "excluded by you"
+    forced = has_clip or name.lower() in include or key in include
+    if not forced:
+        energy = int(meta.get("energy_rank") or 0)
+        if a["grid_conf"] < config.MEDLEY_MIN_GRID_CONF:
+            return f"beat grid unsure ({a['grid_conf']:.0f} < {config.MEDLEY_MIN_GRID_CONF:.0f})"
+        if energy < config.MEDLEY_MIN_ENERGY:
+            return "not tagged for energy yet" if energy == 0 else f"energy {energy} < {config.MEDLEY_MIN_ENERGY}"
+        if meta.get("slow_dance") is True:
+            return "slow dance"
+        if meta.get("genre") in config.MEDLEY_EXCLUDE_GENRES:
+            return f"genre {meta.get('genre')} is excluded"
+        if state.show_exclude_explicit and meta.get("explicit") is True:
+            return "explicit (filtered out)"
+    if not _tempo_options(a["hooks"][0].get("bpm", a["bpm"])):
+        return "tempo outside the medley range"
+    return None
+
+
+def _clip_hook(clip, a):
+    """A saved clip as a hook dict (same shape as an analysed hook)."""
+    bpm = a["hooks"][0].get("bpm", a["bpm"])
+    bars = max(1, int(round((clip["out"] - clip["in"]) * bpm / 240.0)))
+    return {**a["hooks"][0], "start": clip["in"], "bars": bars, "bpm": bpm}
+
+
 def eligible_candidates():
     """Floor-filler tracks with a trustworthy beat grid, as dicts:
-    {path, name, title, artist, bpm, key_cam, hook, energy, duration}."""
+    {path, name, title, artist, bpm, key_cam, hook, energy, duration}.
+    A track with a human-approved clip (drivers/track_record.py) is always
+    in, and its clip replaces the auto-detected hook."""
     from drivers.music_library import music_library, sanitize_track_key
     from drivers import music_metadata_engine as mme
+    from drivers import track_record
     analysis = _load(_analysis, config.MEDLEY_ANALYSIS_FILE)
     ov = _load(_overrides, config.MEDLEY_CANDIDATES_FILE)
     include = {str(x).lower() for x in ov.get("include", [])}
     exclude = {str(x).lower() for x in ov.get("exclude", [])}
+    saved = track_record.clips()
     out = []
     for t in music_library.all_tracks():
         name = os.path.basename(t["path"])
         a = analysis.get(name)
-        if not a or "bpm" not in a or not a.get("hooks"):
-            continue
         key = sanitize_track_key(t["title"], t["artist"])
-        if name.lower() in exclude or key in exclude:
-            continue
-        forced = name.lower() in include or key in include
         meta = mme.get_metadata_for(key) or {}
-        energy = int(meta.get("energy_rank") or 0)
-        if not forced:
-            if a["grid_conf"] < config.MEDLEY_MIN_GRID_CONF:
-                continue
-            if energy < config.MEDLEY_MIN_ENERGY:
-                continue
-            if meta.get("slow_dance") is True:
-                continue
-            if meta.get("genre") in config.MEDLEY_EXCLUDE_GENRES:
-                continue
-            if state.show_exclude_explicit and meta.get("explicit") is True:
-                continue
-        local_bpm = a["hooks"][0].get("bpm", a["bpm"])
-        if not _tempo_options(local_bpm):
+        clip = saved.get(name)
+        if _exclusion_reason(name, key, a, meta, include, exclude, clip is not None):
             continue
+        hook = _clip_hook(clip, a) if clip else a["hooks"][0]
         out.append({
             "path": t["path"], "name": name, "title": t["title"], "artist": t["artist"],
-            "bpm": local_bpm, "key_cam": a.get("camelot"), "hook": a["hooks"][0],
-            "hooks": a["hooks"], "energy": energy, "duration": a["duration"],
-            "key": key,
+            "bpm": a["hooks"][0].get("bpm", a["bpm"]), "key_cam": a.get("camelot"), "hook": hook,
+            "hooks": a["hooks"], "energy": int(meta.get("energy_rank") or 0), "duration": a["duration"],
+            "key": key, "clip": clip,
         })
     return out
+
+
+def pool_report():
+    """{file name: {"state": "clip"|"auto"|"off", "reason": str|None,
+    "included": bool, "excluded": bool}} for the File Manager's Medley column:
+    clip = green (human-approved), auto = yellow (picked by the energy/grid
+    test, points are AI estimates), off = grey (not in the pool, `reason`
+    says why)."""
+    from drivers.music_library import music_library, sanitize_track_key
+    from drivers import music_metadata_engine as mme
+    from drivers import track_record
+    analysis = _load(_analysis, config.MEDLEY_ANALYSIS_FILE)
+    ov = _load(_overrides, config.MEDLEY_CANDIDATES_FILE)
+    include = {str(x).lower() for x in ov.get("include", [])}
+    exclude = {str(x).lower() for x in ov.get("exclude", [])}
+    saved = track_record.clips()
+    rep = {}
+    for t in music_library.all_tracks():
+        name = os.path.basename(t["path"])
+        key = sanitize_track_key(t["title"], t["artist"])
+        meta = mme.get_metadata_for(key) or {}
+        reason = _exclusion_reason(name, key, analysis.get(name), meta, include, exclude, name in saved)
+        rep[name] = {"state": "clip" if (name in saved and not reason) else ("off" if reason else "auto"),
+                     "reason": reason, "included": name.lower() in include, "excluded": name.lower() in exclude}
+    return rep
+
+
+def set_pool_override(name, mode):
+    """mode: "include" (force in), "exclude" (keep out) or "auto" (clear)."""
+    path = os.path.join(_BASE, config.MEDLEY_CANDIDATES_FILE)
+    data = dict(_load(_overrides, config.MEDLEY_CANDIDATES_FILE))
+    inc = [x for x in data.get("include", []) if str(x).lower() != name.lower()]
+    exc = [x for x in data.get("exclude", []) if str(x).lower() != name.lower()]
+    if mode == "include":
+        inc.append(name)
+    elif mode == "exclude":
+        exc.append(name)
+    data["include"], data["exclude"] = sorted(inc), sorted(exc)
+    tmp = path + ".tmp"
+    with open(tmp, "w", encoding="utf-8") as f:
+        json.dump(data, f, indent=1)
+    os.replace(tmp, path)
+    _overrides["data"], _overrides["mtime"] = data, os.path.getmtime(path)
 
 
 # --------------------------------------------------------------------------
@@ -162,6 +228,17 @@ def _make_seg(c, native, tempo, sb, eb):
     """One plan segment from candidate fields `c` at playback `tempo`, with the
     per-song start/end beat adjustments (`sb`, `eb`; positive = later)."""
     beat_native = 60.0 / native            # one felt beat, in the file's own seconds
+    if c.get("clip"):
+        # human-approved clip: exact in/out, no auto extra bars / beat nudges
+        cl = c["clip"]
+        hook_start = max(0.0, cl["in"])
+        beats = max(config.MEDLEY_MIN_HOOK_BEATS, int(round((cl["out"] - cl["in"]) / beat_native)))
+        room = c["duration"] - hook_start - 2.0
+        while beats > config.MEDLEY_MIN_HOOK_BEATS and beats * beat_native > room:
+            beats -= 1
+        return {**c, "hook_start": hook_start, "bars": beats // 4, "beats": beats, "native": native,
+                "tempo": tempo, "rate": tempo / native, "length": beats * 60.0 / tempo,
+                "start_beats": 0, "end_beats": 0}
     hook_start = max(0.0, c["hook"]["start"] + sb * beat_native)
     beats = _pick_bars(c["hook"]["bars"], tempo) * 4 + config.MEDLEY_EXTRA_BARS * 4 + eb - sb
     room = c["duration"] - hook_start - 2.0  # keep it inside the file
@@ -175,11 +252,74 @@ def _make_seg(c, native, tempo, sb, eb):
             "start_beats": sb, "end_beats": eb}
 
 
-def build_plan(start_bpm=None, seed=None, first_name=None):
-    """Greedy tempo/key chain over the eligible pool. Returns a list of
-    segment dicts (see render_chunk) -- empty if there aren't enough."""
-    rng = random.Random(seed)
+_opts = {"mtime": 0.0, "data": {}}
+
+
+def options():
+    """The operator's medley settings (remote's radio buttons + song count):
+    {"source": "latest"|"green"|"yellow", "songs": int}."""
+    d = _load(_opts, config.MEDLEY_OPTIONS_FILE)
+    src = d.get("source", "latest")
+    try:
+        n = int(d.get("songs", config.MEDLEY_DEFAULT_SONGS))
+    except (TypeError, ValueError):
+        n = config.MEDLEY_DEFAULT_SONGS
+    return {"source": src if src in config.MEDLEY_SOURCES else "latest",
+            "songs": max(config.MEDLEY_MIN_TRACKS, min(config.MEDLEY_MAX_TRACKS, n)),
+            "next_only": bool(d.get("next_only", False))}
+
+
+def set_options(source=None, songs=None, next_only=None):
+    cur = options()
+    if next_only is not None:
+        cur["next_only"] = bool(next_only)
+    if source is not None:
+        if source not in config.MEDLEY_SOURCES:
+            raise ValueError("source must be one of " + ", ".join(config.MEDLEY_SOURCES))
+        cur["source"] = source
+    if songs is not None:
+        cur["songs"] = max(config.MEDLEY_MIN_TRACKS, min(config.MEDLEY_MAX_TRACKS, int(songs)))
+    path = os.path.join(_BASE, config.MEDLEY_OPTIONS_FILE)
+    tmp = path + ".tmp"
+    with open(tmp, "w", encoding="utf-8") as f:
+        json.dump(cur, f, indent=1)
+    os.replace(tmp, path)
+    _opts["data"], _opts["mtime"] = cur, os.path.getmtime(path)
+    return cur
+
+
+def next_only_paths():
+    """Paths of the medley pool when "Next track plays medley songs only" is
+    on (so the operator can dress the hottest tracks with lighting), else
+    None. deck_orchestrator._pick_next_track() filters its candidates by it."""
+    if not options()["next_only"]:
+        return None
+    return {c["path"] for c in eligible_candidates()}
+
+
+def pool_counts():
+    """How many songs each source option could draw from right now."""
     pool = eligible_candidates()
+    green = sum(1 for c in pool if c.get("clip"))
+    return {"latest": len(pool), "green": green, "yellow": len(pool) - green}
+
+
+def build_plan(start_bpm=None, seed=None, first_name=None, source=None, songs=None):
+    """Greedy tempo/key chain over the eligible pool. Returns a list of
+    segment dicts (see render_chunk) -- empty if there aren't enough.
+    source: "latest" = every eligible song, human-edited clips first and the
+    most recently edited leading; "green" = human-edited clips only;
+    "yellow" = AI-included songs only. songs = how many to plan (MEDLEY_MAX_SECONDS, if set,
+    cap can still cut it shorter). Both default to the saved options()."""
+    rng = random.Random(seed)
+    o = options()
+    source = source or o["source"]
+    songs = songs or o["songs"]
+    pool = eligible_candidates()
+    if source == "green":
+        pool = [c for c in pool if c.get("clip")]
+    elif source == "yellow":
+        pool = [c for c in pool if not c.get("clip")]
     if len(pool) < config.MEDLEY_MIN_TRACKS:
         return []
     named = [c for c in pool if first_name and first_name.lower() in (c["name"] + " " + c["key"]).lower()]
@@ -191,25 +331,54 @@ def build_plan(start_bpm=None, seed=None, first_name=None):
         first = min(opts, key=lambda c: _feasible(start_bpm, c["bpm"])[0]) if opts else rng.choice(pool)
     else:
         first = rng.choice(pool)
+    # human-edited clips lead: they open the medley and win every pick they're
+    # tempo-feasible for (see CLIP_PRIORITY below)
+    # ...and among them the most recently edited come first (operator, 2026-10-01)
+    clip_rank = {c["name"]: r for r, c in enumerate(
+        sorted((c for c in pool if c.get("clip")), key=lambda c: c["clip"].get("edited_at", 0.0), reverse=True))}
+    if not named and source == "latest":
+        edited = [c for c in pool if c.get("clip")]
+        if start_bpm:
+            edited = [c for c in edited if _feasible(start_bpm, c["bpm"])]
+        if edited:
+            first = min(edited, key=lambda c: clip_rank[c["name"]])
     plan, used, total = [], set(), 0.0
     used_keys = set()
+    # the last hook rings out MEDLEY_LAST_TAIL_SECONDS, so budget for it
+    budget = (config.MEDLEY_MAX_SECONDS - config.MEDLEY_LAST_TAIL_SECONDS) if config.MEDLEY_MAX_SECONDS else float("inf")
+    CLIP_PRIORITY = 1.0
+    RECENCY_WEIGHT = 3.0        # newest clip gets this much extra pull, the oldest none
+    n_clips = max(1, len(clip_rank) - 1)
+
+    def clip_bonus(c):
+        if source != "latest" or not c.get("clip"):
+            return 0.0
+        return CLIP_PRIORITY + RECENCY_WEIGHT * (1.0 - clip_rank[c["name"]] / n_clips)
 
     def add(c, native, tempo):
         nonlocal total
         ov = _load(_hook_ov, config.MEDLEY_HOOK_OVERRIDES_FILE).get(c["key"], {})
         seg = _make_seg(c, native, tempo, int(ov.get("start_beats", 0)), int(ov.get("end_beats", 0)))
+        if plan and total + seg["length"] > budget:
+            return False            # would push the medley past the cap
         plan.append(seg)
         used.add(c["name"])
         used_keys.add(c["key"])
         total += seg["length"]
+        return True
 
+    # songs with an instrumental are held back for the finale (vocal-drop
+    # ending) so the chain can't use them up before the last hook
+    reserved = {c["name"] for c in pool if c is not first and stem_path(c["path"])} \
+        if config.MEDLEY_VOCAL_DROP and config.MEDLEY_DROP_PREFER_LAST else set()
     n0 = min(_tempo_options(first["bpm"]), key=lambda n: abs(n - (start_bpm or 118.0)))
     add(first, n0, n0)
-    while total < config.MEDLEY_MAX_SECONDS and len(plan) < config.MEDLEY_MAX_TRACKS:
+    while total < budget and len(plan) < songs:
         cur = plan[-1]
         scored = []
         for c in pool:
-            if c["name"] in used or c["key"] in used_keys or c["artist"].lower() == cur["artist"].lower():
+            if c["name"] in used or c["name"] in reserved or c["key"] in used_keys \
+                    or c["artist"].lower() == cur["artist"].lower():
                 continue
             f = _feasible(cur["tempo"], c["bpm"])
             if not f:
@@ -217,14 +386,54 @@ def build_plan(start_bpm=None, seed=None, first_name=None):
             tempo_fit, n, nt = f
             key_pen = 0.08 * min(3, _camelot_distance(cur["key_cam"], c["key_cam"]))
             energy_bonus = -0.02 * c["energy"]
-            score = tempo_fit + key_pen + energy_bonus + rng.random() * 0.06
+            score = tempo_fit + key_pen + energy_bonus + rng.random() * 0.06 - clip_bonus(c)
             scored.append((score, c, n, nt))
         if not scored:
             break
         scored.sort(key=lambda s: s[0])
-        _, c, n, nt = scored[0]
-        add(c, n, nt)
+        for _, c, n, nt in scored:      # best first; take the first one that still fits the cap
+            if add(c, n, nt):
+                break
+        else:
+            break
+    if config.MEDLEY_VOCAL_DROP and config.MEDLEY_DROP_PREFER_LAST and len(plan) >= 2 \
+            and not stem_path(plan[-1]["path"]):
+        _end_on_stem(plan, pool, used, used_keys, rng)
     return plan if len(plan) >= config.MEDLEY_MIN_TRACKS else []
+
+
+def _end_on_stem(plan, pool, used, used_keys, rng):
+    """Make the final hook a song that has an instrumental (vocal-drop
+    ending): swap it in for the last hook if it follows the one before by
+    tempo, else append it after the last; failing both, swap in the closest
+    tempo anyway (one bigger tempo step at the very end beats no drop)."""
+    stems = [c for c in pool if stem_path(c["path"]) and c["name"] not in used and c["key"] not in used_keys]
+    if not stems:
+        return
+    rng.shuffle(stems)
+    ov = _load(_hook_ov, config.MEDLEY_HOOK_OVERRIDES_FILE)
+
+    def seg_for(c, native, tempo):
+        o = ov.get(c["key"], {})
+        return _make_seg(c, native, tempo, int(o.get("start_beats", 0)), int(o.get("end_beats", 0)))
+
+    prev = plan[-2]
+    for c in stems:
+        f = _feasible(prev["tempo"], c["bpm"])
+        if f and c["artist"].lower() != prev["artist"].lower():
+            plan[-1] = seg_for(c, f[1], f[2])
+            return
+    for c in stems:
+        f = _feasible(plan[-1]["tempo"], c["bpm"])
+        if f and c["artist"].lower() != plan[-1]["artist"].lower():
+            plan.append(seg_for(c, f[1], f[2]))
+            return
+    cur = prev["tempo"]
+    best = min(((abs(n - cur), c, n) for c in stems if c["artist"].lower() != prev["artist"].lower()
+                for n in _tempo_options(c["bpm"])), key=lambda t: t[0], default=None)
+    if best:
+        _, c, n = best
+        plan[-1] = seg_for(c, n, n)
 
 
 # --------------------------------------------------------------------------
@@ -291,26 +500,103 @@ def _xfade(out_tail, in_head):
     return (hi_out * g_out + lo_out * low_out) + (hi_in * g_in + lo_in * low_in)
 
 
-def _seg_window(seg, xf_in_s, tail_extra_s=0.0):
+def _seg_window(seg, xf_in_s, tail_extra_s=0.0, path=None, gain=None, info=None):
     """Decode + resample one segment's playback audio from (hook start -
     xf_in) to (hook end + tail_extra). Returns (audio, pre_samples) where
-    pre_samples = number of leading pre-roll samples."""
+    pre_samples = number of leading pre-roll samples. `path`/`gain` let the
+    vocal-drop ending read the song's instrumental through the exact same
+    window, speed and level as the full mix; `info["gain"]` receives the
+    level-match gain used."""
     r = seg["rate"]
     pre_native = xf_in_s * r
     body_native = seg["length"] * r
     tail_native = tail_extra_s * r
     start = seg["hook_start"] - pre_native
-    a = _decode_window(seg["path"], start - 0.05, pre_native + body_native + tail_native + 0.15)
+    a = _decode_window(path or seg["path"], start - 0.05, pre_native + body_native + tail_native + 0.15)
     a = a[int(0.05 * FS):]
     y = _resample(a, r)
     pre = int(round(xf_in_s * FS))
     # level-match: each hook's body is brought toward a common RMS (bounded)
-    body = y[pre:pre + int(round(seg["length"] * FS))]
-    if len(body):
-        rms = float(np.sqrt(np.mean(body ** 2)))
-        if rms > 1e-4:
-            y = y * float(np.clip(config.MEDLEY_TARGET_RMS / rms, 0.7, 1.5))
-    return y, pre
+    if gain is None:
+        gain = 1.0
+        body = y[pre:pre + int(round(seg["length"] * FS))]
+        if len(body):
+            rms = float(np.sqrt(np.mean(body ** 2)))
+            if rms > 1e-4:
+                gain = float(np.clip(config.MEDLEY_TARGET_RMS / rms, 0.7, 1.5))
+    if info is not None:
+        info["gain"] = gain
+    return y * gain, pre
+
+
+# --------------------------------------------------------------------------
+# vocal-drop ending (see config.MEDLEY_VOCAL_DROP)
+# --------------------------------------------------------------------------
+def stem_path(name_or_path):
+    """The song's precomputed instrumental, or None."""
+    base = os.path.splitext(os.path.basename(name_or_path))[0]
+    p = os.path.join(config.MEDLEY_STEMS_DIR, base + ".inst.flac")
+    return p if os.path.exists(p) else None
+
+
+def _drop_bed_seconds(seg):
+    """Playback seconds of bed available after the out point (0 = no drop)."""
+    if not config.MEDLEY_VOCAL_DROP or not stem_path(seg["path"]):
+        return 0.0
+    out_native = seg["hook_start"] + seg["length"] * seg["rate"]
+    room = (seg["duration"] - out_native - 0.5) / seg["rate"]
+    bed = min(config.MEDLEY_DROP_BED_SECONDS, room)
+    return bed if bed >= 8.0 else 0.0
+
+
+def _align_lag(ref, other, max_lag=4096):
+    """Samples `other` lags `ref` (mono cross-correlation). The instrumental
+    was decoded by a different MP3 decoder than the live mix, so a small
+    fixed offset is possible; it's measured, not assumed."""
+    a = ref.mean(axis=1) if ref.ndim == 2 else ref
+    b = other.mean(axis=1) if other.ndim == 2 else other
+    n = min(len(a), len(b))
+    if n < 2 * max_lag:
+        return 0
+    a, b = a[:n] - a[:n].mean(), b[:n] - b[:n].mean()
+    size = 1 << int(np.ceil(np.log2(2 * n)))
+    xc = np.fft.irfft(np.fft.rfft(b, size) * np.conj(np.fft.rfft(a, size)), size)
+    lags = np.concatenate([xc[:max_lag + 1], xc[-max_lag:]])
+    k = int(np.argmax(lags))
+    return k if k <= max_lag else k - len(lags)
+
+
+def _render_drop(seg, chunk, y, pre, body_end, gain):
+    """Replace the last chunk's ring-out with the vocal drop. `chunk` already
+    holds the full mix (incl. the incoming crossfade head) out to the bed's
+    end. Returns the new chunk; sets seg["drop_sweep_at"] (seconds into the
+    chunk) for update() to fire the sweeper."""
+    inst, _ = _seg_window(seg, pre / FS, _drop_bed_seconds(seg), path=stem_path(seg["path"]), gain=gain)
+    win0, win1 = max(0, body_end - int(6 * FS)), body_end
+    lag = _align_lag(y[win0:win1], inst[win0:win1])
+    if lag > 0:
+        inst = inst[lag:]
+    elif lag < 0:
+        inst = np.vstack([np.zeros((-lag, 2), np.float32), inst])
+    n = min(len(chunk), len(inst))
+    chunk, inst = chunk[:n], inst[:n]
+    beat = int(round(60.0 / seg["tempo"] * FS))
+    g = np.zeros(n, np.float32)
+    g[body_end:] = 1.0
+    ramp = min(beat, n - body_end)
+    if ramp > 0:
+        g[body_end:body_end + ramp] = np.linspace(0.0, 1.0, ramp, dtype=np.float32)
+    p = g[:, None] * (np.pi / 2)
+    out = chunk * np.cos(p) + inst * np.sin(p)        # equal-power vocal drop
+    # the duck itself is a LIVE deck-volume ramp (update()), not baked in here
+    duck_at = min(body_end + config.MEDLEY_DROP_SWEEPER_BARS * 4 * beat, n - 1)
+    f = min(n, int(config.MEDLEY_DROP_FADE_SECONDS * FS))
+    out[-f:] *= np.linspace(1.0, 0.0, f, dtype=np.float32)[:, None]
+    seg["drop_at"] = body_end / FS
+    seg["drop_sweep_at"] = duck_at / FS
+    print(f"[MEDLEY] Vocal drop ready for {seg['artist']} - {seg['title']}: bed {(n - body_end) / FS:.0f}s, "
+          f"align lag {lag} samples.")
+    return out
 
 
 def _xf_seconds(tempo):
@@ -328,8 +614,12 @@ def render_chunk(plan, i, carry, first=0, last_limit=None):
     last = i == len(plan) - 1
     xf_in = 0.5 if i == first else _xf_seconds(seg["tempo"])
     xf_out = 0.0 if last else _xf_seconds(plan[i + 1]["tempo"])
-    tail_extra = config.MEDLEY_LAST_TAIL_SECONDS if last and not last_limit else 0.0
-    y, pre = _seg_window(seg, xf_in, tail_extra)
+    seg.pop("drop_at", None)
+    seg.pop("drop_sweep_at", None)
+    bed = _drop_bed_seconds(seg) if last and not last_limit else 0.0
+    tail_extra = (bed or config.MEDLEY_LAST_TAIL_SECONDS) if last and not last_limit else 0.0
+    info = {}
+    y, pre = _seg_window(seg, xf_in, tail_extra, info=info)
     body_end = pre + int(round(seg["length"] * FS))
     # fade-in at the very start of the medley's first chunk (the deck
     # crossfade handles the rest); later chunks get their head from _xfade
@@ -347,6 +637,16 @@ def render_chunk(plan, i, carry, first=0, last_limit=None):
         chunk = chunk[:pre + int(last_limit * FS)]
         n = min(len(chunk), int(0.6 * FS))
         chunk[-n:] *= np.linspace(1.0, 0.0, n, dtype=np.float32)[:, None]
+    elif bed:
+        try:
+            chunk = _render_drop(seg, chunk, y, pre, body_end, info["gain"])
+        except Exception as e:
+            print(f"[MEDLEY] Vocal drop failed ({e}) -- plain ending instead.")
+            seg.pop("drop_sweep_at", None)
+            seg.pop("drop_at", None)
+            chunk = chunk[:body_end + int(config.MEDLEY_LAST_TAIL_SECONDS * FS)]
+            n = min(len(chunk), int(config.MEDLEY_LAST_TAIL_SECONDS * FS))
+            chunk[-n:] *= np.linspace(1.0, 0.0, n, dtype=np.float32)[:, None]
     else:
         n = min(len(chunk), int(config.MEDLEY_LAST_TAIL_SECONDS * FS))
         chunk[-n:] *= np.linspace(1.0, 0.0, n, dtype=np.float32)[:, None]
@@ -433,10 +733,12 @@ def start():
     if a and "bpm" in a:
         opts = _tempo_options(a["bpm"])
         start_bpm = opts[0] if opts else None
+    opt = options()
     plan = build_plan(start_bpm)
     if not plan:
-        return {"ok": False, "error": "not enough mixable floor-filler tracks"}
-    run = {"plan": plan, "first": 0, "chunks": {}, "sounds": {}, "played": 0, "queued": -1, "stop": False,
+        what = {"green": "human-edited (green)", "yellow": "AI-included (yellow)"}.get(opt["source"], "floor-filler")
+        return {"ok": False, "error": f"not enough mixable {what} songs (need {config.MEDLEY_MIN_TRACKS}+ that fit by tempo)"}
+    run = {"plan": plan, "requested": opt["songs"], "first": 0, "chunks": {}, "sounds": {}, "played": 0, "queued": -1, "stop": False,
            "started": False, "began_at": 0.0, "chunk_started_at": 0.0, "sweeps": 0,
            "deck": 2 if state.active_deck == 1 else 1, "from_deck": state.active_deck,
            "handoff_sent": False}
@@ -445,6 +747,7 @@ def start():
     from drivers import medley_game
     medley_game.new_game(plan)
     state.medley_active = True
+    state.medley_count, state.medley_pos = len(plan), 0
     state.trivia_confirm_active = False
     threading.Thread(target=_render_worker, args=(run,), daemon=True, name="medley-render").start()
     print(f"[MEDLEY] Planned {len(plan)} tracks, ~{sum(s['length'] for s in plan):.0f}s: "
@@ -460,6 +763,10 @@ def _finish(run, reason, handoff):
     run["stop"] = True
     _run = None
     state.medley_active = False
+    if state.medley_bed_hold:
+        state.medley_results_until = 0.0  # the held winner screen goes with the bed
+    state.medley_bed_hold = False
+    state.medley_count = state.medley_pos = 0
     from drivers import medley_game
     medley_game.finish(show_results=True)
     print(f"[MEDLEY] Ended ({reason}).")
@@ -475,6 +782,21 @@ def stop(reason="stopped by operator"):
     if run is None:
         return False
     _finish(run, reason, handoff=run["started"])
+    return True
+
+
+def in_bed_hold():
+    run = _run
+    return run is not None and bool(run.get("bed_hold"))
+
+
+def end_bed(reason="panel button"):
+    """Host is done talking over the vocal-drop bed: clear the winner screen
+    and crossfade back into normal play (whatever mode the show was in)."""
+    run = _run
+    if run is None or not run.get("bed_hold"):
+        return False
+    _finish(run, f"bed ended by {reason}", handoff=True)
     return True
 
 
@@ -495,8 +817,14 @@ def _set_now_playing(run, i):
     else:
         state.deck2_track, state.deck2_confident, state.deck2_track_source = tup, True, "native"
     state.active_deck = n
+    state.medley_pos = i + 1
     state.now_playing_path = seg["path"]
     state.now_playing_duration = seg["duration"]
+    try:
+        from drivers import track_record
+        track_record.touch_played(seg["path"])
+    except Exception:
+        pass
     # ensure_prefetch() (which normally sets this and applies the song's saved
     # light show) is switched off during a medley, so do both here.
     state.factoid_track_key = seg["key"]
@@ -518,20 +846,69 @@ def _set_now_playing(run, i):
     medley_game.begin_hook(i, seg, run.get("cur_len", seg["length"]))
 
 
+_sweeper_deck = []
+
+
+def _deal_sweeper(paths):
+    """Shuffled-deck pick: every sweeper plays once before any repeats
+    (a medley plays one per hook change, so plain random repeats fast)."""
+    global _sweeper_deck
+    _sweeper_deck = [p for p in _sweeper_deck if p in paths]
+    if not _sweeper_deck:
+        _sweeper_deck = list(paths)
+        random.shuffle(_sweeper_deck)
+    return _sweeper_deck.pop()
+
+
 def _maybe_sweeper(run):
+    """Hook change: a sweeper (every MEDLEY_SWEEPER_EVERY-th change, when
+    sweepers are on) and, always, a light transition paired with it."""
     every = max(1, config.MEDLEY_SWEEPER_EVERY)
     run["sweeps"] += 1
-    if run["sweeps"] % every:
-        return
+    path = None
     paths = _sweeper_paths()
-    if not paths:
+    if paths and not run["sweeps"] % every:
+        path = _deal_sweeper(paths)  # still styles the light transition when SFX is off
+    if path and state.sfx_enabled:
+        try:
+            from drivers import deck_orchestrator
+            snd = deck_orchestrator.dj_engine.load(path)
+            deck_orchestrator.dj_engine._play_at_full("sweeper", snd, 30)
+        except Exception as e:
+            print(f"[MEDLEY] Sweeper failed: {e}")
+    _hook_fx(path)
+
+
+def _hook_fx(sweeper_path):
+    """Marquee + matrix transition for a hook change, styled by the
+    sweeper's class (deck_orchestrator._transition_style_for). No dark hold
+    like a normal song change -- clear, then straight into the reveal."""
+    try:
+        from drivers import deck_orchestrator
+        from graphics import matrix_canvas
+        now = time.time()
+        state.transition_style = deck_orchestrator._transition_style_for(sweeper_path)
+        state.transition_count += 1
+        state.marquee_transition_start = now
+        state.marquee_reveal_at = now + config.MARQUEE_TRANSITION_SECONDS
+        matrix_canvas.start_reveal_at(state.marquee_reveal_at)
+    except Exception as e:
+        print(f"[MEDLEY] Hook transition failed: {e}")
+
+
+def _drop_sweeper():
+    """The vocal-drop sweeper: from the medley sweepers (whatever the
+    every-Nth setting), falling back to the regular sweepers folder."""
+    paths = _sweeper_paths() or glob.glob(os.path.join(config.SWEEPERS_DIR, "*.wav"))
+    if not paths or not state.sfx_enabled:
         return
     try:
         from drivers import deck_orchestrator
-        snd = deck_orchestrator.dj_engine.load(random.choice(paths))
-        deck_orchestrator.dj_engine._play_at_full("sweeper", snd, 30)
+        p = random.choice(paths)
+        deck_orchestrator.dj_engine._play_at_full("sweeper", deck_orchestrator.dj_engine.load(p), 30)
+        print(f"[MEDLEY] Vocal-drop sweeper: {os.path.basename(p)}")
     except Exception as e:
-        print(f"[MEDLEY] Sweeper failed: {e}")
+        print(f"[MEDLEY] Drop sweeper failed: {e}")
 
 
 def update(now):
@@ -593,8 +970,30 @@ def update(now):
         run["cur_len"] = run.get("queue_len", 15.0)
         _set_now_playing(run, run["played"])
         _maybe_sweeper(run)
-    # hand off to normal Auto-DJ shortly before the last chunk finishes
+    # vocal-drop ending: the last question closes (and reveals) when the
+    # vocals drop; a couple of bars later the sweeper fires, the deck ducks
+    # live and the winner screen goes up. It then HOLDS -- bed, then silence
+    # -- until any panel button (end_bed()) returns to normal play.
     last = len(plan) - 1
+    drop_at = plan[last].get("drop_at")
+    sweep_at = plan[last].get("drop_sweep_at")
+    into = now - run["chunk_started_at"]
+    if run["played"] == last and drop_at is not None and sweep_at is not None:
+        from drivers import medley_game
+        if not run.get("drop_closed") and into >= drop_at:
+            run["drop_closed"] = True
+            medley_game.close_question()
+        if not run.get("bed_hold") and into >= sweep_at:
+            run["bed_hold"] = True
+            state.medley_bed_hold = True
+            _drop_sweeper()
+            dj.ramp_volume(_deck_name(run["deck"]), 10 ** (config.MEDLEY_DROP_DUCK_DB / 20.0),
+                           config.MEDLEY_DROP_DUCK_RAMP_SECONDS)
+            medley_game.finish(show_results=True, hold=True)
+            print("[MEDLEY] Vocal-drop bed: holding for a panel button.")
+        if run.get("bed_hold"):
+            return  # no auto-handoff: the host ends the bed
+    # hand off to normal Auto-DJ shortly before the last chunk finishes
     if run["played"] == last and not run["handoff_sent"]:
         if now - run["chunk_started_at"] >= run["cur_len"] - config.MEDLEY_HANDOFF_LEAD_SECONDS:
             run["handoff_sent"] = True
@@ -787,6 +1186,7 @@ def replay():
     from drivers import medley_game
     medley_game.new_game(plan)
     state.medley_active = True
+    state.medley_count, state.medley_pos = len(plan), 0
     state.trivia_confirm_active = False
     threading.Thread(target=_render_worker, args=(new,), daemon=True, name="medley-render").start()
     print(f"[MEDLEY] Replaying the last medley ({len(plan)} hooks) with saved edits.")
@@ -799,7 +1199,7 @@ def status():
     st = {"active": run is not None, "sweeper_mode": state.medley_sweeper_mode,
           "game_on": medley_game.enabled(), "game_switch": state.medley_game_enabled,
           "suppressed": state.questions_suppressed,
-          "has_last": bool(_last_plan), "last_total": len(_last_plan)}
+          "has_last": bool(_last_plan), "last_total": len(_last_plan), "options": options()}
     if run is None:
         return st
     plan = run["plan"]
@@ -809,7 +1209,7 @@ def status():
     nxt = plan[i + 1] if i + 1 < len(plan) else None
     st.update({
         "starting": not run["started"],
-        "total": len(plan), "index": i + 1, "remaining": remaining,
+        "total": len(plan), "requested": run.get("requested", len(plan)), "index": i + 1, "remaining": remaining,
         "current": {"title": cur["title"], "artist": cur["artist"], "tempo": round(cur["tempo"], 1)} if cur else None,
         "next": {"title": nxt["title"], "artist": nxt["artist"], "tempo": round(nxt["tempo"], 1)} if nxt else None,
         "next_in_seconds": max(0.0, run.get("cur_len", 0) - (time.time() - run["chunk_started_at"])) if run["started"] else None,

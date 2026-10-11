@@ -40,8 +40,12 @@ _HEADER = ["track_key", "tempo_period", "color_index", "theme_index",
            "accent_color_index", "accent_theme_index",
            "accent_preset_id", "accent_preset_color_index",
            "accent_palette_index",
-           "accent_speed", "accent_brightness",
-           "tempo_source", "energy", "updated_at"]
+           "accent_speed", "accent_brightness", "show_lower_marquees",
+           "accent_fx_rgb", "accent_bg_rgb",
+           "tempo_source", "energy",
+           "marquee_brightness", "marquee_speed", "marquee_depth", "marquee_off",
+           "dmx_speed_div", "panel_leds_off",
+           "updated_at"]
 
 # Append-only change log (config.LIGHT_PREFS_LOG_PATH, added 2026-09-28): one
 # row per field that actually changed on a write, timestamped, so usage
@@ -120,8 +124,20 @@ class LightPrefsEngine:
                             # 2026-09-28 -- per-song outline speed/brightness; NO_LOOK = none saved.
                             "accent_speed": _to_int(row.get("accent_speed")),
                             "accent_brightness": _to_int(row.get("accent_brightness")),
+                            # 2026-10-02 -- 1 = this song shows the lower marquees (panels 3-6);
+                            # NO_LOOK (the default) = blanked, like every song.
+                            "show_lower_marquees": _to_int(row.get("show_lower_marquees")),
+                            # 2026-10-02 -- outline WLED slot 1 (Fx) / slot 2 (Bg) as 0xRRGGBB; NO_LOOK = auto
+                            "accent_fx_rgb": _to_int(row.get("accent_fx_rgb")),
+                            "accent_bg_rgb": _to_int(row.get("accent_bg_rgb")),
                             "tempo_source": (row.get("tempo_source") or "operator").strip(),
                             "energy": (row.get("energy") or "").strip(),
+                            # 2026-10-05 marquee dials (persisted since 2026-10-07); NO_LOOK = default.
+                            **{k: _to_int(row.get(k)) for k in config.MARQUEE_DIAL_DEFAULTS},
+                            # 2026-10-08 -- DMX pattern at 1/2 (2) or 1/4 (4) tempo; NO_LOOK = full.
+                            "dmx_speed_div": _to_int(row.get("dmx_speed_div")),
+                            # 2026-10-09 -- 1 = panel-button LED animation off for this song; NO_LOOK = on.
+                            "panel_leds_off": _to_int(row.get("panel_leds_off")),
                         }
         except Exception as e:
             print(f"[LIGHT PREFS] Failed to read cache, starting empty: {e}")
@@ -156,8 +172,14 @@ class LightPrefsEngine:
                         "accent_palette_index": prefs.get("accent_palette_index", NO_LOOK),
                         "accent_speed": prefs.get("accent_speed", NO_LOOK),
                         "accent_brightness": prefs.get("accent_brightness", NO_LOOK),
+                        "show_lower_marquees": prefs.get("show_lower_marquees", NO_LOOK),
+                        "accent_fx_rgb": prefs.get("accent_fx_rgb", NO_LOOK),
+                        "accent_bg_rgb": prefs.get("accent_bg_rgb", NO_LOOK),
                         "tempo_source": prefs.get("tempo_source", "operator"),
                         "energy": prefs.get("energy", ""),
+                        **{k: prefs.get(k, NO_LOOK) for k in config.MARQUEE_DIAL_DEFAULTS},
+                        "dmx_speed_div": prefs.get("dmx_speed_div", NO_LOOK),
+                        "panel_leds_off": prefs.get("panel_leds_off", NO_LOOK),
                         "updated_at": now_str,
                     })
         except Exception as e:
@@ -202,6 +224,12 @@ class LightPrefsEngine:
                 "accent_palette_index": NO_LOOK,
                 "accent_speed": NO_LOOK,
                 "accent_brightness": NO_LOOK,
+                "show_lower_marquees": NO_LOOK,
+                "accent_fx_rgb": NO_LOOK,
+                "accent_bg_rgb": NO_LOOK,
+                **{k: NO_LOOK for k in config.MARQUEE_DIAL_DEFAULTS},
+                "dmx_speed_div": NO_LOOK,
+                "panel_leds_off": NO_LOOK,
                 "tempo_source": "online",
                 "energy": "",
             })
@@ -210,6 +238,13 @@ class LightPrefsEngine:
             self._entries[track_key] = entry
         self._save_cache()
         self._log_changes(track_key, _source, old, entry)
+        if _source in ("operator", "library"):
+            from drivers import look_matcher
+            look_matcher.note_operator_edit(track_key)
+
+    def snapshot(self):
+        with self._lock:
+            return dict(self._entries)
 
     def _log_changes(self, track_key, source, old, new):
         """Appends one row per changed field to the change log. old is None
@@ -247,7 +282,9 @@ class LightPrefsEngine:
                         marquee_color_index, marquee_theme_index,
                         accent_color_index, accent_theme_index,
                         accent_preset_id, accent_preset_color_index,
-                        accent_palette_index, accent_speed, accent_brightness):
+                        accent_palette_index, accent_speed, accent_brightness,
+                        show_lower_marquees=NO_LOOK, accent_fx_rgb=NO_LOOK, accent_bg_rgb=NO_LOOK,
+                        marquee_dials=None, dmx_speed_div=NO_LOOK, panel_leds_off=NO_LOOK):
         self._upsert(track_key, tempo_period=tempo_period,
                      # Legacy pair mirrors DMX -- see _save_cache()'s comment.
                      color_index=dmx_color_index, theme_index=dmx_theme_index,
@@ -257,6 +294,11 @@ class LightPrefsEngine:
                      accent_preset_id=accent_preset_id, accent_preset_color_index=accent_preset_color_index,
                      accent_palette_index=accent_palette_index,
                      accent_speed=accent_speed, accent_brightness=accent_brightness,
+                     show_lower_marquees=show_lower_marquees,
+                     accent_fx_rgb=accent_fx_rgb, accent_bg_rgb=accent_bg_rgb,
+                     **(marquee_dials or {}),
+                     dmx_speed_div=dmx_speed_div,
+                     panel_leds_off=panel_leds_off,
                      tempo_source="operator", _source="operator")
         print(f"[LIGHT PREFS] Saved for {track_key!r}: tempo={tempo_period:.3f}s, "
               f"dmx=({dmx_color_index},{dmx_theme_index}), "
@@ -364,6 +406,12 @@ def update(now):
         return
     key, _dirty_track_key = _dirty_track_key, None
     _dirty_since = None
+    if key and state.now_playing_path:
+        try:
+            from drivers import track_record
+            track_record.touch_edited(state.now_playing_path)   # File Manager "Last edited"
+        except Exception as e:
+            print(f"[LIGHT PREFS] last-edited stamp failed: {e}")
     if key:
         light_prefs_engine.save_prefs_for(
             key, state.dj_tempo_period,
@@ -373,7 +421,32 @@ def update(now):
             state.accent_preset_id, state.accent_preset_color_index,
             state.accent_palette_index,
             state.accent_speed, state.accent_brightness,
+            # Only the exception is stored; blanked (the default) saves as NO_LOOK.
+            1 if not state.blank_lower_marquees else NO_LOOK,
+            state.accent_fx_rgb, state.accent_bg_rgb,
+            marquee_dials=_marquee_dial_exceptions(),
+            # Only the exception is stored; full speed (1) saves as NO_LOOK.
+            dmx_speed_div=state.dmx_speed_div if state.dmx_speed_div != 1 else NO_LOOK,
+            # Only the exception is stored; animation on (the default) saves as NO_LOOK.
+            panel_leds_off=1 if not state.panel_leds_fx else NO_LOOK,
         )
+
+
+def _marquee_dial_exceptions():
+    """Marquee brightness/speed/depth/off as stored: only values that differ
+    from config.MARQUEE_DIAL_DEFAULTS, everything else NO_LOOK."""
+    out = {}
+    for k, default in config.MARQUEE_DIAL_DEFAULTS.items():
+        v = int(getattr(state, k))
+        out[k] = v if v != default else NO_LOOK
+    return out
+
+
+def reset_marquee_dials():
+    """Every new song starts from the default marquee dials; a saved
+    exception is re-applied by apply_prefs_for() once the song is known."""
+    for k, default in config.MARQUEE_DIAL_DEFAULTS.items():
+        setattr(state, k, bool(default) if k == "marquee_off" else default)
 
 
 def save_online_tempo(track_key, tempo_period):
@@ -400,6 +473,61 @@ def save_energy(track_key, energy):
 def get_energy_for(track_key):
     """Module-level wrapper, same convention as save_online_tempo()."""
     return light_prefs_engine.get_energy_for(track_key)
+
+
+def _calm_carried_outline_dials(prefs):
+    """A song with no saved outline speed/brightness inherits whatever the last
+    song left on the dials. If that was cranked (speed or brightness above
+    config.ACCENT_CARRYOVER_HOT_PCT), drop it to the calm defaults instead
+    (speed 50%, brightness 35%). Dials this song saved itself are never touched."""
+    hot = 255 * config.ACCENT_CARRYOVER_HOT_PCT / 100.0
+    prefs = prefs or {}
+    if prefs.get("accent_speed", NO_LOOK) < 0 and state.accent_speed > hot:
+        state.accent_speed = round(255 * config.ACCENT_CARRYOVER_SPEED_PCT / 100.0)
+        print(f"[LIGHT PREFS] Outline speed carried over hot -> {config.ACCENT_CARRYOVER_SPEED_PCT}%")
+    if prefs.get("accent_brightness", NO_LOOK) < 0 and state.accent_brightness > hot:
+        state.accent_brightness = round(255 * config.ACCENT_CARRYOVER_BRIGHTNESS_PCT / 100.0)
+        print(f"[LIGHT PREFS] Outline brightness carried over hot -> {config.ACCENT_CARRYOVER_BRIGHTNESS_PCT}%")
+
+
+def _with_borrowed_look(track_key, own):
+    """own prefs with each fixture group this song never got a look for
+    (DMX / marquee + dials / outline) filled from the most similar
+    hand-designed song (drivers/look_matcher.py). Tempo is never borrowed.
+    Returns own unchanged (possibly None) when nothing needed or found."""
+    from drivers import look_matcher
+    state.look_borrowed_from = ""
+    own = own or {}
+    if look_matcher.is_legacy_look(track_key, own):
+        # Pre-split shared look: never designed for these fixtures -- borrow all three.
+        need = [look_matcher.DMX_FIELDS, look_matcher.MARQUEE_FIELDS, look_matcher.ACCENT_FIELDS]
+    else:
+        need = []
+        if any(own.get(f, NO_LOOK) < 0 for f in look_matcher.DMX_FIELDS):
+            need.append(look_matcher.DMX_FIELDS)
+        if any(own.get(f, NO_LOOK) < 0 for f in ("marquee_color_index", "marquee_theme_index")):
+            need.append(look_matcher.MARQUEE_FIELDS)
+        if (own.get("accent_preset_id", NO_LOOK) < 0 and own.get("accent_palette_index", NO_LOOK) < 0
+                and any(own.get(f, NO_LOOK) < 0 for f in ("accent_color_index", "accent_theme_index"))):
+            need.append(look_matcher.ACCENT_FIELDS)
+    if not need:
+        return own or None
+    try:
+        found = look_matcher.find_donor(track_key, light_prefs_engine.snapshot())
+    except Exception as e:
+        print(f"[LOOK MATCH] Lookup failed for {track_key!r}: {e}")
+        found = None
+    if not found:
+        return own or None
+    dkey, dprefs, score = found
+    merged = dict(own)
+    for group in need:
+        for f in group:
+            merged[f] = dprefs.get(f, NO_LOOK)
+    state.look_borrowed_from = dkey
+    print(f"[LOOK MATCH] {track_key!r} borrows the look of {dkey!r} (score {score:.1f}; "
+          f"{len(need)} fixture group(s))")
+    return merged
 
 
 def apply_prefs_for(track_key):
@@ -440,15 +568,27 @@ def apply_prefs_for(track_key):
     state.accent_preset_id = NO_LOOK
     state.accent_preset_color_index = NO_LOOK
     state.accent_palette_index = NO_LOOK
+    # Lower marquees (panels 3-6) are blanked unless THIS song saved an
+    # exception -- never inherited from the previous song.
+    state.blank_lower_marquees = True
+    # Same for the outline's custom Fx/Bg colors: auto unless this song saved them.
+    state.accent_fx_rgb = NO_LOOK
+    state.accent_bg_rgb = NO_LOOK
+    reset_marquee_dials()
+    state.dmx_speed_div = 1  # full tempo unless this song saved 1/2 or 1/4
+    state.panel_leds_fx = True  # button-LED animation on unless this song saved "off"
 
-    prefs = light_prefs_engine.get_prefs_for(track_key)
+    own = light_prefs_engine.get_prefs_for(track_key)
+    prefs = _with_borrowed_look(track_key, own)
     if not prefs:
+        _calm_carried_outline_dials(None)
         return
-    state.dj_tempo_period = max(config.TEMPO_PERIOD_MIN_SECONDS,
-                                 min(config.TEMPO_PERIOD_MAX_SECONDS, prefs["tempo_period"]))
-    # An operator-saved tempo outranks any online BPM that lands later.
-    if prefs.get("tempo_source", "operator") == "operator":
-        state.tempo_operator_set = True
+    if own:
+        state.dj_tempo_period = max(config.TEMPO_PERIOD_MIN_SECONDS,
+                                     min(config.TEMPO_PERIOD_MAX_SECONDS, own["tempo_period"]))
+        # An operator-saved tempo outranks any online BPM that lands later.
+        if own.get("tempo_source", "operator") == "operator":
+            state.tempo_operator_set = True
 
     restored_any = False
 
@@ -507,6 +647,32 @@ def apply_prefs_for(track_key):
     if accent_brightness >= 0:
         state.accent_brightness = max(0, min(255, accent_brightness))
         restored_any = True
+
+    _calm_carried_outline_dials(prefs)
+    for _f in ("accent_fx_rgb", "accent_bg_rgb"):
+        if prefs.get(_f, NO_LOOK) >= 0:
+            setattr(state, _f, prefs[_f] & 0xFFFFFF)
+    if prefs.get("show_lower_marquees", NO_LOOK) == 1:
+        state.blank_lower_marquees = False
+        print(f"[LIGHT PREFS] {track_key!r}: lower marquees left ON (saved exception)")
+    dials = {k: prefs[k] for k in config.MARQUEE_DIAL_DEFAULTS if prefs.get(k, NO_LOOK) >= 0}
+    if dials:
+        lo, hi = config.MARQUEE_SPEED_RANGE
+        state.marquee_brightness = max(0, min(100, dials.get("marquee_brightness", state.marquee_brightness)))
+        state.marquee_speed = max(lo, min(hi, dials.get("marquee_speed", state.marquee_speed)))
+        state.marquee_depth = max(0, min(100, dials.get("marquee_depth", state.marquee_depth)))
+        state.marquee_off = bool(dials.get("marquee_off", 0))
+        print(f"[LIGHT PREFS] {track_key!r}: marquee dials {dials} (saved exception)")
+
+    # DMX speed is the song's own (never borrowed), like its tempo.
+    div = (own or {}).get("dmx_speed_div", NO_LOOK)
+    if div in config.DMX_SPEED_DIVISORS:
+        state.dmx_speed_div = div
+        print(f"[LIGHT PREFS] {track_key!r}: DMX pattern at 1/{div} tempo (saved exception)")
+    # Panel-button LED animation off is the song's own too (never borrowed).
+    if (own or {}).get("panel_leds_off", NO_LOOK) == 1:
+        state.panel_leds_fx = False
+        print(f"[LIGHT PREFS] {track_key!r}: panel button animation OFF (saved exception)")
 
     if not restored_any:
         print(f"[LIGHT PREFS] Restored tempo only for {track_key!r}: "

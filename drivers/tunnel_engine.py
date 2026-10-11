@@ -61,6 +61,7 @@ _DNS_REFRESH_FAILURE_RE = re.compile(r"Failed to (?:refresh|initialize) DNS loca
 _status = "disabled"
 _current_tunnel_url = ""
 _lock = threading.Lock()
+_last_report_result = None   # last redirector POST outcome ("ok"/"HTTP 404"/...), for change-only logging
 
 
 def get_status():
@@ -107,14 +108,25 @@ def _set_status(value):
 def _post_update(url):
     if requests is None or not config.TUNNEL_REDIRECT_UPDATE_URL:
         return
+    global _last_report_result
     try:
-        requests.post(
+        r = requests.post(
             config.TUNNEL_REDIRECT_UPDATE_URL,
             json={"secret": config.TUNNEL_REDIRECT_SECRET, "url": url},
             timeout=5.0,
         )
+        result = "ok" if r.status_code == 200 else f"HTTP {r.status_code}"
     except Exception as e:
-        print(f"[TUNNEL] Failed to report tunnel URL to the redirector: {e}")
+        result = f"error: {e}"
+    # Heartbeats run every minute: log only when the outcome changes, so a
+    # redirector that starts answering 404/403 (e.g. wiped by a site
+    # redeploy, 2026-10-10) shows up once instead of hiding or spamming.
+    if result != _last_report_result:
+        if result == "ok":
+            print(f"[TUNNEL] Redirector accepted tunnel URL ({config.TUNNEL_REDIRECT_UPDATE_URL}).")
+        else:
+            print(f"[TUNNEL] Failed to report tunnel URL to the redirector ({config.TUNNEL_REDIRECT_UPDATE_URL}): {result}")
+        _last_report_result = result
 
 
 def _reader_loop(proc):
@@ -133,11 +145,24 @@ def _reader_loop(proc):
     whatever cloudflared itself reports shows up right in the app's
     console for troubleshooting."""
     global _current_tunnel_url
+    registered = False
     for line in proc.stderr:
         line = line.rstrip("\n")
         if line:
             print(f"[CLOUDFLARED] {line}")
-        if _DNS_REFRESH_FAILURE_RE.search(line):
+        if "Registered tunnel connection" in line:
+            registered = True
+        elif "Lost connection with the edge" in line or "Connection terminated" in line:
+            registered = False
+        if _DNS_REFRESH_FAILURE_RE.search(line) and registered:
+            # 2026-10-03: with --protocol http2 a DNS-refresh timeout while
+            # an edge connection is registered is harmless, but killing here
+            # threw away a working tunnel AND its URL (a new quick-tunnel URL
+            # each respawn), stranding the operator's open page on a dead
+            # address (error 1033) -- twice in 60s on a lossy WiFi link.
+            # Only respawn when there is no live edge connection to keep.
+            print("[TUNNEL] DNS resolver refresh failed, but the edge connection is up -- keeping this tunnel.")
+        elif _DNS_REFRESH_FAILURE_RE.search(line):
             # Self-healing watchdog (2026-09-08): this line means
             # cloudflared's edge routing has gone stale -- it keeps running
             # and keeps LOOKING alive (no exit, no status change), but
@@ -211,8 +236,10 @@ def _run_loop(cloudflared_path):
     "dial udp 192.168.1.1:53: connect: network is unreachable"), exit
     immediately, and just stay down for the rest of that session -- no
     visible symptom until a guest's QR failed to load."""
+    global _proc
     while True:
         proc = _spawn_process(cloudflared_path)
+        _proc = proc
         if proc is not None:
             _set_status("connecting")
             print("[TUNNEL] cloudflared starting -- public URL will appear shortly.")
@@ -221,6 +248,57 @@ def _run_loop(cloudflared_path):
             return
         print(f"[TUNNEL] Retrying in {config.TUNNEL_RETRY_SECONDS:.0f}s...")
         time.sleep(config.TUNNEL_RETRY_SECONDS)
+
+
+_proc = None  # the live cloudflared subprocess (for the network watchdog below)
+_NET_POLL_SECONDS = 4.0
+_NET_OUTAGE_RESTART_SECONDS = 15.0
+
+
+def _local_ip():
+    """The address the Pi would use to reach the internet, or None with no
+    route. A UDP connect sends no packets -- it only picks the interface."""
+    import socket
+    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    try:
+        s.settimeout(1.0)
+        s.connect(("1.1.1.1", 53))
+        return s.getsockname()[0]
+    except OSError:
+        return None
+    finally:
+        s.close()
+
+
+def _network_watchdog():
+    """2026-10-02: a WiFi re-association handed the Pi a new DHCP address
+    (.19 -> .25). cloudflared's edge connection was bound to the old one; it
+    logged nothing, kept reporting 1 healthy connection, and Cloudflare
+    dropped the tunnel (error 1033) until restart. So: when the LAN address
+    changes, or the network is gone for _NET_OUTAGE_RESTART_SECONDS+, kill
+    cloudflared -- _run_loop respawns it and reports the new public URL."""
+    last_ip = None
+    down_since = None
+    while True:
+        time.sleep(_NET_POLL_SECONDS)
+        if state.shutdown_requested:
+            return
+        ip = _local_ip()
+        reason = None
+        if ip is None:
+            down_since = down_since or time.time()
+            continue
+        if down_since is not None and time.time() - down_since >= _NET_OUTAGE_RESTART_SECONDS:
+            reason = f"network was down {time.time() - down_since:.0f}s"
+        elif last_ip is not None and ip != last_ip:
+            reason = f"LAN address changed {last_ip} -> {ip}"
+        down_since = None
+        last_ip = ip
+        proc = _proc
+        if reason and proc is not None and proc.poll() is None:
+            print(f"[TUNNEL] {reason} -- restarting cloudflared so the tunnel re-registers.")
+            time.sleep(2.0)  # let DHCP/routes settle before it redials
+            proc.kill()
 
 
 def _heartbeat_loop():
@@ -255,3 +333,4 @@ def start():
 
     threading.Thread(target=_run_loop, args=(cloudflared_path,), daemon=True).start()
     threading.Thread(target=_heartbeat_loop, daemon=True).start()
+    threading.Thread(target=_network_watchdog, daemon=True).start()

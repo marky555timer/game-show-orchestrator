@@ -71,6 +71,7 @@ _send_queue = queue.Queue()
 
 _PROBE_SETTLE_S = 0.3
 _PROBE_REPLY_WAIT_S = 0.5
+_PROBE_TOTAL_S = 4.0   # whole probe budget; see _open_and_probe()
 _RESCAN_INTERVAL_S = 5.0
 
 if not _AVAILABLE:
@@ -138,6 +139,7 @@ def next_effect():
 
 
 _manual_override = None  # None (auto-sync) or "top"/"all" while a manual movie-chase test is forced
+_blackout_sent = False  # admin blackout: board switched off (drivers/blackout_engine.py)
 _last_sent_look = None  # (fx, r, g, b, sx) tuple last actually sent, so sync_to_show_state() only sends on real change
 _pending_override = None  # (due_time, payload) preset color override waiting on its preset to load -- see _send_preset()
 _preset_segments_active = False  # True once the board may be split into several segments -- see _with_segment_reset()
@@ -190,6 +192,24 @@ def _palette_rgb(color_index):
     return (color[0], color[1], color[2])
 
 
+def _rgb_from_int(v):
+    return ((v >> 16) & 255, (v >> 8) & 255, v & 255)
+
+
+def _slot_colors(auto_rgb):
+    """The two colors a raw effect is sent with: slot 1 "Fx" and slot 2 "Bg".
+    The board used to be told only slot 1, so slot 2 kept whatever it last
+    had (a preset's leftovers) and could equal slot 1 -- an effect between
+    two identical colors shows nothing. Both are now always sent: Fx = the
+    operator's custom pick else the auto swatch; Bg = custom else black. If
+    they would still look alike, Bg falls back to black (white if Fx is dark)."""
+    fx = _rgb_from_int(state.accent_fx_rgb) if state.accent_fx_rgb >= 0 else tuple(auto_rgb)
+    bg = _rgb_from_int(state.accent_bg_rgb) if state.accent_bg_rgb >= 0 else (0, 0, 0)
+    if sum(abs(a - b) for a, b in zip(fx, bg)) < config.ACCENT_COLOR_MIN_DISTANCE:
+        bg = (0, 0, 0) if sum(fx) >= config.ACCENT_COLOR_MIN_DISTANCE else (255, 255, 255)
+    return fx, bg
+
+
 def _target_look():
     """Returns the (fx, r, g, b, sx, r2, g2, b2, pal, tt) this board should
     currently be showing, mirroring drivers/wled_engine.py::update()'s own
@@ -214,6 +234,7 @@ def _target_look():
     session, GPIO36) -- until then this selects the effect but it has no
     live signal to react to."""
     global _last_captured_grade_at, _grade_hold_until, _grade_was_correct
+    state.accent_colors_sent = None  # set again only by the raw DJ-color look at the bottom
     if state.show_phase in ("setup", "countdown", "dark"):
         # Show hasn't started (or is sitting in the deliberate silent
         # "dark"/waiting pause between "Start Game" and the operator
@@ -272,6 +293,10 @@ def _target_look():
         # solid look, rather than inventing a second white-trigger rule.
         return (config.ACCENT_FX_SOLID, 255, 255, 255, state.accent_speed,
                 None, None, None, 0, None)  # Solid, white
+    if state.accent_preset_id in config.ACCENT_AUDIOREACTIVE_PRESETS:
+        # A tuned sound-reactive preset beats the bare-GEQ checkbox below
+        # (see config.ACCENT_AUDIOREACTIVE_PRESETS).
+        return ("preset", state.accent_preset_id, state.accent_preset_color_index)
     if state.accent_sound_enabled:
         return (config.ACCENT_AUDIOREACTIVE_FX_ID, None, None, None, None, None, None, None, 0, None)
     if state.accent_preset_id >= 0:
@@ -287,16 +312,151 @@ def _target_look():
     gradient_mode = state.accent_gradient_mode
     if gradient_mode == "rainbow":
         fx = config.ACCENT_FX_RAINBOW
-    elif gradient_mode in ("adjacent", "complementary"):
+    elif gradient_mode in ("adjacent", "complementary") and state.accent_fx_rgb < 0:
         degrees = 30 if gradient_mode == "adjacent" else 180
         r, g, b = color_utils.hue_shift(r, g, b, degrees)
+    (r, g, b), (r2, g2, b2) = _slot_colors((r, g, b))
+    state.accent_colors_sent = ((r, g, b), (r2, g2, b2))
     # Gradient palette (2026-09-26): a per-song alternative to the flat
     # r/g/b swatch above -- WLED renders the effect through the palette's
     # own blended colors instead. -1 (none) falls back to plain col, same
     # sentinel convention as accent_preset_id.
     pal = (state.accent_palette_index
            if 0 <= state.accent_palette_index < len(config.ACCENT_PALETTE_NAMES) else 0)
-    return (fx, r, g, b, state.accent_speed, None, None, None, pal, None)
+    return (fx, r, g, b, state.accent_speed, r2, g2, b2, pal, None)
+
+
+# ------------------------------------------------------------
+# Song-change transition styles (2026-10-03). The board runs WLED 16, whose
+# state has a global blending style "bs" (wled00/FX.h TRANSITION_*) used for
+# every look change over the current "transition" time. The operator picks
+# one style for normal song changes and one for medley hook changes; it is
+# applied only to the first look change within ACCENT_STYLED_WINDOW_S of a
+# new track, so dragging a color or effect while editing never wipes/flashes.
+# Board defaults (Fade, ACCENT_DEFAULT_TRANSITION_DS) are restored right
+# after. Per-song WLED presets that saved their own "bs"/"transition" may
+# override the style for that song -- WLED applies a preset's own values.
+# ------------------------------------------------------------
+TRANSITION_STYLES = [  # (key, remote label, WLED "bs" or None)
+    ("dissolve", "Dissolve (board default)", None),
+    ("cut", "Hard cut", None),
+    ("flash", "Flash white", None),
+    ("wipe_fwd", "Wipe →", 2),
+    ("wipe_rev", "Wipe ←", 3),
+    ("push_fwd", "Push →", 16),
+    ("push_rev", "Push ←", 17),
+    ("outside_in", "Outside-in", 4),
+    ("inside_out", "Inside-out", 5),
+    ("fairy", "Fairy dust", 1),
+]
+_STYLE_BS = {k: bs for k, _, bs in TRANSITION_STYLES}
+_trans_opts = {"mtime": None, "data": None}
+_seen_track = None
+_track_changed_at = 0.0
+_track_styled = True          # the current track's styled transition already ran (or none due)
+_transition_restore_at = 0.0  # when to put the board back on its default fade
+_flash_fade_pending = False   # flash style: next look send fades in from white
+_preview = None               # (style, phase_until, back) while the remote's Preview runs
+
+
+def _transition_path():
+    import os
+    return os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+                        config.ACCENT_TRANSITION_FILE)
+
+
+def transition_options():
+    """{"song": key, "medley": key} -- the remote's two transition pickers."""
+    import os
+    path = _transition_path()
+    try:
+        mtime = os.path.getmtime(path)
+    except OSError:
+        mtime = None
+    if mtime != _trans_opts["mtime"] or _trans_opts["data"] is None:
+        data = {}
+        if mtime is not None:
+            try:
+                with open(path, encoding="utf-8") as f:
+                    data = json.load(f)
+            except (OSError, ValueError):
+                data = {}
+        _trans_opts["data"], _trans_opts["mtime"] = data, mtime
+    d = _trans_opts["data"]
+    song = d.get("song", config.ACCENT_SONG_TRANSITION_DEFAULT)
+    medley = d.get("medley", config.ACCENT_MEDLEY_TRANSITION_DEFAULT)
+    return {"song": song if song in _STYLE_BS else "dissolve",
+            "medley": medley if medley in _STYLE_BS else "dissolve"}
+
+
+def set_transition_options(song=None, medley=None):
+    import os
+    cur = transition_options()
+    for slot, val in (("song", song), ("medley", medley)):
+        if val is not None:
+            if val not in _STYLE_BS:
+                raise ValueError("unknown transition style: %s" % val)
+            cur[slot] = val
+    path = _transition_path()
+    with open(path + ".tmp", "w", encoding="utf-8") as f:
+        json.dump(cur, f, indent=1)
+    os.replace(path + ".tmp", path)
+    _trans_opts["data"], _trans_opts["mtime"] = cur, os.path.getmtime(path)
+    return cur
+
+
+def preview_transition(style):
+    """Remote's Preview button: transition into plain white with `style`,
+    hold, then transition back with the same style -- shows which way the
+    wipes run on the real strip."""
+    global _preview
+    if style not in _STYLE_BS:
+        raise ValueError("unknown transition style: %s" % style)
+    _preview = (style, time.time() + config.ACCENT_PREVIEW_HOLD_S, False)
+
+
+def _begin_styled(style, now):
+    """Sends what must precede the look change for `style`. Returns False
+    for "flash", whose look send is deferred until the white has shown."""
+    global _flash_until, _flash_fade_pending, _transition_restore_at, _last_sent_look, _last_sent_bri
+    if style == "flash":
+        _send({"bri": 255, "tt": 0,
+               "seg": _with_segment_reset({"fx": config.ACCENT_FX_SOLID, "col": [[255, 255, 255]]})})
+        _flash_until = now + config.ACCENT_FLASH_WHITE_S
+        _flash_fade_pending = True
+        _last_sent_look = None
+        _last_sent_bri = None
+        return False
+    ds = 0 if style == "cut" else (config.ACCENT_MEDLEY_TRANSITION_DS if state.medley_active
+                                   else config.ACCENT_STYLED_TRANSITION_DS)
+    _send({"bs": _STYLE_BS[style] or 0, "transition": ds})
+    _transition_restore_at = now + ds / 10.0 + 1.0
+    return True
+
+
+def _styled_transition_due(look, now):
+    """The style to use for this look change, or None for a plain send."""
+    global _track_styled
+    if _preview is not None:
+        return _preview[0]
+    if _track_styled or _last_sent_look is None or now - _track_changed_at > config.ACCENT_STYLED_WINDOW_S:
+        return None
+    if (state.show_phase in ("setup", "countdown", "dark", "intro") or state.mode != state.MODE_DJ
+            or state.price_game_active):
+        return None
+    _track_styled = True
+    opts = transition_options()
+    style = opts["medley"] if state.medley_active else opts["song"]
+    return None if style == "dissolve" else style
+
+
+def _note_track_change(now):
+    global _seen_track, _track_changed_at, _track_styled
+    path = state.now_playing_path
+    if path != _seen_track:
+        _seen_track = path
+        _track_changed_at = now
+        _track_styled = False
 
 
 def sync_to_show_state():
@@ -322,12 +482,27 @@ def sync_to_show_state():
     ACCENT_REASSERT_INTERVAL_SECONDS' comment for why (a WLED-side reset
     this module has no way to detect directly)."""
     global _last_sent_look, _pending_override, _last_sent_bri, _last_sent_preset_speed, \
-        _preset_segments_active, _last_full_reassert_at
+        _preset_segments_active, _last_full_reassert_at, _preview, _flash_fade_pending, _transition_restore_at
     now = time.time()
+    _note_track_change(now)
+    global _blackout_sent
+    if state.blackout_active:
+        if not _blackout_sent and available():
+            _send({"on": False, "tt": 0})
+            _blackout_sent = True
+        return
+    if _blackout_sent:
+        _blackout_sent = False
+        _send({"on": True, "tt": 0})
+        _last_sent_look = None  # full resend of the look + brightness
+        _last_sent_bri = None
     if now < _flash_until:
         return
     if _manual_override is not None or not available():
         return
+    if _transition_restore_at and now >= _transition_restore_at and _preview is None:
+        _send({"bs": 0, "transition": config.ACCENT_DEFAULT_TRANSITION_DS})
+        _transition_restore_at = 0.0
     if now - _last_full_reassert_at >= config.ACCENT_REASSERT_INTERVAL_SECONDS:
         _last_sent_look = None
         _last_sent_bri = None
@@ -350,9 +525,31 @@ def sync_to_show_state():
         _send(_pending_override[1])
         _pending_override = None
     look = _target_look()
+    preview_style, preview_back = None, False
+    if _preview is not None:
+        preview_style, until, preview_back = _preview
+        if not preview_back and now < until:
+            look = ("preview",)
+        elif not preview_back:
+            _preview = (preview_style, 0.0, True)
+            preview_back = True
     if look != _last_sent_look:
+        if _flash_fade_pending:
+            # the white flash has shown -- fade from it into the new look
+            _flash_fade_pending = False
+            _send({"bs": 0, "transition": config.ACCENT_FLASH_FADE_DS})
+            _transition_restore_at = now + config.ACCENT_FLASH_FADE_DS / 10.0 + 1.0
+        else:
+            style = preview_style or _styled_transition_due(look, now)
+            if style is not None and not _begin_styled(style, now):
+                return  # flash: the look itself goes out once the white has shown
+        if preview_back:
+            _preview = None
         _pending_override = None  # a look change supersedes any not-yet-sent override for the old one
-        if look[0] == "preset":
+        if look[0] == "preview":
+            _send({"seg": _with_segment_reset({"fx": config.ACCENT_FX_SOLID, "col": [[255, 255, 255]],
+                                               **_raw_geometry()})})
+        elif look[0] == "preset":
             _send_preset(look[1], look[2])
         else:
             fx, r, g, b, sx, r2, g2, b2, pal, tt = look
@@ -362,6 +559,7 @@ def sync_to_show_state():
                 seg = {"fx": fx, "col": [[r, g, b]], "sx": sx, "pal": pal}
             else:
                 seg = {"fx": fx, "col": [[r, g, b], [r2, g2, b2]], "sx": sx, "pal": pal}
+            seg.update(_raw_geometry())
             payload = {"seg": _with_segment_reset(seg)}
             if tt is not None:
                 # One-shot transition-time override (WLED JSON API "tt",
@@ -382,7 +580,9 @@ def sync_to_show_state():
         # revert the board to the stale value -- self-corrects on the next speed touch, not worth the extra
         # bookkeeping to close.
         sx = max(0, min(255, state.accent_speed))
-        if sx != _last_sent_preset_speed:
+        if sx != _last_sent_preset_speed and look[1] in config.ACCENT_AUDIOREACTIVE_PRESETS:
+            _last_sent_preset_speed = sx  # tuned preset: ignore the speed slider
+        elif sx != _last_sent_preset_speed:
             targets = sorted({0, *(config.ACCENT_PRESET_OVERRIDE_TARGETS.get(look[1]) or [])})
             _send({"seg": [{"id": sid, "sx": sx} for sid in targets]})
             _last_sent_preset_speed = sx
@@ -390,6 +590,13 @@ def sync_to_show_state():
     if bri != _last_sent_bri:
         _send({"bri": bri})
         _last_sent_bri = bri
+
+
+def _raw_geometry():
+    """Offset / mirror / reverse every raw look is sent with (config.ACCENT_SEGMENT_*),
+    matching the Megablinds preset, instead of whatever the board last had."""
+    return {"of": config.ACCENT_SEGMENT_OFFSET, "mi": config.ACCENT_SEGMENT_MIRROR,
+            "rev": config.ACCENT_SEGMENT_REVERSE}
 
 
 def _with_segment_reset(seg):
@@ -429,6 +636,10 @@ def _send_preset(preset_id, color_index):
     global _pending_override, _preset_segments_active, _last_sent_preset_speed
     _send({"ps": preset_id})
     _preset_segments_active = True
+    if preset_id in config.ACCENT_AUDIOREACTIVE_PRESETS:
+        # Sound-reactive presets keep their own tuned speed/colors untouched.
+        _last_sent_preset_speed = max(0, min(255, state.accent_speed))
+        return
     sx = max(0, min(255, state.accent_speed))
     targets = config.ACCENT_PRESET_OVERRIDE_TARGETS.get(preset_id)
     speed_targets = sorted({0, *(targets or [])})
@@ -478,7 +689,7 @@ def set_movie_chase(all_panels):
     _manual_override = "top" if all_panels is False else "all"
     if all_panels:
         _send({"seg": {"id": 0, "start": 0, "stop": config.ACCENT_TOTAL_LEDS,
-                        "fx": config.ACCENT_FX_THEATER, "col": [[255, 255, 255]]}})
+                        "fx": config.ACCENT_FX_THEATER, "col": [[255, 255, 255]], **_raw_geometry()}})
     else:
         top = config.ACCENT_TOP_SEGMENT_LED_COUNT
         _send({"seg": [
@@ -658,6 +869,17 @@ def _try_find_and_claim():
         return
 
 
+_probe_fail_logged = {}
+
+
+def _log_probe_failure(device, why):
+    """Probe failures used to be completely silent; log them, but at most once a minute per port."""
+    now = time.time()
+    if now - _probe_fail_logged.get(device, 0.0) > 60.0:
+        _probe_fail_logged[device] = now
+        print(f"[ACCENT] Probe of {device}: {why}")
+
+
 def _open_and_probe(device):
     """Opens `device` once, asks WLED for its info, and returns the
     still-open link if info.mac matches config.ACCENT_WLED_MAC --
@@ -672,17 +894,36 @@ def _open_and_probe(device):
         link.rts = False
         time.sleep(_PROBE_SETTLE_S)
         link.reset_input_buffer()
-        link.write(b'{"v":true}\n')
-        time.sleep(_PROBE_REPLY_WAIT_S)
-        data = link.read(4096)
+        # Opening the port RESETS the ESP32 (DTR/RTS auto-reset, seen as a
+        # POWERON_RESET banner), and WLED then takes ~1.7s to answer (measured
+        # 2026-10-01 -- it grows with presets/usermods). A single 0.8s ask-and-
+        # read, as this used to be, fails every time once boot outlasts it,
+        # and each failed probe re-opens (= resets) the board, so it never
+        # gets claimed and just keeps rebooting into its own boot preset.
+        # So: keep asking until a complete JSON line arrives or the budget
+        # runs out; bail out early as soon as ANY board answers with a MAC.
         mac = None
-        text = data.decode("utf-8", errors="replace").strip()
-        for line in text.splitlines():
-            line = line.strip()
-            if line.startswith("{"):
-                mac = json.loads(line).get("info", {}).get("mac")
-                break
+        buf = b""
+        deadline = time.time() + _PROBE_TOTAL_S
+        while mac is None and time.time() < deadline:
+            link.write(b'{"v":true}\n')
+            time.sleep(_PROBE_REPLY_WAIT_S)
+            buf = (buf + link.read(4096))[-16384:]
+            for line in buf.decode("utf-8", errors="replace").splitlines():
+                line = line.strip()
+                if line.startswith("{") and line.endswith("}"):
+                    try:
+                        parsed = json.loads(line)
+                    except ValueError:
+                        continue   # a fragment/garbled line -- keep reading
+                    mac = parsed.get("info", {}).get("mac") if isinstance(parsed, dict) else None
+                    if mac:
+                        break
+        if mac is None:
+            _log_probe_failure(device, "no complete WLED reply within %.0fs" % _PROBE_TOTAL_S)
         if mac == config.ACCENT_WLED_MAC:
+            print(f"[ACCENT] Board firmware: WLED {parsed['info'].get('ver')} (build {parsed['info'].get('vid')}), "
+                  f"{parsed['info'].get('fxcount')} effects, state keys: {sorted(parsed.get('state', {}).keys())}")
             link.timeout = 1  # back to a normal read timeout for ongoing use, was _PROBE_REPLY_WAIT_S just for the probe
             return link
         link.close()
@@ -690,5 +931,6 @@ def _open_and_probe(device):
     except (OSError, serial.SerialException) as e:
         print(f"[ACCENT] Probe of {device} failed: {e}")
         return None
-    except Exception:
+    except Exception as e:
+        _log_probe_failure(device, f"{type(e).__name__}: {e}")
         return None

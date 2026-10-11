@@ -12,13 +12,30 @@ _input_tokens = 0
 _output_tokens = 0
 
 
-def record_usage(input_tokens, output_tokens):
+_other = {}   # model -> [input, output]; non-Haiku usage (question audits)
+
+
+def record_usage(input_tokens, output_tokens, model=None):
+    """`model` None = the Haiku runtime calls the Btn3 overlay prices. Any
+    other model (Sonnet/Opus question audits) is tallied separately so it
+    can't be mis-priced at Haiku rates."""
     global _input_tokens, _output_tokens
     if not input_tokens and not output_tokens:
         return
     with _lock:
+        if model:
+            t = _other.setdefault(model, [0, 0])
+            t[0] += int(input_tokens or 0)
+            t[1] += int(output_tokens or 0)
+            return
         _input_tokens += int(input_tokens or 0)
         _output_tokens += int(output_tokens or 0)
+
+
+def get_other():
+    """{model: (input_tokens, output_tokens)} for non-Haiku calls."""
+    with _lock:
+        return {m: tuple(v) for m, v in _other.items()}
 
 
 def get_totals():

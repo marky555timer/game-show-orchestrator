@@ -66,8 +66,11 @@ _session_start = time.time()
 if psutil is not None:
     psutil.cpu_percent(interval=None)  # prime the internal sampler
 
-# Rebuilt every render() call -- [{"id": str, "rect": pygame.Rect}]
+# Rebuilt on every full redraw (see render()) -- [{"id": str, "rect": pygame.Rect}]
 _click_regions = []
+OVERLAY_REDRAW_SECONDS = 0.25
+_cache = None  # last full redraw of the panel, re-blitted between redraws
+_cache_at = 0.0
 
 _PANEL_X = config.MATRIX_RENDER_WIDTH_PX
 _PAD = 10
@@ -146,6 +149,8 @@ def hit_test(pos):
 def handle_click(click_id):
     """Performs the action for a clicked region id. Called right after
     hit_test() returns a non-None id."""
+    global _cache
+    _cache = None  # show the result of the tap on the very next frame
     if click_id == "toggle_qr_mode":
         global _qr_mode
         _qr_mode = "client" if _qr_mode == "admin" else "admin"
@@ -242,11 +247,24 @@ def render(screen, t):
     right before pygame.display.flip(). Laid out in fixed-height columns
     (see the _COL*_W/_COL*_X constants above) that must never exceed
     config.WINDOW_H -- add new content as a new column, not more rows."""
-    global _click_regions
-    _click_regions = []
-
+    global _click_regions, _cache, _cache_at
     panel_rect = pygame.Rect(_PANEL_X, 0, config.OVERLAY_PANEL_WIDTH_PX, config.WINDOW_H)
+    panel_rect = panel_rect.clip(screen.get_rect())
+    # Slow-changing text, QR and buttons: redraw a few times a second and
+    # re-blit the cached copy in between (2026-10-08 CPU survey -- full
+    # per-frame text rendering was ~14% of the app's CPU). Only the desktop
+    # preview window; the LED panels never pass through here.
+    if _cache is not None and 0.0 <= t - _cache_at < OVERLAY_REDRAW_SECONDS:
+        screen.blit(_cache, panel_rect.topleft)
+        return
+    _click_regions = []
     pygame.draw.rect(screen, _BG, panel_rect)
+    _render_contents(screen, t)
+    _cache = screen.subsurface(panel_rect).copy()
+    _cache_at = t
+
+
+def _render_contents(screen, t):
 
     # --- Column 1: QR (tap to toggle admin remote <-> guest play link) ---
     x, y = _COL1_X, _PAD

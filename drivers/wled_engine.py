@@ -58,7 +58,7 @@ import serial
 import serial.tools.list_ports
 
 import config
-from drivers import color_utils, live_round_engine, serial_ports
+from drivers import color_utils, live_round_engine, serial_ports, transition_shapes
 from state import state
 
 _DDP_FLAGS_VERSION1_PUSH = 0x41
@@ -118,6 +118,10 @@ _last_serial_send_time = 0.0
 # thread and read here, a plain dict is fine under the GIL for this.
 _mac_verify_thread = None
 _mac_verify_result = {}  # device path -> True (confirmed marquee) / False (confirmed not)
+_mac_verify_tries = {}  # device path -> inconclusive probes so far (least-tried probed first)
+# Display.ino's heartbeat byte (drivers/led_bridge.py _HEARTBEAT_BYTE): a port
+# that answers with nothing but these is the matrix display board, not WLED.
+_DISPLAY_HEARTBEAT_BYTE = 0x5A
 
 # Serial write hand-off to _serial_sender_loop's dedicated thread -- same
 # shape/reasoning as _ddp_lock/_ddp_send_ready/_ddp_pending above. See that
@@ -161,7 +165,14 @@ def _find_esp32_port():
     not-yet-verified candidate per call otherwise (throttled by the
     caller's own _SERIAL_RESCAN_INTERVAL_S, so this is at most one new
     background probe every few seconds, not a tight loop)."""
-    for port in serial.tools.list_ports.comports():
+    # Least-probed first (2026-10-08): an inconclusive port used to be
+    # re-probed back-to-back forever because it came first in comports()
+    # order -- live deadlock: this kept the display board's port "verifying"
+    # nearly nonstop, so led_bridge.py never got it and kept grabbing the
+    # marquee's port instead, and this never reached the marquee's port.
+    ports = sorted(serial.tools.list_ports.comports(),
+                   key=lambda p: _mac_verify_tries.get(p.device, 0))
+    for port in ports:
         if (port.vid, port.pid) not in config.ESP32_USB_SERIAL_VID_PIDS:
             continue
         if serial_ports.held_by(port.device) is not None:
@@ -218,7 +229,12 @@ def _verify_candidate_mac(device):
         time.sleep(0.5)
         data = probe.read(4096)
         probe.close()
-        text = data.decode("utf-8", errors="replace").strip()
+        if data and all(b == _DISPLAY_HEARTBEAT_BYTE for b in data):
+            # Only the matrix display's heartbeat came back: definitely not
+            # WLED (2026-10-08) -- record it rather than re-probe forever.
+            probed_ok = True
+            print(f"[WLED] {device} is the matrix display board (heartbeat only) -- not the marquee.")
+        text = "" if probed_ok else data.decode("utf-8", errors="replace").strip()
         for line in text.splitlines():
             line = line.strip()
             if line.startswith("{"):
@@ -233,11 +249,14 @@ def _verify_candidate_mac(device):
         _mac_verify_result[device] = matched
     else:
         _mac_verify_result.pop(device, None)
+        _mac_verify_tries[device] = _mac_verify_tries.get(device, 0) + 1
 
 
 def _try_connect_serial():
     global _serial_link, _last_serial_scan_time, _serial_connect_time
     _last_serial_scan_time = time.monotonic()
+    if _usb_resetting:
+        return
     device = _find_esp32_port()
     if device is None:
         return
@@ -259,6 +278,8 @@ def _try_connect_serial():
         print(f"[WLED] Connected over serial on {device} (confirmed by MAC).")
     except Exception as e:
         print(f"[WLED] Could not open {device}: {e}")
+        if _mac_verify_result.get(device) is True and getattr(config, "WLED_HEARTBEAT_RESET", False):
+            _usb_reenumerate(device)  # the confirmed marquee port won't open -> its USB chip is stuck
         _mac_verify_result.pop(device, None)  # let a future scan re-verify rather than never trying this port again
 
 
@@ -413,6 +434,115 @@ def _fail_serial_link(link, error):
 # fallback.
 _PROACTIVE_RECONNECT_INTERVAL_S = 999999.0
 
+# Heartbeat (2026-10-03). The board froze mid-medley holding its last frame
+# while the Pi kept streaming -- nothing here could tell. WLED's serial
+# handler (wled_serial.cpp, AdaState::Header_A) answers a bare 'v' byte with
+# "WLED <version>\r\n", and Header_A is exactly the state it returns to after
+# every Adalight frame -- so unlike the '{"v":true}' JSON probe that was
+# abandoned above, a 'v' written straight after a frame is answered even
+# while realtime streaming is running. No reply for _HEARTBEAT_TIMEOUT_S =
+# the firmware's loop has stopped; config.WLED_HEARTBEAT_RESET decides
+# whether that only logs or also resets the board (port reopen, the same
+# thing force_reconnect() does).
+_HEARTBEAT_INTERVAL_S = 1.0
+_HEARTBEAT_TIMEOUT_S = 6.0
+_hb_last_probe = 0.0
+_hb_last_reply = 0.0
+_hb_link = None  # the link the two timestamps above belong to
+_hb_rx = b""
+_hb_missing_logged = False
+_hb_replies = 0
+
+
+def _heartbeat(link, now):
+    """Called on the sender thread right after each frame write."""
+    global _hb_last_probe, _hb_last_reply, _hb_link, _hb_rx, _hb_missing_logged, _hb_replies
+    if link is not _hb_link:
+        _hb_link = link
+        _hb_last_probe = 0.0
+        _hb_last_reply = now  # boot window counts as alive
+        _hb_rx = b""
+        _hb_missing_logged = False
+    try:
+        waiting = link.in_waiting
+        if waiting:
+            _hb_rx = (_hb_rx + link.read(waiting))[-256:]
+    except Exception as e:
+        _fail_serial_link(link, e)
+        return
+    if b"WLED" in _hb_rx:
+        if _hb_last_probe and _hb_replies == 0:
+            ver = _hb_rx[_hb_rx.rfind(b"WLED"):].split(b"\r")[0].decode("ascii", "replace")
+            print(f"[WLED] Heartbeat OK ({ver}).")
+        _hb_rx = b""
+        _hb_last_reply = now
+        _hb_replies += 1
+        if _hb_missing_logged:
+            print("[WLED] Heartbeat back.")
+            _hb_missing_logged = False
+    if now - _hb_last_probe >= _HEARTBEAT_INTERVAL_S:
+        if _hb_last_probe and now - _hb_last_probe > 3 * _HEARTBEAT_INTERVAL_S:
+            _hb_last_reply = now  # we stopped sending for a while -- restart the clock, don't blame the board
+        _hb_last_probe = now
+        try:
+            link.write(b"v")
+        except Exception as e:
+            _fail_serial_link(link, e)
+            return
+    silent = now - _hb_last_reply
+    if silent >= _HEARTBEAT_TIMEOUT_S and now - _serial_connect_time >= _SERIAL_BOOT_SETTLE_S + _HEARTBEAT_TIMEOUT_S:
+        if getattr(config, "WLED_HEARTBEAT_RESET", False):
+            device = link.port
+            _fail_serial_link(link, f"no heartbeat for {silent:.1f}s -- resetting board")
+            _usb_reenumerate(device)
+        elif not _hb_missing_logged:
+            print(f"[WLED] No heartbeat for {silent:.1f}s (log-only mode, not resetting).")
+            _hb_missing_logged = True
+
+
+_usb_resetting = False
+
+
+def _usb_reenumerate(device):
+    """2026-10-03, confirmed live: the marquee's CP2102 USB chip itself
+    stopped answering (dmesg "cp210x_open - Unable to enable UART", reopen
+    failed with EIO) -- a port reopen can't fix that, but de-authorizing and
+    re-authorizing the USB device (a software unplug/replug) did. Linux only,
+    needs passwordless sudo; blocks reconnect attempts while it runs."""
+    global _usb_resetting
+    import os
+    import subprocess
+    try:
+        usb_dir = os.path.realpath(f"/sys/class/tty/{os.path.basename(device)}/device/../..")
+    except Exception:
+        return
+    auth = os.path.join(usb_dir, "authorized")
+    if not os.path.exists(auth):
+        return
+
+    def work():
+        global _usb_resetting
+        try:
+            for val, pause in (("0", 1.5), ("1", 2.5)):
+                subprocess.run(["sudo", "-n", "tee", auth], input=val.encode(),
+                               stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=5)
+                time.sleep(pause)
+            print(f"[WLED] USB re-enumerated {os.path.basename(usb_dir)} ({device}).")
+        except Exception as e:
+            print(f"[WLED] USB re-enumerate of {device} failed: {e}")
+        finally:
+            _usb_resetting = False
+
+    _usb_resetting = True
+    threading.Thread(target=work, daemon=True, name="wled-usb-reset").start()
+
+
+def heartbeat_status():
+    """For diagnostics: (replies seen this process, seconds since last reply or None)."""
+    if _hb_link is None or _hb_link is not _serial_link:
+        return _hb_replies, None
+    return _hb_replies, round(time.monotonic() - _hb_last_reply, 1)
+
 
 def force_reconnect():
     """Manual recovery (recovery button): tears down the marquee's serial
@@ -450,6 +580,9 @@ def _serial_sender_loop():
             link.write(frame)
         except Exception as e:
             _fail_serial_link(link, e)
+            continue
+        _heartbeat(link, time.monotonic())
+        if link is not _serial_link:
             continue
         if time.monotonic() - _serial_connect_time >= _PROACTIVE_RECONNECT_INTERVAL_S:
             _fail_serial_link(link, f"proactive reconnect ({_PROACTIVE_RECONNECT_INTERVAL_S:.0f}s interval)")
@@ -684,9 +817,41 @@ def _dj_pattern_wave(now, r, g, b):
 
 def _dj_pattern_twinkle_base(now, r, g, b):
     """Pattern 2: a dim base wash of the current color with occasional
-    brighter sparkle pixels re-rolled every frame."""
+    brighter sparkle pixels re-rolled every frame (at 100% speed; slower
+    speeds hold each roll longer, faster ones sparkle more densely). Depth
+    sets the base wash: 0.25 at the default 50%, black at 100%."""
+    global _twinkle_next
+    if now < _twinkle_next:
+        return  # hold the current roll (slow speed)
+    _twinkle_next = max(_twinkle_next + _DANCE_FRAME_S, now - _DANCE_FRAME_S)  # ~1 roll per frame at 100%
+    base = 0.5 * (1.0 - state.marquee_depth / 100.0)
+    density = min(0.5, 0.08 * max(1.0, state.marquee_speed / 100.0))
     for i in range(config.MARQUEE_TOTAL_LEDS):
-        level = random.uniform(0.6, 1.0) if random.random() < 0.08 else 0.25
+        level = random.uniform(0.6, 1.0) if random.random() < density else base
+        set_pixel(i, r * level, g * level, b * level)
+
+
+_soft_levels = [0.0] * config.MARQUEE_TOTAL_LEDS
+
+
+def _dj_pattern_twinkle_soft(now, r, g, b):
+    """Pattern 10 (2026-10-05): Twinkle Base with a trailing glow -- each
+    sparkle pops on and then fades out smoothly (~0.3 s half-life at 100%
+    speed) instead of blinking off on the next roll. Same depth response as
+    Twinkle Base: depth sets the base wash the glows fade down to (0.25 at
+    the default 50%, black at 100%); speed scales spark rate and fade."""
+    k = _dance_dt / _DANCE_FRAME_S        # frames' worth of animation this tick
+    if k <= 0:
+        return
+    base = 0.5 * (1.0 - state.marquee_depth / 100.0)
+    spark = 1.0 - (1.0 - config.MARQUEE_TWINKLE_SOFT_SPARK_RATE) ** k
+    decay = config.MARQUEE_TWINKLE_SOFT_DECAY ** k
+    for i in range(config.MARQUEE_TOTAL_LEDS):
+        glow = _soft_levels[i] * decay
+        if random.random() < spark:
+            glow = max(glow, random.uniform(0.6, 1.0))
+        _soft_levels[i] = glow
+        level = base + (1.0 - base) * glow
         set_pixel(i, r * level, g * level, b * level)
 
 
@@ -702,23 +867,42 @@ def _dj_pattern_call_response(now, r, g, b):
 
 
 def _dj_pattern_complement_chase(now, r, g, b):
-    """Pattern 4: a comet in the current color chases each segment's own
-    loop, its fading tail blending into the color's complement (opposite
-    hue) instead of just dimming to black."""
-    cr, cg, cb = color_utils.hue_shift(r, g, b, 180)
-    tail = 7
+    """Pattern 4: the current color and its complement (opposite hue) as one
+    continuous gradient all the way around each segment's own loop --
+    color -> complement -> color, so the loop has no seam -- travelling at
+    the Rainbow Chase's pace (2026-10-05; was a 7-LED comet on black). The
+    blend is in RGB, then lifted back to full level, so the midpoint reads
+    as a pale mix (red/cyan -> white) instead of sagging to grey."""
+    comp = color_utils.hue_shift(r, g, b, 180)
     for seg in config.MARQUEE_SEGMENTS.values():
         count = seg["count"]
-        pos = (now / config.MARQUEE_DJ_CHASE_LAP_SECONDS * count) % count
         for offset in range(count):
-            dist = (offset - pos) % count
-            if dist < tail:
-                t = dist / tail
-                lr, lg, lb = r * (1 - t) + cr * t, g * (1 - t) + cg * t, b * (1 - t) + cb * t
-                level = 1.0 - t * 0.5
-                set_pixel(_segment_pixel_index(seg, offset), lr * level, lg * level, lb * level)
-            else:
-                set_pixel(_segment_pixel_index(seg, offset), 0, 0, 0)
+            p = (offset / count + now * config.MARQUEE_DJ_RAINBOW_SPEED) % 1.0
+            set_pixel(_segment_pixel_index(seg, offset), *_complement_mix((r, g, b), comp, p))
+
+
+def _complement_mix(col, comp, p):
+    """Color at phase p (0..1) of a color -> complement -> color loop: an RGB
+    blend lifted back to the brighter end's level, so the midpoint reads as
+    a pale mix rather than sagging to grey."""
+    t = 0.5 - 0.5 * math.cos(2 * math.pi * p)
+    mix = [a * (1 - t) + c * t for a, c in zip(col, comp)]
+    m = max(mix)
+    k = max(max(col), max(comp)) / m if m > 0 else 0.0
+    return mix[0] * k, mix[1] * k, mix[2] * k
+
+
+def _mirror_positions(name, seg):
+    """(global LED index, distance 0..count/2 from the segment's bounce pivot
+    -- config.MARQUEE_SEGMENT_CENTERS, a horizontal edge's center -- measured
+    either way round the loop). Patterns built on the distance are mirror-
+    symmetric and turn around at the pivot and the opposite center, so the
+    wiring seam (a corner) never shows. Wiring direction doesn't matter."""
+    n = seg["count"]
+    pivot = config.MARQUEE_SEGMENT_CENTERS.get(name, 0) % n
+    for pos in range(n):
+        d = (pos - pivot) % n
+        yield seg["start"] + pos, min(d, n - d)
 
 
 def _dj_pattern_rainbow_chase(now, r, g, b):
@@ -729,29 +913,46 @@ def _dj_pattern_rainbow_chase(now, r, g, b):
         count = seg["count"]
         for offset in range(count):
             hue = (offset / count + now * config.MARQUEE_DJ_RAINBOW_SPEED) % 1.0
-            pr, pg, pb = colorsys.hsv_to_rgb(hue, 1.0, 1.0)
+            pr, pg, pb = colorsys.hsv_to_rgb(hue, 1.0, _dance_bri)
             set_pixel(_segment_pixel_index(seg, offset), pr * 255, pg * 255, pb * 255)
 
 
 def _dj_pattern_bounce_comet(now, r, g, b):
-    """Pattern 6: a comet sweeps back and forth (not looping) within each
-    segment, current color at the head fading into an adjacent hue (a
-    small +30 deg shift, not a full complement) at the tail."""
+    """Pattern 6: a comet sweeps back and forth, current color at the head
+    fading into an adjacent hue (a small +30 deg shift, not a full
+    complement) at the tail. Since 2026-10-05 it's a mirrored PAIR per
+    segment: they leave one edge's center together, run up opposite sides,
+    meet at the other edge's center and bounce back -- the turnarounds are
+    at the centers, not the wiring seam in a corner."""
     ar, ag, ab = color_utils.hue_shift(r, g, b, 30)
     t = (now % config.MARQUEE_DJ_BOUNCE_PERIOD_SECONDS) / config.MARQUEE_DJ_BOUNCE_PERIOD_SECONDS
     triangle = t * 2 if t < 0.5 else 2 - t * 2  # 0 -> 1 -> 0
     tail = 5
-    for seg in config.MARQUEE_SEGMENTS.values():
-        pos = triangle * (seg["count"] - 1)
-        for offset in range(seg["count"]):
-            dist = abs(offset - pos)
+    for name, seg in config.MARQUEE_SEGMENTS.items():
+        pos = triangle * seg["count"] / 2
+        for i, d in _mirror_positions(name, seg):
+            dist = abs(d - pos)
             if dist < tail:
                 t2 = dist / tail
                 lr, lg, lb = r * (1 - t2) + ar * t2, g * (1 - t2) + ag * t2, b * (1 - t2) + ab * t2
                 level = 1.0 - t2 * 0.6
-                set_pixel(_segment_pixel_index(seg, offset), lr * level, lg * level, lb * level)
+                set_pixel(i, lr * level, lg * level, lb * level)
             else:
-                set_pixel(_segment_pixel_index(seg, offset), 0, 0, 0)
+                set_pixel(i, 0, 0, 0)
+
+
+def _dj_pattern_bounce_continuous(now, r, g, b):
+    """Pattern 9 (2026-10-05): the Complement Chase gradient, mirrored about
+    the bounce pivot (color at one edge's center, complement at the other),
+    flowing outward from the center for half of
+    MARQUEE_DJ_BOUNCE_GRADIENT_PERIOD_SECONDS, then back in."""
+    comp = color_utils.hue_shift(r, g, b, 180)
+    t = (now % config.MARQUEE_DJ_BOUNCE_GRADIENT_PERIOD_SECONDS) / config.MARQUEE_DJ_BOUNCE_GRADIENT_PERIOD_SECONDS
+    triangle = t * 2 if t < 0.5 else 2 - t * 2
+    for name, seg in config.MARQUEE_SEGMENTS.items():
+        n = seg["count"]
+        for i, d in _mirror_positions(name, seg):
+            set_pixel(i, *_complement_mix((r, g, b), comp, d / n - triangle))
 
 
 def _dj_pattern_confetti(now, r, g, b):
@@ -759,17 +960,30 @@ def _dj_pattern_confetti(now, r, g, b):
     decaying into the existing frame rather than a hard clear each tick --
     a trailing confetti/glitter look. The only pattern that reads directly
     from/writes directly to _pixels instead of going through set_pixel()
-    for every LED every frame, since the decay needs last frame's values."""
+    for every LED every frame, since the decay needs last frame's values.
+
+    Rates are per 40 fps frame at 100% speed, scaled by the speed dial's
+    clock step. Depth: the default 50% decays to black at 0.85/frame; higher
+    decays faster (crisper sparks, down to 0.6/frame at 100%); lower decays
+    only down to a glow of the current color (up to 40% of it at 0%)."""
     cr, cg, cb = color_utils.hue_shift(r, g, b, 180)
+    k = _dance_dt / _DANCE_FRAME_S        # frames' worth of animation this tick
+    if k <= 0:
+        return
+    depth = state.marquee_depth / 100.0
+    decay = (0.85 - 0.5 * max(0.0, depth - 0.5)) ** k
+    floor = 0.8 * max(0.0, 0.5 - depth)
+    fl = (r * floor, g * floor, b * floor)
+    spark = 1.0 - (1.0 - 0.06) ** k
     for i in range(config.MARQUEE_TOTAL_LEDS):
-        if random.random() < 0.06:
+        if random.random() < spark:
             pr, pg, pb = (cr, cg, cb) if random.random() < 0.5 else (r, g, b)
             set_pixel(i, pr, pg, pb)
         else:
             off = i * 3
-            _pixels[off] = int(_pixels[off] * 0.85)
-            _pixels[off + 1] = int(_pixels[off + 1] * 0.85)
-            _pixels[off + 2] = int(_pixels[off + 2] * 0.85)
+            for c in range(3):
+                v = _pixels[off + c]
+                _pixels[off + c] = int(min(255, fl[c] + (v - fl[c]) * decay if v > fl[c] else fl[c]))
 
 
 def _dj_pattern_movie_chase(now, r, g, b):
@@ -786,24 +1000,49 @@ def _dj_pattern_movie_chase(now, r, g, b):
 _DJ_PATTERNS = [
     _dj_pattern_breathe, _dj_pattern_wave, _dj_pattern_twinkle_base, _dj_pattern_call_response,
     _dj_pattern_complement_chase, _dj_pattern_rainbow_chase, _dj_pattern_bounce_comet, _dj_pattern_confetti,
-    _dj_pattern_movie_chase,
+    _dj_pattern_movie_chase, _dj_pattern_bounce_continuous, _dj_pattern_twinkle_soft,
 ]
 
 
+# Admin-panel dials (2026-10-05): the patterns run on their own clock, which
+# advances at state.marquee_speed % of real time; _dance_dt is this tick's
+# step of it (Confetti's decay), _dance_bri the brightness dial (Rainbow,
+# which ignores the color). Speed/brightness/depth/off are per-song.
+_DANCE_FRAME_S = 1.0 / 40      # main loop rate the per-frame patterns were tuned at
+_dance_clock = 0.0
+_dance_last = None
+_dance_dt = 0.0
+_dance_bri = 1.0
+_twinkle_next = 0.0
+
+
 def _apply_dj_dance(now):
+    global _dance_clock, _dance_last, _dance_dt, _dance_bri, _twinkle_next
+    dt = 0.0 if _dance_last is None else max(0.0, min(0.25, now - _dance_last))
+    _dance_last = now
+    _dance_dt = dt * state.marquee_speed / 100.0
+    _dance_clock += _dance_dt
+    if _twinkle_next > _dance_clock + 1.0:
+        _twinkle_next = 0.0
+    if state.marquee_off:
+        fill(0, 0, 0)
+        return
+    _dance_bri = max(0.0, min(1.0, state.marquee_brightness / 100.0))
+    t = _dance_clock
     r, g, b = _resolve_marquee_color(config.DJ_COLOR_PALETTE[state.marquee_color_index])
+    r, g, b = r * _dance_bri, g * _dance_bri, b * _dance_bri
     gradient_mode = state.marquee_gradient_mode
     if gradient_mode == "rainbow":
         # No "color" to shift -- always the rainbow sweep regardless of
         # marquee_theme_index, same override wled_engine's DMX/accent
         # counterparts use for their own rainbow gradient mode.
-        _dj_pattern_rainbow_chase(now, r, g, b)
+        _dj_pattern_rainbow_chase(t, r, g, b)
         return
     if gradient_mode in ("adjacent", "complementary"):
         degrees = 30 if gradient_mode == "adjacent" else 180
         r, g, b = color_utils.hue_shift(r, g, b, degrees)
     pattern_fn = _DJ_PATTERNS[state.marquee_theme_index % len(_DJ_PATTERNS)]
-    pattern_fn(now, r, g, b)
+    pattern_fn(t, r, g, b)
 
 
 def _apply_game_chase(now):
@@ -1167,6 +1406,127 @@ def _log_marquee_branch_transition(now):
         _last_marquee_branch = branch
 
 
+def _apply_locate():
+    """Admin "Show bounce centers" (config.MARQUEE_LOCATE_SECONDS): every
+    segment dim white, its bounce pivot GREEN, the opposite center BLUE, its
+    first wired LED RED then ORANGE, YELLOW (wiring direction) -- to check
+    config.MARQUEE_SEGMENT_CENTERS and map the physical layout by eye."""
+    fill(25, 25, 25)
+    for name, seg in config.MARQUEE_SEGMENTS.items():
+        n = seg["count"]
+        pivot = config.MARQUEE_SEGMENT_CENTERS.get(name, 0) % n
+        set_pixel(seg["start"] + 1, 255, 90, 0)
+        set_pixel(seg["start"] + 2, 255, 220, 0)
+        set_pixel(seg["start"], 255, 0, 0)
+        set_pixel(seg["start"] + pivot, 0, 255, 0)
+        set_pixel(seg["start"] + (pivot + n // 2) % n, 0, 0, 255)
+
+
+def _build_bulb_xy():
+    """Normalized (x, y) per LED, 0..1 across the board (y down), from
+    config.MARQUEE_LAYOUT's photo-measured runs."""
+    pts = [(0.0, 0.0)] * config.MARQUEE_TOTAL_LEDS
+    raw = {}
+    for name, runs in config.MARQUEE_LAYOUT.items():
+        i = config.MARQUEE_SEGMENTS[name]["start"]
+        for x0, y0, x1, y1, n in runs:
+            for k in range(n):
+                f = k / (n - 1) if n > 1 else 0.0
+                raw[i] = (x0 + (x1 - x0) * f, y0 + (y1 - y0) * f)
+                i += 1
+    xs = [p[0] for p in raw.values()]
+    ys = [p[1] for p in raw.values()]
+    w, h = max(xs) - min(xs) or 1.0, max(ys) - min(ys) or 1.0
+    for i, (x, y) in raw.items():
+        if 0 <= i < len(pts):
+            pts[i] = ((x - min(xs)) / w, (y - min(ys)) / h)
+    return pts
+
+
+_bulb_xy = _build_bulb_xy()
+_trans_seen = 0.0
+_trans_old = bytes(len(_pixels))
+
+
+_trans_rnd = [0.0] * config.MARQUEE_TOTAL_LEDS  # pixel dissolve order, re-rolled per transition
+
+
+def _apply_transition(now):
+    """Song-change transition (config.MARQUEE_TRANSITION_* / TRANSITION_*),
+    in step with graphics/matrix_canvas.py's board wipe. The order bulbs
+    change in comes from drivers/transition_shapes.pos() for
+    state.transition_style:
+    1. clear: a white band sweeps through, dark behind it, the old song's
+       last frame (frozen) ahead of it;
+    2. hold dark until state.marquee_reveal_at (crossfade/VO);
+    3. reveal: a band in the new marquee color sweeps through, the new look
+       (already rendered into _pixels this frame) behind it, dark ahead --
+       same moment/speed as the matrix reveal.
+    "flash" pops the whole board instead (white fading to dark, then the
+    new color fading into the new look); "sparkle_wipe" leaves a trail of
+    white sparkles behind the reveal band."""
+    style = state.transition_style
+    start = state.marquee_transition_start
+    t = now - start
+    clear = config.MARQUEE_TRANSITION_SECONDS
+    reveal_at = max(state.marquee_reveal_at, start + clear)
+    rdur = config.TRANSITION_REVEAL_SECONDS
+    band = config.MARQUEE_TRANSITION_BAND
+    tail = config.TRANSITION_SPARKLE_TRAIL if style == "sparkle_wipe" else 0.0
+    end = reveal_at + rdur * (1.0 + tail / (1.0 + 2 * band))
+    if t < 0 or now >= end:
+        return
+    bri = max(0.0, min(1.0, state.marquee_brightness / 100.0))
+    if clear <= t and now < reveal_at:
+        fill(0, 0, 0)
+        return
+    revealing = t >= clear
+    if revealing and state.marquee_off:
+        return
+    if revealing:
+        p = (now - reveal_at) / rdur
+        r, g, b = _resolve_marquee_color(config.DJ_COLOR_PALETTE[state.marquee_color_index])
+        r, g, b = r * bri, g * bri, b * bri
+    else:
+        p = t / clear
+        r = g = b = 255 * bri
+
+    if style == "flash":
+        k = max(0.0, 1.0 - p)  # the pop fades out over the phase
+        for i in range(config.MARQUEE_TOTAL_LEDS):
+            off = i * 3
+            if revealing:  # new color melting into the new look
+                nr, ng, nb = _pixels[off], _pixels[off + 1], _pixels[off + 2]
+                set_pixel(i, nr + (r - nr) * k, ng + (g - ng) * k, nb + (b - nb) * k)
+            else:          # white pop fading to dark
+                set_pixel(i, r * k, g * k, b * k)
+        return
+
+    edge = -band + (1.0 + 2 * band) * p
+    behind, ahead = ("new", "dark") if revealing else ("dark", "old")
+    for i, (x, y) in enumerate(_bulb_xy):
+        d = transition_shapes.pos(style, x, y, _trans_rnd[i])
+        if d < edge - band:
+            if revealing and tail and d >= edge - band - tail:
+                # sparkle trail: dense right behind the band, thinning out
+                closeness = 1.0 - (edge - band - d) / tail
+                if random.random() < 0.45 * closeness:
+                    v = random.uniform(0.5, 1.0) * 255 * bri
+                    set_pixel(i, v, v, v)
+                    continue
+            zone = behind
+        elif d < edge + band:
+            set_pixel(i, r, g, b)
+            continue
+        else:
+            zone = ahead
+        if zone == "dark":
+            set_pixel(i, 0, 0, 0)
+        elif zone == "old":
+            off = i * 3
+            _pixels[off:off + 3] = _trans_old[off:off + 3]
+
+
 def update(now):
     """Per-frame effects dispatch, called once per frame from main.py right
     before render(). Mirrors drivers/lighting_engine.py's show-phase
@@ -1180,7 +1540,15 @@ def update(now):
     Game starts -- see config.py's MARQUEE_GAME_* comment for why mode
     alone left a ~3.5s lag."""
     _log_marquee_branch_transition(now)
-    if time.time() < _flash_until:
+    global _trans_seen, _trans_old
+    if state.marquee_transition_start != _trans_seen:
+        _trans_seen = state.marquee_transition_start
+        _trans_old = bytes(_pixels)  # last frame of the old song, for the wipe
+        for i in range(len(_trans_rnd)):
+            _trans_rnd[i] = random.random()
+    if time.time() < state.marquee_locate_until:
+        _apply_locate()
+    elif time.time() < _flash_until:
         fill(*_flash_color)
     else:
         phase = state.show_phase
@@ -1241,6 +1609,10 @@ def update(now):
             fill(0, 0, 0)  # graded round, call-out over: dark until the next question
         else:
             _apply_game_chase(now)
+    if config.MARQUEE_TRANSITION_ENABLED and time.time() >= state.marquee_locate_until:
+        _apply_transition(time.time())
+    if state.blackout_active:
+        fill(0, 0, 0)  # admin blackout (drivers/blackout_engine.py)
     render()
 
 

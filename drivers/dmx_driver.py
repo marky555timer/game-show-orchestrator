@@ -25,8 +25,10 @@ import time
 import serial
 import serial.tools.list_ports
 
+import config
 from config import DMX_FIXTURE_CHANNELS, DMX_NUM_FIXTURES
 from drivers import dmx_head
+from state import state
 
 # FTDI FT232R, as reported by the Enttec DMX USB PRO itself (Manufacturer
 # "ENTTEC", Product "DMX USB PRO"). This is FTDI's generic default VID/PID,
@@ -210,14 +212,22 @@ class EnttecDMXPro:
             dmx_head.apply(self.dmx_data)
         except Exception as e:
             print(f"[DMX HEAD] apply failed: {e}")
-        data_len = len(self.dmx_data)
+        frame = self.dmx_data
+        if state.blackout_active:
+            # Admin blackout: every light channel 0 on the wire (dmx_data
+            # itself untouched, so the look returns on release), relays kept.
+            frame = bytearray(len(self.dmx_data))
+            for ch in (config.RELAY1_CHANNEL, config.RELAY2_CHANNEL, config.RELAY3_CHANNEL):
+                if 0 <= ch < len(frame):
+                    frame[ch] = self.dmx_data[ch]
+        data_len = len(frame)
         header = bytearray([
             self.START_VAL,
             self.SEND_DMX_LABEL,
             data_len & 0xFF,
             (data_len >> 8) & 0xFF
         ])
-        packet = bytes(header + self.dmx_data + bytearray([self.END_VAL]))
+        packet = bytes(header + frame + bytearray([self.END_VAL]))
         # Hand off to _sender_loop's dedicated thread rather than writing
         # here directly -- see that method's docstring for why. Bind the
         # frame to THIS specific link instance so a write that's still

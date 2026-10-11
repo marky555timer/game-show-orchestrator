@@ -106,6 +106,24 @@
     cursor: pointer; padding: 0;
   }
   .color-swatch-btn.selected { border-color: #fff; box-shadow: 0 0 0 2px #000; }
+  th.sortable { cursor: pointer; user-select: none; white-space: nowrap; }
+  th.sortable:hover { color: #bbb; }
+  th.sortable .arr { color: #ff3b30; margin-left: 3px; }
+  .lib-table-wrap { overflow-x: auto; }
+  .mpill {
+    display: inline-block; padding: 3px 10px; border-radius: 999px; font-size: .75rem; font-weight: 700;
+    cursor: pointer; text-decoration: none; white-space: nowrap; border: 1px solid;
+  }
+  .mpill.green { background: #123d1f; border-color: #2fbf5b; color: #9ff0b6; }
+  .mpill.yellow { background: #3d3512; border-color: #e0b92b; color: #ffe58a; }
+  .mpill.grey { background: #232327; border-color: #3a3a40; color: #8a8a93; }
+  .lib-date { font-size: .75rem; color: #888; white-space: nowrap; }
+  .audit-box { margin-top: 12px; }
+  .audit-cat { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 8px 0; border-bottom: 1px solid #2a2a2e; font-size: .85rem; }
+  .audit-cat .n { font-weight: 700; font-variant-numeric: tabular-nums; }
+  .audit-cat .n.ok { color: #6fdc8c; }
+  .audit-cat .n.todo { color: #ffd166; }
+  .audit-cat details { font-size: .75rem; color: #888; margin-top: 4px; max-height: 140px; overflow: auto; }
   .toast {
     position: fixed; left: 50%; bottom: 16px; transform: translateX(-50%);
     background: #202024; border: 1px solid #333; border-radius: 8px;
@@ -123,6 +141,7 @@
       <a href="/library" class="active">File Manager</a>
       <a href="/setup">Setup</a>
       <a href="/joyassign">Joy Assign</a>
+      <a href="/questions">Questions</a>
     </div>
   </div>
   <h1>File Manager</h1>
@@ -181,12 +200,29 @@
     </div>
     <div id="tag-error-text" style="font-size:.8rem;color:#ffb6b6;margin-top:6px;"></div>
 
+    <div class="row" style="margin-top:12px;align-items:center">
+      <button class="btn" id="audit-btn" onclick="libAudit()">Audit library</button>
+      <span style="color:#777;font-size:.75rem">Checks every track against tags, beat analysis, cue-outs, light designs and medley clips.</span>
+    </div>
+    <div class="audit-box" id="audit-box"></div>
+
+    <div class="lib-table-wrap">
     <table class="lib-track-table" id="lib-track-table" style="display:none">
       <thead>
-        <tr><th>Title</th><th>Artist</th><th>Length</th><th>Tags</th><th></th></tr>
+        <tr>
+          <th class="sortable" data-k="title" onclick="libSortBy('title')">Title<span class="arr"></span></th>
+          <th class="sortable" data-k="artist" onclick="libSortBy('artist')">Artist<span class="arr"></span></th>
+          <th class="sortable" data-k="duration" onclick="libSortBy('duration')">Length<span class="arr"></span></th>
+          <th class="sortable" data-k="tags" onclick="libSortBy('tags')">Tags<span class="arr"></span></th>
+          <th class="sortable" data-k="medley" onclick="libSortBy('medley')">Medley<span class="arr"></span></th>
+          <th class="sortable" data-k="last_edited" onclick="libSortBy('last_edited')">Last edited<span class="arr"></span></th>
+          <th class="sortable" data-k="last_played" onclick="libSortBy('last_played')">Last played<span class="arr"></span></th>
+          <th></th>
+        </tr>
       </thead>
       <tbody id="lib-track-body"></tbody>
     </table>
+    </div>
     <div class="lib-empty" id="lib-empty" style="display:none">No tracks match.</div>
   </section>
 
@@ -196,6 +232,21 @@
       <div class="row">
         <button class="btn" onclick="libCancelDelete()">Cancel</button>
         <button class="btn danger" style="width:auto" onclick="libConfirmDeleteGo()">Delete</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-backdrop" id="medley-pool-modal">
+    <div class="modal-box wide">
+      <p><strong id="mp-title"></strong><br>
+         <span style="color:#999;font-size:.85rem" id="mp-reason"></span></p>
+      <p style="font-size:.82rem;color:#999">This track isn't in the medley pool. You can force it in (it will then show
+         yellow, or green once you save a clip), or open the editor &mdash; saving a clip forces it in too.</p>
+      <div class="row" style="justify-content:flex-end">
+        <button class="btn" onclick="libMedleyModalClose()">Cancel</button>
+        <button class="btn" id="mp-unexclude" style="display:none" onclick="libMedleyPool('auto')">Clear exclusion</button>
+        <button class="btn" onclick="libMedleyPool('include')">Force into pool</button>
+        <button class="btn primary" style="width:auto" onclick="libMedleyEdit()">Open editor</button>
       </div>
     </div>
   </div>
@@ -212,6 +263,12 @@
         <label>Energy Rank (1 = mellow, 5 = floor-filler)
           <input type="number" id="tag-edit-energy" min="1" max="5" step="1">
         </label>
+      </div>
+
+      <div class="light-prefs-subhead">Medley clip</div>
+      <div class="row" style="margin-bottom:8px;align-items:center">
+        <span id="tag-edit-medley" style="font-size:.85rem;color:#bbb;flex:1"></span>
+        <button class="btn small" type="button" onclick="libMedleyEditFromTagEdit()">Edit clip</button>
       </div>
 
       <!-- Per-song DJ-look editor (2026-09-17): saved independently from
@@ -254,7 +311,7 @@
 // this same guard for the full rationale -- every cloudflared restart
 // mints a new *.trycloudflare.com URL, stranding any tab left open across
 // one. Only bounces a tab that's actually on the ephemeral tunnel domain.
-const _ADMIN_FALLBACK_URL = 'https://yannitellphotography.com/trivia/admin.php';
+const _ADMIN_FALLBACK_URL = 'https://triviacade.com/play/admin.php';
 const _API_FAIL_REDIRECT_THRESHOLD = 5;
 let _apiFailStreak = 0;
 let _apiFailRedirecting = false;
@@ -381,6 +438,63 @@ function _tagSummaryHtml(m) {
   return `<span class="lib-tags">${bits.join(' &middot; ')}</span>`;
 }
 
+// ---- sorting (header clicks) --------------------------------------------
+const _SORT_COLS = {
+  title: t => (t.title || '').toLowerCase(),
+  artist: t => (t.artist || '').toLowerCase(),
+  duration: t => t.duration || 0,
+  tags: t => (t.metadata && t.metadata.complete) ? (t.metadata.genre || '').toLowerCase() : null,
+  // yellow (AI points awaiting your review) first, then green (approved), then grey (not in pool)
+  medley: t => ({ auto: 3, clip: 2, off: 1 })[(t.medley || {}).state] || 0,
+  last_edited: t => t.last_edited || null,
+  last_played: t => t.last_played || null,
+};
+let _sortKey = 'artist', _sortDir = 1;
+try {
+  const sv = JSON.parse(localStorage.getItem('libSort') || 'null');
+  if (sv && _SORT_COLS[sv.k]) { _sortKey = sv.k; _sortDir = sv.d === -1 ? -1 : 1; }
+} catch (e) {}
+
+function libSortBy(k) {
+  if (_sortKey === k) _sortDir = -_sortDir;
+  else { _sortKey = k; _sortDir = (k === 'last_edited' || k === 'last_played' || k === 'medley') ? -1 : 1; }
+  try { localStorage.setItem('libSort', JSON.stringify({ k: _sortKey, d: _sortDir })); } catch (e) {}
+  _renderLibTracks();
+}
+
+function _applySort() {
+  const f = _SORT_COLS[_sortKey];
+  if (!f) return;
+  _libTracks.sort((a, b) => {
+    const x = f(a), y = f(b);
+    if (x == null && y == null) return 0;
+    if (x == null) return 1;           // empty values always sink to the bottom
+    if (y == null) return -1;
+    if (x < y) return -_sortDir;
+    if (x > y) return _sortDir;
+    return (a.title || '').localeCompare(b.title || '');
+  });
+}
+
+function _fmtStamp(ts) {
+  if (!ts) return '<span class="lib-date">&mdash;</span>';
+  const d = new Date(ts * 1000), diff = (Date.now() - d.getTime()) / 1000;
+  const rel = diff < 90 ? 'just now' : diff < 3600 ? Math.round(diff / 60) + 'm ago'
+    : diff < 86400 ? Math.round(diff / 3600) + 'h ago'
+    : diff < 86400 * 30 ? Math.round(diff / 86400) + 'd ago' : d.toLocaleDateString();
+  return `<span class="lib-date" title="${_escapeHtml(d.toLocaleString())}">${rel}</span>`;
+}
+
+function _medleyPillHtml(t, i) {
+  const m = t.medley || { state: 'off' };
+  const cls = m.state === 'clip' ? 'green' : m.state === 'auto' ? 'yellow' : 'grey';
+  const label = m.state === 'clip' ? 'Medley &#10003;' : 'Medley';
+  const tip = m.state === 'clip' ? 'In the pool - human-approved clip'
+    : m.state === 'auto' ? 'In the pool - AI-estimated in/out, not yet verified. Click to edit.'
+    : 'Not in the pool: ' + (m.reason || 'unknown') + '. Click to assign.';
+  return `<a class="mpill ${cls}" title="${_escapeHtml(tip)}" onclick="libMedleyClick(${i})">${label}</a>`;
+}
+
 function _renderLibTracks() {
   const table = document.getElementById('lib-track-table');
   const empty = document.getElementById('lib-empty');
@@ -392,6 +506,11 @@ function _renderLibTracks() {
   }
   table.style.display = '';
   empty.style.display = 'none';
+  // Rows address tracks by index into _libTracks, so sort that array in place.
+  _applySort();
+  document.querySelectorAll('#lib-track-table th.sortable').forEach(th => {
+    th.querySelector('.arr').textContent = th.dataset.k === _sortKey ? (_sortDir === 1 ? '\u25B2' : '\u25BC') : '';
+  });
   body.innerHTML = _libTracks.map((t, i) => {
     const isCued = t.filename === _libCuedFilename;
     return `
@@ -400,6 +519,9 @@ function _renderLibTracks() {
       <td><div class="lib-track-artist">${_escapeHtml(t.artist || 'Unknown artist')}</div></td>
       <td class="lib-track-duration">${_fmtDuration(t.duration)}</td>
       <td>${_tagSummaryHtml(t.metadata)}</td>
+      <td>${_medleyPillHtml(t, i)}</td>
+      <td>${_fmtStamp(t.last_edited)}</td>
+      <td>${_fmtStamp(t.last_played)}</td>
       <td>
         <div class="lib-actions">
           <button class="btn small cue ${isCued ? 'is-cued' : ''}" ${isCued ? 'disabled' : ''}
@@ -410,6 +532,85 @@ function _renderLibTracks() {
       </td>
     </tr>`;
   }).join('');
+}
+
+// ---- medley pill actions ---------------------------------------------------
+let _mpIndex = -1;
+function _medleyEditUrl(t) { return '/medley-edit?f=' + encodeURIComponent(t.filename); }
+
+function libMedleyClick(i) {
+  const t = _libTracks[i];
+  if (!t) return;
+  const m = t.medley || {};
+  if (m.state !== 'off') { location.href = _medleyEditUrl(t); return; }
+  _mpIndex = i;
+  document.getElementById('mp-title').textContent = t.title;
+  document.getElementById('mp-reason').textContent = 'Why: ' + (m.reason || 'unknown');
+  document.getElementById('mp-unexclude').style.display = m.excluded ? '' : 'none';
+  document.getElementById('medley-pool-modal').classList.add('open');
+}
+function libMedleyModalClose() { document.getElementById('medley-pool-modal').classList.remove('open'); }
+function libMedleyEdit() { const t = _libTracks[_mpIndex]; if (t) location.href = _medleyEditUrl(t); }
+async function libMedleyPool(mode) {
+  const t = _libTracks[_mpIndex];
+  if (!t) return;
+  const d = await api('/api/medley/pool', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ filename: t.filename, mode }) });
+  libMedleyModalClose();
+  if (d && d.ok) {
+    showToast(mode === 'include' ? 'Forced into the medley pool' : 'Pool setting cleared');
+    libRefresh();
+  } else {
+    showToast((d && d.reason) || 'Could not change the pool');
+  }
+}
+function libMedleyEditFromTagEdit() {
+  const t = _libTracks[_tagEditIndex];
+  if (t) location.href = _medleyEditUrl(t);
+}
+
+// ---- library audit -----------------------------------------------------------
+let _auditPoll = null;
+async function libAudit() {
+  const box = document.getElementById('audit-box');
+  box.innerHTML = '<span style="color:#999;font-size:.85rem">Auditing...</span>';
+  const d = await api('/api/library/audit');
+  if (!d || !d.ok) { box.textContent = 'Audit failed.'; return; }
+  const job = d.job || {};
+  const rows = Object.entries(d.categories).map(([k, c]) => {
+    const n = c.files.length;
+    const fix = (c.fixable && n)
+      ? `<button class="btn small primary" onclick="libAuditFix('${k}')" ${job.running ? 'disabled' : ''}>Fix ${n}</button>` : '';
+    const list = n ? `<details><summary>show ${n}</summary>${c.files.slice(0, 200).map(_escapeHtml).join('<br>')}${n > 200 ? '<br>...' : ''}</details>` : '';
+    return `<div class="audit-cat"><div>${_escapeHtml(c.label)}${list}</div>
+      <div class="row" style="flex-wrap:nowrap"><span class="n ${n ? 'todo' : 'ok'}">${n ? n : 'OK'}</span>${fix}</div></div>`;
+  }).join('');
+  box.innerHTML = `<div style="font-size:.8rem;color:#999;margin-bottom:4px">${d.total} tracks checked
+      <span id="audit-job" style="margin-left:8px;color:#ffd166"></span></div>${rows}`;
+  if (job.running) _auditWatch();
+}
+
+async function libAuditFix(what) {
+  if (what === 'tags') { startTagging(); return; }
+  const d = await api('/api/library/audit/fix', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ what }) });
+  if (!d || !d.ok) { showToast((d && d.reason) || 'Could not start'); return; }
+  showToast('Started: ' + what.replace('_', ' '));
+  _auditWatch();
+}
+
+function _auditWatch() {
+  clearInterval(_auditPoll);
+  _auditPoll = setInterval(async () => {
+    const j = await api('/api/library/audit/status');
+    const el = document.getElementById('audit-job');
+    if (!j) return;
+    if (el) el.textContent = j.running ? `${j.what.replace('_', ' ')}: ${j.done}/${j.total}` : '';
+    if (!j.running) {
+      clearInterval(_auditPoll);
+      if (j.error) showToast('Analysis stopped: ' + j.error);
+      libAudit();
+      libRefresh();
+    }
+  }, 2000);
 }
 
 async function libCue(index) {
@@ -795,6 +996,11 @@ function openTagEdit(index) {
   document.getElementById('tag-edit-accent-theme').value = String(_tagEditLightPrefs.accent_theme_index);
   _renderAllLightPrefsSwatches();
 
+  const mm = track.medley || {};
+  document.getElementById('tag-edit-medley').textContent =
+    mm.state === 'clip' ? `Human-approved clip (${(track.clip.out - track.clip.in).toFixed(1)}s)`
+    : mm.state === 'auto' ? 'In the pool - AI-estimated points (unverified)'
+    : 'Not in the pool: ' + (mm.reason || 'unknown');
   document.getElementById('tag-edit-modal').classList.add('open');
 }
 

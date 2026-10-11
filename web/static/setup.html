@@ -72,6 +72,7 @@
       <a href="/library">File Manager</a>
       <a href="/setup" class="active">Setup</a>
       <a href="/joyassign">Joy Assign</a>
+      <a href="/questions">Questions</a>
     </div>
   </div>
   <h1>Show Setup</h1>
@@ -91,6 +92,8 @@
       <label class="check"><input type="checkbox" id="exclude-slowdance"> Exclude slow dance / romantic ballads</label>
       <label class="check"><input type="checkbox" id="exclude-nevercharted"> Exclude deep cuts (never charted)</label>
     </div>
+    <h2 style="margin-top:16px">Allowed Decades <span style="color:#666;font-weight:400;text-transform:none;letter-spacing:0">(none checked = all decades)</span></h2>
+    <div class="genre-grid" id="decade-grid"></div>
     <h2 style="margin-top:16px">Allowed Genres <span style="color:#666;font-weight:400;text-transform:none;letter-spacing:0">(none checked = all genres)</span></h2>
     <div class="genre-grid" id="genre-grid"></div>
   </section>
@@ -144,7 +147,7 @@
 // this same guard for the full rationale -- every cloudflared restart
 // mints a new *.trycloudflare.com URL, stranding any tab left open across
 // one. Only bounces a tab that's actually on the ephemeral tunnel domain.
-const _ADMIN_FALLBACK_URL = 'https://yannitellphotography.com/trivia/admin.php';
+const _ADMIN_FALLBACK_URL = 'https://triviacade.com/play/admin.php';
 const _API_FAIL_REDIRECT_THRESHOLD = 5;
 let _apiFailStreak = 0;
 let _apiFailRedirecting = false;
@@ -295,6 +298,17 @@ function buildGenreGrid(genres) {
   ).join('');
 }
 
+function buildDecadeGrid(decades) {
+  const grid = document.getElementById('decade-grid');
+  grid.innerHTML = decades.map((d) =>
+    `<label class="check"><input type="checkbox" class="decade-cb" value="${d.value}"> ${d.label}</label>`
+  ).join('');
+}
+
+function selectedDecades() {
+  return Array.from(document.querySelectorAll('.decade-cb:checked')).map(cb => cb.value);
+}
+
 function selectedGenres() {
   return Array.from(document.querySelectorAll('.genre-cb:checked')).map(cb => cb.value);
 }
@@ -310,6 +324,7 @@ function buildSetupPayload() {
     exclude_slow_dance: document.getElementById('exclude-slowdance').checked,
     exclude_never_charted: document.getElementById('exclude-nevercharted').checked,
     allowed_genres: selectedGenres(),
+    allowed_decades: selectedDecades(),
     auto_final_round: document.getElementById('auto-final-round').checked,
     suppress_questions: document.getElementById('suppress-questions').checked,
     skip_intro: document.getElementById('skip-intro').checked,
@@ -353,6 +368,7 @@ async function loadStatus() {
   document.getElementById('avg-round-minutes').textContent = _avgRoundMinutes;
 
   buildGenreGrid(d.music_genres || []);
+  buildDecadeGrid(d.music_decades || []);
   document.getElementById('win-score-input').value = d.game_win_score || 15;
   document.getElementById('intermission-minutes-input').value = d.intermission_minutes || 5;
   document.getElementById('exclude-explicit').checked = !!d.exclude_explicit;
@@ -363,6 +379,11 @@ async function loadStatus() {
   document.getElementById('skip-intro').checked = !!d.skip_intro;
   (d.allowed_genres || []).forEach((g) => {
     const cb = document.querySelector(`.genre-cb[value="${g}"]`);
+    if (cb) cb.checked = true;
+  });
+
+  (d.allowed_decades || []).forEach((v) => {
+    const cb = document.querySelector(`.decade-cb[value="${v}"]`);
     if (cb) cb.checked = true;
   });
 

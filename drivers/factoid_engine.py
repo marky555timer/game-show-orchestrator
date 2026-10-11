@@ -6,6 +6,7 @@ import queue
 import random
 import itertools
 import threading
+import uuid
 
 try:
     import requests
@@ -310,6 +311,13 @@ def _apply_active_question(data, source):
 
     state.factoid_question = data.get("question", "")
     state.factoid_choices = list(data.get("choices", []))
+    # Phone wording (question audit page): the LED keeps the short text above;
+    # players' phones get the long text. Paired with the short question it
+    # belongs to so a question set by any other path can never inherit it.
+    long_choices = list(data.get("choices_long") or [])
+    state.factoid_question_long = data.get("question_long", "") or ""
+    state.factoid_choices_long = long_choices if len(long_choices) == len(state.factoid_choices) else []
+    state.factoid_long_pair = state.factoid_question
     # Drives the per-option cascade build-up every Game Mode question gets
     # (2026-09-18) -- see question_reveal_count() below. Set here, the one
     # shared chokepoint for every question source, so it covers all of
@@ -530,6 +538,7 @@ class TrackQuestionEngine:
     def __init__(self):
         self._cache = {}  # key -> list[question dict], up to TRACK_QUESTIONS_PER_TRACK
         self._cache_lock = threading.Lock()
+        self._save_file_lock = threading.Lock()  # serializes the temp-file write + replace
         # PriorityQueue (2026-08-15, Hot Track feature): lower number =
         # served first. _queue_seq is a tie-breaker so two same-priority
         # items never fall back to comparing the (key, title, artist)
@@ -563,17 +572,66 @@ class TrackQuestionEngine:
             if os.path.exists(config.TRACK_CACHE_PATH):
                 with open(config.TRACK_CACHE_PATH, "r", encoding="utf-8") as f:
                     self._cache = json.load(f)
-        except Exception:
+        except Exception as e:
+            # This file is the master question database (audit status lives
+            # in it): never let an unreadable file be silently replaced by
+            # the next save. Move it aside so it can be recovered by hand.
             self._cache = {}
+            try:
+                aside = f"{config.TRACK_CACHE_PATH}.corrupt-{int(time.time())}"
+                os.replace(config.TRACK_CACHE_PATH, aside)
+                print(f"[TRACK CACHE] track_cache.json was unreadable ({e}); moved to {aside}")
+            except Exception:
+                pass
+        # Every question carries a stable id (the audit page addresses
+        # questions by it, not by list position). Older questions get one here.
+        changed = False
+        for lst in self._cache.values():
+            for q in lst:
+                if isinstance(q, dict) and not q.get("qid"):
+                    q["qid"] = uuid.uuid4().hex[:12]
+                    changed = True
+        if changed:
+            self._save_cache()
 
     def _save_cache(self):
+        # Atomic: write a temp file, then replace. A power cut mid-write can
+        # no longer leave a half-written master database.
         try:
+            # Compact (no indent): indent forces Python's slow pure-Python
+            # encoder, ~10x slower, and this runs on every audit edit.
             with self._cache_lock:
-                snapshot = dict(self._cache)
-            with open(config.TRACK_CACHE_PATH, "w", encoding="utf-8") as f:
-                json.dump(snapshot, f, indent=2)
-        except Exception:
-            pass
+                snapshot = json.dumps(self._cache)
+            tmp = f"{config.TRACK_CACHE_PATH}.tmp"
+            with self._save_file_lock:
+                with open(tmp, "w", encoding="utf-8") as f:
+                    f.write(snapshot)
+                os.replace(tmp, config.TRACK_CACHE_PATH)
+        except Exception as e:
+            print(f"[TRACK CACHE] save failed: {e}")
+
+    def peek(self, key):
+        """Deep copy of one song's question list (empty if none)."""
+        with self._cache_lock:
+            return json.loads(json.dumps(self._cache.get(key, [])))
+
+    def snapshot(self):
+        """Deep copy of the whole cache ({key: [question dicts]}), for the
+        audit page."""
+        with self._cache_lock:
+            return json.loads(json.dumps(self._cache))
+
+    def edit(self, key, fn):
+        """Runs fn(list_of_questions_for_key) under the cache lock (the list
+        is created if missing and may be mutated in place), then saves.
+        Returns fn's result. The audit page's only write path."""
+        with self._cache_lock:
+            lst = self._cache.setdefault(key, [])
+            result = fn(lst)
+            if not lst:
+                self._cache.pop(key, None)
+        self._save_cache()
+        return result
 
     def is_exhausted(self, key):
         """One-shot AI query policy: True if this track key was marked
@@ -602,8 +660,10 @@ class TrackQuestionEngine:
 
         key = _sanitize_track_key(title, artist)
 
-        with self._cache_lock:
-            cached = list(self._cache.get(key, []))
+        # Lock-free on purpose: this runs every frame on the main loop, and
+        # the audit page's saves hold _cache_lock while they serialize. A
+        # dict.get + list copy is atomic under the GIL.
+        cached = list(self._cache.get(key, []))
 
         if key != state.factoid_track_key:
             state.factoid_track_key = key
@@ -904,7 +964,7 @@ class TrackQuestionEngine:
         with self._cache_lock:
             existing = list(self._cache.get(key, []))
         if len(existing) >= config.TRACK_QUESTIONS_PER_TRACK:
-            return
+            return None
         style_hint = self._style_hints_for_track(key)[len(existing) % len(self._QUESTION_STYLE_HINTS)]
 
         for _attempt in range(3):
@@ -920,7 +980,14 @@ class TrackQuestionEngine:
                 if state.factoid_track_key == key and not existing:
                     self._set_status(key, None, reason)
                 _print_failure_banner(title, artist, reason)
-                return
+                return reason
+
+            # Audit bookkeeping (drivers/question_audit.py): stable id + the
+            # "AI generated, unverified" starting stage. The offline fallback
+            # question (network down) is stamped as such so the audit page
+            # can spot it -- it was never written for this song.
+            from drivers import question_audit
+            question_audit.stamp_new(result, source="fallback" if result.get("headline") == "offline trivia" else "ai")
 
             with self._cache_lock:
                 existing = list(self._cache.get(key, []))
@@ -942,7 +1009,16 @@ class TrackQuestionEngine:
                     self._maybe_arm_price_game(key, result["release_year"])
             _maybe_apply_online_bpm(key, result.get("bpm"))
             _maybe_cache_energy(key, result.get("energy"))
-            return
+            # The AI's full sentence becomes the phone wording and a terse
+            # headline is written for the LED. Until it lands, both show the
+            # full sentence.
+            if result.get("source") != "fallback":
+                try:
+                    question_audit.ensure_wording(key, title, artist, result.get("qid"))
+                except Exception as e:
+                    print(f"[TRACK PREFETCH] LED wording failed for '{title}': {e}")
+            return None
+        return "DUPLICATE QUESTION"
 
     def _call_ai(self, title, artist, style_hint):
         """Returns (result_dict, None) on success, or (None, reason_str) on failure."""
@@ -979,7 +1055,14 @@ def call_haiku(prompt, max_tokens=500, timeout=None):
     return _post_haiku(prompt, max_tokens=max_tokens, timeout=timeout)
 
 
-def _post_haiku(prompt, max_tokens=500, timeout=None):
+def call_model(prompt, model, max_tokens=700, timeout=None):
+    """Same (text, reason) contract as call_haiku, for an explicit model --
+    used only by the operator-started question audit (drivers/
+    question_audit.py), never by anything that runs on its own in a show."""
+    return _post_haiku(prompt, max_tokens=max_tokens, timeout=timeout, model=model)
+
+
+def _post_haiku(prompt, max_tokens=500, timeout=None, model=None):
     """Shared Anthropic Haiku call + response-text extraction, reused by
     every AI prompt in this module (track trivia and the Price Game pricing
     question below). Returns (text, None) on success, or (None, reason_str)
@@ -996,8 +1079,9 @@ def _post_haiku(prompt, max_tokens=500, timeout=None):
             json={
                 # Runtime question generation is cost-gated to Haiku only
                 # (Section 1) -- AI_CLEANUP_MODEL is pinned to Haiku, never
-                # Sonnet/Opus, in config.py.
-                "model": config.AI_CLEANUP_MODEL,
+                # Sonnet/Opus, in config.py. The one exception is the
+                # operator-started audit, which passes `model` explicitly.
+                "model": model or config.AI_CLEANUP_MODEL,
                 "max_tokens": max_tokens,
                 "messages": [{"role": "user", "content": prompt}],
             },
@@ -1022,7 +1106,7 @@ def _post_haiku(prompt, max_tokens=500, timeout=None):
     try:
         data = resp.json()
         usage = data.get("usage") or {}
-        token_tracker.record_usage(usage.get("input_tokens", 0), usage.get("output_tokens", 0))
+        token_tracker.record_usage(usage.get("input_tokens", 0), usage.get("output_tokens", 0), model=model)
         text = "".join(
             block.get("text", "") for block in data.get("content", []) if block.get("type") == "text"
         ).strip()

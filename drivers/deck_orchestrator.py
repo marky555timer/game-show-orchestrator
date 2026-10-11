@@ -133,6 +133,20 @@ def _pick_next_track():
     if not candidates:
         candidates = tracks  # exhausted the no-repeat window -- everything's fair game again
 
+    # Remote's "next track = medley songs only" checkbox: lets the operator
+    # walk the hottest tracks to dress each with lighting. Falls back to the
+    # whole library if the pool has nothing left outside the no-repeat window.
+    try:
+        from drivers import medley_engine
+        pool = medley_engine.next_only_paths()
+    except Exception as e:
+        print(f"[DECK] medley-only filter skipped: {e}")
+        pool = None
+    if pool:
+        in_pool = [t for t in candidates if t["path"] in pool] or [t for t in tracks if t["path"] in pool]
+        if in_pool:
+            candidates = in_pool
+
     filtered = _apply_show_filters(candidates)
     if filtered:
         candidates = filtered
@@ -153,7 +167,8 @@ def _apply_show_filters(candidates):
     tagged, and treating "unknown" as "exclude" would silently starve the
     rotation for a partially-tagged library."""
     if not (state.show_exclude_explicit or state.show_exclude_slow_dance
-            or state.show_exclude_never_charted or state.show_allowed_genres):
+            or state.show_exclude_never_charted or state.show_allowed_genres
+            or state.show_allowed_decades):
         return candidates  # no filters active -- skip the metadata lookup entirely
 
     from drivers.music_metadata_engine import get_metadata_for
@@ -172,6 +187,8 @@ def _apply_show_filters(candidates):
         if state.show_exclude_never_charted and meta.get("never_charted"):
             continue
         if state.show_allowed_genres and meta.get("genre") and meta["genre"] not in state.show_allowed_genres:
+            continue
+        if state.show_allowed_decades and meta.get("decade") and meta["decade"] not in state.show_allowed_decades:
             continue
         out.append(t)
     return out
@@ -231,6 +248,28 @@ def _pick_with_history(paths, history, history_size):
     if len(history) > history_size:
         history.pop(0)
     return choice
+
+
+_transition_class_turns = {}
+
+
+def _transition_style_for(sweeper_path):
+    """Light-transition shape for this song change: paired with the
+    sweeper's class (config.SWEEPER_TRANSITION_STYLES, keyed by file-name
+    prefix, longest match first), rotating within that class; a plain
+    crossfade (or an unknown class) takes config.TRANSITION_STYLES in turn."""
+    styles, key = config.TRANSITION_STYLES or ["wipe_lr"], ""
+    if sweeper_path:
+        stem = os.path.splitext(os.path.basename(sweeper_path))[0].lower()
+        for k in sorted(config.SWEEPER_TRANSITION_STYLES, key=len, reverse=True):
+            if stem.startswith(k):
+                styles, key = config.SWEEPER_TRANSITION_STYLES[k] or styles, k
+                break
+    turn = _transition_class_turns.get(key, 0)
+    _transition_class_turns[key] = turn + 1
+    style = styles[turn % len(styles)]
+    print(f"[TRANSITION] {style} (sweeper class '{key or 'none'}')")
+    return style
 
 
 def _pick_sweeper():
@@ -493,11 +532,14 @@ def _begin_move(direction, announced, sweeper_only=False):
 
 
 def trigger_track_move(direction):
-    """Manual gamepad/web "next"/"back". Announced (sweeper+VO, same
-    choreography as Auto-DJ's own transitions) when state.auto_announce_enabled
-    is on, otherwise a plain crossfade -- one setting governs every
-    transition, manual or automatic (2026-08-08)."""
-    _begin_move(direction, announced=state.auto_announce_enabled)
+    """Manual gamepad/web "next"/"back" (and Auto-DJ with announcements
+    off). Since 2026-10-07 the remote's two checkboxes are independent:
+    ANNOUNCEMENTS = the spoken VO, SFX = the sweeper. Both on -> sweeper +
+    VO; VO only -> the VO with no whoosh; SFX only -> sweeper over the
+    crossfade; neither -> plain crossfade. update() re-checks state.sfx_enabled
+    when the move actually fires."""
+    announced = state.auto_announce_enabled
+    _begin_move(direction, announced=announced, sweeper_only=not announced)
 
 
 def trigger_announced_track_move():
@@ -517,13 +559,18 @@ def trigger_sweeper_only_track_move():
     file to caption it from. Every later transition that night goes back
     to the normal trigger_track_move()/Auto-DJ behavior, unaffected by
     this."""
+    global _get_ready_next
+    _get_ready_next = True  # only this handoff shows "GET READY"; a plain SFX-only change has no banner
     _begin_move("next", announced=False, sweeper_only=True)
+
+
+_get_ready_next = False
 
 
 def update(now):
     """Per-frame pump -- called once per frame from
     inputs/gamepad.py::process_events(), same as under the old MIDI version."""
-    global _pending
+    global _pending, _get_ready_next
     if _pending is None:
         return
 
@@ -541,12 +588,15 @@ def update(now):
         fade_duration = CROSSFADE_SECONDS
         played_announcement = False
         played_sweeper_only = False
+        played_sweeper_path = None  # picks the light transition's style
         # Reset every transition (2026-08-11) -- only set to a real future
         # timestamp in the announced/sweeper-only branches below. A plain
         # crossfade has no announcement to wait for, so the mystery teaser
         # should arm immediately for it, same as always.
         state.mystery_defer_until = 0.0
-        if _pending.get("sweeper_only"):
+        if _pending.get("sweeper_only") and not state.sfx_enabled:
+            dj_engine.crossfade_decks(outgoing_name, incoming_name, CROSSFADE_SECONDS)
+        elif _pending.get("sweeper_only"):
             # Trivia Night show flow's first-song handoff (2026-08-14):
             # sweeper "whoosh" plays, but deliberately no spoken
             # announcement -- see trigger_sweeper_only_track_move(). Timed
@@ -561,6 +611,7 @@ def update(now):
                     crossfade_seconds=fade_duration,
                 )
                 played_sweeper_only = True
+                played_sweeper_path = sweeper_path
                 state.mystery_defer_until = now + fade_duration
             else:
                 print("[DECK ORCHESTRATOR] Sweeper-only move requested but no sweeper files "
@@ -571,15 +622,19 @@ def update(now):
             # decoded every sweeper/announcement file at import time -- so this
             # never blocks, unlike before (2026-08-07 fix, see module docstring).
             sweeper_path, announcement_path = _pick_sweeper(), _pick_announcement()
-            if sweeper_path and announcement_path:
-                sweeper_sound = _load_cached(sweeper_path)
+            if not state.sfx_enabled:
+                sweeper_path = None  # SFX checkbox off: the VO without the whoosh
+            if announcement_path and (sweeper_path or not state.sfx_enabled):
+                sweeper_sound = _load_cached(sweeper_path) if sweeper_path else None
                 announcement_sound = _load_cached(announcement_path)
                 dj_engine.play_sweeper_and_announcement(
                     sweeper_sound, announcement_sound,
                     outgoing_deck=outgoing_name, incoming_deck=incoming_name,
                 )
-                fade_duration = SWEEPER_OVERLAP_SECONDS + announcement_sound.get_length()
+                fade_duration = ((SWEEPER_OVERLAP_SECONDS if sweeper_sound else 0.0)
+                                 + announcement_sound.get_length())
                 played_announcement = True
+                played_sweeper_path = sweeper_path
                 # Per-file caption table (drivers/announcement_engine.py,
                 # 2026-08-10 redesign): the banner shows whichever caption
                 # is on file for THIS specific announcement clip, not one
@@ -636,11 +691,19 @@ def update(now):
             state.announcement_banner_text_override = ""  # clear any stale sweeper-only override
             state.announcement_banner_from = now
             state.announcement_banner_until = now + max(config.ANNOUNCEMENT_BANNER_HOLD_SECONDS, wipe_hold)
-        elif played_sweeper_only:
+        elif played_sweeper_only and _get_ready_next:
             state.announcement_banner_text_override = "GET READY"
             state.announcement_banner_from = now
             state.announcement_banner_until = now + max(config.ANNOUNCEMENT_BANNER_HOLD_SECONDS, wipe_hold)
+        _get_ready_next = False
 
+        state.blank_lower_marquees = True  # default for every new song; a saved exception is re-applied once it is identified
+        state.marquee_transition_start = time.time()  # marquee wipe on every song change
+        state.marquee_reveal_at = state.marquee_transition_start + wipe_hold  # in step with the matrix reveal
+        state.transition_style = _transition_style_for(played_sweeper_path)
+        state.transition_count += 1
+        from drivers import light_prefs_engine
+        light_prefs_engine.reset_marquee_dials()  # same rule for brightness/speed/depth/off
         deck_track = (track["title"], track["artist"])
         if target_deck == 1:
             state.deck1_track, state.deck1_confident, state.deck1_track_source = deck_track, True, "native"
@@ -650,6 +713,11 @@ def update(now):
         state.active_deck = target_deck
         state.now_playing_duration = track["duration"]
         state.now_playing_path = track["path"]
+        try:
+            from drivers import track_record
+            track_record.touch_played(track["path"])
+        except Exception:
+            pass
         # DMX pace follows the track's own stored tempo (ID3 BPM tag) when it
         # has one. Otherwise it resets to config.TEMPO_DEFAULT_BPM (120)
         # rather than carrying the previous song's tempo forward

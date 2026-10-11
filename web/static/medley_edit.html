@@ -1,0 +1,400 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>Medley Clip Editor</title>
+<style>
+  :root { color-scheme: dark; }
+  * { box-sizing: border-box; }
+  body { margin: 0; padding: 12px 12px 40px; background: #0b0b0d; color: #f2f2f2;
+         font-family: -apple-system, Segoe UI, Roboto, sans-serif; -webkit-tap-highlight-color: transparent; }
+  .top { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+  .top .ttl { flex: 1; min-width: 0; }
+  .ttl h1 { font-size: 1rem; margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .ttl .sub { font-size: .78rem; color: #999; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  button { cursor: pointer; font: inherit; }
+  .btn { padding: 10px 14px; border-radius: 8px; border: 1px solid #333; background: #202024; color: #f2f2f2; font-size: .9rem; touch-action: manipulation; }
+  .btn.primary { background: #ff3b30; border-color: #ff3b30; color: #fff; font-weight: 700; }
+  .btn.small { padding: 7px 10px; font-size: .8rem; }
+  .btn.danger { background: #4a0f0f; border-color: #ff3b30; color: #ffb6b6; }
+  .btn:disabled { opacity: .4; cursor: default; }
+  .btn.grey { background: #1a1a1d; color: #666; border-color: #2a2a2e; }
+  .card { background: #17171a; border-radius: 10px; padding: 12px; margin-bottom: 12px; }
+  .pill { display: inline-block; padding: 3px 10px; border-radius: 999px; font-size: .75rem; font-weight: 700; border: 1px solid; }
+  .pill.green { background: #123d1f; border-color: #2fbf5b; color: #9ff0b6; }
+  .pill.yellow { background: #3d3512; border-color: #e0b92b; color: #ffe58a; }
+  .pill.grey { background: #232327; border-color: #3a3a40; color: #8a8a93; }
+  #loadbox { text-align: center; padding: 26px 10px; }
+  #loadbar { height: 8px; background: #2a2a2e; border-radius: 4px; overflow: hidden; margin: 10px auto 0; max-width: 420px; }
+  #loadfill { height: 100%; width: 0; background: #ff3b30; transition: width .15s; }
+  #wavewrap { position: relative; background: #101013; border-radius: 8px; overflow: hidden; touch-action: none; }
+  canvas { display: block; width: 100%; height: 190px; }
+  #scroll { width: 100%; margin: 8px 0 0; }
+  .row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+  .times { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin: 12px 0 4px; text-align: center; }
+  .times .k { font-size: .68rem; text-transform: uppercase; letter-spacing: .05em; color: #777; }
+  .times .v { font-size: 1.05rem; font-weight: 700; font-variant-numeric: tabular-nums; }
+  .times .s { font-size: .72rem; color: #999; }
+  .nudge { display: flex; gap: 4px; flex-wrap: wrap; align-items: center; margin-top: 6px; }
+  .nudge .lbl { font-size: .75rem; color: #999; width: 34px; }
+  label.chk { display: flex; align-items: center; gap: 6px; font-size: .85rem; color: #ccc; }
+  .hint { font-size: .75rem; color: #777; margin-top: 6px; }
+  .toast { position: fixed; left: 50%; bottom: 16px; transform: translateX(-50%); background: #202024; border: 1px solid #333;
+           border-radius: 8px; padding: 8px 14px; font-size: .85rem; opacity: 0; transition: opacity .2s; pointer-events: none; max-width: 90vw; text-align: center; }
+  .toast.show { opacity: 1; }
+  .warn { color: #ffd166; font-size: .8rem; margin-top: 6px; }
+</style>
+</head>
+<body>
+  <div class="top">
+    <button class="btn" onclick="exitEditor()">&larr; Back</button>
+    <div class="ttl"><h1 id="t-title">Medley clip</h1><div class="sub" id="t-sub"></div></div>
+    <span id="pool-pill" class="pill grey"></span>
+    <button class="btn primary" id="save-top" onclick="saveAndExit()" disabled>Save &amp; Exit</button>
+  </div>
+
+  <div class="card" id="loadbox">
+    <div id="load-text">Loading track&hellip;</div>
+    <div id="loadbar"><div id="loadfill"></div></div>
+    <div class="hint">The track downloads once to this device so scrubbing and preview play instantly, with no network lag.</div>
+  </div>
+
+  <div id="editor" style="display:none">
+    <div class="card">
+      <div id="wavewrap"><canvas id="wave"></canvas></div>
+      <input type="range" id="scroll" min="0" max="1000" value="0" style="display:none">
+      <div class="row" style="margin-top:8px">
+        <button class="btn small" onclick="zoomWhole()">Whole track</button>
+        <button class="btn small" onclick="zoomClip()">Zoom to clip</button>
+        <button class="btn small" onclick="zoomBy(0.5)">+</button>
+        <button class="btn small" onclick="zoomBy(2)">&minus;</button>
+        <span class="hint" style="margin:0 0 0 auto">Drag the red handles, or drag inside the highlight to move it. Scroll wheel zooms.</span>
+      </div>
+      <div class="times">
+        <div><div class="k">In</div><div class="v" id="v-in">0:00.0</div><div class="s" id="s-in"></div></div>
+        <div><div class="k">Length</div><div class="v" id="v-len">0.0s</div><div class="s" id="s-len"></div></div>
+        <div><div class="k">Out</div><div class="v" id="v-out">0:00.0</div><div class="s" id="s-out"></div></div>
+      </div>
+      <div class="nudge"><span class="lbl">In</span>
+        <button class="btn small" onclick="nudge('in',-1)">&minus;1 beat</button><button class="btn small" onclick="nudge('in',1)">+1 beat</button>
+        <button class="btn small" onclick="nudge('in',-.02,true)">&minus;20ms</button><button class="btn small" onclick="nudge('in',.02,true)">+20ms</button></div>
+      <div class="nudge"><span class="lbl">Out</span>
+        <button class="btn small" onclick="nudge('out',-1)">&minus;1 beat</button><button class="btn small" onclick="nudge('out',1)">+1 beat</button>
+        <button class="btn small" onclick="nudge('out',-.02,true)">&minus;20ms</button><button class="btn small" onclick="nudge('out',.02,true)">+20ms</button></div>
+    </div>
+
+    <div class="card">
+      <div class="row">
+        <button class="btn primary" id="play-btn" onclick="togglePlay()">&#9654; Preview</button>
+        <button class="btn" onclick="hear('in')">Hear start</button>
+        <button class="btn" onclick="hear('out')">Hear end</button>
+        <label class="chk"><input type="checkbox" id="loop"> Loop</label>
+      </div>
+      <div class="row" style="margin-top:12px;align-items:center">
+        <button class="btn" id="markplay-btn" onclick="markPlay()">&#9654; Play &amp; mark</button>
+        <button class="btn" id="markin-btn" onclick="markIn()" disabled>IN</button>
+        <button class="btn primary" id="markout-btn" onclick="markOut()" disabled style="min-width:110px;font-weight:800">OUT</button>
+        <span class="hint" style="margin:0">Plays from just before the In point &mdash; tap OUT (or press O) the moment the clip should end. I marks In.</span>
+      </div>
+      <div class="row" style="margin-top:12px">
+        <button class="btn" id="quant-btn" onclick="quantize()">Quantize to beat</button>
+        <label class="chk"><input type="checkbox" id="snap"> Snap handles to beats</label>
+        <button class="btn small" id="reset-btn" onclick="resetToSuggestion()">Reset to AI suggestion</button>
+      </div>
+      <div class="warn" id="grid-note"></div>
+      <div class="hint">Quantize snaps both points to the track's beat grid and keeps snapping while you drag. The faint yellow band is the AI-suggested hook.</div>
+    </div>
+
+    <div class="card">
+      <div class="row">
+        <span style="font-size:.85rem;color:#999">Medley pool:</span>
+        <button class="btn small" onclick="setPool('include')">Force in</button>
+        <button class="btn small" onclick="setPool('exclude')">Keep out</button>
+        <button class="btn small" onclick="setPool('auto')">Automatic</button>
+        <button class="btn small danger" id="del-btn" onclick="deleteClip()" style="margin-left:auto" disabled>Remove saved clip</button>
+      </div>
+      <div class="hint" id="pool-reason"></div>
+    </div>
+
+    <div class="row">
+      <button class="btn primary" onclick="saveAndExit()" id="save-bot">Save &amp; Exit</button>
+      <button class="btn" onclick="exitEditor()">Exit without saving</button>
+    </div>
+  </div>
+  <div class="toast" id="toast"></div>
+
+<script>
+const FILE = new URLSearchParams(location.search).get('f') || '';
+const MIN_LEN = 2, MAX_LEN = 90;
+let info = null, buf = null, peaks = null, dur = 0;
+let tIn = 0, tOut = 16, saved = null, dirty = false, base = null;
+let view = { a: 0, b: 1 };
+let markMode = false;
+let ctx = null, src = null, gain = null, playStart = 0, playFrom = 0, playTo = 0, playing = false, raf = 0, playLoop = false;
+const cv = document.getElementById('wave'), g2 = cv.getContext('2d');
+
+function $(id) { return document.getElementById(id); }
+function toast(m) { const t = $('toast'); t.textContent = m; t.classList.add('show'); clearTimeout(toast._t); toast._t = setTimeout(() => t.classList.remove('show'), 2400); }
+function fmt(t) { t = Math.max(0, t); const m = Math.floor(t / 60); return m + ':' + (t - m * 60).toFixed(1).padStart(4, '0'); }
+function setPill(pool) {
+  const p = $('pool-pill');
+  const s = pool && pool.state;
+  p.className = 'pill ' + (s === 'clip' ? 'green' : s === 'auto' ? 'yellow' : 'grey');
+  p.textContent = s === 'clip' ? 'Medley ✓' : s === 'auto' ? 'Medley (AI)' : 'Medley (off)';
+  $('pool-reason').textContent = !pool ? '' : pool.state === 'off' ? 'Not in the pool: ' + (pool.reason || '')
+    : pool.state === 'auto' ? 'In the pool using AI-estimated in/out points - save a clip to approve them.' : 'In the pool with your approved clip.';
+}
+
+// ---- beat grid -----------------------------------------------------------
+function period() { return 60 / info.bpm; }
+function hasGrid() { return !!(info && info.grid_ok && info.bpm && info.beat_phase != null); }
+function nearestBeat(t) { const p = period(); return Math.min(dur, Math.max(0, info.beat_phase + Math.round((t - info.beat_phase) / p) * p)); }
+function beatNo(t) { return Math.round((t - info.beat_phase) / period()); }
+
+// ---- load ----------------------------------------------------------------
+async function fetchAudio(url, onProgress) {
+  let cache = null;
+  try { cache = await caches.open('medley-audio-v1'); } catch (e) {}
+  if (cache) {
+    try { const hit = await cache.match(url); if (hit) { onProgress(1, 1); return await hit.arrayBuffer(); } } catch (e) {}
+  }
+  const res = await fetch(url);
+  if (!res.ok) throw new Error('download failed (' + res.status + ')');
+  const total = +res.headers.get('Content-Length') || 0;
+  const reader = res.body.getReader(); const chunks = []; let got = 0;
+  for (;;) { const { done, value } = await reader.read(); if (done) break; chunks.push(value); got += value.length; onProgress(got, total); }
+  const out = new Uint8Array(got); let o = 0; for (const c of chunks) { out.set(c, o); o += c.length; }
+  if (cache) {
+    try {
+      await cache.put(url, new Response(out.buffer.slice(0), { headers: { 'Content-Type': 'audio/mpeg' } }));
+      const keys = await cache.keys(); for (let i = 0; i < keys.length - 8; i++) await cache.delete(keys[i]);   // keep the last 8 tracks
+    } catch (e) {}
+  }
+  return out.buffer;
+}
+
+function computePeaks(b, n) {
+  const ch0 = b.getChannelData(0), ch1 = b.numberOfChannels > 1 ? b.getChannelData(1) : ch0;
+  const out = new Float32Array(n), step = ch0.length / n;
+  for (let i = 0; i < n; i++) {
+    let sum = 0, cnt = 0; const a = Math.floor(i * step), z = Math.min(ch0.length, Math.floor((i + 1) * step));
+    const stride = Math.max(1, Math.floor((z - a) / 64));
+    for (let j = a; j < z; j += stride) { sum += Math.max(Math.abs(ch0[j]), Math.abs(ch1[j])); cnt++; }
+    out[i] = cnt ? Math.min(1, (sum / cnt) * 1.5) : 0;   // mean level (peaks flatten loud masters into a block)
+  }
+  return out;
+}
+
+async function init() {
+  if (!FILE) { $('load-text').textContent = 'No track selected.'; return; }
+  info = await (await fetch('/api/medley/clip?filename=' + encodeURIComponent(FILE))).json();
+  if (!info.ok) { $('load-text').textContent = info.reason || 'Track not found.'; return; }
+  $('t-title').textContent = info.title;
+  $('t-sub').textContent = info.artist + (info.bpm ? ' · ' + info.bpm.toFixed(1) + ' BPM' : '');
+  setPill(info.pool); saved = info.clip;
+  try {
+    const ab = await fetchAudio('/api/library/audio?filename=' + encodeURIComponent(FILE), (got, total) => {
+      const pct = total ? Math.round(got / total * 100) : 0;
+      $('loadfill').style.width = (total ? pct : 50) + '%';
+      $('load-text').textContent = 'Downloading track… ' + (total ? pct + '%  (' + (got / 1048576).toFixed(1) + ' / ' + (total / 1048576).toFixed(1) + ' MB)' : (got / 1048576).toFixed(1) + ' MB');
+    });
+    $('load-text').textContent = 'Decoding…';
+    ctx = new (window.AudioContext || window.webkitAudioContext)();
+    buf = await new Promise((ok, bad) => ctx.decodeAudioData(ab, ok, bad));
+  } catch (e) { $('load-text').textContent = 'Could not load the track: ' + e.message; return; }
+  dur = buf.duration;
+  peaks = computePeaks(buf, 24000);
+  // starting region: saved clip > AI hook > a 16-beat window in the middle
+  if (saved) { tIn = saved.in; tOut = saved.out; }
+  else if (info.hook) { tIn = info.hook.start; tOut = info.hook.end; }
+  else { tIn = dur * 0.4; tOut = Math.min(dur, tIn + 15); }
+  if (hasGrid()) { $('grid-note').textContent = ''; }
+  else {
+    $('quant-btn').disabled = true; $('quant-btn').classList.add('grey'); $('snap').disabled = true;
+    $('grid-note').textContent = "Couldn't find a reliable beat grid for this track, so Quantize is unavailable. You can still set In/Out freely.";
+  }
+  if (!info.hook) $('reset-btn').disabled = true;
+  $('del-btn').disabled = !saved;
+  $('loadbox').style.display = 'none'; $('editor').style.display = '';
+  base = { in: tIn, out: tOut };
+  fit(); zoomWhole(); update(); $('save-top').disabled = false;
+}
+
+// ---- drawing / interaction ----------------------------------------------
+function fit() { const r = cv.getBoundingClientRect(); const d = window.devicePixelRatio || 1; cv.width = Math.round(r.width * d); cv.height = Math.round(r.height * d); }
+function xOf(t) { return (t - view.a) / (view.b - view.a) * cv.width; }
+function tOf(x) { return view.a + x / cv.width * (view.b - view.a); }
+
+function draw(cursorT) {
+  if (!buf) return;
+  const W = cv.width, H = cv.height, mid = H / 2; g2.clearRect(0, 0, W, H);
+  if (info.hook) { g2.fillStyle = 'rgba(224,185,43,.13)'; g2.fillRect(xOf(info.hook.start), 0, xOf(info.hook.end) - xOf(info.hook.start), H); }
+  g2.fillStyle = 'rgba(255,59,48,.20)'; g2.fillRect(xOf(tIn), 0, xOf(tOut) - xOf(tIn), H);
+  const n = peaks.length, pxN = Math.ceil(W);
+  g2.fillStyle = '#7d8cff';
+  for (let x = 0; x < pxN; x++) {
+    const t0 = tOf(x), t1 = tOf(x + 1); if (t1 < 0 || t0 > dur) continue;
+    const i0 = Math.max(0, Math.floor(t0 / dur * n)), i1 = Math.min(n - 1, Math.max(i0, Math.floor(t1 / dur * n)));
+    let m = 0; for (let i = i0; i <= i1; i++) if (peaks[i] > m) m = peaks[i];
+    const h = Math.max(1, m * (H * 0.46)); g2.fillRect(x, mid - h, 1, h * 2);
+  }
+  // beat grid when zoomed far enough to be useful
+  if (hasGrid() && (view.b - view.a) / period() < W / (8 * (window.devicePixelRatio || 1))) {
+    const p = period(); const k0 = Math.ceil((view.a - info.beat_phase) / p), k1 = Math.floor((view.b - info.beat_phase) / p);
+    for (let k = k0; k <= k1; k++) { const x = xOf(info.beat_phase + k * p); g2.fillStyle = (k % 4 === 0) ? 'rgba(255,255,255,.28)' : 'rgba(255,255,255,.10)'; g2.fillRect(x, 0, 1, H); }
+  }
+  // handles
+  for (const [t, c] of [[tIn, '#ff3b30'], [tOut, '#ff3b30']]) {
+    const x = xOf(t); g2.fillStyle = c; g2.fillRect(x - 1.5, 0, 3, H);
+    g2.beginPath(); g2.arc(x, 14 * (window.devicePixelRatio || 1), 9 * (window.devicePixelRatio || 1), 0, 6.3); g2.fill();
+  }
+  if (cursorT != null) { const x = xOf(cursorT); g2.fillStyle = '#fff'; g2.fillRect(x - 1, 0, 2, H); }
+}
+
+function update() {
+  $('v-in').textContent = fmt(tIn); $('v-out').textContent = fmt(tOut); $('v-len').textContent = (tOut - tIn).toFixed(1) + 's';
+  if (hasGrid()) {
+    const beats = Math.round((tOut - tIn) / period());
+    $('s-len').textContent = beats + ' beats · ' + (beats / 4).toFixed(1) + ' bars';
+    $('s-in').textContent = 'beat ' + beatNo(tIn); $('s-out').textContent = 'beat ' + beatNo(tOut);
+  } else { $('s-len').textContent = ''; $('s-in').textContent = ''; $('s-out').textContent = ''; }
+  dirty = !!base && (Math.abs(base.in - tIn) > 0.001 || Math.abs(base.out - tOut) > 0.001);
+  syncScroll(); draw(playing ? curT() : null);
+}
+
+function clampRegion(which) {
+  if (which === 'in') tIn = Math.max(0, Math.min(tIn, tOut - MIN_LEN));
+  else if (which === 'out') tOut = Math.min(dur, Math.max(tOut, tIn + MIN_LEN));
+  if (tOut - tIn > MAX_LEN) { if (which === 'in') tIn = tOut - MAX_LEN; else tOut = tIn + MAX_LEN; }
+}
+function snapIf(t) { return ($('snap').checked && hasGrid()) ? nearestBeat(t) : t; }
+
+let drag = null;
+function pos(e) { const r = cv.getBoundingClientRect(); return (e.clientX - r.left) * (cv.width / r.width); }
+cv.addEventListener('pointerdown', e => {
+  if (!buf) return; cv.setPointerCapture(e.pointerId);
+  const x = pos(e), tol = 26 * (window.devicePixelRatio || 1), xi = xOf(tIn), xo = xOf(tOut);
+  if (Math.abs(x - xi) < tol && Math.abs(x - xi) <= Math.abs(x - xo)) drag = { k: 'in' };
+  else if (Math.abs(x - xo) < tol) drag = { k: 'out' };
+  else if (x > xi && x < xo) drag = { k: 'move', off: tOf(x) - tIn, len: tOut - tIn };
+  else drag = { k: 'pan', x0: x, a0: view.a, b0: view.b };
+});
+cv.addEventListener('pointermove', e => {
+  if (!drag) return; const x = pos(e), t = tOf(x);
+  if (drag.k === 'in') { tIn = snapIf(t); clampRegion('in'); }
+  else if (drag.k === 'out') { tOut = snapIf(t); clampRegion('out'); }
+  else if (drag.k === 'move') { let a = snapIf(t - drag.off); a = Math.max(0, Math.min(dur - drag.len, a)); tIn = a; tOut = a + drag.len; }
+  else { const dt = (drag.x0 - x) / cv.width * (drag.b0 - drag.a0); const w = drag.b0 - drag.a0; view.a = Math.max(0, Math.min(dur - w, drag.a0 + dt)); view.b = view.a + w; }
+  update();
+});
+const endDrag = () => { drag = null; };
+cv.addEventListener('pointerup', endDrag); cv.addEventListener('pointercancel', endDrag);
+cv.addEventListener('wheel', e => { e.preventDefault(); const t = tOf(pos(e)); zoomAt(t, e.deltaY > 0 ? 1.25 : 0.8); }, { passive: false });
+
+function setView(a, b) { const w = Math.max(1, Math.min(dur, b - a)); a = Math.max(0, Math.min(dur - w, a)); view = { a, b: a + w }; update(); }
+function zoomAt(t, f) { const w = (view.b - view.a) * f; const r = (t - view.a) / (view.b - view.a); setView(t - r * w, t - r * w + w); }
+function zoomBy(f) { zoomAt((view.a + view.b) / 2, f); }
+function zoomWhole() { setView(0, dur); }
+function zoomClip() { const pad = Math.max(2, (tOut - tIn) * 0.25); setView(tIn - pad, tOut + pad); }
+const sc = $('scroll');
+sc.addEventListener('input', () => { const w = view.b - view.a; const a = sc.value / 1000 * (dur - w); view = { a, b: a + w }; draw(playing ? curT() : null); });
+function syncScroll() { const w = view.b - view.a; if (w >= dur - 0.01) { sc.style.display = 'none'; return; } sc.style.display = ''; sc.value = Math.round(view.a / (dur - w) * 1000); }
+window.addEventListener('resize', () => { fit(); update(); });
+
+function nudge(which, amt, fine) {
+  const d = fine ? amt : (hasGrid() ? amt * period() : amt * 0.1);
+  if (which === 'in') { tIn = Math.max(0, tIn + d); clampRegion('in'); } else { tOut = Math.min(dur, tOut + d); clampRegion('out'); }
+  update();
+}
+function quantize() {
+  if (!hasGrid()) return;
+  tIn = nearestBeat(tIn); tOut = nearestBeat(tOut);
+  if (tOut - tIn < MIN_LEN) tOut = nearestBeat(tIn + MIN_LEN + period());
+  clampRegion('in'); $('snap').checked = true; update(); toast('Snapped to the beat grid');
+}
+function resetToSuggestion() { if (!info.hook) return; tIn = info.hook.start; tOut = info.hook.end; update(); }
+
+// ---- local preview -------------------------------------------------------
+function curT() { return playFrom + (ctx.currentTime - playStart); }
+function stop() {
+  if (src) { try { src.onended = null; src.stop(); } catch (e) {} src.disconnect(); src = null; }
+  playing = false; markMode = false; cancelAnimationFrame(raf); $('play-btn').innerHTML = '&#9654; Preview';
+  $('markin-btn').disabled = true; $('markout-btn').disabled = true; $('markplay-btn').innerHTML = '&#9654; Play &amp; mark'; draw(null);
+}
+function playRange(a, b, loop) {
+  stop(); if (!buf) return; if (ctx.state === 'suspended') ctx.resume();
+  src = ctx.createBufferSource(); src.buffer = buf; gain = ctx.createGain(); src.connect(gain); gain.connect(ctx.destination);
+  const len = b - a, f = Math.min(0.03, len / 4), now = ctx.currentTime;
+  gain.gain.setValueAtTime(0, now); gain.gain.linearRampToValueAtTime(1, now + f);
+  gain.gain.setValueAtTime(1, now + len - f); gain.gain.linearRampToValueAtTime(0, now + len);
+  src.start(now, a, len); playStart = now; playFrom = a; playTo = b; playing = true; playLoop = loop;
+  src.onended = () => { if (!playing) return; if (playLoop && $('loop').checked) playRange(a, b, true); else stop(); };
+  $('play-btn').innerHTML = '&#9632; Stop';
+  const tick = () => {
+    if (!playing) return;
+    const c = Math.min(curT(), playTo);
+    if (markMode) { const w = view.b - view.a; if (c > view.b - w * 0.1 || c < view.a) { const a = Math.max(0, Math.min(dur - w, c - w * 0.2)); view = { a, b: a + w }; syncScroll(); } }
+    draw(c); raf = requestAnimationFrame(tick);
+  }; tick();
+}
+function togglePlay() { if (playing) stop(); else playRange(tIn, tOut, true); }
+function hear(which) { if (which === 'in') playRange(tIn, Math.min(dur, tIn + 4), false); else playRange(Math.max(0, tOut - 4), Math.min(dur, tOut + 0.6), false); }
+function heardT() { return Math.max(0, curT() - ((ctx && ctx.outputLatency) || 0)); }   // what you are hearing now, not what was scheduled
+function markPlay() {
+  if (markMode) { stop(); return; }
+  playRange(Math.max(0, tIn - 4), dur, false);
+  markMode = true; $('markin-btn').disabled = false; $('markout-btn').disabled = false; $('markplay-btn').innerHTML = '&#9632; Stop';
+}
+function markOut() {
+  if (!markMode || !playing) return;
+  let t = snapIf(heardT());
+  if (t < tIn + MIN_LEN) { toast('Out must be at least ' + MIN_LEN + ' s after In - keep listening'); return; }
+  if (t - tIn > MAX_LEN) t = tIn + MAX_LEN;
+  stop(); tOut = Math.min(dur, t); update(); zoomClip(); toast('Out marked at ' + fmt(tOut));
+}
+function markIn() {
+  if (!markMode || !playing) return;
+  const t = snapIf(heardT()), len = Math.max(MIN_LEN, tOut - tIn);
+  tIn = Math.max(0, Math.min(t, dur - MIN_LEN)); if (tOut - tIn < MIN_LEN || tOut - tIn > MAX_LEN) tOut = Math.min(dur, tIn + Math.min(len, MAX_LEN));
+  update(); toast('In marked at ' + fmt(tIn));
+}
+document.addEventListener('keydown', e => {
+  if (markMode && playing && !e.repeat) {
+    if (e.code === 'KeyO') { e.preventDefault(); markOut(); return; }
+    if (e.code === 'KeyI') { e.preventDefault(); markIn(); return; }
+  } if (e.code === 'Space' && buf && !/INPUT|BUTTON/.test(document.activeElement.tagName)) { e.preventDefault(); togglePlay(); } });
+
+// ---- save / pool ---------------------------------------------------------
+async function post(path, body) {
+  const r = await fetch(path, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+  return r.json();
+}
+async function saveAndExit() {
+  const d = await post('/api/medley/clip', { filename: FILE, start: +tIn.toFixed(3), end: +tOut.toFixed(3) });
+  if (!d.ok) { toast(d.reason || 'Save failed'); return; }
+  saved = d.clip; base = { in: saved.in, out: saved.out }; dirty = false;
+  const again = await (await fetch('/api/medley/clip?filename=' + encodeURIComponent(FILE))).json();
+  setPill(again.pool);
+  if (again.pool && again.pool.state === 'off') { toast('Saved - but the medley can’t use this track yet: ' + again.pool.reason); $('del-btn').disabled = false; return; }
+  toast('Saved'); setTimeout(() => { location.href = '/library'; }, 500);
+}
+async function deleteClip() {
+  if (!saved) return;
+  const d = await post('/api/medley/clip/delete', { filename: FILE });
+  if (d.ok) { saved = null; $('del-btn').disabled = true; const a = await (await fetch('/api/medley/clip?filename=' + encodeURIComponent(FILE))).json(); setPill(a.pool); toast('Clip removed'); update(); }
+}
+async function setPool(mode) {
+  const d = await post('/api/medley/pool', { filename: FILE, mode });
+  if (d.ok) { setPill(d.pool); toast(mode === 'include' ? 'Forced into the pool' : mode === 'exclude' ? 'Kept out of the pool' : 'Back to automatic'); }
+}
+function exitEditor() {
+  if (dirty && buf && !confirm('Leave without saving your changes?')) return;
+  stop(); location.href = '/library';
+}
+window.addEventListener('beforeunload', e => { if (dirty && buf) { e.preventDefault(); e.returnValue = ''; } });
+
+fit(); init();
+</script>
+</body>
+</html>

@@ -2,8 +2,9 @@
 # that doesn't use Apache; if you're on nginx or something else, see the
 # README for the equivalent rules).
 
-# No directory listing.
+# No directory listing; /play/ serves index.php (the guest redirect).
 Options -Indexes
+DirectoryIndex index.php
 
 # Block direct access to the state file (not secret, but no reason to
 # expose it) and config.php (executes as empty PHP output if hit directly,

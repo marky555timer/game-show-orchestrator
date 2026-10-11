@@ -51,6 +51,12 @@ class State:
         # auto-advance, or an offline fallback), not merely prefetched.
         self.factoid_question = ""
         self.factoid_choices = []          # list of 4 answer strings
+        # Phone-length wording of the same question (LED uses the short
+        # text above). factoid_long_pair = the short question these belong
+        # to; /api/player/state only uses them while it still matches.
+        self.factoid_question_long = ""
+        self.factoid_choices_long = []
+        self.factoid_long_pair = ""
         self.factoid_correct_index = -1    # index into factoid_choices
         # When the CURRENT factoid_choices became active (time.time()) --
         # drives the compressed per-option cascade build-up every Game
@@ -151,11 +157,26 @@ class State:
         self.dmx_color_index = 0
         self.dmx_theme_index = 0
         self.dmx_gradient_mode = "off"  # config.GRADIENT_MODES
+        self.dmx_speed_div = 1  # 1/2/4 = DMX pattern at full/half/quarter tempo
+        self.panel_leds_fx = True  # arcade-button LED animation during music (per-song off)
 
         self.marquee_color_index = 0
         self.marquee_theme_index = 0
         self.marquee_gradient_mode = "off"
         self.blank_lower_marquees = True  # panels 3-6 dark during normal DJ-mode dancing
+        # DJ-dance animation dials (2026-10-05), per-song exceptions like the
+        # above: reset to config.MARQUEE_DIAL_DEFAULTS on every track change.
+        self.marquee_brightness = 100     # % of full
+        self.marquee_speed = 100          # % of normal pace
+        self.marquee_depth = 50           # contrast of confetti / twinkle (50 = the original look)
+        self.marquee_off = False          # whole marquee dark while dancing to this song
+        self.look_borrowed_from = ""  # track key this song's look was borrowed from (drivers/look_matcher.py)
+        self.marquee_locate_until = 0.0   # admin "Show bounce centers" overlay
+        self.blackout_active = False  # admin instant blackout/mute (drivers/blackout_engine.py)
+        self.marquee_transition_start = 0.0  # track-change wipe (wled_engine._apply_transition)
+        self.marquee_reveal_at = 0.0  # when the new look sweeps in (= matrix board-wipe hold end)
+        self.transition_style = "wipe_lr"  # this song change's shape (config.TRANSITION_STYLES)
+        self.transition_count = 0
 
         self.accent_color_index = 0
         self.accent_theme_index = 0
@@ -165,6 +186,11 @@ class State:
         # 2026-09-25, a preset's known segments (drivers/accent_engine.py::_send_preset())
         self.accent_brightness = 180  # WLED top-level "bri" (0-255) -- master dimmer; saved per song like accent_speed
         # (2026-09-28); applies uniformly whether raw or preset
+        # Outline colors, WLED-style (2026-10-02): slot 1 "Fx" and slot 2 "Bg" as 0xRRGGBB, -1 = auto
+        # (Fx follows accent_color_index's swatch, Bg is black). Saved per song, only when set.
+        self.accent_fx_rgb = -1
+        self.accent_bg_rgb = -1
+        self.accent_colors_sent = None  # ((r,g,b) Fx, (r,g,b) Bg) the engine last chose for a raw look, else None
         self.accent_sound_enabled = False  # True = let WLED's own AudioReactive effect run
         self.accent_preset_id = -1  # WLED saved-preset id (config.ACCENT_PRESETS), -1 = none, use the raw effect/color above
         self.accent_preset_color_index = -1  # DJ_COLOR_PALETTE override for the preset's segments, -1 = preset's own colors
@@ -564,6 +590,8 @@ class State:
         # graphics/matrix_canvas.py); green = yes sets this True for the rest
         # of that autoplay session, red/anything else cancels.
         self.medley_active = False
+        self.medley_count = 0              # songs in the running medley (progress bar on panels 1+2)
+        self.medley_pos = 0                # 1-based index of the hook playing now (0 = not started)
         # "This is <artist>" true/false game inside a medley (drivers/medley_game.py).
         # Runs only when questions aren't suppressed and this is on.
         self.medley_game_enabled = True
@@ -572,6 +600,7 @@ class State:
         self.medley_scores = {}            # player_id | "PANEL" -> {initials, points, answered}
         self.medley_results = []           # end-of-medley leaderboard rows
         self.medley_results_until = 0.0
+        self.medley_bed_hold = False       # vocal-drop bed: winner screen held until any panel button
         self.medley_songs_total = 0
         self.medley_sweeper_mode = config.MEDLEY_SWEEPER_MODE_DEFAULT  # "off" | "medley" | "all"
         self.questions_suppressed = False  # jukebox mode: no questions asked (auto-start, or the Setup "suppress questions" box)
@@ -600,6 +629,7 @@ class State:
         self.show_exclude_slow_dance = False
         self.show_exclude_never_charted = False
         self.show_allowed_genres = []  # empty = no genre restriction
+        self.show_allowed_decades = []  # empty = no decade restriction
 
         # --- Auto Final Round: the round number, if any, whose win ends the
         # night (outro) instead of starting the normal intermission. Set

@@ -81,6 +81,16 @@ the Pi back **on** with another press once it's fully off -- one button
 covers both directions, matching the "push button on the exterior of the
 box" ask. No relay, transistor, or debounce circuit required.
 
+## Show shutdown button (GPIO26, app-driven, 2026-10-07)
+
+Momentary push button between **physical pin 37** (GPIO26) and **physical
+pin 39** (GND). Internal pull-up, no resistor. Hold ~1 s: instant blackout
+(lights, red matrix text, sound), then the same graceful teardown + `sudo
+shutdown -h now` as "SHUT DOWN PI" (needs that sudoers line above). Code:
+`drivers/shutdown_button.py`, settings `SHUTDOWN_BUTTON_*` in config.py.
+Chosen instead of the GPIO3 overlay above because the HiFiBerry DAC+ uses
+GPIO2/3 (I2C).
+
 ## Simon hardware (physical buttons + LEDs, 2026-09-11)
 
 Four arcade push-buttons and four LEDs wired directly to the Pi's 40-pin

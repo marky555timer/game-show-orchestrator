@@ -235,7 +235,7 @@ def _render_dj_uplights(t, brightness=1.0):
         dmx.set_all_uplights(0, 0, 0, 0)
         return
     color = _current_color()
-    frame = _dj_theme_frame(t, state.dj_tempo_period)
+    frame = _dj_theme_frame(t, state.dj_tempo_period * state.dmx_speed_div)
     if state.dmx_gradient_mode != "off":
         gradient_colors = _dmx_gradient_frame(t, color)
         for i, dimmer in enumerate(frame):
@@ -586,7 +586,7 @@ def _render_fixture1(t, brightness=1.0):
         # to, so it reads as part of the same show instead of an unsynced
         # extra blink.
         color = _current_color()
-        period = state.dj_tempo_period
+        period = state.dj_tempo_period * state.dmx_speed_div  # 1/2, 1/4 speed option
         phase = (t % period) / period
         level = (math.sin(phase * 2 * math.pi) + 1.0) / 2.0
         dimmer = int((40 + level * 195) * brightness)
