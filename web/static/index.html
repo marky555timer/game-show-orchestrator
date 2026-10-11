@@ -37,7 +37,7 @@
   .btn.medley.on { background: #111; color: #ffd400; border-color: #ffd400; }
   #medley-status { margin-top: 8px; font-size: .85rem; color: #ffe266; line-height: 1.35; }
   /* Medley mode: the per-song controls are removed until the operator exits */
-  body.medley-on #audition-btn, body.medley-on #jukebox-btn, body.medley-on #medley-options { display: none !important; }
+  body.medley-on #audition-btn, body.medley-on #hookwords-btn, body.medley-on #song-theme-box,body.medley-on #jukebox-btn, body.medley-on #medley-options { display: none !important; }
   .mo-n { color: #999; font-size: .75rem; }
   .wled-slot { flex: 1; padding: 8px 4px; border: 2px solid #444; border-radius: 10px; background: #1a1a1a; color: #ddd; font-weight: 700; cursor: pointer; }
   .wled-slot.sel { border-color: #fff; }
@@ -299,6 +299,15 @@
     <div class="now-tags" id="np-tags"></div>
     <div class="now-timer" id="autodj-remaining">--:--</div>
     <button class="btn" style="margin-top:8px" id="audition-btn" onclick="auditionEnding()">AUDITION ENDING (jump to -15s)</button>
+    <button class="btn" style="margin-top:8px" id="hookwords-btn" onclick="hookWordsDemo()">HOOK WORDS DEMO</button>
+    <div id="song-theme-box" style="margin-top:10px">
+      <label style="font-size:.85rem;font-weight:700">Panel theme for this song
+        <select id="song-theme-select" onchange="songThemeSet(this.value)" style="width:100%;margin-top:4px">
+          <option value="">Automatic</option>
+        </select>
+      </label>
+      <div id="song-theme-status" style="color:#999;font-size:.75rem;margin-top:3px"></div>
+    </div>
     <button class="btn" style="margin-top:8px; display:none" id="jukebox-btn" onclick="toggleJukebox()">JUKEBOX MODE</button>
   </section>
 
@@ -617,16 +626,33 @@
       </div>
 
       <div class="subhead">Idle Animation Theme</div>
+      <label style="display:block;margin:2px 0 8px;font-size:.85rem"><input type="checkbox" id="auto-theme-checkbox" checked onchange="autoThemeSet(this.checked)"> Slow songs &rarr; Love, fast songs &rarr; Technical Dreams</label>
       <div class="row">
         <!-- Options must track config.IDLE_ANIMATION_THEMES; "selected"
              must track config.IDLE_THEME_DEFAULT ("Question Marks"). -->
-        <label style="flex:1">Theme
+        <label style="flex:1">General theme (everything else)
           <select id="idle-theme-select" onchange="idleTheme(this.value)">
             <option value="Halloween">Halloween</option>
             <option value="Birthday">Birthday</option>
             <option value="Question Marks" selected>Question Marks</option>
+            <option value="Technical Dreams">Technical Dreams</option>
+            <option value="Love">Love</option>
           </select>
         </label>
+      </div>
+      <div class="row">
+        <button class="btn" style="flex:1" id="td-demo-btn" onclick="tdDemo()">PLAY TECHNICAL DREAMS DEMO</button>
+        <button class="btn" onclick="api('/api/idle/td-demo/stop', {method: 'POST'})">STOP</button>
+      </div>
+      <label style="font-weight:700;font-size:.85rem;display:block;margin-top:10px">Technical Dreams headline</label>
+      <input type="text" id="td-headline" maxlength="24" placeholder="TRIVIACADE">
+      <div style="color:#999;font-size:.75rem;margin:2px 0 6px">Up to ~10 capitals per line; a | splits it onto two lines.</div>
+      <label style="font-weight:700;font-size:.85rem;display:block">Technical Dreams scroller</label>
+      <textarea id="td-scroller" maxlength="600" rows="4" style="width:100%;box-sizing:border-box"></textarea>
+      <div style="color:#999;font-size:.75rem;margin:2px 0 6px">Letters, numbers and ! ? . , ' - : # only. Leave a box empty for the default.</div>
+      <div class="row">
+        <button class="btn primary" onclick="tdTextSave()">Save text</button>
+        <button class="btn" onclick="tdTextDefaults()">Defaults</button>
       </div>
 
       <div class="subhead">Branding</div>
@@ -957,6 +983,51 @@ async function auditionEnding() {
   const old = b.textContent;
   b.textContent = d && d.ok ? 'Jumped to ' + Math.round(d.seek_to_seconds) + 's' : ((d && d.error) || 'Failed');
   setTimeout(() => { b.textContent = old; }, 2500);
+  refreshAutoDj();
+}
+
+let _tdDefaults = null;
+async function tdTextLoad() {
+  const d = await api('/api/idle/td-text');
+  if (!d || !d.ok) return;
+  _tdDefaults = d;
+  document.getElementById('td-headline').value = d.headline;
+  document.getElementById('td-scroller').value = d.scroller;
+}
+async function tdTextSave() {
+  const body = {headline: document.getElementById('td-headline').value,
+                scroller: document.getElementById('td-scroller').value};
+  const d = await api('/api/idle/td-text', {method: 'POST', headers: {'Content-Type': 'application/json'},
+                                            body: JSON.stringify(body)});
+  if (d && d.ok) {
+    document.getElementById('td-headline').value = d.headline;
+    document.getElementById('td-scroller').value = d.scroller;
+    showToast('Technical Dreams text saved.');
+  }
+}
+function tdTextDefaults() {
+  if (!_tdDefaults) return;
+  document.getElementById('td-headline').value = _tdDefaults.default_headline;
+  document.getElementById('td-scroller').value = _tdDefaults.default_scroller;
+  tdTextSave();
+}
+document.addEventListener('DOMContentLoaded', tdTextLoad);
+
+async function tdDemo() {
+  const b = document.getElementById('td-demo-btn');
+  const d = await api('/api/idle/td-demo', {method: 'POST'});
+  const old = b.textContent;
+  b.textContent = d && d.ok ? 'Playing (' + d.seconds + 's) -- watch panels 3-6' : ((d && d.error) || 'Failed');
+  setTimeout(() => { b.textContent = old; }, 4000);
+}
+
+async function hookWordsDemo() {
+  const b = document.getElementById('hookwords-btn');
+  const d = await api('/api/hook-words/demo', {method: 'POST'});
+  const old = b.textContent;
+  b.textContent = !(d && d.ok) ? ((d && d.error) || 'Failed')
+    : d.switching ? 'Switching song, then jumping...' : 'Jumped to ' + Math.round(d.seek_to_seconds) + 's -- watch panels 3-6';
+  setTimeout(() => { b.textContent = old; }, 4000);
   refreshAutoDj();
 }
 
@@ -1765,8 +1836,37 @@ async function refreshBlackout() {
   if (d) renderBlackout(d.active);
 }
 
+let _songThemeBuilt = false;
+function songThemeShow(d) {
+  if (!d || !d.ok) return;
+  const sel = document.getElementById('song-theme-select');
+  if (!_songThemeBuilt) {
+    sel.innerHTML = '<option value="">Automatic</option><option value="@general">General theme</option>'
+      + d.themes.map(t => '<option value="' + t + '">' + t + '</option>').join('');
+    _songThemeBuilt = true;
+  }
+  if (document.activeElement !== sel) sel.value = d.saved || '';
+  sel.disabled = !d.track_key;
+  const why = {song: 'set for this song', slow: 'slow song', fast: 'fast song', general: 'general theme'}[d.source] || d.source;
+  document.getElementById('song-theme-status').textContent = d.track_key ? 'Showing: ' + d.showing + ' (' + why + ')' : 'Waiting for the song to be identified';
+  const gen = document.getElementById('idle-theme-select');
+  if (document.activeElement !== gen) gen.value = d.general;
+  const auto = document.getElementById('auto-theme-checkbox');
+  if (document.activeElement !== auto) auto.checked = d.auto;
+}
+async function refreshSongTheme() { songThemeShow(await api('/api/song-theme')); }
+async function songThemeSet(theme) {
+  const d = await api('/api/song-theme', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({theme})});
+  if (d && !d.ok) showToast(d.error || 'Could not save');
+  songThemeShow(d);
+}
+async function autoThemeSet(on) {
+  songThemeShow(await api('/api/idle/auto-theme', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({on})}));
+}
+
 function refreshAll() {
   refreshBlackout();
+  refreshSongTheme();
   refreshNowPlaying();
   refreshAutoDj();
   refreshHostPreview();

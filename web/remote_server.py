@@ -207,6 +207,16 @@ if app is not None:
     class IdleThemeSet(BaseModel):
         theme: str
 
+    class SongThemeSet(BaseModel):
+        theme: str = ""   # "" = automatic, "@general", or a theme name
+
+    class AutoThemeSet(BaseModel):
+        on: bool
+
+    class TdTextSet(BaseModel):
+        headline: str = ""
+        scroller: str = ""
+
     class GameForce(BaseModel):
         category: str
 
@@ -1795,6 +1805,13 @@ if app is not None:
         physical yellow button shares it)."""
         return auto_dj_engine.audition_ending()
 
+    @app.post("/api/hook-words/demo")
+    def hook_words_demo():
+        """HOOK WORDS DEMO: plays the saved song a few seconds before its
+        hook phrase (drivers/hook_words.py)."""
+        from drivers import hook_words
+        return hook_words.demo()
+
     @app.post("/api/autodj/skip-now")
     def autodj_skip_now():
         deck_orchestrator.trigger_track_move("next")
@@ -2467,9 +2484,76 @@ if app is not None:
                  "valid": config.IDLE_ANIMATION_THEMES},
                 status_code=400,
             )
-        state.idle_theme = body.theme
+        # The general theme; a song's own / slow-fast theme still wins for
+        # that song (drivers/light_prefs_engine.py::resolve_idle_theme).
+        from drivers import light_prefs_engine
+        state.idle_theme_base = body.theme
+        light_prefs_engine.apply_idle_theme_for(state.factoid_track_key)
         deal_panel_animations()
-        return {"ok": True, "theme": state.idle_theme}
+        return {"ok": True, "theme": state.idle_theme_base, "showing": state.idle_theme}
+
+    @app.post("/api/idle/td-demo")
+    def idle_td_demo():
+        """PLAY TECHNICAL DREAMS DEMO: the whole four-panel demo once, now
+        (graphics/technical_dreams.py), whatever the theme."""
+        from graphics import technical_dreams
+        if state.mode != state.MODE_DJ:
+            return {"ok": False, "error": "only in music mode (no question up)"}
+        return {"ok": True, "seconds": round(technical_dreams.play_full_demo())}
+
+    def _song_theme_status():
+        from drivers import light_prefs_engine
+        key = state.factoid_track_key
+        prefs = light_prefs_engine.get_prefs_for(key) if key else None
+        return {"ok": True, "track_key": key, "saved": (prefs or {}).get("idle_theme", ""),
+                "energy": (prefs or {}).get("energy", ""), "showing": state.idle_theme,
+                "source": state.idle_theme_source, "general": state.idle_theme_base,
+                "auto": state.idle_theme_auto, "themes": config.IDLE_ANIMATION_THEMES,
+                "by_energy": config.IDLE_THEME_BY_ENERGY}
+
+    @app.get("/api/song-theme")
+    def song_theme_get():
+        """Panels 3-6 theme for the song playing now, and why."""
+        return _song_theme_status()
+
+    @app.post("/api/song-theme")
+    def song_theme_set(body: SongThemeSet):
+        """Remote's "Theme for this song" -- saved per song (exception only)."""
+        from drivers import light_prefs_engine
+        key = state.factoid_track_key
+        if not key:
+            return {"ok": False, "error": "no song identified yet"}
+        try:
+            light_prefs_engine.save_song_theme(key, body.theme)
+        except ValueError as e:
+            return {"ok": False, "error": str(e)}
+        light_prefs_engine.apply_idle_theme_for(key)
+        return _song_theme_status()
+
+    @app.post("/api/idle/auto-theme")
+    def idle_auto_theme(body: AutoThemeSet):
+        """Slow songs -> Love, fast songs -> Technical Dreams (on/off)."""
+        from drivers import light_prefs_engine
+        state.idle_theme_auto = body.on
+        light_prefs_engine.apply_idle_theme_for(state.factoid_track_key)
+        return _song_theme_status()
+
+    @app.get("/api/idle/td-text")
+    def idle_td_text_get():
+        from graphics import technical_dreams
+        return {"ok": True, **technical_dreams.get_texts()}
+
+    @app.post("/api/idle/td-text")
+    def idle_td_text_set(body: TdTextSet):
+        """Technical Dreams headline + scroller text (blank = default)."""
+        from graphics import technical_dreams
+        return {"ok": True, **technical_dreams.set_texts(body.headline, body.scroller)}
+
+    @app.post("/api/idle/td-demo/stop")
+    def idle_td_demo_stop():
+        from graphics import technical_dreams
+        technical_dreams.stop()
+        return {"ok": True}
 
     @app.get("/api/tokens")
     def tokens():

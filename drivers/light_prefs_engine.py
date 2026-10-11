@@ -44,7 +44,7 @@ _HEADER = ["track_key", "tempo_period", "color_index", "theme_index",
            "accent_fx_rgb", "accent_bg_rgb",
            "tempo_source", "energy",
            "marquee_brightness", "marquee_speed", "marquee_depth", "marquee_off",
-           "dmx_speed_div", "panel_leds_off",
+           "dmx_speed_div", "panel_leds_off", "idle_theme",
            "updated_at"]
 
 # Append-only change log (config.LIGHT_PREFS_LOG_PATH, added 2026-09-28): one
@@ -138,6 +138,9 @@ class LightPrefsEngine:
                             "dmx_speed_div": _to_int(row.get("dmx_speed_div")),
                             # 2026-10-09 -- 1 = panel-button LED animation off for this song; NO_LOOK = on.
                             "panel_leds_off": _to_int(row.get("panel_leds_off")),
+                            # 2026-10-11 -- panels 3-6 animation theme for this song
+                            # ("" = automatic; see resolve_idle_theme).
+                            "idle_theme": (row.get("idle_theme") or "").strip(),
                         }
         except Exception as e:
             print(f"[LIGHT PREFS] Failed to read cache, starting empty: {e}")
@@ -180,6 +183,7 @@ class LightPrefsEngine:
                         **{k: prefs.get(k, NO_LOOK) for k in config.MARQUEE_DIAL_DEFAULTS},
                         "dmx_speed_div": prefs.get("dmx_speed_div", NO_LOOK),
                         "panel_leds_off": prefs.get("panel_leds_off", NO_LOOK),
+                        "idle_theme": prefs.get("idle_theme", ""),
                         "updated_at": now_str,
                     })
         except Exception as e:
@@ -230,6 +234,7 @@ class LightPrefsEngine:
                 **{k: NO_LOOK for k in config.MARQUEE_DIAL_DEFAULTS},
                 "dmx_speed_div": NO_LOOK,
                 "panel_leds_off": NO_LOOK,
+                "idle_theme": "",
                 "tempo_source": "online",
                 "energy": "",
             })
@@ -465,9 +470,52 @@ def get_prefs_for(track_key):
     return light_prefs_engine.get_prefs_for(track_key)
 
 
+def resolve_idle_theme(track_key):
+    """(theme, source) for panels 3-6 on this song: its own saved theme
+    ("song"); else, with auto on, the theme for its energy tag ("slow" ->
+    Love, "fast" -> Technical Dreams); else the operator's general theme.
+    A saved "@general" pins the general theme even for a slow/fast song."""
+    prefs = light_prefs_engine.get_prefs_for(track_key) or {}
+    own = prefs.get("idle_theme", "")
+    if own == config.IDLE_THEME_GENERAL:
+        return state.idle_theme_base, "song"
+    if own in config.IDLE_ANIMATION_THEMES:
+        return own, "song"
+    energy = prefs.get("energy") or ""
+    if state.idle_theme_auto and energy in config.IDLE_THEME_BY_ENERGY:
+        return config.IDLE_THEME_BY_ENERGY[energy], energy
+    return state.idle_theme_base, "general"
+
+
+def apply_idle_theme_for(track_key):
+    from graphics.animations import set_effective_theme
+    theme, source = resolve_idle_theme(track_key) if track_key else (state.idle_theme_base, "general")
+    state.idle_theme_source = source
+    if theme != state.idle_theme:
+        print(f"[LIGHT PREFS] {track_key!r}: panel theme {theme!r} ({source})")
+    set_effective_theme(theme)
+
+
+def save_song_theme(track_key, theme):
+    """Remote's "Theme for this song": "" = automatic (nothing stored),
+    "@general", or a theme name. Only the exception is stored."""
+    if not track_key:
+        return
+    if theme not in ("", config.IDLE_THEME_GENERAL) and theme not in config.IDLE_ANIMATION_THEMES:
+        raise ValueError(f"unknown theme {theme!r}")
+    existing = light_prefs_engine.get_prefs_for(track_key)
+    if not existing and not theme:
+        return
+    extra = {} if existing else {"tempo_period": state.dj_tempo_period, "tempo_source": "online"}
+    light_prefs_engine._upsert(track_key, idle_theme=theme, _source="theme", **extra)
+    print(f"[LIGHT PREFS] {track_key!r}: song theme set to {theme or 'automatic'!r}")
+
+
 def save_energy(track_key, energy):
     """Module-level wrapper, same convention as save_online_tempo()."""
     light_prefs_engine.save_energy_for(track_key, energy)
+    if track_key and track_key == state.factoid_track_key:
+        apply_idle_theme_for(track_key)  # a slow/fast tag can arrive mid-song
 
 
 def get_energy_for(track_key):
@@ -577,6 +625,7 @@ def apply_prefs_for(track_key):
     reset_marquee_dials()
     state.dmx_speed_div = 1  # full tempo unless this song saved 1/2 or 1/4
     state.panel_leds_fx = True  # button-LED animation on unless this song saved "off"
+    apply_idle_theme_for(track_key)  # panels 3-6 theme: song's own / slow-fast auto / general
 
     own = light_prefs_engine.get_prefs_for(track_key)
     prefs = _with_borrowed_look(track_key, own)

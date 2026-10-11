@@ -50,6 +50,7 @@ from graphics.animations import (
     anim_bold_star, anim_bold_dollar, anim_arrow_down,
 )
 from graphics import overlay_panel
+from graphics import technical_dreams
 from graphics import secondary_canvas
 
 # Initialize Pygame Display Engine
@@ -379,6 +380,13 @@ def _render_idle_cycle_panel(pid, rect, t):
     just draws whatever the current phase says). Beta-Fix Feature Set
     items 1 (fill wasted idle space) and 4 (leaderboard)."""
     phase = state.idle_cycle_phase
+
+    # Technical Dreams demo across panels 3-6: a "play it now" run takes
+    # over any idle phase; a theme turn only plays in the dancing phase.
+    now = time.time()
+    if technical_dreams.running(now) and (technical_dreams.full_running(now) or phase == "dancing"):
+        technical_dreams.render_demo_panel(matrix_surface, pid, rect, now)
+        return
 
     if phase == "start_game":
         # One distinct word per panel, in reading order (2026-08-10 fix --
@@ -1842,6 +1850,113 @@ def _draw_medley_results(t):
                          align="center", scroll=False)
 
 
+def _draw_text_2x(text, x, y, color):
+    """Double-size 5x7 glyphs (each pixel a 2x2 block, 1px gap between
+    letters -- "WHO" is exactly 32px, one full panel)."""
+    from graphics.text_render import _glyph_for, _glyph_width
+    cx = x
+    for ch in text:
+        g = _glyph_for(ch)
+        for r, row in enumerate(g):
+            for c, px in enumerate(row):
+                if px == "1":
+                    matrix_surface.fill(color, (cx + c * 2, y + r * 2, 2, 2))
+        cx += _glyph_width(g) * 2 + 1
+
+
+def _text_2x_width(text):
+    return sum(char_width(ch) * 2 + 1 for ch in text) - 1 if text else 0
+
+
+def _split_two_lines(text):
+    """Two lines for a word/pair too wide for one: the most even split at a
+    space, or a long single word cut in half (SOME / BODY)."""
+    words = text.split()
+    if len(words) > 1:
+        best = min(range(1, len(words)),
+                   key=lambda k: abs(text_width(" ".join(words[:k])) - text_width(" ".join(words[k:]))))
+        return " ".join(words[:best]), " ".join(words[best:])
+    half = (len(text) + 1) // 2
+    return text[:half], text[half:]
+
+
+def _tight_width(line):
+    """Width with no gap between letters (6 capitals = 30px)."""
+    return text_width(line) - GLYPH_GAP * (len(line) - 1) if line else 0
+
+
+def hook_layout(text, w=PANEL_W):
+    """How a hook-words panel text is drawn: ("2x", [text]) if double size
+    fits, else ("lines", [(line, tight)...]) -- one line, or two at a "|"
+    or the most even split. tight = letters drawn touching, for 6-letter
+    words. None if it can't fit."""
+    if "|" not in text and _text_2x_width(text) <= w:
+        return "2x", [text]
+    if "|" in text:
+        lines = text.split("|", 1)
+    elif text_width(text) <= w or _tight_width(text) <= w:
+        lines = [text]
+    else:
+        lines = list(_split_two_lines(text))
+    out = []
+    for line in lines:
+        if text_width(line) <= w:
+            out.append((line, False))
+        elif _tight_width(line) <= w:
+            out.append((line, True))
+        else:
+            return None
+    return "lines", out
+
+
+def _draw_tight(text, x, y, color, clip):
+    cx = x
+    for ch in text:
+        draw_bitmap_text(matrix_surface, ch, cx, y, color=color, clip_rect=clip)
+        cx += char_width(ch)
+
+
+def _draw_hook_word(pid, text, pop):
+    """One panel's word (see hook_layout). `pop` = just landed: drawn
+    inverted (lit panel, dark letters)."""
+    x0, y0, w, h = PANELS[pid]
+    fg, bg = (BLACK, RED_FULL) if pop else (RED_FULL, BLACK)
+    matrix_surface.fill(bg, (x0, y0, w, h))
+    clip = (x0, y0, w, h)
+    layout = hook_layout(text, w)
+    if layout is None:
+        layout = ("lines", [(text.replace("|", " "), False)])
+    mode, lines = layout
+    if mode == "2x":
+        _draw_text_2x(text, x0 + (w - _text_2x_width(text)) // 2, y0 + (h - 14) // 2, fg)
+        return
+    top = y0 + (h - (len(lines) * LINE_H - 1)) // 2
+    for k, (line, tight) in enumerate(lines):
+        lw = _tight_width(line) if tight else text_width(line)
+        x = x0 + max(0, (w - lw) // 2)
+        if tight:
+            _draw_tight(line, x, top + k * LINE_H, fg, clip)
+        else:
+            draw_bitmap_text(matrix_surface, line, x, top + k * LINE_H, color=fg, clip_rect=clip)
+
+
+def _draw_hook_words(t):
+    """Hook words (drivers/hook_words.py): panels 3-6 go dark, then each
+    panel's word appears as it's sung. DJ mode only."""
+    from drivers import hook_words
+    if state.mode != state.MODE_DJ or state.medley_active or state.show_phase != "live" or state.win_sequence_active:
+        return
+    on = hook_words.active(t)
+    if not on:
+        return
+    panels, shown = on
+    for pid, text, at in zip((3, 4, 5, 6), panels, shown):
+        if at is None:
+            matrix_surface.fill(BLACK, PANELS[pid])
+        else:
+            _draw_hook_word(pid, text, pop=(t - at) < config.HOOK_WORDS_POP_SECONDS)
+
+
 def _draw_trivia_confirm():
     """"TRIVIA QUESTION?" YES/NO confirm over the live jukebox screen (green
     button = YES on panel 3, red = NO on panel 4)."""
@@ -1917,6 +2032,8 @@ def update_matrix_canvas():
         if not _draw_medley_game(time.time()):
             _draw_medley_banner(time.time())
         _draw_medley_progress(time.time())
+    else:
+        _draw_hook_words(time.time())
     # After the medley overlays so a hook change's reveal covers them too.
     _apply_board_reveal(time.time())
     if state.blackout_active:

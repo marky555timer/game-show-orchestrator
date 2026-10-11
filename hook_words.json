@@ -1,0 +1,727 @@
+{
+ "01 I Wanna Dance with Somebody (Who Loves Me).mp3": {
+  "panels": [
+   "WITH",
+   "SOMEBODY",
+   "WHO",
+   "LOVES ME!"
+  ],
+  "times": [
+   [
+    76.38,
+    76.73,
+    77.43,
+    77.93
+   ],
+   [
+    143.02,
+    143.4,
+    144.08,
+    144.6
+   ],
+   [
+    159.22,
+    159.55,
+    160.24,
+    160.75
+   ],
+   [
+    205.65,
+    206.0,
+    206.65,
+    207.2
+   ],
+   [
+    221.83,
+    222.12,
+    222.84,
+    223.4
+   ]
+  ],
+  "note": "Whitney Houston -- every clean 'With somebody who loves me' (outro ad-libs at ~252s/~268s left out: words run together). Times from Demucs vocals + Whisper word timing, checked against the vocal onsets, 2026-10-11."
+ },
+ "03 Livin' On A Prayer.mp3": {
+  "panels": [
+   "WHOA",
+   "LIVIN'",
+   "ON A",
+   "PRAYER"
+  ],
+  "times": [
+   [
+    97.44,
+    98.85,
+    99.3,
+    100.03
+   ],
+   [
+    105.12,
+    106.55,
+    107.03,
+    108.01
+   ],
+   [
+    163.74,
+    165.28,
+    165.73,
+    166.7
+   ],
+   [
+    171.57,
+    172.94,
+    173.43,
+    174.36
+   ]
+  ],
+  "note": "auto-timed 2026-10-11 (demucs + windowed whisper, onset-snapped)"
+ },
+ "13 Sweet Caroline.mp3": {
+  "panels": [
+   "GOOD|TIMES",
+   "NEVER",
+   "SEEMED",
+   "SO|GOOD"
+  ],
+  "times": [
+   [
+    68.71,
+    69.37,
+    69.63,
+    70.61
+   ],
+   [
+    141.0,
+    141.64,
+    141.92,
+    142.9
+   ],
+   [
+    177.13,
+    177.76,
+    178.06,
+    179.01
+   ]
+  ],
+  "note": "auto-timed 2026-10-11 (demucs + windowed whisper, onset-snapped)"
+ },
+ "02 Don't Stop Believin' (2024 Remaster).mp3": {
+  "panels": [
+   "DON'T|STOP",
+   "BELIEV|IN'",
+   "HOLD|ON",
+   "TO|THAT"
+  ],
+  "times": [
+   [
+    201.39,
+    203.11,
+    204.12,
+    206.84
+   ]
+  ],
+  "note": "auto-timed 2026-10-11 (demucs + windowed whisper, onset-snapped)"
+ },
+ "04 Uptown Funk (feat. Bruno Mars).mp3": {
+  "panels": [
+   "UPTOWN",
+   "FUNK",
+   "YOU",
+   "UP!"
+  ],
+  "times": [
+   [
+    175.61,
+    176.19,
+    177.07,
+    177.27
+   ],
+   [
+    179.8,
+    180.86,
+    181.25,
+    181.49
+   ]
+  ],
+  "note": "auto-timed 2026-10-11 (demucs + windowed whisper, onset-snapped)"
+ },
+ "01 Eye of the Tiger.mp3": {
+  "panels": [
+   "THE",
+   "EYE",
+   "OF|THE",
+   "TIGER"
+  ],
+  "times": [
+   [
+    208.66,
+    208.88,
+    209.16,
+    209.65
+   ],
+   [
+    226.52,
+    226.68,
+    226.86,
+    227.33
+   ]
+  ],
+  "note": "auto-timed 2026-10-11 (demucs + windowed whisper, onset-snapped)"
+ },
+ "05 I Gotta Feeling.mp3": {
+  "panels": [
+   "TO|NIGHT",
+   "GONNA|BE",
+   "A|GOOD",
+   "NIGHT"
+  ],
+  "times": [
+   [
+    33.12,
+    34.08,
+    34.97,
+    35.53
+   ],
+   [
+    36.85,
+    37.82,
+    38.47,
+    39.23
+   ],
+   [
+    153.12,
+    154.08,
+    154.97,
+    155.52
+   ],
+   [
+    157.13,
+    157.82,
+    158.74,
+    159.3
+   ],
+   [
+    168.13,
+    169.07,
+    169.87,
+    170.45
+   ],
+   [
+    172.12,
+    172.8,
+    173.74,
+    174.22
+   ],
+   [
+    273.15,
+    274.06,
+    275.0,
+    275.51
+   ],
+   [
+    276.84,
+    277.82,
+    278.6,
+    279.22
+   ]
+  ],
+  "note": "auto-timed 2026-10-11 (demucs + windowed whisper, onset-snapped)"
+ },
+ "01 Single Ladies (Put a Ring on It).mp3": {
+  "panels": [
+   "PUT A",
+   "RING",
+   "ON",
+   "IT!"
+  ],
+  "times": [
+   [
+    32.81,
+    33.14,
+    33.54,
+    33.74
+   ],
+   [
+    60.15,
+    60.47,
+    60.79,
+    61.16
+   ],
+   [
+    82.3,
+    82.62,
+    83.02,
+    83.22
+   ],
+   [
+    102.22,
+    102.39,
+    102.85,
+    103.02
+   ],
+   [
+    170.91,
+    171.23,
+    171.67,
+    171.84
+   ],
+   [
+    178.31,
+    178.62,
+    178.92,
+    179.24
+   ],
+   [
+    188.21,
+    188.53,
+    188.81,
+    189.12
+   ]
+  ],
+  "note": "auto-timed 2026-10-11 (demucs + windowed whisper, onset-snapped)"
+ },
+ "01 Mamma Mia.mp3": {
+  "panels": [
+   "MAMMA",
+   "MIA",
+   "HERE|I GO",
+   "AGAIN"
+  ],
+  "times": [
+   [
+    51.12,
+    51.33,
+    52.67,
+    53.09
+   ],
+   [
+    124.52,
+    124.73,
+    126.07,
+    126.5
+   ]
+  ],
+  "note": "auto-timed 2026-10-11 (demucs + windowed whisper, onset-snapped)"
+ },
+ "01 ...Baby One More Time.mp3": {
+  "panels": [
+   "HIT|ME",
+   "BABY",
+   "ONE|MORE",
+   "TIME"
+  ],
+  "times": [
+   [
+    60.69,
+    61.0,
+    61.68,
+    62.6
+   ],
+   [
+    205.25,
+    205.55,
+    206.23,
+    207.18
+   ]
+  ],
+  "note": "auto-timed 2026-10-11 (demucs + windowed whisper, onset-snapped)"
+ },
+ "10 Africa.mp3": {
+  "panels": [
+   "I|BLESS",
+   "THE|RAINS",
+   "DOWN|IN",
+   "AFRICA"
+  ],
+  "times": [
+   [
+    86.4,
+    87.86,
+    89.05,
+    89.29
+   ],
+   [
+    153.68,
+    155.23,
+    156.41,
+    156.73
+   ],
+   [
+    219.66,
+    221.02,
+    222.3,
+    222.84
+   ],
+   [
+    230.02,
+    231.37,
+    232.69,
+    233.03
+   ]
+  ],
+  "note": "auto-timed 2026-10-11 (demucs + windowed whisper, onset-snapped)"
+ },
+ "06 Summer Of '69.mp3": {
+  "panels": [
+   "THOSE|WERE",
+   "THE|BEST",
+   "DAYS|OF",
+   "MY|LIFE"
+  ],
+  "times": [
+   [
+    45.18,
+    46.48,
+    47.13,
+    48.0
+   ],
+   [
+    155.46,
+    156.9,
+    157.51,
+    158.4
+   ]
+  ],
+  "note": "auto-timed 2026-10-11 (demucs + windowed whisper, onset-snapped)"
+ },
+ "02 Party In The U.S.A_.mp3": {
+  "panels": [
+   "IT'S|A",
+   "PARTY",
+   "IN|THE",
+   "U.S.A"
+  ],
+  "times": [
+   [
+    62.44,
+    62.78,
+    62.97,
+    63.67
+   ],
+   [
+    127.56,
+    127.74,
+    127.95,
+    128.69
+   ],
+   [
+    167.32,
+    167.78,
+    167.97,
+    168.67
+   ],
+   [
+    172.41,
+    172.56,
+    172.79,
+    173.57
+   ],
+   [
+    192.48,
+    192.78,
+    192.97,
+    193.67
+   ],
+   [
+    197.39,
+    197.65,
+    197.81,
+    198.56
+   ]
+  ],
+  "note": "auto-timed 2026-10-11 (demucs + windowed whisper, onset-snapped)"
+ },
+ "06 Walking On Sunshine.mp3": {
+  "panels": [
+   "I'M",
+   "WALK|ING",
+   "ON",
+   "SUN|SHINE"
+  ],
+  "times": [
+   [
+    55.18,
+    55.94,
+    56.71,
+    57.13
+   ],
+   [
+    116.37,
+    117.05,
+    117.76,
+    118.18
+   ],
+   [
+    173.14,
+    173.86,
+    174.59,
+    175.01
+   ]
+  ],
+  "note": "auto-timed 2026-10-11 (demucs + windowed whisper, onset-snapped)"
+ },
+ "03 Another One Bites The Dust - Remastered 2011.mp3": {
+  "panels": [
+   "AN|OTHER",
+   "ONE",
+   "BITES",
+   "THE|DUST"
+  ],
+  "times": [
+   [
+    42.05,
+    42.31,
+    42.57,
+    43.0
+   ],
+   [
+    46.27,
+    46.53,
+    46.93,
+    47.34
+   ],
+   [
+    50.76,
+    51.02,
+    51.3,
+    51.72
+   ],
+   [
+    55.01,
+    55.37,
+    55.66,
+    56.06
+   ],
+   [
+    85.73,
+    85.98,
+    86.23,
+    86.62
+   ],
+   [
+    89.94,
+    90.3,
+    90.57,
+    90.98
+   ],
+   [
+    94.44,
+    94.68,
+    94.96,
+    95.33
+   ],
+   [
+    98.83,
+    99.08,
+    99.33,
+    99.73
+   ],
+   [
+    140.14,
+    140.54,
+    140.83,
+    141.22
+   ],
+   [
+    144.65,
+    144.88,
+    145.16,
+    145.56
+   ],
+   [
+    177.42,
+    177.65,
+    177.94,
+    178.33
+   ],
+   [
+    181.75,
+    182.01,
+    182.28,
+    182.69
+   ],
+   [
+    186.08,
+    186.36,
+    186.65,
+    187.04
+   ],
+   [
+    190.4,
+    190.75,
+    191.03,
+    191.43
+   ]
+  ],
+  "note": "auto-timed 2026-10-11 (demucs + windowed whisper, onset-snapped)"
+ },
+ "01 Wake Me Up Before You Go-Go.mp3": {
+  "panels": [
+   "WAKE|ME UP",
+   "BEFORE",
+   "YOU",
+   "GO-GO"
+  ],
+  "times": [
+   [
+    37.2,
+    38.36,
+    38.77,
+    39.37
+   ],
+   [
+    42.93,
+    44.19,
+    44.66,
+    45.06
+   ],
+   [
+    48.97,
+    50.34,
+    50.59,
+    51.15
+   ],
+   [
+    54.5,
+    56.05,
+    56.27,
+    56.79
+   ],
+   [
+    102.06,
+    103.39,
+    103.76,
+    104.16
+   ],
+   [
+    107.94,
+    109.45,
+    109.85,
+    110.14
+   ],
+   [
+    113.44,
+    114.95,
+    115.17,
+    115.67
+   ],
+   [
+    165.35,
+    166.71,
+    167.09,
+    167.46
+   ],
+   [
+    171.25,
+    172.61,
+    172.91,
+    173.37
+   ],
+   [
+    177.09,
+    178.25,
+    178.64,
+    179.24
+   ],
+   [
+    183.05,
+    184.41,
+    184.75,
+    185.12
+   ],
+   [
+    188.94,
+    190.43,
+    190.63,
+    191.04
+   ]
+  ],
+  "note": "auto-timed 2026-10-11 (demucs + windowed whisper, onset-snapped)"
+ },
+ "01 You Spin Me Round (Like a Record).mp3": {
+  "panels": [
+   "YOU|SPIN",
+   "ME|RIGHT",
+   "ROUND",
+   "BABY"
+  ],
+  "times": [
+   [
+    61.42,
+    61.94,
+    62.96,
+    63.96
+   ],
+   [
+    69.24,
+    69.59,
+    70.46,
+    71.27
+   ]
+  ],
+  "note": "auto-timed 2026-10-11 (demucs + windowed whisper, onset-snapped)"
+ },
+ "01 The Final Countdown.mp3": {
+  "panels": [
+   "IT'S",
+   "THE",
+   "FINAL",
+   "COUNT|DOWN"
+  ],
+  "times": [
+   [
+    117.57,
+    118.11,
+    118.31,
+    119.1
+   ],
+   [
+    292.74,
+    293.28,
+    293.44,
+    294.28
+   ],
+   [
+    300.34,
+    301.03,
+    301.21,
+    301.94
+   ]
+  ],
+  "note": "auto-timed 2026-10-11 (demucs + windowed whisper, onset-snapped)"
+ },
+ "16 Ain't No Mountain High Enough - Mono.mp3": {
+  "panels": [
+   "AIN'T|NO",
+   "MOUN|TAIN",
+   "HIGH",
+   "ENOUGH"
+  ],
+  "times": [
+   [
+    31.25,
+    32.31,
+    32.83,
+    33.34
+   ],
+   [
+    61.2,
+    62.42,
+    62.86,
+    63.25
+   ],
+   [
+    113.1,
+    114.3,
+    114.73,
+    115.3
+   ],
+   [
+    138.89,
+    140.08,
+    140.55,
+    140.89
+   ]
+  ],
+  "note": "auto-timed 2026-10-11 (demucs + windowed whisper, onset-snapped)"
+ }
+}

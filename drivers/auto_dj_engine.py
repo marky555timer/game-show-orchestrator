@@ -167,6 +167,7 @@ def audition_ending():
     if not deck_orchestrator.dj_engine.seek_deck(deck_name, target):
         return {"ok": False, "error": "could not seek the playing track"}
     state.auto_dj_track_started_at = time.time() - target
+    state.now_playing_started_at = time.time() - target
     print(f"[AUTO-DJ] Audition: jumped to {target:.0f}s (cue-out at {state.auto_dj_track_duration:.0f}s).")
     return {"ok": True, "seek_to_seconds": round(target, 1)}
 

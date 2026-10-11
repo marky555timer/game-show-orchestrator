@@ -6,6 +6,7 @@ from config import (
     IDLE_ANIMATION_THEMES, IDLE_THEME_DEFAULT,
 )
 from state import state
+from graphics import technical_dreams, love_theme
 
 # NOTE ON CLIPPING: render_panel_animation() sets a clip rect around the
 # panel before calling an animation, and pygame's draw.* primitives honour
@@ -873,6 +874,10 @@ IDLE_THEMES = {
         anim_qmark_pulse_grow,
         anim_qmark_bounce,
     ],
+    # Demoscene effects + the four-panel demo (graphics/technical_dreams.py).
+    "Technical Dreams": technical_dreams.ANIMATIONS,
+    # Slow songs and ballads (graphics/love_theme.py).
+    "Love": love_theme.ANIMATIONS,
 }
 # Keeps config.IDLE_ANIMATION_THEMES (the admin panel's dropdown source of
 # truth) and this dict from silently drifting apart -- fails loudly at
@@ -890,6 +895,16 @@ _panel_deal = {}
 def _current_theme_pool():
     themed = IDLE_THEMES.get(state.idle_theme) or IDLE_THEMES[IDLE_THEME_DEFAULT]
     return GENERAL_IDLE_ANIMATIONS + themed
+
+
+def set_effective_theme(theme):
+    """Switch what panels 3-6 show (per-song theme resolution); re-deals
+    straight away only when it actually changes."""
+    if theme not in IDLE_THEMES:
+        theme = IDLE_THEME_DEFAULT
+    if theme != state.idle_theme:
+        state.idle_theme = theme
+        deal_panel_animations()
 
 
 def deal_panel_animations():

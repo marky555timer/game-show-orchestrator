@@ -22,6 +22,7 @@ class State:
         self.active_deck = 1  # 1 or 2
         self.now_playing_duration = 0.0  # exact length (sec) of the active deck's track
         self.now_playing_path = ""       # audio file path of the active deck's track
+        self.now_playing_started_at = 0.0  # wall time the active deck's audio was at 0s (re-aligned on every seek)
 
         # True once a deck's (title, artist) came from an exact rekordbox
         # DB match or a resolved AI cleanup -- i.e. NOT a raw regex guess.
@@ -357,6 +358,7 @@ class State:
         # dancing animations, panels 3-6 in DJ mode (drivers/idle_cycle_engine.py) ---
         self.idle_cycle_phase = "start_game"   # "start_game" | "leaderboard" | "goal" | "dancing"
         self.idle_cycle_phase_started_at = 0.0
+        self.idle_dance_seconds = config.IDLE_DANCE_SECONDS  # this dancing turn's length (a Technical Dreams demo slice runs longer)
         self.idle_cycle_leaderboard_page = 0
         self.idle_cycle_goal_page = 0
         # Which per-theme animation set (graphics/animations.py::IDLE_THEMES)
@@ -364,6 +366,12 @@ class State:
         # Operator-selectable in the admin panel; see
         # web/remote_server.py::/api/idle/theme.
         self.idle_theme = config.IDLE_THEME_DEFAULT
+        # idle_theme above is what's showing now; this is the operator's
+        # general theme, and a song's own/energy theme overrides it per track
+        # (drivers/light_prefs_engine.py::resolve_idle_theme).
+        self.idle_theme_base = config.IDLE_THEME_DEFAULT
+        self.idle_theme_auto = config.IDLE_THEME_AUTO_BY_ENERGY_DEFAULT
+        self.idle_theme_source = "general"  # "song" | "slow" | "fast" | "general" -- why idle_theme is what it is
 
         # --- Era-trivia once-per-game scheduling (drivers/factoid_engine.py) ---
         # game_active tracks whether we're mid-game (reset False whenever

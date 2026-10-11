@@ -713,6 +713,7 @@ def update(now):
         state.active_deck = target_deck
         state.now_playing_duration = track["duration"]
         state.now_playing_path = track["path"]
+        state.now_playing_started_at = time.time()  # play_deck() above started it at 0s
         try:
             from drivers import track_record
             track_record.touch_played(track["path"])

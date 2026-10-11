@@ -35,6 +35,11 @@ def _enter_phase(phase, now):
         state.idle_cycle_leaderboard_page = 0
     elif phase == "goal":
         state.idle_cycle_goal_page = 0
+    elif phase == "dancing":
+        # Technical Dreams: every other dancing turn is a slice of the
+        # four-panel demo, which sets its own length (graphics/technical_dreams.py).
+        from graphics import technical_dreams
+        state.idle_dance_seconds = technical_dreams.on_dancing(now) or config.IDLE_DANCE_SECONDS
 
 
 def update(now):
@@ -79,7 +84,7 @@ def update(now):
                 state.idle_cycle_phase_started_at = now
 
     elif phase == "dancing":
-        if elapsed >= config.IDLE_DANCE_SECONDS:
+        if elapsed >= state.idle_dance_seconds:
             _enter_phase("start_game", now)
 
     else:

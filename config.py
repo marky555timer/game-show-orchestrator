@@ -1642,7 +1642,17 @@ IDLE_GOAL_PAGE_SIZE = 2
 # IDLE_THEMES dict has exactly these keys, and web/remote_server.py
 # validates incoming admin-panel selections against it, so the two can't
 # silently drift apart.
-IDLE_ANIMATION_THEMES = ["Halloween", "Birthday", "Question Marks"]
+IDLE_ANIMATION_THEMES = ["Halloween", "Birthday", "Question Marks", "Technical Dreams", "Love"]
+# Per-song theme (2026-10-11): a song's saved theme wins; otherwise, with
+# auto on, its energy tag picks one (slow -> Love, fast -> Technical
+# Dreams); anything else plays the general theme chosen in the admin panel.
+# drivers/light_prefs_engine.py::resolve_idle_theme.
+IDLE_THEME_BY_ENERGY = {"slow": "Love", "fast": "Technical Dreams"}
+IDLE_THEME_AUTO_BY_ENERGY_DEFAULT = True
+IDLE_THEME_GENERAL = "@general"   # saved per-song value: "use the general theme even if slow/fast"
+# Technical Dreams demo's headline + scroller text, edited from the remote
+# (graphics/technical_dreams.py; only non-default text is stored).
+TD_TEXT_FILE = resource_path("technical_dreams_text.json")
 IDLE_THEME_DEFAULT = "Question Marks"
 
 # ==========================================
@@ -2458,6 +2468,16 @@ MEDLEY_RESULTS_SECONDS = 15.0    # game: end-of-medley leaderboard on the main s
 MEDLEY_BANNER_SCROLL_PX_PER_SEC = 20.0  # "MEDLEY TIME!" on panels 3+4: scroll speed
 MEDLEY_BANNER_BOB_PX = 3               # ...and how far it bobs up/down
 MEDLEY_BANNER_BOB_PERIOD_SECONDS = 1.6
+
+# HOOK WORDS (drivers/hook_words.py, 2026-10-11): a song's signature phrase
+# across panels 3-6, one word per panel, each appearing as it's sung.
+HOOK_WORDS_ENABLED = True
+HOOK_WORDS_FILE = resource_path("hook_words.json")
+HOOK_WORDS_LEAD_SECONDS = 0.10        # show each word this much early (audio output + LED pipeline delay)
+HOOK_WORDS_CLEAR_BEFORE_SECONDS = 0.6 # panels 3-6 go dark this long before the first word
+HOOK_WORDS_HOLD_SECONDS = 2.5         # the full phrase holds this long after the last word appears
+HOOK_WORDS_POP_SECONDS = 0.15         # each word flashes inverted (lit box, dark letters) as it lands
+HOOK_WORDS_DEMO_LEAD_IN_SECONDS = 9.0 # demo button: jump to this long before the phrase
 MEDLEY_ENTRY_FADE_SECONDS = 1.5   # fade from the normal track into the first hook
 MEDLEY_LAST_TAIL_SECONDS = 4.0    # the last hook rings out this long
 MEDLEY_HANDOFF_LEAD_SECONDS = 6.0 # start the normal-track crossfade this early (its decode takes a moment)
