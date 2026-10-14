@@ -470,20 +470,41 @@ def get_prefs_for(track_key):
     return light_prefs_engine.get_prefs_for(track_key)
 
 
+def decade_for(track_key):
+    """The song's release decade as a number (1980, 1990, ...): the library
+    tag if it has one, else the year the AI reported for the song playing
+    now. None if neither is known yet."""
+    from drivers import music_metadata_engine
+    label = (music_metadata_engine.get_metadata_for(track_key) or {}).get("decade") or ""
+    if label[:4].isdigit():
+        return int(label[:4])
+    if track_key and track_key == state.factoid_track_key and state.track_release_year:
+        return state.track_release_year // 10 * 10
+    return None
+
+
 def resolve_idle_theme(track_key):
     """(theme, source) for panels 3-6 on this song: its own saved theme
-    ("song"); else, with auto on, the theme for its energy tag ("slow" ->
-    Love, "fast" -> Technical Dreams); else the operator's general theme.
-    A saved "@general" pins the general theme even for a slow/fast song."""
+    ("song"); else, with auto on, Dark for a "dark" song, then the theme for
+    its release decade ("decade": 50s to 90s), then the one for its energy
+    tag ("slow" -> Love, "fast" -> Technical Dreams); else the operator's
+    general theme. A saved "@general" pins the general theme regardless."""
     prefs = light_prefs_engine.get_prefs_for(track_key) or {}
     own = prefs.get("idle_theme", "")
     if own == config.IDLE_THEME_GENERAL:
         return state.idle_theme_base, "song"
     if own in config.IDLE_ANIMATION_THEMES:
         return own, "song"
-    energy = prefs.get("energy") or ""
-    if state.idle_theme_auto and energy in config.IDLE_THEME_BY_ENERGY:
-        return config.IDLE_THEME_BY_ENERGY[energy], energy
+    if state.idle_theme_auto:
+        energy = prefs.get("energy") or ""
+        by_energy = config.IDLE_THEME_BY_ENERGY.get(energy)
+        if by_energy and energy in config.IDLE_THEME_ENERGY_BEFORE_DECADE:
+            return by_energy, energy
+        by_decade = config.IDLE_THEME_BY_DECADE.get(decade_for(track_key))
+        if by_decade:
+            return by_decade, "decade"
+        if by_energy:
+            return by_energy, energy
     return state.idle_theme_base, "general"
 
 
@@ -493,7 +514,7 @@ def apply_idle_theme_for(track_key):
     state.idle_theme_source = source
     if theme != state.idle_theme:
         print(f"[LIGHT PREFS] {track_key!r}: panel theme {theme!r} ({source})")
-    set_effective_theme(theme)
+    set_effective_theme(theme, (get_energy_for(track_key) or "") if track_key else "")
 
 
 def save_song_theme(track_key, theme):

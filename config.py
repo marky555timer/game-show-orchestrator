@@ -1642,12 +1642,16 @@ IDLE_GOAL_PAGE_SIZE = 2
 # IDLE_THEMES dict has exactly these keys, and web/remote_server.py
 # validates incoming admin-panel selections against it, so the two can't
 # silently drift apart.
-IDLE_ANIMATION_THEMES = ["Halloween", "Birthday", "Question Marks", "Technical Dreams", "Love"]
+IDLE_ANIMATION_THEMES = ["Halloween", "Birthday", "Question Marks", "Technical Dreams", "Love",
+                         "50s", "60s", "70s", "80s", "90s", "Dark"]
 # Per-song theme (2026-10-11): a song's saved theme wins; otherwise, with
-# auto on, its energy tag picks one (slow -> Love, fast -> Technical
-# Dreams); anything else plays the general theme chosen in the admin panel.
-# drivers/light_prefs_engine.py::resolve_idle_theme.
-IDLE_THEME_BY_ENERGY = {"slow": "Love", "fast": "Technical Dreams"}
+# auto on, a "dark" song gets Dark whatever its decade, then the release
+# decade picks one (2026-10-13: 50s to 90s), then the energy tag (slow ->
+# Love, fast -> Technical Dreams); anything else plays the general theme
+# chosen in the admin panel. drivers/light_prefs_engine.py::resolve_idle_theme.
+IDLE_THEME_BY_ENERGY = {"slow": "Love", "fast": "Technical Dreams", "dark": "Dark"}
+IDLE_THEME_BY_DECADE = {1950: "50s", 1960: "60s", 1970: "70s", 1980: "80s", 1990: "90s"}
+IDLE_THEME_ENERGY_BEFORE_DECADE = ("dark",)   # these energy tags outrank the decade
 IDLE_THEME_AUTO_BY_ENERGY_DEFAULT = True
 IDLE_THEME_GENERAL = "@general"   # saved per-song value: "use the general theme even if slow/fast"
 # Technical Dreams demo's headline + scroller text, edited from the remote

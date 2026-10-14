@@ -723,5 +723,1192 @@
    ]
   ],
   "note": "auto-timed 2026-10-11 (demucs + windowed whisper, onset-snapped)"
+ },
+ "The Box Tops - The Letter.mp3": {
+  "panels": [
+   "MY|BABY",
+   "JUST",
+   "WROTE|ME",
+   "A|LETTER"
+  ],
+  "times": [
+   [
+    14.14,
+    14.36,
+    15.01,
+    15.65
+   ]
+  ],
+  "note": "auto-timed 2026-10-13 (demucs + windowed whisper, onset-snapped)"
+ },
+ "Village People - Y.M.C.A..mp3": {
+  "panels": [
+   "Y",
+   "M",
+   "C",
+   "A"
+  ],
+  "times": [
+   [
+    116.36,
+    116.52,
+    116.9,
+    117.13
+   ],
+   [
+    180.74,
+    181.04,
+    181.29,
+    181.47
+   ],
+   [
+    209.1,
+    209.26,
+    209.46,
+    209.72
+   ],
+   [
+    269.25,
+    269.55,
+    269.82,
+    270.07
+   ]
+  ],
+  "note": "auto-timed 2026-10-13 (demucs + windowed whisper, onset-snapped)"
+ },
+ "Sister Sledge - We Are Family.mp3": {
+  "panels": [
+   "WE ARE",
+   "FAMILY",
+   "I GOT|ALL MY",
+   "SISTER|WITH ME"
+  ],
+  "times": [
+   [
+    49.91,
+    50.94,
+    53.82,
+    54.75
+   ],
+   [
+    114.51,
+    115.39,
+    118.4,
+    119.18
+   ]
+  ],
+  "note": "auto-timed 2026-10-13 (demucs + windowed whisper, onset-snapped)"
+ },
+ "Donna Summer - Hot Stuff.mp3": {
+  "panels": [
+   "LOOKIN'|FOR",
+   "SOME",
+   "HOT",
+   "STUFF"
+  ],
+  "times": [
+   [
+    46.42,
+    47.86,
+    48.39,
+    48.89
+   ]
+  ],
+  "note": "auto-timed 2026-10-13 (demucs + windowed whisper, onset-snapped)"
+ },
+ "KC & The Sunshine Band - That's the Way (I Like It).mp3": {
+  "panels": [
+   "THAT'S",
+   "THE|WAY",
+   "I",
+   "LIKE|IT"
+  ],
+  "times": [
+   [
+    26.48,
+    26.92,
+    27.57,
+    28.39
+   ],
+   [
+    30.89,
+    31.45,
+    31.99,
+    32.8
+   ],
+   [
+    166.91,
+    167.45,
+    167.98,
+    168.84
+   ],
+   [
+    171.34,
+    171.79,
+    172.43,
+    173.26
+   ],
+   [
+    225.04,
+    225.6,
+    226.17,
+    226.98
+   ]
+  ],
+  "note": "auto-timed 2026-10-13 (demucs + windowed whisper, onset-snapped)"
+ },
+ "Wild Cherry - Play That Funky Music.mp3": {
+  "panels": [
+   "PLAY|THAT",
+   "FUNKY",
+   "MUSIC",
+   "WHITE|BOY"
+  ],
+  "times": [
+   [
+    149.54,
+    149.88,
+    150.15,
+    151.44
+   ],
+   [
+    157.24,
+    158.64,
+    159.15,
+    160.23
+   ]
+  ],
+  "note": "auto-timed 2026-10-13 (demucs + windowed whisper, onset-snapped)"
+ },
+ "Bill Withers - Lean on Me.mp3": {
+  "panels": [
+   "LEAN|ON ME",
+   "WHEN|YOU'RE",
+   "NOT",
+   "STRONG"
+  ],
+  "times": [
+   [
+    129.97,
+    132.68,
+    133.52,
+    133.93
+   ]
+  ],
+  "note": "auto-timed 2026-10-13 (demucs + windowed whisper, onset-snapped)"
+ },
+ "Chuck Berry - Johnny B. Goode.mp3": {
+  "panels": [
+   "GO",
+   "JOHNNY",
+   "GO",
+   "GO!"
+  ],
+  "times": [
+   [
+    137.65,
+    138.13,
+    138.28,
+    140.13
+   ],
+   [
+    146.61,
+    146.98,
+    147.19,
+    148.99
+   ]
+  ],
+  "note": "auto-timed 2026-10-13 (demucs + windowed whisper, onset-snapped)"
+ },
+ "Jerry Lee Lewis - Whole Lotta Shakin' Goin' On.mp3": {
+  "panels": [
+   "WHOLE",
+   "LOTTA",
+   "SHAKIN'",
+   "GOIN'|ON"
+  ],
+  "times": [
+   [
+    7.32,
+    7.64,
+    8.24,
+    8.64
+   ],
+   [
+    19.02,
+    19.52,
+    19.88,
+    20.25
+   ]
+  ],
+  "note": "auto-timed 2026-10-13 (demucs + windowed whisper, onset-snapped)"
+ },
+ "Roy Orbison - Oh, Pretty Woman.mp3": {
+  "panels": [
+   "PRETTY",
+   "WOMAN",
+   "WALKIN'",
+   "DOWN THE|STREET"
+  ],
+  "times": [
+   [
+    14.42,
+    14.86,
+    16.55,
+    16.8
+   ]
+  ],
+  "note": "auto-timed 2026-10-13 (demucs + windowed whisper, onset-snapped)"
+ },
+ "The Jackson 5 - I Want You Back.mp3": {
+  "panels": [
+   "OH|BABY",
+   "GIVE|ME",
+   "ONE|MORE",
+   "CHANCE"
+  ],
+  "times": [
+   [
+    49.56,
+    50.21,
+    51.04,
+    51.9
+   ]
+  ],
+  "note": "auto-timed 2026-10-13 (demucs + windowed whisper, onset-snapped)"
+ },
+ "Elvis Presley - Suspicious Minds.mp3": {
+  "panels": [
+   "WE'RE",
+   "CAUGHT",
+   "IN A",
+   "TRAP"
+  ],
+  "times": [
+   [
+    5.21,
+    5.45,
+    5.74,
+    6.27
+   ],
+   [
+    136.15,
+    136.38,
+    136.66,
+    137.21
+   ]
+  ],
+  "note": "auto-timed 2026-10-13 (demucs + windowed whisper, onset-snapped)"
+ },
+ "Steppenwolf - Born to Be Wild.mp3": {
+  "panels": [
+   "BORN",
+   "TO",
+   "BE",
+   "WILD"
+  ],
+  "times": [
+   [
+    71.12,
+    71.37,
+    71.77,
+    72.12
+   ],
+   [
+    80.5,
+    80.76,
+    81.15,
+    81.52
+   ],
+   [
+    87.32,
+    87.76,
+    88.21,
+    88.57
+   ],
+   [
+    160.22,
+    160.49,
+    160.85,
+    161.2
+   ]
+  ],
+  "note": "auto-timed 2026-10-13 (demucs + windowed whisper, onset-snapped)"
+ },
+ "Nancy Sinatra - These Boots Are Made for Walkin'.mp3": {
+  "panels": [
+   "THESE",
+   "BOOTS",
+   "ARE MADE|FOR",
+   "WALKIN'"
+  ],
+  "times": [
+   [
+    34.47,
+    34.85,
+    35.2,
+    35.98
+   ],
+   [
+    79.55,
+    79.92,
+    80.26,
+    81.01
+   ],
+   [
+    124.76,
+    125.12,
+    125.48,
+    126.25
+   ]
+  ],
+  "note": "auto-timed 2026-10-13 (demucs + windowed whisper, onset-snapped)"
+ },
+ "Rose Royce - Car Wash.mp3": {
+  "panels": [
+   "WORKIN'",
+   "AT THE",
+   "CAR",
+   "WASH"
+  ],
+  "times": [
+   [
+    83.68,
+    83.94,
+    84.65,
+    85.06
+   ]
+  ],
+  "note": "auto-timed 2026-10-13 (demucs + windowed whisper, onset-snapped)"
+ },
+ "Anita Ward - Ring My Bell.mp3": {
+  "panels": [
+   "YOU|CAN",
+   "RING",
+   "MY",
+   "BELL"
+  ],
+  "times": [
+   [
+    52.47,
+    52.66,
+    53.3,
+    53.74
+   ],
+   [
+    105.99,
+    106.16,
+    106.68,
+    107.3
+   ]
+  ],
+  "note": "auto-timed 2026-10-13 (demucs + windowed whisper, onset-snapped)"
+ },
+ "Sam & Dave - Soul Man.mp3": {
+  "panels": [
+   "I'M",
+   "A",
+   "SOUL",
+   "MAN"
+  ],
+  "times": [
+   [
+    38.05,
+    38.33,
+    38.6,
+    39.14
+   ],
+   [
+    42.3,
+    42.58,
+    42.87,
+    43.4
+   ],
+   [
+    72.15,
+    72.43,
+    72.69,
+    73.15
+   ],
+   [
+    76.4,
+    76.69,
+    76.94,
+    77.51
+   ],
+   [
+    101.97,
+    102.24,
+    102.52,
+    103.07
+   ],
+   [
+    106.5,
+    106.78,
+    107.02,
+    107.55
+   ],
+   [
+    110.47,
+    110.83,
+    111.04,
+    111.44
+   ],
+   [
+    114.69,
+    114.98,
+    115.26,
+    115.81
+   ],
+   [
+    140.44,
+    140.72,
+    140.87,
+    141.54
+   ]
+  ],
+  "note": "auto-timed 2026-10-13 (demucs + windowed whisper, onset-snapped)"
+ },
+ "James Brown - I Got You (I Feel Good).mp3": {
+  "panels": [
+   "I FEEL",
+   "GOOD",
+   "I KNEW|THAT I",
+   "WOULD"
+  ],
+  "times": [
+   [
+    0.98,
+    1.3,
+    4.21,
+    4.77
+   ],
+   [
+    6.3,
+    7.36,
+    10.01,
+    10.75
+   ]
+  ],
+  "note": "auto-timed 2026-10-13 (demucs + windowed whisper, onset-snapped)"
+ },
+ "The Everly Brothers - Wake Up Little Susie.mp3": {
+  "panels": [
+   "WAKE|UP",
+   "LITTLE",
+   "SUSIE",
+   "WAKE|UP"
+  ],
+  "times": [
+   [
+    5.52,
+    6.4,
+    6.82,
+    8.06
+   ],
+   [
+    10.77,
+    11.66,
+    12.04,
+    13.58
+   ]
+  ],
+  "note": "auto-timed 2026-10-13 (demucs + windowed whisper, onset-snapped)"
+ },
+ "Roberta Flack - Killing Me Softly with His Song.mp3": {
+  "panels": [
+   "KILLING",
+   "ME",
+   "SOFTLY",
+   "WITH|HIS SONG"
+  ],
+  "times": [
+   [
+    9.41,
+    9.77,
+    10.25,
+    10.73
+   ],
+   [
+    12.64,
+    12.96,
+    13.49,
+    14.04
+   ],
+   [
+    21.45,
+    21.8,
+    22.21,
+    22.84
+   ],
+   [
+    79.46,
+    79.86,
+    80.23,
+    80.71
+   ],
+   [
+    82.51,
+    82.77,
+    83.29,
+    83.78
+   ],
+   [
+    131.16,
+    131.41,
+    131.92,
+    132.41
+   ],
+   [
+    142.59,
+    142.79,
+    143.29,
+    143.81
+   ],
+   [
+    182.53,
+    182.92,
+    183.27,
+    183.76
+   ],
+   [
+    237.05,
+    237.42,
+    237.91,
+    238.35
+   ],
+   [
+    263.78,
+    263.96,
+    264.58,
+    265.01
+   ],
+   [
+    275.01,
+    275.18,
+    275.78,
+    276.2
+   ]
+  ],
+  "note": "auto-timed 2026-10-13 (demucs + windowed whisper, onset-snapped)"
+ },
+ "Bill Withers - Ain't No Sunshine.mp3": {
+  "panels": [
+   "AIN'T|NO",
+   "SUN|SHINE",
+   "WHEN",
+   "SHE'S|GONE"
+  ],
+  "times": [
+   [
+    0.06,
+    0.71,
+    1.11,
+    2.08
+   ],
+   [
+    12.93,
+    13.54,
+    13.91,
+    14.91
+   ],
+   [
+    38.07,
+    38.66,
+    39.05,
+    39.95
+   ],
+   [
+    74.24,
+    74.88,
+    75.26,
+    76.16
+   ],
+   [
+    86.34,
+    86.93,
+    87.31,
+    88.2
+   ]
+  ],
+  "note": "auto-timed 2026-10-13 (demucs + windowed whisper, onset-snapped)"
+ },
+ "Marvin Gaye - I Heard It Through the Grapevine.mp3": {
+  "panels": [
+   "I|HEARD IT",
+   "THRU|THE",
+   "GRAPE",
+   "VINE"
+  ],
+  "times": [
+   [
+    182.45,
+    183.69,
+    184.23,
+    184.69
+   ]
+  ],
+  "note": "auto-timed 2026-10-13 (demucs + windowed whisper, onset-snapped)"
+ },
+ "The Supremes - Baby Love.mp3": {
+  "panels": [
+   "BABY",
+   "LOVE",
+   "MY",
+   "BABY|LOVE"
+  ],
+  "times": [
+   [
+    30.37,
+    31.0,
+    31.67,
+    32.1
+   ]
+  ],
+  "note": "auto-timed 2026-10-13 (demucs + windowed whisper, onset-snapped)"
+ },
+ "Bee Gees - You Should Be Dancing.mp3": {
+  "panels": [
+   "YOU",
+   "SHOULD",
+   "BE",
+   "DANCIN'"
+  ],
+  "times": [
+   [
+    38.07,
+    38.61,
+    38.82,
+    39.06
+   ],
+   [
+    69.25,
+    69.84,
+    70.06,
+    70.3
+   ]
+  ],
+  "note": "auto-timed 2026-10-13 (demucs + windowed whisper, onset-snapped)"
+ },
+ "Eddie Cochran - Summertime Blues.mp3": {
+  "panels": [
+   "AIN'T NO|CURE",
+   "FOR THE",
+   "SUMMER|TIME",
+   "BLUES"
+  ],
+  "times": [
+   [
+    31.1,
+    32.11,
+    32.87,
+    33.71
+   ],
+   [
+    64.16,
+    65.15,
+    65.93,
+    66.77
+   ],
+   [
+    97.13,
+    98.13,
+    98.91,
+    99.74
+   ]
+  ],
+  "note": "auto-timed 2026-10-13 (demucs + windowed whisper, onset-snapped)"
+ },
+ "Thelma Houston - Don't Leave Me This Way.mp3": {
+  "panels": [
+   "DON'T",
+   "LEAVE|ME",
+   "THIS",
+   "WAY"
+  ],
+  "times": [
+   [
+    64.7,
+    65.21,
+    65.67,
+    66.29
+   ],
+   [
+    77.35,
+    77.79,
+    78.41,
+    78.89
+   ],
+   [
+    122.98,
+    123.42,
+    123.98,
+    124.25
+   ],
+   [
+    129.01,
+    129.41,
+    130.05,
+    130.43
+   ],
+   [
+    141.05,
+    141.43,
+    141.94,
+    142.35
+   ],
+   [
+    318.09,
+    318.52,
+    318.88,
+    319.3
+   ]
+  ],
+  "note": "auto-timed 2026-10-13 (demucs + windowed whisper, onset-snapped)"
+ },
+ "Candi Staton - Young Hearts Run Free.mp3": {
+  "panels": [
+   "YOUNG",
+   "HEARTS",
+   "RUN",
+   "FREE"
+  ],
+  "times": [
+   [
+    204.96,
+    205.25,
+    206.96,
+    207.38
+   ]
+  ],
+  "note": "auto-timed 2026-10-13 (demucs + windowed whisper, onset-snapped)"
+ },
+ "Yvonne Elliman - If I Can't Have You.mp3": {
+  "panels": [
+   "IF I",
+   "CAN'T",
+   "HAVE",
+   "YOU"
+  ],
+  "times": [
+   [
+    47.6,
+    48.37,
+    48.74,
+    49.03
+   ],
+   [
+    53.0,
+    53.77,
+    54.08,
+    54.37
+   ],
+   [
+    61.79,
+    62.43,
+    62.86,
+    63.14
+   ],
+   [
+    114.36,
+    115.02,
+    115.45,
+    115.78
+   ],
+   [
+    118.51,
+    119.37,
+    119.8,
+    120.11
+   ],
+   [
+    123.14,
+    123.8,
+    124.22,
+    124.53
+   ],
+   [
+    168.06,
+    168.89,
+    169.39,
+    169.61
+   ],
+   [
+    172.25,
+    173.06,
+    173.46,
+    173.64
+   ]
+  ],
+  "note": "auto-timed 2026-10-13 (demucs + windowed whisper, onset-snapped)"
+ },
+ "The Staple Singers - I'll Take You There.mp3": {
+  "panels": [
+   "I'LL",
+   "TAKE",
+   "YOU",
+   "THERE"
+  ],
+  "times": [
+   [
+    42.43,
+    42.64,
+    43.03,
+    43.21
+   ],
+   [
+    47.03,
+    47.34,
+    47.68,
+    47.93
+   ],
+   [
+    56.45,
+    56.76,
+    57.14,
+    57.34
+   ],
+   [
+    60.94,
+    61.27,
+    61.52,
+    61.79
+   ],
+   [
+    65.91,
+    66.22,
+    66.52,
+    66.86
+   ],
+   [
+    70.99,
+    71.27,
+    71.56,
+    71.89
+   ],
+   [
+    136.5,
+    136.82,
+    137.13,
+    137.37
+   ],
+   [
+    141.17,
+    141.52,
+    141.84,
+    142.09
+   ],
+   [
+    145.95,
+    146.21,
+    146.45,
+    146.76
+   ],
+   [
+    150.53,
+    150.85,
+    151.14,
+    151.41
+   ],
+   [
+    155.2,
+    155.58,
+    155.81,
+    156.11
+   ],
+   [
+    159.89,
+    160.17,
+    160.48,
+    160.76
+   ],
+   [
+    197.23,
+    197.57,
+    197.78,
+    198.1
+   ],
+   [
+    201.82,
+    202.17,
+    202.45,
+    202.72
+   ],
+   [
+    206.47,
+    206.76,
+    207.17,
+    207.33
+   ],
+   [
+    211.18,
+    211.53,
+    211.74,
+    212.06
+   ],
+   [
+    215.78,
+    216.09,
+    216.41,
+    216.66
+   ],
+   [
+    239.16,
+    239.47,
+    239.78,
+    240.02
+   ],
+   [
+    243.87,
+    244.17,
+    244.49,
+    244.76
+   ],
+   [
+    248.51,
+    248.82,
+    249.14,
+    249.36
+   ],
+   [
+    253.15,
+    253.52,
+    253.78,
+    254.09
+   ]
+  ],
+  "note": "auto-timed 2026-10-13 (demucs + windowed whisper, onset-snapped)"
+ },
+ "Marvin Gaye - Let's Get It On.mp3": {
+  "panels": [
+   "LET'S",
+   "GET",
+   "IT",
+   "ON"
+  ],
+  "times": [
+   [
+    29.92,
+    30.62,
+    31.0,
+    31.25
+   ],
+   [
+    35.66,
+    36.38,
+    36.7,
+    36.95
+   ],
+   [
+    41.47,
+    42.19,
+    42.49,
+    42.7
+   ],
+   [
+    138.82,
+    139.62,
+    139.96,
+    140.27
+   ],
+   [
+    144.47,
+    145.16,
+    145.53,
+    145.75
+   ],
+   [
+    166.56,
+    167.25,
+    167.48,
+    167.93
+   ],
+   [
+    172.52,
+    173.39,
+    173.75,
+    173.9
+   ],
+   [
+    286.41,
+    287.21,
+    287.42,
+    287.7
+   ]
+  ],
+  "note": "auto-timed 2026-10-13 (demucs + windowed whisper, onset-snapped)"
+ },
+ "The Platters - The Great Pretender.mp3": {
+  "panels": [
+   "OH|YES",
+   "I'M THE",
+   "GREAT",
+   "PRE|TENDER"
+  ],
+  "times": [
+   [
+    5.28,
+    7.44,
+    7.98,
+    8.77
+   ],
+   [
+    30.35,
+    32.45,
+    32.98,
+    33.81
+   ]
+  ],
+  "note": "auto-timed 2026-10-13 (demucs + windowed whisper, onset-snapped)"
+ },
+ "Chic - Good Times.mp3": {
+  "panels": [
+   "GOOD",
+   "TIMES",
+   "THESE|ARE THE",
+   "GOOD|TIMES"
+  ],
+  "times": [
+   [
+    175.58,
+    175.86,
+    177.9,
+    179.54
+   ]
+  ],
+  "note": "auto-timed 2026-10-13 (demucs + windowed whisper, onset-snapped)"
+ },
+ "Stevie Wonder - Uptight (Everything's Alright).mp3": {
+  "panels": [
+   "EVERY|THING",
+   "IS AL|RIGHT",
+   "UP|TIGHT",
+   "OUTTA|SIGHT"
+  ],
+  "times": [
+   [
+    23.43,
+    24.1,
+    25.42,
+    27.37
+   ],
+   [
+    30.64,
+    31.09,
+    32.67,
+    34.55
+   ]
+  ],
+  "note": "auto-timed 2026-10-13 (demucs + windowed whisper, onset-snapped)"
+ },
+ "The Everly Brothers - All I Have to Do Is Dream.mp3": {
+  "panels": [
+   "ALL I|HAVE",
+   "TO DO",
+   "IS",
+   "DREAM"
+  ],
+  "times": [
+   [
+    24.27,
+    25.18,
+    25.83,
+    26.41
+   ],
+   [
+    44.25,
+    45.27,
+    45.91,
+    46.5
+   ],
+   [
+    84.19,
+    85.23,
+    86.02,
+    86.45
+   ],
+   [
+    128.82,
+    130.0,
+    130.74,
+    131.23
+   ]
+  ],
+  "note": "auto-timed 2026-10-13 (demucs + windowed whisper, onset-snapped)"
+ },
+ "Otis Redding - (Sittin' On) The Dock of the Bay.mp3": {
+  "panels": [
+   "SITTIN'",
+   "ON THE",
+   "DOCK OF",
+   "THE BAY"
+  ],
+  "times": [
+   [
+    27.91,
+    28.21,
+    29.07,
+    29.91
+   ]
+  ],
+  "note": "auto-timed 2026-10-13 (demucs + windowed whisper, onset-snapped)"
+ },
+ "The Beach Boys - Wouldn't It Be Nice.mp3": {
+  "panels": [
+   "WOULDN'T",
+   "IT",
+   "BE",
+   "NICE"
+  ],
+  "times": [
+   [
+    6.93,
+    7.5,
+    7.81,
+    8.07
+   ],
+   [
+    14.44,
+    14.84,
+    15.41,
+    15.62
+   ],
+   [
+    33.83,
+    34.37,
+    34.64,
+    35.21
+   ],
+   [
+    60.92,
+    61.26,
+    61.68,
+    62.18
+   ],
+   [
+    117.98,
+    118.31,
+    118.73,
+    119.22
+   ]
+  ],
+  "note": "auto-timed 2026-10-13 (demucs + windowed whisper, onset-snapped)"
+ },
+ "The Flamingos - I Only Have Eyes for You.mp3": {
+  "panels": [
+   "I ONLY",
+   "HAVE",
+   "EYES",
+   "FOR|YOU"
+  ],
+  "times": [
+   [
+    165.84,
+    167.28,
+    168.34,
+    171.2
+   ]
+  ],
+  "note": "auto-timed 2026-10-13 (demucs + windowed whisper, onset-snapped)"
  }
 }

@@ -46,7 +46,7 @@ from graphics.text_render import (
 )
 from graphics.animations import (
     render_panel_animation, deal_panel_animations,
-    anim_dancing_cat, anim_star_burst, anim_coin_pop,
+    anim_coin_pop,
     anim_bold_star, anim_bold_dollar, anim_arrow_down,
 )
 from graphics import overlay_panel
@@ -458,43 +458,23 @@ def _render_intermission_countdown(pid, rect):
     draw_marquee(matrix_surface, "intermission_countdown", f"{minutes}:{seconds:02d}", rect, align="center")
 
 
-# Statuses that just mean "nothing to report yet" -- not an AI failure, so
-# panel 3 stays on its dealt animation rather than showing the dancing-cat
-# failure animation.
-_AI_BENIGN_STATUSES = ("", "NO CONFIDENT TRACK ID", "FETCHING FACTOID...")
-
-
 def _status_kind():
-    """Which AI-pipeline indicator panel 3 owes the room right now:
-    "credit" if a Btn6-triggered fetch just failed (out of credits/API
-    error), "fail" for any other factoid/question failure, "ok" once a real
-    AI-sourced question has loaded for the current track, or None when
-    there's nothing to report (panel 3 then just animates)."""
+    """Whether panel 3 owes the room an indicator right now: "credit" if a
+    Btn2 quiz fetch just timed out, else None (panel 3 just animates). The
+    old star-on-success / cat-on-failure AI indicators were retired
+    2026-10-13."""
     if state.coin_pop_flash_until and time.time() < state.coin_pop_flash_until:
         return "credit"
-    if state.factoid_status not in _AI_BENIGN_STATUSES:
-        return "fail"
-    if state.factoid_headline and not state.quiz_is_test:
-        return "ok"
     return None
 
 
 def _render_status_panel(rect, t, kind):
-    """Panel 3 briefly doubles as a status indicator for the AI factoid/quiz
-    pipeline: a bursting star once a real question has loaded for the current
-    track, a dancing cat face if the AI request failed or is unavailable (the
-    reason is also echoed loudly to the console -- see
-    drivers/factoid_engine.py), or a coin-pop specifically when a Btn6 quiz
-    fetch attempt itself just failed ("out of credits")."""
+    """Panel 3 briefly shows a coin-pop when a Btn2 quiz fetch attempt has
+    just failed ("out of credits")."""
     old_clip = matrix_surface.get_clip()
     matrix_surface.set_clip(pygame.Rect(rect))
     try:
-        if kind == "credit":
-            anim_coin_pop(matrix_surface, rect, t)
-        elif kind == "fail":
-            anim_dancing_cat(matrix_surface, rect, t)
-        else:
-            anim_star_burst(matrix_surface, rect, t)
+        anim_coin_pop(matrix_surface, rect, t)
     finally:
         matrix_surface.set_clip(old_clip)
 

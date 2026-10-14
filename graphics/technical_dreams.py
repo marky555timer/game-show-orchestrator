@@ -97,6 +97,79 @@ def _x2(m):
     return np.kron(m, np.ones((2, 2), bool))
 
 
+def sprite(*rows):
+    """Rows of "#" (lit) / anything else (dark) -> on/off mask."""
+    return np.array([[c == "#" for c in r] for r in rows], bool)
+
+
+def draw_line(m, xa, ya, xb, yb):
+    n = int(max(abs(xb - xa), abs(yb - ya))) + 1
+    xs = np.rint(np.linspace(xa, xb, n)).astype(int)
+    ys = np.rint(np.linspace(ya, yb, n)).astype(int)
+    ok = (xs >= 0) & (xs < m.shape[1]) & (ys >= 0) & (ys < m.shape[0])
+    m[ys[ok], xs[ok]] = True
+
+
+def draw_box(m, x, y, w, h, fill=False):
+    H, W = m.shape
+    xa, ya, xb, yb = max(0, x), max(0, y), min(W, x + w), min(H, y + h)
+    if xb <= xa or yb <= ya:
+        return
+    if fill:
+        m[ya:yb, xa:xb] = True
+        return
+    if 0 <= y < H:
+        m[y, xa:xb] = True
+    if 0 <= y + h - 1 < H:
+        m[y + h - 1, xa:xb] = True
+    if 0 <= x < W:
+        m[ya:yb, x] = True
+    if 0 <= x + w - 1 < W:
+        m[ya:yb, x + w - 1] = True
+
+
+def disc(h, w, cx, cy, r):
+    yy, xx = _grid(h, w)
+    return np.hypot(xx - cx, yy - cy) <= r
+
+
+def ellipse(h, w, cx, cy, rx, ry):
+    yy, xx = _grid(h, w)
+    return ((xx - cx) / rx) ** 2 + ((yy - cy) / ry) ** 2 <= 1
+
+
+def plot(m, xs, ys):
+    """Light the points (xs, ys) -- arrays or lists -- that land on the panel."""
+    xs = np.rint(np.asarray(xs, np.float32)).astype(int)
+    ys = np.rint(np.asarray(ys, np.float32)).astype(int)
+    ok = (xs >= 0) & (xs < m.shape[1]) & (ys >= 0) & (ys < m.shape[0])
+    m[ys[ok], xs[ok]] = True
+
+
+def tri(p):
+    """Triangle wave 0..1..0 over one unit of p."""
+    p %= 1.0
+    return 2 * p if p < 0.5 else 2 - 2 * p
+
+
+noise_rng = np.random.RandomState(7)   # throwaway noise; seeding a fresh generator every frame is slow on the Pi
+
+
+def hash01(a, b=0.0):
+    """Repeatable 0..1 pseudo-random number for a pair of numbers."""
+    return (math.sin(a * 12.9898 + b * 78.233) * 43758.5453) % 1.0
+
+
+def for_energy(*tags):
+    """Marks an animation as suiting only these energy tags ("slow",
+    "fast"); unmarked ones suit any song. graphics/animations.py deals
+    from the matching part of a theme (state.idle_theme_energy)."""
+    def mark(fn):
+        fn.energies = tags
+        return fn
+    return mark
+
+
 def _beat(t):
     """0..1 position in the current beat on the tempo-locked idle clock
     (graphics/matrix_canvas.py advances it one default period per beat)."""
@@ -540,7 +613,7 @@ def _sc_boot(tl, dur, beat):
     m = np.zeros((H, W), bool)
     n = int(tl * 20)  # characters typed so far
     y = 0
-    for line in ("TD-OS 1.0", "ONE COLOUR", "LOADING"):
+    for line in ("TC-OS 1.0", "ONE COLOUR", "LOADING"):
         shown = line[:max(0, n)]
         n -= len(line) + 3  # a short pause between lines
         if not shown:
@@ -658,7 +731,7 @@ def _td_tile():
     t = _st.get("td_tile")
     if t is None:
         t = np.zeros((10, 14), bool)
-        _stamp(t, text_mask("TD"), 1, 1)
+        _stamp(t, text_mask("TC"), 1, 1)
         _st["td_tile"] = t
     return t
 

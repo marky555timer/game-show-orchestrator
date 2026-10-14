@@ -674,16 +674,17 @@ class TrackQuestionEngine:
             # earlier one), overriding whatever the BPM-tag auto-set or the
             # last track's cycling left the lights at. No-op if this track
             # has no saved prefs.
+            # Re-learned below (cache hit) or by the fetch worker once this
+            # track's first question lands. Stale here would aim Btn6's
+            # price question -- and the panel theme apply_prefs_for() picks
+            # by decade -- at the PREVIOUS song's era.
+            state.track_release_year = None
             light_prefs_engine.apply_prefs_for(key)
             # New track -- any Price Game armed for the previous track is no
             # longer relevant. Re-armed just below if this track's own
             # cached questions already carry an eligible release_year.
             state.price_game_pending = False
             state.price_game_decade = ""
-            # Re-learned below (cache hit) or by the fetch worker once this
-            # track's first question lands. Stale here would aim Btn6's
-            # price question at the PREVIOUS song's era.
-            state.track_release_year = None
             if cached:
                 print(f"[TRACK CACHE] {len(cached)} cached question(s) already on disk for "
                       f"'{title}' - '{artist}'")
@@ -821,6 +822,8 @@ class TrackQuestionEngine:
                 state.track_release_year = int(year)
             except (TypeError, ValueError):
                 pass
+            else:
+                light_prefs_engine.apply_idle_theme_for(key)  # an 80s/90s year can arrive mid-song
         if key in self._price_offered:
             return
         self._price_offered.add(key)

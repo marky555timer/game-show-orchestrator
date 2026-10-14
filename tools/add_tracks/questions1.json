@@ -1,0 +1,6702 @@
+{
+ "otis redding - (sittin' on) the dock of the bay": [
+  {
+   "category": "date",
+   "question": "Year released?",
+   "question_long": "What year was '(Sittin' On) The Dock of the Bay' by Otis Redding released?",
+   "choices": [
+    "1957",
+    "1968",
+    "1972",
+    "1963"
+   ],
+   "correct_index": 1,
+   "correction": "",
+   "headline": "Released in 1968",
+   "full": "'(Sittin' On) The Dock of the Bay' by Otis Redding was released in 1968.",
+   "choices_long": [
+    "1957",
+    "1968",
+    "1972",
+    "1963"
+   ],
+   "release_year": 1968,
+   "energy": "slow"
+  },
+  {
+   "category": "geography",
+   "question": "Otis Redding's home state?",
+   "question_long": "Which US state was Otis Redding from?",
+   "choices": [
+    "Alabama",
+    "Georgia",
+    "Mississippi",
+    "Tennessee"
+   ],
+   "correct_index": 1,
+   "correction": "",
+   "headline": "Georgia's king of soul",
+   "full": "Otis Redding was born in Dawson, Georgia, and grew up in Macon.",
+   "choices_long": [
+    "Alabama",
+    "Georgia",
+    "Mississippi",
+    "Tennessee"
+   ],
+   "release_year": 1968,
+   "energy": "slow"
+  },
+  {
+   "category": "true_false",
+   "question": "T/F: Released after Redding's death?",
+   "question_long": "True or false: '(Sittin' On) The Dock of the Bay' was released after Otis Redding's death.",
+   "choices": [
+    "True",
+    "False"
+   ],
+   "correct_index": 0,
+   "correction": "",
+   "headline": "A hit he never got to hear",
+   "full": "Redding died in a plane crash in December 1967. The single came out in January 1968 and became the first posthumous #1 on the Hot 100.",
+   "choices_long": [
+    "True",
+    "False"
+   ],
+   "release_year": 1968,
+   "energy": "slow"
+  }
+ ],
+ "bobby womack - across 110th street": [
+  {
+   "category": "geography",
+   "question": "110th Street is in which city?",
+   "question_long": "The 110th Street of Bobby Womack's song is in which city?",
+   "choices": [
+    "Detroit",
+    "Chicago",
+    "Los Angeles",
+    "New York"
+   ],
+   "correct_index": 3,
+   "correction": "",
+   "headline": "The edge of Harlem",
+   "full": "110th Street runs along the southern edge of Harlem in New York City.",
+   "choices_long": [
+    "Detroit",
+    "Chicago",
+    "Los Angeles",
+    "New York"
+   ],
+   "release_year": 1972,
+   "energy": "dark"
+  },
+  {
+   "category": "career_stat",
+   "question": "Tarantino film that opens with it?",
+   "question_long": "Which Quentin Tarantino film opens with 'Across 110th Street'?",
+   "choices": [
+    "Reservoir Dogs",
+    "Pulp Fiction",
+    "Kill Bill",
+    "Jackie Brown"
+   ],
+   "correct_index": 3,
+   "correction": "",
+   "headline": "Tarantino's opening credits",
+   "full": "The song was written for the 1972 film 'Across 110th Street' and opens Tarantino's 'Jackie Brown' (1997).",
+   "choices_long": [
+    "Reservoir Dogs",
+    "Pulp Fiction",
+    "Kill Bill",
+    "Jackie Brown"
+   ],
+   "release_year": 1972,
+   "energy": "dark"
+  },
+  {
+   "category": "true_false",
+   "question": "T/F: Bobby Womack was born in Detroit?",
+   "question_long": "True or false: Bobby Womack was born in Detroit.",
+   "choices": [
+    "True",
+    "False"
+   ],
+   "correct_index": 1,
+   "correction": "Bobby Womack was born in Cleveland, Ohio",
+   "headline": "Cleveland's own",
+   "full": "Bobby Womack was born in Cleveland, Ohio, and started out singing gospel with his brothers.",
+   "choices_long": [
+    "True",
+    "False"
+   ],
+   "release_year": 1972,
+   "energy": "dark"
+  }
+ ],
+ "bill withers - ain't no sunshine": [
+  {
+   "category": "date",
+   "question": "Year released?",
+   "question_long": "What year was 'Ain't No Sunshine' by Bill Withers released?",
+   "choices": [
+    "1971",
+    "1976",
+    "1962",
+    "1967"
+   ],
+   "correct_index": 0,
+   "correction": "",
+   "headline": "Released in 1971",
+   "full": "'Ain't No Sunshine' by Bill Withers was released in 1971.",
+   "choices_long": [
+    "1971",
+    "1976",
+    "1962",
+    "1967"
+   ],
+   "release_year": 1971,
+   "energy": "slow"
+  },
+  {
+   "category": "career_stat",
+   "question": "'I know' sung how many times in a row?",
+   "question_long": "How many times in a row does Bill Withers sing 'I know' in 'Ain't No Sunshine'?",
+   "choices": [
+    "34",
+    "26",
+    "18",
+    "12"
+   ],
+   "correct_index": 1,
+   "correction": "",
+   "headline": "I know, I know, I know...",
+   "full": "Withers repeats 'I know' 26 times in a row in place of a verse he never wrote.",
+   "choices_long": [
+    "34",
+    "26",
+    "18",
+    "12"
+   ],
+   "release_year": 1971,
+   "energy": "slow"
+  },
+  {
+   "category": "true_false",
+   "question": "T/F: Bill Withers served in the US Navy?",
+   "question_long": "True or false: Bill Withers served in the US Navy before his music career.",
+   "choices": [
+    "True",
+    "False"
+   ],
+   "correct_index": 0,
+   "correction": "",
+   "headline": "Sailor before singer",
+   "full": "Bill Withers spent nine years in the US Navy before he ever made a record.",
+   "choices_long": [
+    "True",
+    "False"
+   ],
+   "release_year": 1971,
+   "energy": "slow"
+  }
+ ],
+ "al green - let's stay together": [
+  {
+   "category": "date",
+   "question": "Year released?",
+   "question_long": "What year was 'Let's Stay Together' by Al Green released?",
+   "choices": [
+    "1976",
+    "1962",
+    "1967",
+    "1971"
+   ],
+   "correct_index": 3,
+   "correction": "",
+   "headline": "Released in 1971",
+   "full": "'Let's Stay Together' by Al Green was released in 1971.",
+   "choices_long": [
+    "1976",
+    "1962",
+    "1967",
+    "1971"
+   ],
+   "release_year": 1971,
+   "energy": "slow"
+  },
+  {
+   "category": "geography",
+   "question": "Al Green's home state?",
+   "question_long": "Which US state was Al Green born in?",
+   "choices": [
+    "Mississippi",
+    "Tennessee",
+    "Arkansas",
+    "Georgia"
+   ],
+   "correct_index": 2,
+   "correction": "",
+   "headline": "From Forrest City, Arkansas",
+   "full": "Al Green was born in Forrest City, Arkansas.",
+   "choices_long": [
+    "Mississippi",
+    "Tennessee",
+    "Arkansas",
+    "Georgia"
+   ],
+   "release_year": 1971,
+   "energy": "slow"
+  },
+  {
+   "category": "true_false",
+   "question": "T/F: Al Green became a pastor in Chicago?",
+   "question_long": "True or false: Al Green later became a pastor in Chicago.",
+   "choices": [
+    "True",
+    "False"
+   ],
+   "correct_index": 1,
+   "correction": "His church, the Full Gospel Tabernacle, is in Memphis",
+   "headline": "The Reverend Al Green",
+   "full": "Al Green became an ordained pastor and leads the Full Gospel Tabernacle in Memphis, Tennessee.",
+   "choices_long": [
+    "True",
+    "False"
+   ],
+   "release_year": 1971,
+   "energy": "slow"
+  }
+ ],
+ "the everly brothers - all i have to do is dream": [
+  {
+   "category": "date",
+   "question": "Year released?",
+   "question_long": "What year was 'All I Have to Do Is Dream' by The Everly Brothers released?",
+   "choices": [
+    "1963",
+    "1968",
+    "1958",
+    "1954"
+   ],
+   "correct_index": 2,
+   "correction": "",
+   "headline": "Released in 1958",
+   "full": "'All I Have to Do Is Dream' by The Everly Brothers was released in 1958.",
+   "choices_long": [
+    "1963",
+    "1968",
+    "1958",
+    "1954"
+   ],
+   "release_year": 1958,
+   "energy": "slow"
+  },
+  {
+   "category": "real_name",
+   "question": "The Everly Brothers' first names?",
+   "question_long": "What were the first names of the Everly Brothers?",
+   "choices": [
+    "Tom and Dick",
+    "Bob and Ray",
+    "Jim and Dean",
+    "Don and Phil"
+   ],
+   "correct_index": 3,
+   "correction": "",
+   "headline": "Don and Phil",
+   "full": "The Everly Brothers were Don and Phil Everly.",
+   "choices_long": [
+    "Tom and Dick",
+    "Bob and Ray",
+    "Jim and Dean",
+    "Don and Phil"
+   ],
+   "release_year": 1958,
+   "energy": "slow"
+  },
+  {
+   "category": "true_false",
+   "question": "T/F: Written by the Everlys themselves?",
+   "question_long": "True or false: The Everly Brothers wrote 'All I Have to Do Is Dream' themselves.",
+   "choices": [
+    "True",
+    "False"
+   ],
+   "correct_index": 1,
+   "correction": "Boudleaux Bryant wrote it",
+   "headline": "A Bryant song",
+   "full": "'All I Have to Do Is Dream' was written by Boudleaux Bryant, who with his wife Felice wrote many Everly Brothers hits.",
+   "choices_long": [
+    "True",
+    "False"
+   ],
+   "release_year": 1958,
+   "energy": "slow"
+  }
+ ],
+ "creedence clearwater revival - bad moon rising": [
+  {
+   "category": "date",
+   "question": "Year released?",
+   "question_long": "What year was 'Bad Moon Rising' by Creedence Clearwater Revival released?",
+   "choices": [
+    "1964",
+    "1973",
+    "1958",
+    "1969"
+   ],
+   "correct_index": 3,
+   "correction": "",
+   "headline": "Released in 1969",
+   "full": "'Bad Moon Rising' by Creedence Clearwater Revival was released in 1969.",
+   "choices_long": [
+    "1964",
+    "1973",
+    "1958",
+    "1969"
+   ],
+   "release_year": 1969,
+   "energy": "fast"
+  },
+  {
+   "category": "real_name",
+   "question": "CCR's lead singer?",
+   "question_long": "Who was the lead singer and songwriter of Creedence Clearwater Revival?",
+   "choices": [
+    "Bob Seger",
+    "John Fogerty",
+    "Tom Petty",
+    "Don Henley"
+   ],
+   "correct_index": 1,
+   "correction": "",
+   "headline": "Fogerty's band",
+   "full": "John Fogerty wrote and sang 'Bad Moon Rising'.",
+   "choices_long": [
+    "Bob Seger",
+    "John Fogerty",
+    "Tom Petty",
+    "Don Henley"
+   ],
+   "release_year": 1969,
+   "energy": "fast"
+  },
+  {
+   "category": "true_false",
+   "question": "T/F: It hit #1 on the US Hot 100?",
+   "question_long": "True or false: 'Bad Moon Rising' reached #1 on the US Hot 100.",
+   "choices": [
+    "True",
+    "False"
+   ],
+   "correct_index": 1,
+   "correction": "It peaked at #2; CCR never had a US #1 single",
+   "headline": "Always the runner-up",
+   "full": "'Bad Moon Rising' peaked at #2 in the US. Creedence Clearwater Revival never had a #1 on the Hot 100.",
+   "choices_long": [
+    "True",
+    "False"
+   ],
+   "release_year": 1969,
+   "energy": "fast"
+  }
+ ],
+ "william devaughn - be thankful for what you got": [
+  {
+   "category": "date",
+   "question": "Year released?",
+   "question_long": "What year was 'Be Thankful for What You Got' by William DeVaughn released?",
+   "choices": [
+    "1963",
+    "1969",
+    "1974",
+    "1978"
+   ],
+   "correct_index": 2,
+   "correction": "",
+   "headline": "Released in 1974",
+   "full": "'Be Thankful for What You Got' by William DeVaughn was released in 1974.",
+   "choices_long": [
+    "1963",
+    "1969",
+    "1974",
+    "1978"
+   ],
+   "release_year": 1974,
+   "energy": "slow"
+  },
+  {
+   "category": "song_meaning",
+   "question": "Car named in the lyrics?",
+   "question_long": "Which car is named in the lyrics of 'Be Thankful for What You Got'?",
+   "choices": [
+    "Cadillac",
+    "Mustang",
+    "Corvette",
+    "Lincoln"
+   ],
+   "correct_index": 0,
+   "correction": "",
+   "headline": "Diamond in the back",
+   "full": "The lyric says you may not drive 'a great big Cadillac' but can still stand tall.",
+   "choices_long": [
+    "Cadillac",
+    "Mustang",
+    "Corvette",
+    "Lincoln"
+   ],
+   "release_year": 1974,
+   "energy": "slow"
+  },
+  {
+   "category": "true_false",
+   "question": "T/F: William DeVaughn is from D.C.?",
+   "question_long": "True or false: William DeVaughn is from Washington, D.C.",
+   "choices": [
+    "True",
+    "False"
+   ],
+   "correct_index": 0,
+   "correction": "",
+   "headline": "A Washington, D.C. singer",
+   "full": "William DeVaughn is from Washington, D.C.",
+   "choices_long": [
+    "True",
+    "False"
+   ],
+   "release_year": 1974,
+   "energy": "slow"
+  }
+ ],
+ "gene vincent & his blue caps - be-bop-a-lula": [
+  {
+   "category": "date",
+   "question": "Year released?",
+   "question_long": "What year was 'Be-Bop-A-Lula' by Gene Vincent & His Blue Caps released?",
+   "choices": [
+    "1956",
+    "1960",
+    "1965",
+    "1950"
+   ],
+   "correct_index": 0,
+   "correction": "",
+   "headline": "Released in 1956",
+   "full": "'Be-Bop-A-Lula' by Gene Vincent & His Blue Caps was released in 1956.",
+   "choices_long": [
+    "1956",
+    "1960",
+    "1965",
+    "1950"
+   ],
+   "release_year": 1956,
+   "energy": "fast"
+  },
+  {
+   "category": "real_name",
+   "question": "Gene Vincent's backing band?",
+   "question_long": "What was the name of Gene Vincent's backing band?",
+   "choices": [
+    "The Blue Caps",
+    "The Crickets",
+    "The Comets",
+    "The Shadows"
+   ],
+   "correct_index": 0,
+   "correction": "",
+   "headline": "Gene Vincent & His Blue Caps",
+   "full": "Gene Vincent recorded 'Be-Bop-A-Lula' with his band, the Blue Caps.",
+   "choices_long": [
+    "The Blue Caps",
+    "The Crickets",
+    "The Comets",
+    "The Shadows"
+   ],
+   "release_year": 1956,
+   "energy": "fast"
+  },
+  {
+   "category": "true_false",
+   "question": "T/F: Gene Vincent was from Texas?",
+   "question_long": "True or false: Gene Vincent was from Texas.",
+   "choices": [
+    "True",
+    "False"
+   ],
+   "correct_index": 1,
+   "correction": "Gene Vincent was from Norfolk, Virginia",
+   "headline": "Virginia rockabilly",
+   "full": "Gene Vincent was born in Norfolk, Virginia.",
+   "choices_long": [
+    "True",
+    "False"
+   ],
+   "release_year": 1956,
+   "energy": "fast"
+  }
+ ],
+ "fats domino - blueberry hill": [
+  {
+   "category": "date",
+   "question": "Year released?",
+   "question_long": "What year was 'Blueberry Hill' by Fats Domino released?",
+   "choices": [
+    "1951",
+    "1956",
+    "1960",
+    "1945"
+   ],
+   "correct_index": 1,
+   "correction": "",
+   "headline": "Released in 1956",
+   "full": "'Blueberry Hill' by Fats Domino was released in 1956.",
+   "choices_long": [
+    "1951",
+    "1956",
+    "1960",
+    "1945"
+   ],
+   "release_year": 1956,
+   "energy": "slow"
+  },
+  {
+   "category": "geography",
+   "question": "Fats Domino's hometown?",
+   "question_long": "Which city was Fats Domino from?",
+   "choices": [
+    "Chicago",
+    "Memphis",
+    "New Orleans",
+    "St. Louis"
+   ],
+   "correct_index": 2,
+   "correction": "",
+   "headline": "New Orleans piano man",
+   "full": "Fats Domino was born in New Orleans and lived there nearly all his life.",
+   "choices_long": [
+    "Chicago",
+    "Memphis",
+    "New Orleans",
+    "St. Louis"
+   ],
+   "release_year": 1956,
+   "energy": "slow"
+  },
+  {
+   "category": "true_false",
+   "question": "T/F: Fats Domino wrote Blueberry Hill?",
+   "question_long": "True or false: Fats Domino wrote 'Blueberry Hill'.",
+   "choices": [
+    "True",
+    "False"
+   ],
+   "correct_index": 1,
+   "correction": "It dates from 1940; Glenn Miller had a hit with it",
+   "headline": "Older than rock and roll",
+   "full": "'Blueberry Hill' was written in 1940, and Glenn Miller had a hit with it 16 years before Fats Domino.",
+   "choices_long": [
+    "True",
+    "False"
+   ],
+   "release_year": 1956,
+   "energy": "slow"
+  }
+ ],
+ "heatwave - boogie nights": [
+  {
+   "category": "career_stat",
+   "question": "Heatwave's Rod Temperton later wrote?",
+   "question_long": "Heatwave's keyboardist Rod Temperton later wrote which Michael Jackson song?",
+   "choices": [
+    "Beat It",
+    "Billie Jean",
+    "Thriller",
+    "Bad"
+   ],
+   "correct_index": 2,
+   "correction": "",
+   "headline": "From Heatwave to Thriller",
+   "full": "Rod Temperton wrote 'Boogie Nights' for Heatwave and later wrote 'Thriller' and 'Rock with You' for Michael Jackson.",
+   "choices_long": [
+    "Beat It",
+    "Billie Jean",
+    "Thriller",
+    "Bad"
+   ],
+   "release_year": 1977,
+   "energy": "fast"
+  },
+  {
+   "category": "career_stat",
+   "question": "Another Heatwave hit?",
+   "question_long": "Which of these was also a hit for Heatwave?",
+   "choices": [
+    "Always and Forever",
+    "Reunited",
+    "After the Love Has Gone",
+    "Three Times a Lady"
+   ],
+   "correct_index": 0,
+   "correction": "",
+   "headline": "Heatwave's slow-dance classic",
+   "full": "Heatwave followed 'Boogie Nights' with the ballad 'Always and Forever'.",
+   "choices_long": [
+    "Always and Forever",
+    "Reunited",
+    "After the Love Has Gone",
+    "Three Times a Lady"
+   ],
+   "release_year": 1977,
+   "energy": "fast"
+  },
+  {
+   "category": "true_false",
+   "question": "T/F: It hit #1 on the US Hot 100?",
+   "question_long": "True or false: 'Boogie Nights' reached #1 on the US Hot 100.",
+   "choices": [
+    "True",
+    "False"
+   ],
+   "correct_index": 1,
+   "correction": "It peaked at #2 in the US",
+   "headline": "So close",
+   "full": "'Boogie Nights' peaked at #2 on the US Hot 100 in 1977.",
+   "choices_long": [
+    "True",
+    "False"
+   ],
+   "release_year": 1977,
+   "energy": "fast"
+  }
+ ],
+ "a taste of honey - boogie oogie oogie": [
+  {
+   "category": "date",
+   "question": "Year released?",
+   "question_long": "What year was 'Boogie Oogie Oogie' by A Taste of Honey released?",
+   "choices": [
+    "1983",
+    "1978",
+    "1988",
+    "1974"
+   ],
+   "correct_index": 1,
+   "correction": "",
+   "headline": "Released in 1978",
+   "full": "'Boogie Oogie Oogie' by A Taste of Honey was released in 1978.",
+   "choices_long": [
+    "1983",
+    "1978",
+    "1988",
+    "1974"
+   ],
+   "release_year": 1978,
+   "energy": "fast"
+  },
+  {
+   "category": "career_stat",
+   "question": "Grammy the group won in 1979?",
+   "question_long": "Which Grammy did A Taste of Honey win in 1979?",
+   "choices": [
+    "Record of the Year",
+    "Best New Artist",
+    "Song of the Year",
+    "Album of the Year"
+   ],
+   "correct_index": 1,
+   "correction": "",
+   "headline": "Best New Artist",
+   "full": "A Taste of Honey won the Grammy for Best New Artist in 1979.",
+   "choices_long": [
+    "Record of the Year",
+    "Best New Artist",
+    "Song of the Year",
+    "Album of the Year"
+   ],
+   "release_year": 1978,
+   "energy": "fast"
+  },
+  {
+   "category": "true_false",
+   "question": "T/F: It reached #1 on the Hot 100?",
+   "question_long": "True or false: 'Boogie Oogie Oogie' reached #1 on the US Hot 100.",
+   "choices": [
+    "True",
+    "False"
+   ],
+   "correct_index": 0,
+   "correction": "",
+   "headline": "Three weeks on top",
+   "full": "'Boogie Oogie Oogie' spent three weeks at #1 on the Hot 100 in 1978.",
+   "choices_long": [
+    "True",
+    "False"
+   ],
+   "release_year": 1978,
+   "energy": "fast"
+  }
+ ],
+ "earth, wind & fire, the emotions - boogie wonderland": [
+  {
+   "category": "date",
+   "question": "Year released?",
+   "question_long": "What year was 'Boogie Wonderland' by Earth, Wind & Fire, The Emotions released?",
+   "choices": [
+    "1979",
+    "1983",
+    "1988",
+    "1973"
+   ],
+   "correct_index": 0,
+   "correction": "",
+   "headline": "Released in 1979",
+   "full": "'Boogie Wonderland' by Earth, Wind & Fire, The Emotions was released in 1979.",
+   "choices_long": [
+    "1979",
+    "1983",
+    "1988",
+    "1973"
+   ],
+   "release_year": 1979,
+   "energy": "fast"
+  },
+  {
+   "category": "career_stat",
+   "question": "Guest vocal group on it?",
+   "question_long": "Which vocal group sings with Earth, Wind & Fire on 'Boogie Wonderland'?",
+   "choices": [
+    "The Emotions",
+    "The Supremes",
+    "Sister Sledge",
+    "The Pointer Sisters"
+   ],
+   "correct_index": 0,
+   "correction": "",
+   "headline": "With The Emotions",
+   "full": "The Emotions, who had a #1 with 'Best of My Love', sing on 'Boogie Wonderland'.",
+   "choices_long": [
+    "The Emotions",
+    "The Supremes",
+    "Sister Sledge",
+    "The Pointer Sisters"
+   ],
+   "release_year": 1979,
+   "energy": "fast"
+  },
+  {
+   "category": "true_false",
+   "question": "T/F: Philip Bailey founded the band?",
+   "question_long": "True or false: Earth, Wind & Fire was founded by Philip Bailey.",
+   "choices": [
+    "True",
+    "False"
+   ],
+   "correct_index": 1,
+   "correction": "Maurice White founded Earth, Wind & Fire",
+   "headline": "Maurice White's band",
+   "full": "Maurice White founded Earth, Wind & Fire in Chicago; Philip Bailey joined later as co-lead singer.",
+   "choices_long": [
+    "True",
+    "False"
+   ],
+   "release_year": 1979,
+   "energy": "fast"
+  }
+ ],
+ "steppenwolf - born to be wild": [
+  {
+   "category": "date",
+   "question": "Year released?",
+   "question_long": "What year was 'Born to Be Wild' by Steppenwolf released?",
+   "choices": [
+    "1968",
+    "1957",
+    "1972",
+    "1963"
+   ],
+   "correct_index": 0,
+   "correction": "",
+   "headline": "Released in 1968",
+   "full": "'Born to Be Wild' by Steppenwolf was released in 1968.",
+   "choices_long": [
+    "1968",
+    "1957",
+    "1972",
+    "1963"
+   ],
+   "release_year": 1968,
+   "energy": "fast"
+  },
+  {
+   "category": "career_stat",
+   "question": "1969 film that made it an anthem?",
+   "question_long": "Which 1969 film made 'Born to Be Wild' a biker anthem?",
+   "choices": [
+    "The Wild One",
+    "Bullitt",
+    "Easy Rider",
+    "Vanishing Point"
+   ],
+   "correct_index": 2,
+   "correction": "",
+   "headline": "The Easy Rider song",
+   "full": "'Born to Be Wild' plays over the opening ride of the 1969 film 'Easy Rider'.",
+   "choices_long": [
+    "The Wild One",
+    "Bullitt",
+    "Easy Rider",
+    "Vanishing Point"
+   ],
+   "release_year": 1968,
+   "energy": "fast"
+  },
+  {
+   "category": "true_false",
+   "question": "T/F: Lyrics say 'heavy metal thunder'?",
+   "question_long": "True or false: The lyrics of 'Born to Be Wild' include the phrase 'heavy metal thunder'.",
+   "choices": [
+    "True",
+    "False"
+   ],
+   "correct_index": 0,
+   "correction": "",
+   "headline": "Heavy metal thunder",
+   "full": "The song's line 'heavy metal thunder' is often cited as an early use of 'heavy metal' in rock.",
+   "choices_long": [
+    "True",
+    "False"
+   ],
+   "release_year": 1968,
+   "energy": "fast"
+  }
+ ],
+ "cymande - bra": [
+  {
+   "category": "date",
+   "question": "Year released?",
+   "question_long": "What year was 'Bra' by Cymande released?",
+   "choices": [
+    "1977",
+    "1972",
+    "1968",
+    "1982"
+   ],
+   "correct_index": 1,
+   "correction": "",
+   "headline": "Released in 1972",
+   "full": "'Bra' by Cymande was released in 1972.",
+   "choices_long": [
+    "1977",
+    "1972",
+    "1968",
+    "1982"
+   ],
+   "release_year": 1972,
+   "energy": "fast"
+  },
+  {
+   "category": "geography",
+   "question": "Cymande formed in which city?",
+   "question_long": "In which city did the band Cymande form?",
+   "choices": [
+    "New York",
+    "Kingston",
+    "London",
+    "Lagos"
+   ],
+   "correct_index": 2,
+   "correction": "",
+   "headline": "A London funk band",
+   "full": "Cymande formed in London in 1971.",
+   "choices_long": [
+    "New York",
+    "Kingston",
+    "London",
+    "Lagos"
+   ],
+   "release_year": 1972,
+   "energy": "fast"
+  },
+  {
+   "category": "true_false",
+   "question": "T/F: Cymande's members had Caribbean roots?",
+   "question_long": "True or false: The members of Cymande had Caribbean roots.",
+   "choices": [
+    "True",
+    "False"
+   ],
+   "correct_index": 0,
+   "correction": "",
+   "headline": "Caribbean roots, London funk",
+   "full": "Cymande's members came from Guyana, Jamaica and St. Vincent and met in London.",
+   "choices_long": [
+    "True",
+    "False"
+   ],
+   "release_year": 1972,
+   "energy": "fast"
+  }
+ ],
+ "rose royce - car wash": [
+  {
+   "category": "date",
+   "question": "Year released?",
+   "question_long": "What year was 'Car Wash' by Rose Royce released?",
+   "choices": [
+    "1972",
+    "1976",
+    "1981",
+    "1986"
+   ],
+   "correct_index": 1,
+   "correction": "",
+   "headline": "Released in 1976",
+   "full": "'Car Wash' by Rose Royce was released in 1976.",
+   "choices_long": [
+    "1972",
+    "1976",
+    "1981",
+    "1986"
+   ],
+   "release_year": 1976,
+   "energy": "fast"
+  },
+  {
+   "category": "real_name",
+   "question": "Who wrote and produced it?",
+   "question_long": "Who wrote and produced 'Car Wash' for Rose Royce?",
+   "choices": [
+    "Norman Whitfield",
+    "Giorgio Moroder",
+    "Barry White",
+    "Quincy Jones"
+   ],
+   "correct_index": 0,
+   "correction": "",
+   "headline": "A Norman Whitfield production",
+   "full": "Former Motown producer Norman Whitfield wrote and produced 'Car Wash' for the 1976 film.",
+   "choices_long": [
+    "Norman Whitfield",
+    "Giorgio Moroder",
+    "Barry White",
+    "Quincy Jones"
+   ],
+   "release_year": 1976,
+   "energy": "fast"
+  },
+  {
+   "category": "true_false",
+   "question": "T/F: The film starred Eddie Murphy?",
+   "question_long": "True or false: The film 'Car Wash' starred Eddie Murphy.",
+   "choices": [
+    "True",
+    "False"
+   ],
+   "correct_index": 1,
+   "correction": "Richard Pryor and George Carlin appear; Murphy does not",
+   "headline": "Pryor and Carlin at the car wash",
+   "full": "The 1976 film 'Car Wash' features Richard Pryor and George Carlin.",
+   "choices_long": [
+    "True",
+    "False"
+   ],
+   "release_year": 1976,
+   "energy": "fast"
+  }
+ ],
+ "rufus, chaka khan - tell me something good": [
+  {
+   "category": "date",
+   "question": "Year released?",
+   "question_long": "What year was 'Tell Me Something Good' by Rufus, Chaka Khan released?",
+   "choices": [
+    "1984",
+    "1974",
+    "1979",
+    "1970"
+   ],
+   "correct_index": 1,
+   "correction": "",
+   "headline": "Released in 1974",
+   "full": "'Tell Me Something Good' by Rufus, Chaka Khan was released in 1974.",
+   "choices_long": [
+    "1984",
+    "1974",
+    "1979",
+    "1970"
+   ],
+   "release_year": 1974,
+   "energy": "fast"
+  },
+  {
+   "category": "real_name",
+   "question": "Who wrote it?",
+   "question_long": "Who wrote 'Tell Me Something Good' for Rufus?",
+   "choices": [
+    "Stevie Wonder",
+    "Sly Stone",
+    "Curtis Mayfield",
+    "Marvin Gaye"
+   ],
+   "correct_index": 0,
+   "correction": "",
+   "headline": "A gift from Stevie",
+   "full": "Stevie Wonder wrote 'Tell Me Something Good' for Rufus and Chaka Khan.",
+   "choices_long": [
+    "Stevie Wonder",
+    "Sly Stone",
+    "Curtis Mayfield",
+    "Marvin Gaye"
+   ],
+   "release_year": 1974,
+   "energy": "fast"
+  },
+  {
+   "category": "true_false",
+   "question": "T/F: Chaka Khan was born Yvette Stevens?",
+   "question_long": "True or false: Chaka Khan's birth name is Yvette Stevens.",
+   "choices": [
+    "True",
+    "False"
+   ],
+   "correct_index": 0,
+   "correction": "",
+   "headline": "Born Yvette Stevens",
+   "full": "Chaka Khan was born Yvette Marie Stevens in Chicago.",
+   "choices_long": [
+    "True",
+    "False"
+   ],
+   "release_year": 1974,
+   "energy": "fast"
+  }
+ ],
+ "the big bopper - chantilly lace": [
+  {
+   "category": "date",
+   "question": "Year released?",
+   "question_long": "What year was 'Chantilly Lace' by The Big Bopper released?",
+   "choices": [
+    "1951",
+    "1955",
+    "1958",
+    "1964"
+   ],
+   "correct_index": 2,
+   "correction": "",
+   "headline": "Released in 1958",
+   "full": "'Chantilly Lace' by The Big Bopper was released in 1958.",
+   "choices_long": [
+    "1951",
+    "1955",
+    "1958",
+    "1964"
+   ],
+   "release_year": 1958,
+   "energy": "fast"
+  },
+  {
+   "category": "real_name",
+   "question": "The Big Bopper's real name?",
+   "question_long": "What was The Big Bopper's real name?",
+   "choices": [
+    "J.P. Richardson",
+    "Charles Hardin",
+    "Ellas McDaniel",
+    "Richard Penniman"
+   ],
+   "correct_index": 0,
+   "correction": "",
+   "headline": "J.P. Richardson",
+   "full": "The Big Bopper was Jiles Perry 'J.P.' Richardson, a Texas disc jockey.",
+   "choices_long": [
+    "J.P. Richardson",
+    "Charles Hardin",
+    "Ellas McDaniel",
+    "Richard Penniman"
+   ],
+   "release_year": 1958,
+   "energy": "fast"
+  },
+  {
+   "category": "true_false",
+   "question": "T/F: Died in Buddy Holly's plane crash?",
+   "question_long": "True or false: The Big Bopper died in the same plane crash as Buddy Holly.",
+   "choices": [
+    "True",
+    "False"
+   ],
+   "correct_index": 0,
+   "correction": "",
+   "headline": "The day the music died",
+   "full": "The Big Bopper, Buddy Holly and Ritchie Valens died in a plane crash on February 3, 1959.",
+   "choices_long": [
+    "True",
+    "False"
+   ],
+   "release_year": 1958,
+   "energy": "fast"
+  }
+ ],
+ "commodores - brick house": [
+  {
+   "category": "date",
+   "question": "Year released?",
+   "question_long": "What year was 'Brick House' by Commodores released?",
+   "choices": [
+    "1981",
+    "1971",
+    "1986",
+    "1977"
+   ],
+   "correct_index": 3,
+   "correction": "",
+   "headline": "Released in 1977",
+   "full": "'Brick House' by Commodores was released in 1977.",
+   "choices_long": [
+    "1981",
+    "1971",
+    "1986",
+    "1977"
+   ],
+   "release_year": 1977,
+   "energy": "fast"
+  },
+  {
+   "category": "real_name",
+   "question": "Who sings lead on it?",
+   "question_long": "Who sings lead on the Commodores' 'Brick House'?",
+   "choices": [
+    "Walter Orange",
+    "Lionel Richie",
+    "William King",
+    "Thomas McClary"
+   ],
+   "correct_index": 0,
+   "correction": "",
+   "headline": "The drummer sings",
+   "full": "Drummer Walter 'Clyde' Orange sings lead on 'Brick House', not Lionel Richie.",
+   "choices_long": [
+    "Walter Orange",
+    "Lionel Richie",
+    "William King",
+    "Thomas McClary"
+   ],
+   "release_year": 1977,
+   "energy": "fast"
+  },
+  {
+   "category": "true_false",
+   "question": "T/F: The Commodores met at Tuskegee?",
+   "question_long": "True or false: The Commodores met as students at Tuskegee Institute.",
+   "choices": [
+    "True",
+    "False"
+   ],
+   "correct_index": 0,
+   "correction": "",
+   "headline": "Tuskegee classmates",
+   "full": "The Commodores formed in 1968 as students at Tuskegee Institute in Alabama.",
+   "choices_long": [
+    "True",
+    "False"
+   ],
+   "release_year": 1977,
+   "energy": "fast"
+  }
+ ],
+ "martha reeves & the vandellas - dancing in the street": [
+  {
+   "category": "date",
+   "question": "Year released?",
+   "question_long": "What year was 'Dancing in the Street' by Martha Reeves & The Vandellas released?",
+   "choices": [
+    "1973",
+    "1958",
+    "1968",
+    "1964"
+   ],
+   "correct_index": 3,
+   "correction": "",
+   "headline": "Released in 1964",
+   "full": "'Dancing in the Street' by Martha Reeves & The Vandellas was released in 1964.",
+   "choices_long": [
+    "1973",
+    "1958",
+    "1968",
+    "1964"
+   ],
+   "release_year": 1964,
+   "energy": "fast"
+  },
+  {
+   "category": "real_name",
+   "question": "Motown star who co-wrote it?",
+   "question_long": "Which Motown star co-wrote 'Dancing in the Street'?",
+   "choices": [
+    "Smokey Robinson",
+    "Stevie Wonder",
+    "Marvin Gaye",
+    "Lionel Richie"
+   ],
+   "correct_index": 2,
+   "correction": "",
+   "headline": "Co-written by Marvin Gaye",
+   "full": "Marvin Gaye wrote 'Dancing in the Street' with William 'Mickey' Stevenson and Ivy Jo Hunter.",
+   "choices_long": [
+    "Smokey Robinson",
+    "Stevie Wonder",
+    "Marvin Gaye",
+    "Lionel Richie"
+   ],
+   "release_year": 1964,
+   "energy": "fast"
+  },
+  {
+   "category": "true_false",
+   "question": "T/F: Bowie covered it with Elton John?",
+   "question_long": "True or false: David Bowie covered 'Dancing in the Street' with Elton John.",
+   "choices": [
+    "True",
+    "False"
+   ],
+   "correct_index": 1,
+   "correction": "Bowie's 1985 duet partner was Mick Jagger",
+   "headline": "Bowie and Jagger",
+   "full": "David Bowie and Mick Jagger recorded 'Dancing in the Street' in 1985 for Live Aid.",
+   "choices_long": [
+    "True",
+    "False"
+   ],
+   "release_year": 1964,
+   "energy": "fast"
+  }
+ ],
+ "the trammps - disco inferno": [
+  {
+   "category": "career_stat",
+   "question": "Soundtrack that made it a hit?",
+   "question_long": "Which film soundtrack made 'Disco Inferno' a hit?",
+   "choices": [
+    "Grease",
+    "Thank God It's Friday",
+    "Car Wash",
+    "Saturday Night Fever"
+   ],
+   "correct_index": 3,
+   "correction": "",
+   "headline": "Saturday Night Fever",
+   "full": "'Disco Inferno' became a hit after it appeared on the 'Saturday Night Fever' soundtrack.",
+   "choices_long": [
+    "Grease",
+    "Thank God It's Friday",
+    "Car Wash",
+    "Saturday Night Fever"
+   ],
+   "release_year": 1976,
+   "energy": "fast"
+  },
+  {
+   "category": "geography",
+   "question": "The Trammps' home city?",
+   "question_long": "Which city were The Trammps from?",
+   "choices": [
+    "Miami",
+    "Detroit",
+    "Philadelphia",
+    "Chicago"
+   ],
+   "correct_index": 2,
+   "correction": "",
+   "headline": "Philly disco",
+   "full": "The Trammps were from Philadelphia.",
+   "choices_long": [
+    "Miami",
+    "Detroit",
+    "Philadelphia",
+    "Chicago"
+   ],
+   "release_year": 1976,
+   "energy": "fast"
+  },
+  {
+   "category": "true_false",
+   "question": "T/F: The chorus says 'Burn, baby, burn'?",
+   "question_long": "True or false: The chorus of 'Disco Inferno' says 'Burn, baby, burn'.",
+   "choices": [
+    "True",
+    "False"
+   ],
+   "correct_index": 0,
+   "correction": "",
+   "headline": "Burn, baby, burn",
+   "full": "The chorus of 'Disco Inferno' is built on the chant 'Burn, baby, burn'.",
+   "choices_long": [
+    "True",
+    "False"
+   ],
+   "release_year": 1976,
+   "energy": "fast"
+  }
+ ],
+ "thelma houston - don't leave me this way": [
+  {
+   "category": "career_stat",
+   "question": "Who recorded it first, in 1975?",
+   "question_long": "Who first recorded 'Don't Leave Me This Way', in 1975?",
+   "choices": [
+    "The Stylistics",
+    "The O'Jays",
+    "H. Melvin & Blue Notes",
+    "The Spinners"
+   ],
+   "correct_index": 2,
+   "correction": "",
+   "headline": "A Blue Notes song first",
+   "full": "Harold Melvin & the Blue Notes recorded it in 1975 with Teddy Pendergrass singing lead.",
+   "choices_long": [
+    "The Stylistics",
+    "The O'Jays",
+    "H. Melvin & Blue Notes",
+    "The Spinners"
+   ],
+   "release_year": 1976,
+   "energy": "fast"
+  },
+  {
+   "category": "career_stat",
+   "question": "Thelma Houston's label for it?",
+   "question_long": "Which record company released Thelma Houston's 'Don't Leave Me This Way'?",
+   "choices": [
+    "Casablanca",
+    "Motown",
+    "Atlantic",
+    "Stax"
+   ],
+   "correct_index": 1,
+   "correction": "",
+   "headline": "A Motown disco hit",
+   "full": "Thelma Houston's version came out on Motown's Tamla label.",
+   "choices_long": [
+    "Casablanca",
+    "Motown",
+    "Atlantic",
+    "Stax"
+   ],
+   "release_year": 1976,
+   "energy": "fast"
+  },
+  {
+   "category": "true_false",
+   "question": "T/F: Thelma is Whitney Houston's aunt?",
+   "question_long": "True or false: Thelma Houston is Whitney Houston's aunt.",
+   "choices": [
+    "True",
+    "False"
+   ],
+   "correct_index": 1,
+   "correction": "They are not related",
+   "headline": "No relation",
+   "full": "Thelma Houston and Whitney Houston are not related.",
+   "choices_long": [
+    "True",
+    "False"
+   ],
+   "release_year": 1976,
+   "energy": "fast"
+  }
+ ],
+ "the penguins - earth angel (will you be mine)": [
+  {
+   "category": "date",
+   "question": "Year released?",
+   "question_long": "What year was 'Earth Angel (Will You Be Mine)' by The Penguins released?",
+   "choices": [
+    "1954",
+    "1947",
+    "1960",
+    "1951"
+   ],
+   "correct_index": 0,
+   "correction": "",
+   "headline": "Released in 1954",
+   "full": "'Earth Angel (Will You Be Mine)' by The Penguins was released in 1954.",
+   "choices_long": [
+    "1954",
+    "1947",
+    "1960",
+    "1951"
+   ],
+   "release_year": 1954,
+   "energy": "slow"
+  },
+  {
+   "category": "geography",
+   "question": "The Penguins' home city?",
+   "question_long": "Which city were The Penguins from?",
+   "choices": [
+    "Chicago",
+    "Los Angeles",
+    "New York",
+    "Philadelphia"
+   ],
+   "correct_index": 1,
+   "correction": "",
+   "headline": "Los Angeles doo-wop",
+   "full": "The Penguins formed in Los Angeles in 1953.",
+   "choices_long": [
+    "Chicago",
+    "Los Angeles",
+    "New York",
+    "Philadelphia"
+   ],
+   "release_year": 1954,
+   "energy": "slow"
+  },
+  {
+   "category": "true_false",
+   "question": "T/F: It's in Back to the Future's dance?",
+   "question_long": "True or false: 'Earth Angel' is played at the school dance in 'Back to the Future'.",
+   "choices": [
+    "True",
+    "False"
+   ],
+   "correct_index": 0,
+   "correction": "",
+   "headline": "Enchantment Under the Sea",
+   "full": "'Earth Angel' is the slow dance at the Enchantment Under the Sea dance in 'Back to the Future'.",
+   "choices_long": [
+    "True",
+    "False"
+   ],
+   "release_year": 1954,
+   "energy": "slow"
+  }
+ ],
+ "elvis presley - hound dog": [
+  {
+   "category": "date",
+   "question": "Year released?",
+   "question_long": "What year was 'Hound Dog' by Elvis Presley released?",
+   "choices": [
+    "1952",
+    "1961",
+    "1956",
+    "1947"
+   ],
+   "correct_index": 2,
+   "correction": "",
+   "headline": "Released in 1956",
+   "full": "'Hound Dog' by Elvis Presley was released in 1956.",
+   "choices_long": [
+    "1952",
+    "1961",
+    "1956",
+    "1947"
+   ],
+   "release_year": 1956,
+   "energy": "fast"
+  },
+  {
+   "category": "career_stat",
+   "question": "Who recorded Hound Dog first?",
+   "question_long": "Who recorded 'Hound Dog' before Elvis Presley?",
+   "choices": [
+    "LaVern Baker",
+    "Ruth Brown",
+    "Etta James",
+    "Big Mama Thornton"
+   ],
+   "correct_index": 3,
+   "correction": "",
+   "headline": "Big Mama's song first",
+   "full": "Big Mama Thornton recorded 'Hound Dog' in 1952, four years before Elvis.",
+   "choices_long": [
+    "LaVern Baker",
+    "Ruth Brown",
+    "Etta James",
+    "Big Mama Thornton"
+   ],
+   "release_year": 1956,
+   "energy": "fast"
+  },
+  {
+   "category": "true_false",
+   "question": "T/F: Elvis wrote Hound Dog?",
+   "question_long": "True or false: Elvis Presley wrote 'Hound Dog'.",
+   "choices": [
+    "True",
+    "False"
+   ],
+   "correct_index": 1,
+   "correction": "Jerry Leiber and Mike Stoller wrote it",
+   "headline": "A Leiber and Stoller song",
+   "full": "'Hound Dog' was written by Jerry Leiber and Mike Stoller.",
+   "choices_long": [
+    "True",
+    "False"
+   ],
+   "release_year": 1956,
+   "energy": "fast"
+  }
+ ],
+ "roy ayers ubiquity - everybody loves the sunshine": [
+  {
+   "category": "date",
+   "question": "Year released?",
+   "question_long": "What year was 'Everybody Loves the Sunshine' by Roy Ayers Ubiquity released?",
+   "choices": [
+    "1973",
+    "1969",
+    "1976",
+    "1982"
+   ],
+   "correct_index": 2,
+   "correction": "",
+   "headline": "Released in 1976",
+   "full": "'Everybody Loves the Sunshine' by Roy Ayers Ubiquity was released in 1976.",
+   "choices_long": [
+    "1973",
+    "1969",
+    "1976",
+    "1982"
+   ],
+   "release_year": 1976,
+   "energy": "slow"
+  },
+  {
+   "category": "career_stat",
+   "question": "Roy Ayers' main instrument?",
+   "question_long": "What was Roy Ayers' main instrument?",
+   "choices": [
+    "Hammond organ",
+    "Saxophone",
+    "Trumpet",
+    "Vibraphone"
+   ],
+   "correct_index": 3,
+   "correction": "",
+   "headline": "The vibes man",
+   "full": "Roy Ayers was a jazz vibraphone player.",
+   "choices_long": [
+    "Hammond organ",
+    "Saxophone",
+    "Trumpet",
+    "Vibraphone"
+   ],
+   "release_year": 1976,
+   "energy": "slow"
+  },
+  {
+   "category": "true_false",
+   "question": "T/F: Roy Ayers was born in Los Angeles?",
+   "question_long": "True or false: Roy Ayers was born in Los Angeles.",
+   "choices": [
+    "True",
+    "False"
+   ],
+   "correct_index": 0,
+   "correction": "",
+   "headline": "An L.A. native",
+   "full": "Roy Ayers was born in Los Angeles in 1940.",
+   "choices_long": [
+    "True",
+    "False"
+   ],
+   "release_year": 1976,
+   "energy": "slow"
+  }
+ ],
+ "kc & the sunshine band - get down tonight": [
+  {
+   "category": "date",
+   "question": "Year released?",
+   "question_long": "What year was 'Get Down Tonight' by KC & The Sunshine Band released?",
+   "choices": [
+    "1979",
+    "1964",
+    "1975",
+    "1970"
+   ],
+   "correct_index": 2,
+   "correction": "",
+   "headline": "Released in 1975",
+   "full": "'Get Down Tonight' by KC & The Sunshine Band was released in 1975.",
+   "choices_long": [
+    "1979",
+    "1964",
+    "1975",
+    "1970"
+   ],
+   "release_year": 1975,
+   "energy": "fast"
+  },
+  {
+   "category": "geography",
+   "question": "The band's home state?",
+   "question_long": "Which US state were KC & The Sunshine Band from?",
+   "choices": [
+    "Georgia",
+    "California",
+    "Texas",
+    "Florida"
+   ],
+   "correct_index": 3,
+   "correction": "",
+   "headline": "The Sunshine State band",
+   "full": "KC & The Sunshine Band came from the Miami area of Florida.",
+   "choices_long": [
+    "Georgia",
+    "California",
+    "Texas",
+    "Florida"
+   ],
+   "release_year": 1975,
+   "energy": "fast"
+  },
+  {
+   "category": "true_false",
+   "question": "T/F: It was the band's first US #1?",
+   "question_long": "True or false: 'Get Down Tonight' was KC & The Sunshine Band's first US #1.",
+   "choices": [
+    "True",
+    "False"
+   ],
+   "correct_index": 0,
+   "correction": "",
+   "headline": "The first of five",
+   "full": "'Get Down Tonight' was the band's first #1 on the Hot 100, in 1975.",
+   "choices_long": [
+    "True",
+    "False"
+   ],
+   "release_year": 1975,
+   "energy": "fast"
+  }
+ ],
+ "parliament - give up the funk (tear the roof off the sucker)": [
+  {
+   "category": "real_name",
+   "question": "Parliament's leader?",
+   "question_long": "Who led the band Parliament?",
+   "choices": [
+    "James Brown",
+    "Rick James",
+    "Sly Stone",
+    "George Clinton"
+   ],
+   "correct_index": 3,
+   "correction": "",
+   "headline": "George Clinton's P-Funk",
+   "full": "George Clinton led Parliament and its sister band Funkadelic.",
+   "choices_long": [
+    "James Brown",
+    "Rick James",
+    "Sly Stone",
+    "George Clinton"
+   ],
+   "release_year": 1975,
+   "energy": "fast"
+  },
+  {
+   "category": "career_stat",
+   "question": "Album it comes from?",
+   "question_long": "Which Parliament album does 'Give Up the Funk' come from?",
+   "choices": [
+    "Chocolate City",
+    "Maggot Brain",
+    "Mothership Connection",
+    "Uncle Jam Wants You"
+   ],
+   "correct_index": 2,
+   "correction": "",
+   "headline": "Mothership Connection",
+   "full": "'Give Up the Funk' comes from Parliament's album 'Mothership Connection'.",
+   "choices_long": [
+    "Chocolate City",
+    "Maggot Brain",
+    "Mothership Connection",
+    "Uncle Jam Wants You"
+   ],
+   "release_year": 1975,
+   "energy": "fast"
+  },
+  {
+   "category": "true_false",
+   "question": "T/F: George Clinton once ran a barbershop?",
+   "question_long": "True or false: George Clinton once ran a barbershop.",
+   "choices": [
+    "True",
+    "False"
+   ],
+   "correct_index": 0,
+   "correction": "",
+   "headline": "From barber to funk",
+   "full": "George Clinton ran a barbershop in Plainfield, New Jersey, where his group first sang.",
+   "choices_long": [
+    "True",
+    "False"
+   ],
+   "release_year": 1975,
+   "energy": "fast"
+  }
+ ],
+ "chic - good times": [
+  {
+   "category": "date",
+   "question": "Year released?",
+   "question_long": "What year was 'Good Times' by Chic released?",
+   "choices": [
+    "1973",
+    "1983",
+    "1988",
+    "1979"
+   ],
+   "correct_index": 3,
+   "correction": "",
+   "headline": "Released in 1979",
+   "full": "'Good Times' by Chic was released in 1979.",
+   "choices_long": [
+    "1973",
+    "1983",
+    "1988",
+    "1979"
+   ],
+   "release_year": 1979,
+   "energy": "fast"
+  },
+  {
+   "category": "career_stat",
+   "question": "Rap hit built on its bassline?",
+   "question_long": "Which 1979 rap hit was built on the bassline of 'Good Times'?",
+   "choices": [
+    "Rapper's Delight",
+    "Planet Rock",
+    "The Breaks",
+    "The Message"
+   ],
+   "correct_index": 0,
+   "correction": "",
+   "headline": "The Rapper's Delight bassline",
+   "full": "The Sugarhill Gang's 'Rapper's Delight' was built on the 'Good Times' groove.",
+   "choices_long": [
+    "Rapper's Delight",
+    "Planet Rock",
+    "The Breaks",
+    "The Message"
+   ],
+   "release_year": 1979,
+   "energy": "fast"
+  },
+  {
+   "category": "true_false",
+   "question": "T/F: Quincy Jones co-founded Chic?",
+   "question_long": "True or false: Chic was founded by Nile Rodgers and Quincy Jones.",
+   "choices": [
+    "True",
+    "False"
+   ],
+   "correct_index": 1,
+   "correction": "Nile Rodgers founded Chic with bassist Bernard Edwards",
+   "headline": "Rodgers and Edwards",
+   "full": "Chic was founded by guitarist Nile Rodgers and bassist Bernard Edwards.",
+   "choices_long": [
+    "True",
+    "False"
+   ],
+   "release_year": 1979,
+   "energy": "fast"
+  }
+ ],
+ "the beatles - hey jude": [
+  {
+   "category": "date",
+   "question": "Year released?",
+   "question_long": "What year was 'Hey Jude' by The Beatles released?",
+   "choices": [
+    "1957",
+    "1963",
+    "1968",
+    "1972"
+   ],
+   "correct_index": 2,
+   "correction": "",
+   "headline": "Released in 1968",
+   "full": "'Hey Jude' by The Beatles was released in 1968.",
+   "choices_long": [
+    "1957",
+    "1963",
+    "1968",
+    "1972"
+   ],
+   "release_year": 1968,
+   "energy": "slow"
+  },
+  {
+   "category": "song_meaning",
+   "question": "Who was 'Jude' written for?",
+   "question_long": "Paul McCartney wrote 'Hey Jude' to comfort whom?",
+   "choices": [
+    "Sean Lennon",
+    "Julian Lennon",
+    "Dhani Harrison",
+    "Zak Starkey"
+   ],
+   "correct_index": 1,
+   "correction": "",
+   "headline": "It began as 'Hey Jules'",
+   "full": "Paul McCartney wrote it for John Lennon's son Julian during his parents' divorce.",
+   "choices_long": [
+    "Sean Lennon",
+    "Julian Lennon",
+    "Dhani Harrison",
+    "Zak Starkey"
+   ],
+   "release_year": 1968,
+   "energy": "slow"
+  },
+  {
+   "category": "true_false",
+   "question": "T/F: First Beatles single on Apple?",
+   "question_long": "True or false: 'Hey Jude' was the first Beatles single released on their Apple label.",
+   "choices": [
+    "True",
+    "False"
+   ],
+   "correct_index": 0,
+   "correction": "",
+   "headline": "Apple's first Beatles single",
+   "full": "'Hey Jude' was the first Beatles single on Apple Records, in August 1968.",
+   "choices_long": [
+    "True",
+    "False"
+   ],
+   "release_year": 1968,
+   "energy": "slow"
+  }
+ ],
+ "loleatta holloway - hit and run": [
+  {
+   "category": "date",
+   "question": "Year released?",
+   "question_long": "What year was 'Hit and Run' by Loleatta Holloway released?",
+   "choices": [
+    "1986",
+    "1971",
+    "1981",
+    "1977"
+   ],
+   "correct_index": 3,
+   "correction": "",
+   "headline": "Released in 1977",
+   "full": "'Hit and Run' by Loleatta Holloway was released in 1977.",
+   "choices_long": [
+    "1986",
+    "1971",
+    "1981",
+    "1977"
+   ],
+   "release_year": 1977,
+   "energy": "fast"
+  },
+  {
+   "category": "career_stat",
+   "question": "Black Box hit sampling her voice?",
+   "question_long": "Which Black Box hit sampled Loleatta Holloway's voice?",
+   "choices": [
+    "Ride on Time",
+    "Everybody Everybody",
+    "Pump Up the Jam",
+    "Strike It Up"
+   ],
+   "correct_index": 0,
+   "correction": "",
+   "headline": "The voice of Ride on Time",
+   "full": "Black Box's 1989 hit 'Ride on Time' sampled Holloway's vocal from 'Love Sensation'.",
+   "choices_long": [
+    "Ride on Time",
+    "Everybody Everybody",
+    "Pump Up the Jam",
+    "Strike It Up"
+   ],
+   "release_year": 1977,
+   "energy": "fast"
+  },
+  {
+   "category": "true_false",
+   "question": "T/F: Loleatta Holloway was from Chicago?",
+   "question_long": "True or false: Loleatta Holloway was from Chicago.",
+   "choices": [
+    "True",
+    "False"
+   ],
+   "correct_index": 0,
+   "correction": "",
+   "headline": "Chicago gospel roots",
+   "full": "Loleatta Holloway was born in Chicago and started out in gospel.",
+   "choices_long": [
+    "True",
+    "False"
+   ],
+   "release_year": 1977,
+   "energy": "fast"
+  }
+ ],
+ "donna summer - hot stuff": [
+  {
+   "category": "date",
+   "question": "Year released?",
+   "question_long": "What year was 'Hot Stuff' by Donna Summer released?",
+   "choices": [
+    "1979",
+    "1983",
+    "1973",
+    "1988"
+   ],
+   "correct_index": 0,
+   "correction": "",
+   "headline": "Released in 1979",
+   "full": "'Hot Stuff' by Donna Summer was released in 1979.",
+   "choices_long": [
+    "1979",
+    "1983",
+    "1973",
+    "1988"
+   ],
+   "release_year": 1979,
+   "energy": "fast"
+  },
+  {
+   "category": "career_stat",
+   "question": "Album it comes from?",
+   "question_long": "Which Donna Summer album does 'Hot Stuff' come from?",
+   "choices": [
+    "Love to Love You Baby",
+    "On the Radio",
+    "Bad Girls",
+    "Once Upon a Time"
+   ],
+   "correct_index": 2,
+   "correction": "",
+   "headline": "From the Bad Girls album",
+   "full": "'Hot Stuff' was the first single from Donna Summer's 1979 album 'Bad Girls'.",
+   "choices_long": [
+    "Love to Love You Baby",
+    "On the Radio",
+    "Bad Girls",
+    "Once Upon a Time"
+   ],
+   "release_year": 1979,
+   "energy": "fast"
+  },
+  {
+   "category": "true_false",
+   "question": "T/F: It won a Grammy in a rock category?",
+   "question_long": "True or false: 'Hot Stuff' won a Grammy in a rock category.",
+   "choices": [
+    "True",
+    "False"
+   ],
+   "correct_index": 0,
+   "correction": "",
+   "headline": "The disco queen rocks",
+   "full": "'Hot Stuff' won Donna Summer the Grammy for Best Female Rock Vocal Performance.",
+   "choices_long": [
+    "True",
+    "False"
+   ],
+   "release_year": 1979,
+   "energy": "fast"
+  }
+ ],
+ "donna summer - i feel love": [
+  {
+   "category": "date",
+   "question": "Year released?",
+   "question_long": "What year was 'I Feel Love' by Donna Summer released?",
+   "choices": [
+    "1972",
+    "1966",
+    "1981",
+    "1977"
+   ],
+   "correct_index": 3,
+   "correction": "",
+   "headline": "Released in 1977",
+   "full": "'I Feel Love' by Donna Summer was released in 1977.",
+   "choices_long": [
+    "1972",
+    "1966",
+    "1981",
+    "1977"
+   ],
+   "release_year": 1977,
+   "energy": "fast"
+  },
+  {
+   "category": "real_name",
+   "question": "Who produced it?",
+   "question_long": "Who produced Donna Summer's 'I Feel Love'?",
+   "choices": [
+    "Arif Mardin",
+    "Quincy Jones",
+    "Giorgio Moroder",
+    "Nile Rodgers"
+   ],
+   "correct_index": 2,
+   "correction": "",
+   "headline": "Moroder's synthesizers",
+   "full": "Giorgio Moroder and Pete Bellotte produced 'I Feel Love' with an almost entirely electronic backing.",
+   "choices_long": [
+    "Arif Mardin",
+    "Quincy Jones",
+    "Giorgio Moroder",
+    "Nile Rodgers"
+   ],
+   "release_year": 1977,
+   "energy": "fast"
+  },
+  {
+   "category": "true_false",
+   "question": "T/F: Donna Summer was born in Germany?",
+   "question_long": "True or false: Donna Summer was born in Germany.",
+   "choices": [
+    "True",
+    "False"
+   ],
+   "correct_index": 1,
+   "correction": "She was born in Boston; her career began in Germany",
+   "headline": "Boston-born",
+   "full": "Donna Summer was born in Boston and moved to Germany as a young stage performer.",
+   "choices_long": [
+    "True",
+    "False"
+   ],
+   "release_year": 1977,
+   "energy": "fast"
+  }
+ ],
+ "james brown - i got you (i feel good)": [
+  {
+   "category": "date",
+   "question": "Year released?",
+   "question_long": "What year was 'I Got You (I Feel Good)' by James Brown released?",
+   "choices": [
+    "1959",
+    "1974",
+    "1965",
+    "1969"
+   ],
+   "correct_index": 2,
+   "correction": "",
+   "headline": "Released in 1965",
+   "full": "'I Got You (I Feel Good)' by James Brown was released in 1965.",
+   "choices_long": [
+    "1959",
+    "1974",
+    "1965",
+    "1969"
+   ],
+   "release_year": 1965,
+   "energy": "fast"
+  },
+  {
+   "category": "real_name",
+   "question": "James Brown's nickname?",
+   "question_long": "Which nickname belongs to James Brown?",
+   "choices": [
+    "The Genius",
+    "Prince of Motown",
+    "King of Soul",
+    "Godfather of Soul"
+   ],
+   "correct_index": 3,
+   "correction": "",
+   "headline": "The Godfather of Soul",
+   "full": "James Brown was known as the Godfather of Soul and the Hardest Working Man in Show Business.",
+   "choices_long": [
+    "The Genius",
+    "Prince of Motown",
+    "King of Soul",
+    "Godfather of Soul"
+   ],
+   "release_year": 1965,
+   "energy": "fast"
+  },
+  {
+   "category": "true_false",
+   "question": "T/F: James Brown was born in Georgia?",
+   "question_long": "True or false: James Brown was born in Georgia.",
+   "choices": [
+    "True",
+    "False"
+   ],
+   "correct_index": 1,
+   "correction": "Born in Barnwell, South Carolina; raised in Augusta, Georgia",
+   "headline": "Born in South Carolina",
+   "full": "James Brown was born in Barnwell, South Carolina, and grew up in Augusta, Georgia.",
+   "choices_long": [
+    "True",
+    "False"
+   ],
+   "release_year": 1965,
+   "energy": "fast"
+  }
+ ],
+ "marvin gaye - i heard it through the grapevine": [
+  {
+   "category": "date",
+   "question": "Year released?",
+   "question_long": "What year was 'I Heard It Through the Grapevine' by Marvin Gaye released?",
+   "choices": [
+    "1968",
+    "1959",
+    "1973",
+    "1964"
+   ],
+   "correct_index": 0,
+   "correction": "",
+   "headline": "Released in 1968",
+   "full": "'I Heard It Through the Grapevine' by Marvin Gaye was released in 1968.",
+   "choices_long": [
+    "1968",
+    "1959",
+    "1973",
+    "1964"
+   ],
+   "release_year": 1968,
+   "energy": "dark"
+  },
+  {
+   "category": "career_stat",
+   "question": "Who had a hit with it a year earlier?",
+   "question_long": "Who had a hit with 'I Heard It Through the Grapevine' a year before Marvin Gaye?",
+   "choices": [
+    "The Four Tops",
+    "Gladys Knight & The Pips",
+    "The Marvelettes",
+    "The Supremes"
+   ],
+   "correct_index": 1,
+   "correction": "",
+   "headline": "Gladys got there first",
+   "full": "Gladys Knight & The Pips took the song to #2 in 1967; Marvin Gaye's version hit #1 in 1968.",
+   "choices_long": [
+    "The Four Tops",
+    "Gladys Knight & The Pips",
+    "The Marvelettes",
+    "The Supremes"
+   ],
+   "release_year": 1968,
+   "energy": "dark"
+  },
+  {
+   "category": "true_false",
+   "question": "T/F: CCR cut an 11-minute version?",
+   "question_long": "True or false: Creedence Clearwater Revival recorded an 11-minute version of 'I Heard It Through the Grapevine'.",
+   "choices": [
+    "True",
+    "False"
+   ],
+   "correct_index": 0,
+   "correction": "",
+   "headline": "Eleven minutes of Creedence",
+   "full": "Creedence Clearwater Revival's 11-minute version is on their 1970 album 'Cosmo's Factory'.",
+   "choices_long": [
+    "True",
+    "False"
+   ],
+   "release_year": 1968,
+   "energy": "dark"
+  }
+ ],
+ "the flamingos - i only have eyes for you": [
+  {
+   "category": "date",
+   "question": "Year released?",
+   "question_long": "What year was 'I Only Have Eyes for You' by The Flamingos released?",
+   "choices": [
+    "1948",
+    "1959",
+    "1954",
+    "1963"
+   ],
+   "correct_index": 1,
+   "correction": "",
+   "headline": "Released in 1959",
+   "full": "'I Only Have Eyes for You' by The Flamingos was released in 1959.",
+   "choices_long": [
+    "1948",
+    "1959",
+    "1954",
+    "1963"
+   ],
+   "release_year": 1959,
+   "energy": "slow"
+  },
+  {
+   "category": "geography",
+   "question": "The Flamingos formed in?",
+   "question_long": "In which city did The Flamingos form?",
+   "choices": [
+    "Philadelphia",
+    "Detroit",
+    "New York",
+    "Chicago"
+   ],
+   "correct_index": 3,
+   "correction": "",
+   "headline": "Chicago doo-wop",
+   "full": "The Flamingos formed in Chicago in the early 1950s.",
+   "choices_long": [
+    "Philadelphia",
+    "Detroit",
+    "New York",
+    "Chicago"
+   ],
+   "release_year": 1959,
+   "energy": "slow"
+  },
+  {
+   "category": "true_false",
+   "question": "T/F: The Flamingos wrote it?",
+   "question_long": "True or false: The Flamingos wrote 'I Only Have Eyes for You'.",
+   "choices": [
+    "True",
+    "False"
+   ],
+   "correct_index": 1,
+   "correction": "It was written in 1934 for the film 'Dames'",
+   "headline": "A 1934 movie song",
+   "full": "Harry Warren and Al Dubin wrote it for the 1934 film 'Dames', 25 years before The Flamingos' version.",
+   "choices_long": [
+    "True",
+    "False"
+   ],
+   "release_year": 1959,
+   "energy": "slow"
+  }
+ ],
+ "the jackson 5 - i want you back": [
+  {
+   "category": "date",
+   "question": "Year released?",
+   "question_long": "What year was 'I Want You Back' by The Jackson 5 released?",
+   "choices": [
+    "1966",
+    "1969",
+    "1975",
+    "1962"
+   ],
+   "correct_index": 1,
+   "correction": "",
+   "headline": "Released in 1969",
+   "full": "'I Want You Back' by The Jackson 5 was released in 1969.",
+   "choices_long": [
+    "1966",
+    "1969",
+    "1975",
+    "1962"
+   ],
+   "release_year": 1969,
+   "energy": "fast"
+  },
+  {
+   "category": "geography",
+   "question": "The Jacksons' hometown?",
+   "question_long": "Which city were the Jackson 5 from?",
+   "choices": [
+    "Detroit, Michigan",
+    "Chicago, Illinois",
+    "Cleveland, Ohio",
+    "Gary, Indiana"
+   ],
+   "correct_index": 3,
+   "correction": "",
+   "headline": "Gary, Indiana",
+   "full": "The Jackson brothers grew up in Gary, Indiana.",
+   "choices_long": [
+    "Detroit, Michigan",
+    "Chicago, Illinois",
+    "Cleveland, Ohio",
+    "Gary, Indiana"
+   ],
+   "release_year": 1969,
+   "energy": "fast"
+  },
+  {
+   "category": "true_false",
+   "question": "T/F: Michael was 11 when it came out?",
+   "question_long": "True or false: Michael Jackson was 11 years old when 'I Want You Back' was released.",
+   "choices": [
+    "True",
+    "False"
+   ],
+   "correct_index": 0,
+   "correction": "",
+   "headline": "An 11-year-old lead singer",
+   "full": "Michael Jackson was 11 when 'I Want You Back' came out in October 1969.",
+   "choices_long": [
+    "True",
+    "False"
+   ],
+   "release_year": 1969,
+   "energy": "fast"
+  }
+ ],
+ "gloria gaynor - i will survive": [
+  {
+   "category": "date",
+   "question": "Year released?",
+   "question_long": "What year was 'I Will Survive' by Gloria Gaynor released?",
+   "choices": [
+    "1983",
+    "1978",
+    "1974",
+    "1988"
+   ],
+   "correct_index": 1,
+   "correction": "",
+   "headline": "Released in 1978",
+   "full": "'I Will Survive' by Gloria Gaynor was released in 1978.",
+   "choices_long": [
+    "1983",
+    "1978",
+    "1974",
+    "1988"
+   ],
+   "release_year": 1978,
+   "energy": "fast"
+  },
+  {
+   "category": "career_stat",
+   "question": "It was first the B-side of?",
+   "question_long": "'I Will Survive' was first released as the B-side of which song?",
+   "choices": [
+    "Never Can Say Goodbye",
+    "Honey Bee",
+    "Reach Out I'll Be There",
+    "Substitute"
+   ],
+   "correct_index": 3,
+   "correction": "",
+   "headline": "A B-side that took over",
+   "full": "'I Will Survive' was the B-side of 'Substitute' until DJs flipped the record.",
+   "choices_long": [
+    "Never Can Say Goodbye",
+    "Honey Bee",
+    "Reach Out I'll Be There",
+    "Substitute"
+   ],
+   "release_year": 1978,
+   "energy": "fast"
+  },
+  {
+   "category": "true_false",
+   "question": "T/F: Won the only Best Disco Grammy?",
+   "question_long": "True or false: 'I Will Survive' won the only Grammy ever given for Best Disco Recording.",
+   "choices": [
+    "True",
+    "False"
+   ],
+   "correct_index": 0,
+   "correction": "",
+   "headline": "The only disco Grammy",
+   "full": "The Grammy for Best Disco Recording was given just once, in 1980, to 'I Will Survive'.",
+   "choices_long": [
+    "True",
+    "False"
+   ],
+   "release_year": 1978,
+   "energy": "fast"
+  }
+ ],
+ "yvonne elliman - if i can't have you": [
+  {
+   "category": "real_name",
+   "question": "Who wrote it?",
+   "question_long": "Who wrote 'If I Can't Have You'?",
+   "choices": [
+    "Carole King",
+    "ABBA",
+    "Giorgio Moroder",
+    "The Bee Gees"
+   ],
+   "correct_index": 3,
+   "correction": "",
+   "headline": "A Bee Gees song",
+   "full": "The Bee Gees wrote 'If I Can't Have You' for the 'Saturday Night Fever' soundtrack.",
+   "choices_long": [
+    "Carole King",
+    "ABBA",
+    "Giorgio Moroder",
+    "The Bee Gees"
+   ],
+   "release_year": 1977,
+   "energy": "fast"
+  },
+  {
+   "category": "geography",
+   "question": "Yvonne Elliman's home state?",
+   "question_long": "Which US state is Yvonne Elliman from?",
+   "choices": [
+    "New York",
+    "Hawaii",
+    "California",
+    "Florida"
+   ],
+   "correct_index": 1,
+   "correction": "",
+   "headline": "From Honolulu",
+   "full": "Yvonne Elliman was born in Honolulu, Hawaii.",
+   "choices_long": [
+    "New York",
+    "Hawaii",
+    "California",
+    "Florida"
+   ],
+   "release_year": 1977,
+   "energy": "fast"
+  },
+  {
+   "category": "true_false",
+   "question": "T/F: She played Mary Magdalene on stage?",
+   "question_long": "True or false: Yvonne Elliman played Mary Magdalene in 'Jesus Christ Superstar'.",
+   "choices": [
+    "True",
+    "False"
+   ],
+   "correct_index": 0,
+   "correction": "",
+   "headline": "Mary Magdalene",
+   "full": "Yvonne Elliman played Mary Magdalene in 'Jesus Christ Superstar' on record, on stage and in the 1973 film.",
+   "choices_long": [
+    "True",
+    "False"
+   ],
+   "release_year": 1977,
+   "energy": "fast"
+  }
+ ],
+ "the spinners - i'll be around": [
+  {
+   "category": "date",
+   "question": "Year released?",
+   "question_long": "What year was 'I'll Be Around' by The Spinners released?",
+   "choices": [
+    "1972",
+    "1968",
+    "1982",
+    "1977"
+   ],
+   "correct_index": 0,
+   "correction": "",
+   "headline": "Released in 1972",
+   "full": "'I'll Be Around' by The Spinners was released in 1972.",
+   "choices_long": [
+    "1972",
+    "1968",
+    "1982",
+    "1977"
+   ],
+   "release_year": 1972,
+   "energy": "fast"
+  },
+  {
+   "category": "real_name",
+   "question": "Producer and co-writer?",
+   "question_long": "Who produced and co-wrote 'I'll Be Around' for The Spinners?",
+   "choices": [
+    "Willie Mitchell",
+    "Thom Bell",
+    "Norman Whitfield",
+    "Quincy Jones"
+   ],
+   "correct_index": 1,
+   "correction": "",
+   "headline": "The Thom Bell sound",
+   "full": "Thom Bell produced The Spinners' run of 1970s hits and co-wrote 'I'll Be Around'.",
+   "choices_long": [
+    "Willie Mitchell",
+    "Thom Bell",
+    "Norman Whitfield",
+    "Quincy Jones"
+   ],
+   "release_year": 1972,
+   "energy": "fast"
+  },
+  {
+   "category": "true_false",
+   "question": "T/F: The Spinners came from Philadelphia?",
+   "question_long": "True or false: The Spinners came from Philadelphia.",
+   "choices": [
+    "True",
+    "False"
+   ],
+   "correct_index": 1,
+   "correction": "They formed near Detroit; their hits were recorded in Philadelphia",
+   "headline": "Detroit group, Philly sound",
+   "full": "The Spinners formed in Ferndale, Michigan, near Detroit, and recorded their 1970s hits in Philadelphia.",
+   "choices_long": [
+    "True",
+    "False"
+   ],
+   "release_year": 1972,
+   "energy": "fast"
+  }
+ ],
+ "the staple singers - i'll take you there": [
+  {
+   "category": "date",
+   "question": "Year released?",
+   "question_long": "What year was 'I'll Take You There' by The Staple Singers released?",
+   "choices": [
+    "1972",
+    "1963",
+    "1968",
+    "1977"
+   ],
+   "correct_index": 0,
+   "correction": "",
+   "headline": "Released in 1972",
+   "full": "'I'll Take You There' by The Staple Singers was released in 1972.",
+   "choices_long": [
+    "1972",
+    "1963",
+    "1968",
+    "1977"
+   ],
+   "release_year": 1972,
+   "energy": "fast"
+  },
+  {
+   "category": "career_stat",
+   "question": "Label that released it?",
+   "question_long": "Which record label released 'I'll Take You There'?",
+   "choices": [
+    "Chess",
+    "Stax",
+    "Motown",
+    "Atlantic"
+   ],
+   "correct_index": 1,
+   "correction": "",
+   "headline": "A Stax #1",
+   "full": "The Staple Singers recorded 'I'll Take You There' for Stax Records.",
+   "choices_long": [
+    "Chess",
+    "Stax",
+    "Motown",
+    "Atlantic"
+   ],
+   "release_year": 1972,
+   "energy": "fast"
+  },
+  {
+   "category": "true_false",
+   "question": "T/F: Mavis Staples sings lead?",
+   "question_long": "True or false: Mavis Staples sings lead on 'I'll Take You There'.",
+   "choices": [
+    "True",
+    "False"
+   ],
+   "correct_index": 0,
+   "correction": "",
+   "headline": "Mavis out front",
+   "full": "Mavis Staples sings lead, with her father Pops and her sisters behind her.",
+   "choices_long": [
+    "True",
+    "False"
+   ],
+   "release_year": 1972,
+   "energy": "fast"
+  }
+ ],
+ "wilson pickett - in the midnight hour": [
+  {
+   "category": "date",
+   "question": "Year released?",
+   "question_long": "What year was 'In the Midnight Hour' by Wilson Pickett released?",
+   "choices": [
+    "1961",
+    "1965",
+    "1970",
+    "1956"
+   ],
+   "correct_index": 1,
+   "correction": "",
+   "headline": "Released in 1965",
+   "full": "'In the Midnight Hour' by Wilson Pickett was released in 1965.",
+   "choices_long": [
+    "1961",
+    "1965",
+    "1970",
+    "1956"
+   ],
+   "release_year": 1965,
+   "energy": "fast"
+  },
+  {
+   "category": "real_name",
+   "question": "Guitarist who co-wrote it?",
+   "question_long": "Which guitarist co-wrote 'In the Midnight Hour' with Wilson Pickett?",
+   "choices": [
+    "Curtis Mayfield",
+    "Steve Cropper",
+    "Bobby Womack",
+    "Duane Allman"
+   ],
+   "correct_index": 1,
+   "correction": "",
+   "headline": "Pickett and Cropper",
+   "full": "Wilson Pickett wrote 'In the Midnight Hour' with Stax guitarist Steve Cropper.",
+   "choices_long": [
+    "Curtis Mayfield",
+    "Steve Cropper",
+    "Bobby Womack",
+    "Duane Allman"
+   ],
+   "release_year": 1965,
+   "energy": "fast"
+  },
+  {
+   "category": "true_false",
+   "question": "T/F: Recorded at Motown in Detroit?",
+   "question_long": "True or false: 'In the Midnight Hour' was recorded at Motown in Detroit.",
+   "choices": [
+    "True",
+    "False"
+   ],
+   "correct_index": 1,
+   "correction": "It was recorded at Stax in Memphis",
+   "headline": "Made in Memphis",
+   "full": "'In the Midnight Hour' was recorded at the Stax studio in Memphis in 1965.",
+   "choices_long": [
+    "True",
+    "False"
+   ],
+   "release_year": 1965,
+   "energy": "fast"
+  }
+ ],
+ "elvis presley - jailhouse rock": [
+  {
+   "category": "date",
+   "question": "Year released?",
+   "question_long": "What year was 'Jailhouse Rock' by Elvis Presley released?",
+   "choices": [
+    "1957",
+    "1963",
+    "1954",
+    "1950"
+   ],
+   "correct_index": 0,
+   "correction": "",
+   "headline": "Released in 1957",
+   "full": "'Jailhouse Rock' by Elvis Presley was released in 1957.",
+   "choices_long": [
+    "1957",
+    "1963",
+    "1954",
+    "1950"
+   ],
+   "release_year": 1957,
+   "energy": "fast"
+  },
+  {
+   "category": "real_name",
+   "question": "Songwriting duo behind it?",
+   "question_long": "Which songwriting duo wrote 'Jailhouse Rock'?",
+   "choices": [
+    "Goffin & King",
+    "Bacharach & David",
+    "Leiber & Stoller",
+    "Pomus & Shuman"
+   ],
+   "correct_index": 2,
+   "correction": "",
+   "headline": "Leiber and Stoller again",
+   "full": "Jerry Leiber and Mike Stoller wrote 'Jailhouse Rock' for Elvis Presley's 1957 film.",
+   "choices_long": [
+    "Goffin & King",
+    "Bacharach & David",
+    "Leiber & Stoller",
+    "Pomus & Shuman"
+   ],
+   "release_year": 1957,
+   "energy": "fast"
+  },
+  {
+   "category": "true_false",
+   "question": "T/F: Elvis starred in a film of that name?",
+   "question_long": "True or false: Elvis Presley starred in a film called 'Jailhouse Rock'.",
+   "choices": [
+    "True",
+    "False"
+   ],
+   "correct_index": 0,
+   "correction": "",
+   "headline": "Song and movie",
+   "full": "'Jailhouse Rock' was the title song of Elvis Presley's third film, released in 1957.",
+   "choices_long": [
+    "True",
+    "False"
+   ],
+   "release_year": 1957,
+   "energy": "fast"
+  }
+ ],
+ "chuck berry - johnny b. goode": [
+  {
+   "category": "date",
+   "question": "Year released?",
+   "question_long": "What year was 'Johnny B. Goode' by Chuck Berry released?",
+   "choices": [
+    "1954",
+    "1963",
+    "1958",
+    "1949"
+   ],
+   "correct_index": 2,
+   "correction": "",
+   "headline": "Released in 1958",
+   "full": "'Johnny B. Goode' by Chuck Berry was released in 1958.",
+   "choices_long": [
+    "1954",
+    "1963",
+    "1958",
+    "1949"
+   ],
+   "release_year": 1958,
+   "energy": "fast"
+  },
+  {
+   "category": "career_stat",
+   "question": "Sent into space in 1977 aboard?",
+   "question_long": "'Johnny B. Goode' was sent into space in 1977 aboard which spacecraft?",
+   "choices": [
+    "Skylab",
+    "Pioneer 10",
+    "Apollo 17",
+    "Voyager"
+   ],
+   "correct_index": 3,
+   "correction": "",
+   "headline": "Rock and roll in deep space",
+   "full": "'Johnny B. Goode' is on the Golden Record carried by NASA's Voyager probes, launched in 1977.",
+   "choices_long": [
+    "Skylab",
+    "Pioneer 10",
+    "Apollo 17",
+    "Voyager"
+   ],
+   "release_year": 1958,
+   "energy": "fast"
+  },
+  {
+   "category": "true_false",
+   "question": "T/F: Chuck Berry was from New Orleans?",
+   "question_long": "True or false: Chuck Berry was from New Orleans.",
+   "choices": [
+    "True",
+    "False"
+   ],
+   "correct_index": 1,
+   "correction": "Chuck Berry was from St. Louis, Missouri",
+   "headline": "St. Louis, not Louisiana",
+   "full": "The song is set near New Orleans, but Chuck Berry was from St. Louis, Missouri.",
+   "choices_long": [
+    "True",
+    "False"
+   ],
+   "release_year": 1958,
+   "energy": "fast"
+  }
+ ],
+ "kool & the gang - jungle boogie": [
+  {
+   "category": "date",
+   "question": "Year released?",
+   "question_long": "What year was 'Jungle Boogie' by Kool & The Gang released?",
+   "choices": [
+    "1973",
+    "1979",
+    "1966",
+    "1970"
+   ],
+   "correct_index": 0,
+   "correction": "",
+   "headline": "Released in 1973",
+   "full": "'Jungle Boogie' by Kool & The Gang was released in 1973.",
+   "choices_long": [
+    "1973",
+    "1979",
+    "1966",
+    "1970"
+   ],
+   "release_year": 1973,
+   "energy": "fast"
+  },
+  {
+   "category": "career_stat",
+   "question": "1994 film that revived it?",
+   "question_long": "Which 1994 film brought 'Jungle Boogie' back?",
+   "choices": [
+    "Clerks",
+    "Forrest Gump",
+    "Pulp Fiction",
+    "Reservoir Dogs"
+   ],
+   "correct_index": 2,
+   "correction": "",
+   "headline": "The Pulp Fiction soundtrack",
+   "full": "'Jungle Boogie' plays early in Quentin Tarantino's 'Pulp Fiction' (1994).",
+   "choices_long": [
+    "Clerks",
+    "Forrest Gump",
+    "Pulp Fiction",
+    "Reservoir Dogs"
+   ],
+   "release_year": 1973,
+   "energy": "fast"
+  },
+  {
+   "category": "true_false",
+   "question": "T/F: The band formed in New Jersey?",
+   "question_long": "True or false: Kool & The Gang formed in New Jersey.",
+   "choices": [
+    "True",
+    "False"
+   ],
+   "correct_index": 0,
+   "correction": "",
+   "headline": "Jersey City funk",
+   "full": "Kool & The Gang formed in Jersey City, New Jersey, in 1964.",
+   "choices_long": [
+    "True",
+    "False"
+   ],
+   "release_year": 1973,
+   "energy": "fast"
+  }
+ ],
+ "roberta flack - killing me softly with his song": [
+  {
+   "category": "date",
+   "question": "Year released?",
+   "question_long": "What year was 'Killing Me Softly with His Song' by Roberta Flack released?",
+   "choices": [
+    "1977",
+    "1967",
+    "1982",
+    "1973"
+   ],
+   "correct_index": 3,
+   "correction": "",
+   "headline": "Released in 1973",
+   "full": "'Killing Me Softly with His Song' by Roberta Flack was released in 1973.",
+   "choices_long": [
+    "1977",
+    "1967",
+    "1982",
+    "1973"
+   ],
+   "release_year": 1973,
+   "energy": "slow"
+  },
+  {
+   "category": "song_meaning",
+   "question": "Singer said to have inspired it?",
+   "question_long": "Which singer's concert is said to have inspired 'Killing Me Softly with His Song'?",
+   "choices": [
+    "James Taylor",
+    "Neil Diamond",
+    "Don McLean",
+    "Cat Stevens"
+   ],
+   "correct_index": 2,
+   "correction": "",
+   "headline": "Inspired by Don McLean",
+   "full": "Singer Lori Lieberman said the idea came from watching Don McLean perform.",
+   "choices_long": [
+    "James Taylor",
+    "Neil Diamond",
+    "Don McLean",
+    "Cat Stevens"
+   ],
+   "release_year": 1973,
+   "energy": "slow"
+  },
+  {
+   "category": "true_false",
+   "question": "T/F: Roberta Flack wrote it?",
+   "question_long": "True or false: Roberta Flack wrote 'Killing Me Softly with His Song'.",
+   "choices": [
+    "True",
+    "False"
+   ],
+   "correct_index": 1,
+   "correction": "Charles Fox and Norman Gimbel wrote it",
+   "headline": "Fox and Gimbel",
+   "full": "Charles Fox and Norman Gimbel wrote the song; Lori Lieberman recorded it first, in 1972.",
+   "choices_long": [
+    "True",
+    "False"
+   ],
+   "release_year": 1973,
+   "energy": "slow"
+  }
+ ],
+ "ritchie valens - la bamba": [
+  {
+   "category": "date",
+   "question": "Year released?",
+   "question_long": "What year was 'La Bamba' by Ritchie Valens released?",
+   "choices": [
+    "1962",
+    "1952",
+    "1967",
+    "1958"
+   ],
+   "correct_index": 3,
+   "correction": "",
+   "headline": "Released in 1958",
+   "full": "'La Bamba' by Ritchie Valens was released in 1958.",
+   "choices_long": [
+    "1962",
+    "1952",
+    "1967",
+    "1958"
+   ],
+   "release_year": 1958,
+   "energy": "fast"
+  },
+  {
+   "category": "geography",
+   "question": "It began as a folk song from?",
+   "question_long": "'La Bamba' began as a folk song from which country?",
+   "choices": [
+    "Cuba",
+    "Mexico",
+    "Puerto Rico",
+    "Spain"
+   ],
+   "correct_index": 1,
+   "correction": "",
+   "headline": "A Veracruz folk song",
+   "full": "'La Bamba' is a traditional folk song from Veracruz, Mexico.",
+   "choices_long": [
+    "Cuba",
+    "Mexico",
+    "Puerto Rico",
+    "Spain"
+   ],
+   "release_year": 1958,
+   "energy": "fast"
+  },
+  {
+   "category": "true_false",
+   "question": "T/F: Ritchie Valens died at 17?",
+   "question_long": "True or false: Ritchie Valens was 17 years old when he died.",
+   "choices": [
+    "True",
+    "False"
+   ],
+   "correct_index": 0,
+   "correction": "",
+   "headline": "Gone at 17",
+   "full": "Ritchie Valens was 17 when he died in the 1959 plane crash that also killed Buddy Holly.",
+   "choices_long": [
+    "True",
+    "False"
+   ],
+   "release_year": 1958,
+   "energy": "fast"
+  }
+ ],
+ "chic - le freak": [
+  {
+   "category": "date",
+   "question": "Year released?",
+   "question_long": "What year was 'Le Freak' by Chic released?",
+   "choices": [
+    "1978",
+    "1975",
+    "1971",
+    "1984"
+   ],
+   "correct_index": 0,
+   "correction": "",
+   "headline": "Released in 1978",
+   "full": "'Le Freak' by Chic was released in 1978.",
+   "choices_long": [
+    "1978",
+    "1975",
+    "1971",
+    "1984"
+   ],
+   "release_year": 1978,
+   "energy": "fast"
+  },
+  {
+   "category": "song_meaning",
+   "question": "Club that turned Chic away?",
+   "question_long": "Being turned away from which nightclub inspired 'Le Freak'?",
+   "choices": [
+    "Studio 54",
+    "Paradise Garage",
+    "CBGB",
+    "The Roxy"
+   ],
+   "correct_index": 0,
+   "correction": "",
+   "headline": "Turned away at the door",
+   "full": "Nile Rodgers and Bernard Edwards wrote it after being refused entry to Studio 54.",
+   "choices_long": [
+    "Studio 54",
+    "Paradise Garage",
+    "CBGB",
+    "The Roxy"
+   ],
+   "release_year": 1978,
+   "energy": "fast"
+  },
+  {
+   "category": "true_false",
+   "question": "T/F: It reached #1 on the Hot 100?",
+   "question_long": "True or false: 'Le Freak' reached #1 on the US Hot 100.",
+   "choices": [
+    "True",
+    "False"
+   ],
+   "correct_index": 0,
+   "correction": "",
+   "headline": "Number one, three times",
+   "full": "'Le Freak' went to #1 on the Hot 100 on three separate occasions in 1978 and 1979.",
+   "choices_long": [
+    "True",
+    "False"
+   ],
+   "release_year": 1978,
+   "energy": "fast"
+  }
+ ],
+ "bill withers - lean on me": [
+  {
+   "category": "date",
+   "question": "Year released?",
+   "question_long": "What year was 'Lean on Me' by Bill Withers released?",
+   "choices": [
+    "1965",
+    "1978",
+    "1969",
+    "1972"
+   ],
+   "correct_index": 3,
+   "correction": "",
+   "headline": "Released in 1972",
+   "full": "'Lean on Me' by Bill Withers was released in 1972.",
+   "choices_long": [
+    "1965",
+    "1978",
+    "1969",
+    "1972"
+   ],
+   "release_year": 1972,
+   "energy": "slow"
+  },
+  {
+   "category": "geography",
+   "question": "Bill Withers' home state?",
+   "question_long": "Which US state was Bill Withers from?",
+   "choices": [
+    "West Virginia",
+    "Alabama",
+    "Kentucky",
+    "Tennessee"
+   ],
+   "correct_index": 0,
+   "correction": "",
+   "headline": "A West Virginia coal town",
+   "full": "Bill Withers grew up in the coal-mining town of Slab Fork, West Virginia.",
+   "choices_long": [
+    "West Virginia",
+    "Alabama",
+    "Kentucky",
+    "Tennessee"
+   ],
+   "release_year": 1972,
+   "energy": "slow"
+  },
+  {
+   "category": "true_false",
+   "question": "T/F: Club Nouveau took it to #1 in 1987?",
+   "question_long": "True or false: Club Nouveau took a cover of 'Lean on Me' to #1 in 1987.",
+   "choices": [
+    "True",
+    "False"
+   ],
+   "correct_index": 0,
+   "correction": "",
+   "headline": "Number one twice",
+   "full": "'Lean on Me' hit #1 for Bill Withers in 1972 and again for Club Nouveau in 1987.",
+   "choices_long": [
+    "True",
+    "False"
+   ],
+   "release_year": 1972,
+   "energy": "slow"
+  }
+ ],
+ "minnie riperton - les fleurs": [
+  {
+   "category": "date",
+   "question": "Year released?",
+   "question_long": "What year was 'Les Fleurs' by Minnie Riperton released?",
+   "choices": [
+    "1970",
+    "1967",
+    "1976",
+    "1963"
+   ],
+   "correct_index": 0,
+   "correction": "",
+   "headline": "Released in 1970",
+   "full": "'Les Fleurs' by Minnie Riperton was released in 1970.",
+   "choices_long": [
+    "1970",
+    "1967",
+    "1976",
+    "1963"
+   ],
+   "release_year": 1970,
+   "energy": "slow"
+  },
+  {
+   "category": "song_meaning",
+   "question": "'Les Fleurs' means?",
+   "question_long": "What does the French title 'Les Fleurs' mean?",
+   "choices": [
+    "The Birds",
+    "The Stars",
+    "The Rivers",
+    "The Flowers"
+   ],
+   "correct_index": 3,
+   "correction": "",
+   "headline": "The Flowers",
+   "full": "'Les Fleurs' is French for 'The Flowers'.",
+   "choices_long": [
+    "The Birds",
+    "The Stars",
+    "The Rivers",
+    "The Flowers"
+   ],
+   "release_year": 1970,
+   "energy": "slow"
+  },
+  {
+   "category": "true_false",
+   "question": "T/F: Her daughter is Maya Rudolph?",
+   "question_long": "True or false: Minnie Riperton's daughter is actress Maya Rudolph.",
+   "choices": [
+    "True",
+    "False"
+   ],
+   "correct_index": 0,
+   "correction": "",
+   "headline": "Maya's mother",
+   "full": "Minnie Riperton was the mother of actress and comedian Maya Rudolph.",
+   "choices_long": [
+    "True",
+    "False"
+   ],
+   "release_year": 1970,
+   "energy": "slow"
+  }
+ ],
+ "first choice - let no man put asunder": [
+  {
+   "category": "date",
+   "question": "Year released?",
+   "question_long": "What year was 'Let No Man Put Asunder' by First Choice released?",
+   "choices": [
+    "1983",
+    "1977",
+    "1970",
+    "1974"
+   ],
+   "correct_index": 1,
+   "correction": "",
+   "headline": "Released in 1977",
+   "full": "'Let No Man Put Asunder' by First Choice was released in 1977.",
+   "choices_long": [
+    "1983",
+    "1977",
+    "1970",
+    "1974"
+   ],
+   "release_year": 1977,
+   "energy": "fast"
+  },
+  {
+   "category": "geography",
+   "question": "First Choice's home city?",
+   "question_long": "Which city were First Choice from?",
+   "choices": [
+    "Miami",
+    "New York",
+    "Philadelphia",
+    "Chicago"
+   ],
+   "correct_index": 2,
+   "correction": "",
+   "headline": "A Philadelphia trio",
+   "full": "First Choice were a vocal trio from Philadelphia.",
+   "choices_long": [
+    "Miami",
+    "New York",
+    "Philadelphia",
+    "Chicago"
+   ],
+   "release_year": 1977,
+   "energy": "fast"
+  },
+  {
+   "category": "true_false",
+   "question": "T/F: The title echoes wedding vows?",
+   "question_long": "True or false: The phrase 'let no man put asunder' comes from the traditional wedding service.",
+   "choices": [
+    "True",
+    "False"
+   ],
+   "correct_index": 0,
+   "correction": "",
+   "headline": "Straight from the wedding",
+   "full": "The title quotes the traditional marriage service: 'What God hath joined together, let no man put asunder.'",
+   "choices_long": [
+    "True",
+    "False"
+   ],
+   "release_year": 1977,
+   "energy": "fast"
+  }
+ ],
+ "marvin gaye - let's get it on": [
+  {
+   "category": "date",
+   "question": "Year released?",
+   "question_long": "What year was 'Let's Get It On' by Marvin Gaye released?",
+   "choices": [
+    "1977",
+    "1973",
+    "1962",
+    "1968"
+   ],
+   "correct_index": 1,
+   "correction": "",
+   "headline": "Released in 1973",
+   "full": "'Let's Get It On' by Marvin Gaye was released in 1973.",
+   "choices_long": [
+    "1977",
+    "1973",
+    "1962",
+    "1968"
+   ],
+   "release_year": 1973,
+   "energy": "slow"
+  },
+  {
+   "category": "geography",
+   "question": "Marvin Gaye's hometown?",
+   "question_long": "Which city was Marvin Gaye from?",
+   "choices": [
+    "Memphis",
+    "Detroit",
+    "Washington, D.C.",
+    "Chicago"
+   ],
+   "correct_index": 2,
+   "correction": "",
+   "headline": "Born in Washington, D.C.",
+   "full": "Marvin Gaye was born and raised in Washington, D.C.",
+   "choices_long": [
+    "Memphis",
+    "Detroit",
+    "Washington, D.C.",
+    "Chicago"
+   ],
+   "release_year": 1973,
+   "energy": "slow"
+  },
+  {
+   "category": "true_false",
+   "question": "T/F: Gaye played for the Detroit Lions?",
+   "question_long": "True or false: Marvin Gaye played football for the Detroit Lions.",
+   "choices": [
+    "True",
+    "False"
+   ],
+   "correct_index": 1,
+   "correction": "He tried out in 1970 but never made the team",
+   "headline": "The Lions tryout",
+   "full": "Marvin Gaye tried out for the Detroit Lions in 1970 but did not make the team.",
+   "choices_long": [
+    "True",
+    "False"
+   ],
+   "release_year": 1973,
+   "energy": "slow"
+  }
+ ],
+ "little richard - long tall sally": [
+  {
+   "category": "date",
+   "question": "Year released?",
+   "question_long": "What year was 'Long Tall Sally' by Little Richard released?",
+   "choices": [
+    "1965",
+    "1960",
+    "1950",
+    "1956"
+   ],
+   "correct_index": 3,
+   "correction": "",
+   "headline": "Released in 1956",
+   "full": "'Long Tall Sally' by Little Richard was released in 1956.",
+   "choices_long": [
+    "1965",
+    "1960",
+    "1950",
+    "1956"
+   ],
+   "release_year": 1956,
+   "energy": "fast"
+  },
+  {
+   "category": "real_name",
+   "question": "Little Richard's real surname?",
+   "question_long": "What was Little Richard's real surname?",
+   "choices": [
+    "Richardson",
+    "Domino",
+    "Penniman",
+    "Perkins"
+   ],
+   "correct_index": 2,
+   "correction": "",
+   "headline": "Richard Penniman",
+   "full": "Little Richard was born Richard Wayne Penniman in Macon, Georgia.",
+   "choices_long": [
+    "Richardson",
+    "Domino",
+    "Penniman",
+    "Perkins"
+   ],
+   "release_year": 1956,
+   "energy": "fast"
+  },
+  {
+   "category": "true_false",
+   "question": "T/F: The Beatles recorded a cover?",
+   "question_long": "True or false: The Beatles recorded a cover of 'Long Tall Sally'.",
+   "choices": [
+    "True",
+    "False"
+   ],
+   "correct_index": 0,
+   "correction": "",
+   "headline": "A Beatles favorite",
+   "full": "The Beatles released their version of 'Long Tall Sally' in 1964, sung by Paul McCartney.",
+   "choices_long": [
+    "True",
+    "False"
+   ],
+   "release_year": 1956,
+   "energy": "fast"
+  }
+ ],
+ "the kingsmen - louie louie": [
+  {
+   "category": "date",
+   "question": "Year released?",
+   "question_long": "What year was 'Louie Louie' by The Kingsmen released?",
+   "choices": [
+    "1968",
+    "1963",
+    "1959",
+    "1973"
+   ],
+   "correct_index": 1,
+   "correction": "",
+   "headline": "Released in 1963",
+   "full": "'Louie Louie' by The Kingsmen was released in 1963.",
+   "choices_long": [
+    "1968",
+    "1963",
+    "1959",
+    "1973"
+   ],
+   "release_year": 1963,
+   "energy": "fast"
+  },
+  {
+   "category": "career_stat",
+   "question": "Agency that probed its lyrics?",
+   "question_long": "Which agency investigated the lyrics of 'Louie Louie'?",
+   "choices": [
+    "Scotland Yard",
+    "The FBI",
+    "The IRS",
+    "The CIA"
+   ],
+   "correct_index": 1,
+   "correction": "",
+   "headline": "An FBI case",
+   "full": "The FBI investigated the slurred lyrics for obscenity and concluded they were unintelligible.",
+   "choices_long": [
+    "Scotland Yard",
+    "The FBI",
+    "The IRS",
+    "The CIA"
+   ],
+   "release_year": 1963,
+   "energy": "fast"
+  },
+  {
+   "category": "true_false",
+   "question": "T/F: The Kingsmen wrote Louie Louie?",
+   "question_long": "True or false: The Kingsmen wrote 'Louie Louie'.",
+   "choices": [
+    "True",
+    "False"
+   ],
+   "correct_index": 1,
+   "correction": "Richard Berry wrote and first recorded it in the 1950s",
+   "headline": "Richard Berry's song",
+   "full": "Richard Berry wrote 'Louie Louie' and recorded it years before The Kingsmen's 1963 hit.",
+   "choices_long": [
+    "True",
+    "False"
+   ],
+   "release_year": 1963,
+   "energy": "fast"
+  }
+ ],
+ "ohio players - love rollercoaster": [
+  {
+   "category": "date",
+   "question": "Year released?",
+   "question_long": "What year was 'Love Rollercoaster' by Ohio Players released?",
+   "choices": [
+    "1975",
+    "1971",
+    "1966",
+    "1980"
+   ],
+   "correct_index": 0,
+   "correction": "",
+   "headline": "Released in 1975",
+   "full": "'Love Rollercoaster' by Ohio Players was released in 1975.",
+   "choices_long": [
+    "1975",
+    "1971",
+    "1966",
+    "1980"
+   ],
+   "release_year": 1975,
+   "energy": "fast"
+  },
+  {
+   "category": "geography",
+   "question": "Ohio Players' home city?",
+   "question_long": "Which Ohio city were the Ohio Players from?",
+   "choices": [
+    "Cleveland",
+    "Columbus",
+    "Cincinnati",
+    "Dayton"
+   ],
+   "correct_index": 3,
+   "correction": "",
+   "headline": "Dayton funk",
+   "full": "The Ohio Players came from Dayton, Ohio.",
+   "choices_long": [
+    "Cleveland",
+    "Columbus",
+    "Cincinnati",
+    "Dayton"
+   ],
+   "release_year": 1975,
+   "energy": "fast"
+  },
+  {
+   "category": "true_false",
+   "question": "T/F: Its scream was a real murder?",
+   "question_long": "True or false: The scream heard in 'Love Rollercoaster' was a real murder caught on tape.",
+   "choices": [
+    "True",
+    "False"
+   ],
+   "correct_index": 1,
+   "correction": "It's an urban legend; the scream is band member Billy Beck",
+   "headline": "The scream myth",
+   "full": "The murder story is an urban legend. The scream was keyboardist Billy Beck.",
+   "choices_long": [
+    "True",
+    "False"
+   ],
+   "release_year": 1975,
+   "energy": "fast"
+  }
+ ],
+ "the o'jays - love train": [
+  {
+   "category": "date",
+   "question": "Year released?",
+   "question_long": "What year was 'Love Train' by The O'Jays released?",
+   "choices": [
+    "1972",
+    "1981",
+    "1976",
+    "1966"
+   ],
+   "correct_index": 0,
+   "correction": "",
+   "headline": "Released in 1972",
+   "full": "'Love Train' by The O'Jays was released in 1972.",
+   "choices_long": [
+    "1972",
+    "1981",
+    "1976",
+    "1966"
+   ],
+   "release_year": 1972,
+   "energy": "fast"
+  },
+  {
+   "category": "real_name",
+   "question": "Writing team behind it?",
+   "question_long": "Which writing and production team was behind 'Love Train'?",
+   "choices": [
+    "Gamble & Huff",
+    "Holland-Dozier-Holland",
+    "Ashford & Simpson",
+    "Leiber & Stoller"
+   ],
+   "correct_index": 0,
+   "correction": "",
+   "headline": "The Sound of Philadelphia",
+   "full": "Kenny Gamble and Leon Huff wrote and produced 'Love Train' for their Philadelphia International label.",
+   "choices_long": [
+    "Gamble & Huff",
+    "Holland-Dozier-Holland",
+    "Ashford & Simpson",
+    "Leiber & Stoller"
+   ],
+   "release_year": 1972,
+   "energy": "fast"
+  },
+  {
+   "category": "true_false",
+   "question": "T/F: The O'Jays are named after a DJ?",
+   "question_long": "True or false: The O'Jays are named after a radio DJ.",
+   "choices": [
+    "True",
+    "False"
+   ],
+   "correct_index": 0,
+   "correction": "",
+   "headline": "Named for Eddie O'Jay",
+   "full": "The group took its name from Cleveland disc jockey Eddie O'Jay.",
+   "choices_long": [
+    "True",
+    "False"
+   ],
+   "release_year": 1972,
+   "energy": "fast"
+  }
+ ],
+ "war - low rider": [
+  {
+   "category": "date",
+   "question": "Year released?",
+   "question_long": "What year was 'Low Rider' by War released?",
+   "choices": [
+    "1975",
+    "1980",
+    "1966",
+    "1971"
+   ],
+   "correct_index": 0,
+   "correction": "",
+   "headline": "Released in 1975",
+   "full": "'Low Rider' by War was released in 1975.",
+   "choices_long": [
+    "1975",
+    "1980",
+    "1966",
+    "1971"
+   ],
+   "release_year": 1975,
+   "energy": "fast"
+  },
+  {
+   "category": "career_stat",
+   "question": "Sitcom that used it as a theme?",
+   "question_long": "Which TV sitcom used 'Low Rider' as its theme song?",
+   "choices": [
+    "Chico and the Man",
+    "That '70s Show",
+    "George Lopez",
+    "Sanford and Son"
+   ],
+   "correct_index": 2,
+   "correction": "",
+   "headline": "The George Lopez theme",
+   "full": "'Low Rider' was the theme song of the sitcom 'George Lopez'.",
+   "choices_long": [
+    "Chico and the Man",
+    "That '70s Show",
+    "George Lopez",
+    "Sanford and Son"
+   ],
+   "release_year": 1975,
+   "energy": "fast"
+  },
+  {
+   "category": "true_false",
+   "question": "T/F: War once backed Eric Burdon?",
+   "question_long": "True or false: War once backed Eric Burdon of The Animals.",
+   "choices": [
+    "True",
+    "False"
+   ],
+   "correct_index": 0,
+   "correction": "",
+   "headline": "Eric Burdon and War",
+   "full": "War first found fame backing Eric Burdon, including on the 1970 hit 'Spill the Wine'.",
+   "choices_long": [
+    "True",
+    "False"
+   ],
+   "release_year": 1975,
+   "energy": "fast"
+  }
+ ],
+ "gladys knight & the pips - midnight train to georgia": [
+  {
+   "category": "date",
+   "question": "Year released?",
+   "question_long": "What year was 'Midnight Train to Georgia' by Gladys Knight & The Pips released?",
+   "choices": [
+    "1962",
+    "1973",
+    "1977",
+    "1968"
+   ],
+   "correct_index": 1,
+   "correction": "",
+   "headline": "Released in 1973",
+   "full": "'Midnight Train to Georgia' by Gladys Knight & The Pips was released in 1973.",
+   "choices_long": [
+    "1962",
+    "1973",
+    "1977",
+    "1968"
+   ],
+   "release_year": 1973,
+   "energy": "slow"
+  },
+  {
+   "category": "song_meaning",
+   "question": "Originally 'Midnight Plane to'...?",
+   "question_long": "The song was first written as 'Midnight Plane to' which city?",
+   "choices": [
+    "Dallas",
+    "Atlanta",
+    "Memphis",
+    "Houston"
+   ],
+   "correct_index": 3,
+   "correction": "",
+   "headline": "It started as a plane",
+   "full": "Jim Weatherly first wrote it as 'Midnight Plane to Houston'.",
+   "choices_long": [
+    "Dallas",
+    "Atlanta",
+    "Memphis",
+    "Houston"
+   ],
+   "release_year": 1973,
+   "energy": "slow"
+  },
+  {
+   "category": "true_false",
+   "question": "T/F: Gladys Knight was born in Atlanta?",
+   "question_long": "True or false: Gladys Knight was born in Atlanta.",
+   "choices": [
+    "True",
+    "False"
+   ],
+   "correct_index": 0,
+   "correction": "",
+   "headline": "A Georgia native",
+   "full": "Gladys Knight was born in Atlanta, Georgia.",
+   "choices_long": [
+    "True",
+    "False"
+   ],
+   "release_year": 1973,
+   "energy": "slow"
+  }
+ ],
+ "tommy james & the shondells - mony mony": [
+  {
+   "category": "date",
+   "question": "Year released?",
+   "question_long": "What year was 'Mony Mony' by Tommy James & The Shondells released?",
+   "choices": [
+    "1963",
+    "1957",
+    "1968",
+    "1972"
+   ],
+   "correct_index": 2,
+   "correction": "",
+   "headline": "Released in 1968",
+   "full": "'Mony Mony' by Tommy James & The Shondells was released in 1968.",
+   "choices_long": [
+    "1963",
+    "1957",
+    "1968",
+    "1972"
+   ],
+   "release_year": 1968,
+   "energy": "fast"
+  },
+  {
+   "category": "career_stat",
+   "question": "Who took a cover to #1 in 1987?",
+   "question_long": "Who took a live cover of 'Mony Mony' to #1 in 1987?",
+   "choices": [
+    "Bon Jovi",
+    "Tiffany",
+    "Billy Idol",
+    "Joan Jett"
+   ],
+   "correct_index": 2,
+   "correction": "",
+   "headline": "Billy Idol's #1",
+   "full": "Billy Idol's live version of 'Mony Mony' reached #1 in the US in 1987.",
+   "choices_long": [
+    "Bon Jovi",
+    "Tiffany",
+    "Billy Idol",
+    "Joan Jett"
+   ],
+   "release_year": 1968,
+   "energy": "fast"
+  },
+  {
+   "category": "true_false",
+   "question": "T/F: Title came from an insurance sign?",
+   "question_long": "True or false: The title 'Mony Mony' came from a Mutual of New York sign.",
+   "choices": [
+    "True",
+    "False"
+   ],
+   "correct_index": 0,
+   "correction": "",
+   "headline": "Mutual of New York",
+   "full": "Tommy James took the title from the MONY sign on the Mutual of New York building.",
+   "choices_long": [
+    "True",
+    "False"
+   ],
+   "release_year": 1968,
+   "energy": "fast"
+  }
+ ],
+ "bee gees - night fever": [
+  {
+   "category": "career_stat",
+   "question": "Soundtrack it comes from?",
+   "question_long": "Which film soundtrack does 'Night Fever' come from?",
+   "choices": [
+    "Staying Alive",
+    "Flashdance",
+    "Grease",
+    "Saturday Night Fever"
+   ],
+   "correct_index": 3,
+   "correction": "",
+   "headline": "It named the movie",
+   "full": "'Night Fever' was written for 'Saturday Night Fever', and the film's title borrowed from the song.",
+   "choices_long": [
+    "Staying Alive",
+    "Flashdance",
+    "Grease",
+    "Saturday Night Fever"
+   ],
+   "release_year": 1977,
+   "energy": "fast"
+  },
+  {
+   "category": "geography",
+   "question": "Where were the Gibb brothers born?",
+   "question_long": "Where were the Bee Gees' Gibb brothers born?",
+   "choices": [
+    "Australia",
+    "Scotland",
+    "Isle of Man",
+    "New Zealand"
+   ],
+   "correct_index": 2,
+   "correction": "",
+   "headline": "Manx-born brothers",
+   "full": "Barry, Robin and Maurice Gibb were born on the Isle of Man and later raised in England and Australia.",
+   "choices_long": [
+    "Australia",
+    "Scotland",
+    "Isle of Man",
+    "New Zealand"
+   ],
+   "release_year": 1977,
+   "energy": "fast"
+  },
+  {
+   "category": "true_false",
+   "question": "T/F: Eight weeks at #1 in the US?",
+   "question_long": "True or false: 'Night Fever' spent eight weeks at #1 in the US.",
+   "choices": [
+    "True",
+    "False"
+   ],
+   "correct_index": 0,
+   "correction": "",
+   "headline": "Eight weeks on top",
+   "full": "'Night Fever' spent eight weeks at #1 on the Hot 100 in 1978.",
+   "choices_long": [
+    "True",
+    "False"
+   ],
+   "release_year": 1977,
+   "energy": "fast"
+  }
+ ],
+ "roy orbison - oh, pretty woman": [
+  {
+   "category": "date",
+   "question": "Year released?",
+   "question_long": "What year was 'Oh, Pretty Woman' by Roy Orbison released?",
+   "choices": [
+    "1969",
+    "1974",
+    "1964",
+    "1960"
+   ],
+   "correct_index": 2,
+   "correction": "",
+   "headline": "Released in 1964",
+   "full": "'Oh, Pretty Woman' by Roy Orbison was released in 1964.",
+   "choices_long": [
+    "1969",
+    "1974",
+    "1964",
+    "1960"
+   ],
+   "release_year": 1964,
+   "energy": "fast"
+  },
+  {
+   "category": "career_stat",
+   "question": "Star of the 1990 film named after it?",
+   "question_long": "Who starred in the 1990 film named after 'Oh, Pretty Woman'?",
+   "choices": [
+    "Meg Ryan",
+    "Sandra Bullock",
+    "Julia Roberts",
+    "Demi Moore"
+   ],
+   "correct_index": 2,
+   "correction": "",
+   "headline": "The Pretty Woman movie",
+   "full": "The 1990 film 'Pretty Woman', starring Julia Roberts and Richard Gere, took its title from the song.",
+   "choices_long": [
+    "Meg Ryan",
+    "Sandra Bullock",
+    "Julia Roberts",
+    "Demi Moore"
+   ],
+   "release_year": 1964,
+   "energy": "fast"
+  },
+  {
+   "category": "true_false",
+   "question": "T/F: Roy Orbison was from Tennessee?",
+   "question_long": "True or false: Roy Orbison was from Tennessee.",
+   "choices": [
+    "True",
+    "False"
+   ],
+   "correct_index": 1,
+   "correction": "Roy Orbison was from Texas",
+   "headline": "A Texan",
+   "full": "Roy Orbison was born in Vernon, Texas.",
+   "choices_long": [
+    "True",
+    "False"
+   ],
+   "release_year": 1964,
+   "energy": "fast"
+  }
+ ],
+ "the platters - only you (and you alone)": [
+  {
+   "category": "date",
+   "question": "Year released?",
+   "question_long": "What year was 'Only You (And You Alone)' by The Platters released?",
+   "choices": [
+    "1950",
+    "1955",
+    "1944",
+    "1959"
+   ],
+   "correct_index": 1,
+   "correction": "",
+   "headline": "Released in 1955",
+   "full": "'Only You (And You Alone)' by The Platters was released in 1955.",
+   "choices_long": [
+    "1950",
+    "1955",
+    "1944",
+    "1959"
+   ],
+   "release_year": 1955,
+   "energy": "slow"
+  },
+  {
+   "category": "real_name",
+   "question": "The Platters' lead tenor?",
+   "question_long": "Who was the lead tenor of The Platters on 'Only You'?",
+   "choices": [
+    "Sam Cooke",
+    "Clyde McPhatter",
+    "Tony Williams",
+    "Ben E. King"
+   ],
+   "correct_index": 2,
+   "correction": "",
+   "headline": "Tony Williams sings",
+   "full": "Tony Williams sang lead on The Platters' biggest hits, including 'Only You'.",
+   "choices_long": [
+    "Sam Cooke",
+    "Clyde McPhatter",
+    "Tony Williams",
+    "Ben E. King"
+   ],
+   "release_year": 1955,
+   "energy": "slow"
+  },
+  {
+   "category": "true_false",
+   "question": "T/F: The Platters formed in Los Angeles?",
+   "question_long": "True or false: The Platters formed in Los Angeles.",
+   "choices": [
+    "True",
+    "False"
+   ],
+   "correct_index": 0,
+   "correction": "",
+   "headline": "An L.A. vocal group",
+   "full": "The Platters formed in Los Angeles in the early 1950s.",
+   "choices_long": [
+    "True",
+    "False"
+   ],
+   "release_year": 1955,
+   "energy": "slow"
+  }
+ ],
+ "the temptations - papa was a rollin' stone": [
+  {
+   "category": "date",
+   "question": "Year released?",
+   "question_long": "What year was 'Papa Was a Rollin' Stone' by The Temptations released?",
+   "choices": [
+    "1972",
+    "1967",
+    "1961",
+    "1976"
+   ],
+   "correct_index": 0,
+   "correction": "",
+   "headline": "Released in 1972",
+   "full": "'Papa Was a Rollin' Stone' by The Temptations was released in 1972.",
+   "choices_long": [
+    "1972",
+    "1967",
+    "1961",
+    "1976"
+   ],
+   "release_year": 1972,
+   "energy": "dark"
+  },
+  {
+   "category": "song_meaning",
+   "question": "Day Papa died, in the lyrics?",
+   "question_long": "According to the lyrics, on what day did Papa die?",
+   "choices": [
+    "First of December",
+    "Ninth of October",
+    "Fourth of July",
+    "Third of September"
+   ],
+   "correct_index": 3,
+   "correction": "",
+   "headline": "The third of September",
+   "full": "The song opens: 'It was the third of September, that day I'll always remember.'",
+   "choices_long": [
+    "First of December",
+    "Ninth of October",
+    "Fourth of July",
+    "Third of September"
+   ],
+   "release_year": 1972,
+   "energy": "dark"
+  },
+  {
+   "category": "true_false",
+   "question": "T/F: The Temptations recorded it first?",
+   "question_long": "True or false: The Temptations were the first to record 'Papa Was a Rollin' Stone'.",
+   "choices": [
+    "True",
+    "False"
+   ],
+   "correct_index": 1,
+   "correction": "The Undisputed Truth recorded it first, earlier in 1972",
+   "headline": "Second time lucky",
+   "full": "The Undisputed Truth released the song first in 1972; The Temptations' version later that year went to #1.",
+   "choices_long": [
+    "True",
+    "False"
+   ],
+   "release_year": 1972,
+   "energy": "dark"
+  }
+ ],
+ "buddy holly - peggy sue": [
+  {
+   "category": "date",
+   "question": "Year released?",
+   "question_long": "What year was 'Peggy Sue' by Buddy Holly released?",
+   "choices": [
+    "1961",
+    "1957",
+    "1966",
+    "1951"
+   ],
+   "correct_index": 1,
+   "correction": "",
+   "headline": "Released in 1957",
+   "full": "'Peggy Sue' by Buddy Holly was released in 1957.",
+   "choices_long": [
+    "1961",
+    "1957",
+    "1966",
+    "1951"
+   ],
+   "release_year": 1957,
+   "energy": "fast"
+  },
+  {
+   "category": "geography",
+   "question": "Buddy Holly's hometown?",
+   "question_long": "Which town was Buddy Holly from?",
+   "choices": [
+    "Memphis, Tennessee",
+    "Clovis, New Mexico",
+    "Tulsa, Oklahoma",
+    "Lubbock, Texas"
+   ],
+   "correct_index": 3,
+   "correction": "",
+   "headline": "Lubbock's favorite son",
+   "full": "Buddy Holly was from Lubbock, Texas. He recorded 'Peggy Sue' in Clovis, New Mexico.",
+   "choices_long": [
+    "Memphis, Tennessee",
+    "Clovis, New Mexico",
+    "Tulsa, Oklahoma",
+    "Lubbock, Texas"
+   ],
+   "release_year": 1957,
+   "energy": "fast"
+  },
+  {
+   "category": "true_false",
+   "question": "T/F: Its working title was 'Cindy Lou'?",
+   "question_long": "True or false: 'Peggy Sue' was first called 'Cindy Lou'.",
+   "choices": [
+    "True",
+    "False"
+   ],
+   "correct_index": 0,
+   "correction": "",
+   "headline": "Almost Cindy Lou",
+   "full": "The song was 'Cindy Lou' until it was renamed for the girlfriend of drummer Jerry Allison.",
+   "choices_long": [
+    "True",
+    "False"
+   ],
+   "release_year": 1957,
+   "energy": "fast"
+  }
+ ],
+ "wild cherry - play that funky music": [
+  {
+   "category": "date",
+   "question": "Year released?",
+   "question_long": "What year was 'Play That Funky Music' by Wild Cherry released?",
+   "choices": [
+    "1986",
+    "1972",
+    "1976",
+    "1981"
+   ],
+   "correct_index": 2,
+   "correction": "",
+   "headline": "Released in 1976",
+   "full": "'Play That Funky Music' by Wild Cherry was released in 1976.",
+   "choices_long": [
+    "1986",
+    "1972",
+    "1976",
+    "1981"
+   ],
+   "release_year": 1976,
+   "energy": "fast"
+  },
+  {
+   "category": "geography",
+   "question": "Wild Cherry's home state?",
+   "question_long": "Which US state were Wild Cherry from?",
+   "choices": [
+    "Texas",
+    "Ohio",
+    "Michigan",
+    "Georgia"
+   ],
+   "correct_index": 1,
+   "correction": "",
+   "headline": "An Ohio band",
+   "full": "Wild Cherry came from Mingo Junction, Ohio.",
+   "choices_long": [
+    "Texas",
+    "Ohio",
+    "Michigan",
+    "Georgia"
+   ],
+   "release_year": 1976,
+   "energy": "fast"
+  },
+  {
+   "category": "true_false",
+   "question": "T/F: Wild Cherry began as a rock band?",
+   "question_long": "True or false: Wild Cherry started out as a rock band.",
+   "choices": [
+    "True",
+    "False"
+   ],
+   "correct_index": 0,
+   "correction": "",
+   "headline": "Rockers go funk",
+   "full": "Wild Cherry were a rock band; the song tells how club crowds asked them to play funk instead.",
+   "choices_long": [
+    "True",
+    "False"
+   ],
+   "release_year": 1976,
+   "energy": "fast"
+  }
+ ],
+ "aretha franklin - respect": [
+  {
+   "category": "date",
+   "question": "Year released?",
+   "question_long": "What year was 'Respect' by Aretha Franklin released?",
+   "choices": [
+    "1963",
+    "1972",
+    "1958",
+    "1967"
+   ],
+   "correct_index": 3,
+   "correction": "",
+   "headline": "Released in 1967",
+   "full": "'Respect' by Aretha Franklin was released in 1967.",
+   "choices_long": [
+    "1963",
+    "1972",
+    "1958",
+    "1967"
+   ],
+   "release_year": 1967,
+   "energy": "fast"
+  },
+  {
+   "category": "career_stat",
+   "question": "Who wrote and first recorded it?",
+   "question_long": "Who wrote and first recorded 'Respect'?",
+   "choices": [
+    "Wilson Pickett",
+    "Otis Redding",
+    "Ray Charles",
+    "Sam Cooke"
+   ],
+   "correct_index": 1,
+   "correction": "",
+   "headline": "An Otis Redding song",
+   "full": "Otis Redding wrote and recorded 'Respect' in 1965, two years before Aretha Franklin's version.",
+   "choices_long": [
+    "Wilson Pickett",
+    "Otis Redding",
+    "Ray Charles",
+    "Sam Cooke"
+   ],
+   "release_year": 1967,
+   "energy": "fast"
+  },
+  {
+   "category": "true_false",
+   "question": "T/F: Aretha Franklin was born in Detroit?",
+   "question_long": "True or false: Aretha Franklin was born in Detroit.",
+   "choices": [
+    "True",
+    "False"
+   ],
+   "correct_index": 1,
+   "correction": "She was born in Memphis and raised in Detroit",
+   "headline": "Memphis-born",
+   "full": "Aretha Franklin was born in Memphis, Tennessee, and grew up in Detroit.",
+   "choices_long": [
+    "True",
+    "False"
+   ],
+   "release_year": 1967,
+   "energy": "fast"
+  }
+ ],
+ "anita ward - ring my bell": [
+  {
+   "category": "date",
+   "question": "Year released?",
+   "question_long": "What year was 'Ring My Bell' by Anita Ward released?",
+   "choices": [
+    "1979",
+    "1975",
+    "1970",
+    "1984"
+   ],
+   "correct_index": 0,
+   "correction": "",
+   "headline": "Released in 1979",
+   "full": "'Ring My Bell' by Anita Ward was released in 1979.",
+   "choices_long": [
+    "1979",
+    "1975",
+    "1970",
+    "1984"
+   ],
+   "release_year": 1979,
+   "energy": "fast"
+  },
+  {
+   "category": "career_stat",
+   "question": "Anita Ward's job before fame?",
+   "question_long": "What was Anita Ward's job before 'Ring My Bell'?",
+   "choices": [
+    "Flight attendant",
+    "Bank teller",
+    "Schoolteacher",
+    "Nurse"
+   ],
+   "correct_index": 2,
+   "correction": "",
+   "headline": "From classroom to charts",
+   "full": "Anita Ward was working as a schoolteacher in Memphis before 'Ring My Bell'.",
+   "choices_long": [
+    "Flight attendant",
+    "Bank teller",
+    "Schoolteacher",
+    "Nurse"
+   ],
+   "release_year": 1979,
+   "energy": "fast"
+  },
+  {
+   "category": "true_false",
+   "question": "T/F: It reached #1 in the US and UK?",
+   "question_long": "True or false: 'Ring My Bell' reached #1 in both the US and the UK.",
+   "choices": [
+    "True",
+    "False"
+   ],
+   "correct_index": 0,
+   "correction": "",
+   "headline": "A transatlantic #1",
+   "full": "'Ring My Bell' went to #1 in both the US and the UK in 1979.",
+   "choices_long": [
+    "True",
+    "False"
+   ],
+   "release_year": 1979,
+   "energy": "fast"
+  }
+ ],
+ "the blackbyrds - rock creek park": [
+  {
+   "category": "date",
+   "question": "Year released?",
+   "question_long": "What year was 'Rock Creek Park' by The Blackbyrds released?",
+   "choices": [
+    "1975",
+    "1969",
+    "1979",
+    "1984"
+   ],
+   "correct_index": 0,
+   "correction": "",
+   "headline": "Released in 1975",
+   "full": "'Rock Creek Park' by The Blackbyrds was released in 1975.",
+   "choices_long": [
+    "1975",
+    "1969",
+    "1979",
+    "1984"
+   ],
+   "release_year": 1975,
+   "energy": "fast"
+  },
+  {
+   "category": "geography",
+   "question": "Rock Creek Park is in which city?",
+   "question_long": "The Rock Creek Park of the song is in which city?",
+   "choices": [
+    "Baltimore",
+    "Philadelphia",
+    "Washington, D.C.",
+    "Atlanta"
+   ],
+   "correct_index": 2,
+   "correction": "",
+   "headline": "A park in the capital",
+   "full": "Rock Creek Park is a large park in Washington, D.C.",
+   "choices_long": [
+    "Baltimore",
+    "Philadelphia",
+    "Washington, D.C.",
+    "Atlanta"
+   ],
+   "release_year": 1975,
+   "energy": "fast"
+  },
+  {
+   "category": "true_false",
+   "question": "T/F: Donald Byrd formed the band?",
+   "question_long": "True or false: The Blackbyrds were formed by jazz trumpeter Donald Byrd.",
+   "choices": [
+    "True",
+    "False"
+   ],
+   "correct_index": 0,
+   "correction": "",
+   "headline": "Donald Byrd's students",
+   "full": "Trumpeter Donald Byrd formed The Blackbyrds from his students at Howard University.",
+   "choices_long": [
+    "True",
+    "False"
+   ],
+   "release_year": 1975,
+   "energy": "fast"
+  }
+ ],
+ "peaches & herb - shake your groove thing": [
+  {
+   "category": "date",
+   "question": "Year released?",
+   "question_long": "What year was 'Shake Your Groove Thing' by Peaches & Herb released?",
+   "choices": [
+    "1969",
+    "1983",
+    "1978",
+    "1974"
+   ],
+   "correct_index": 2,
+   "correction": "",
+   "headline": "Released in 1978",
+   "full": "'Shake Your Groove Thing' by Peaches & Herb was released in 1978.",
+   "choices_long": [
+    "1969",
+    "1983",
+    "1978",
+    "1974"
+   ],
+   "release_year": 1978,
+   "energy": "fast"
+  },
+  {
+   "category": "career_stat",
+   "question": "Their #1 ballad from the same album?",
+   "question_long": "Which #1 ballad came from the same Peaches & Herb album?",
+   "choices": [
+    "Still",
+    "Reunited",
+    "Endless Love",
+    "Three Times a Lady"
+   ],
+   "correct_index": 1,
+   "correction": "",
+   "headline": "Then came Reunited",
+   "full": "'Shake Your Groove Thing' and the #1 ballad 'Reunited' both come from the album '2 Hot!'.",
+   "choices_long": [
+    "Still",
+    "Reunited",
+    "Endless Love",
+    "Three Times a Lady"
+   ],
+   "release_year": 1978,
+   "energy": "fast"
+  },
+  {
+   "category": "true_false",
+   "question": "T/F: More than one woman was 'Peaches'?",
+   "question_long": "True or false: More than one woman has performed as 'Peaches' in Peaches & Herb.",
+   "choices": [
+    "True",
+    "False"
+   ],
+   "correct_index": 0,
+   "correction": "",
+   "headline": "Several Peaches, one Herb",
+   "full": "Herb Fame has sung with several different partners as 'Peaches' since the 1960s.",
+   "choices_long": [
+    "True",
+    "False"
+   ],
+   "release_year": 1978,
+   "energy": "fast"
+  }
+ ],
+ "the undisputed truth - smiling faces sometimes": [
+  {
+   "category": "date",
+   "question": "Year released?",
+   "question_long": "What year was 'Smiling Faces Sometimes' by The Undisputed Truth released?",
+   "choices": [
+    "1971",
+    "1976",
+    "1981",
+    "1967"
+   ],
+   "correct_index": 0,
+   "correction": "",
+   "headline": "Released in 1971",
+   "full": "'Smiling Faces Sometimes' by The Undisputed Truth was released in 1971.",
+   "choices_long": [
+    "1971",
+    "1976",
+    "1981",
+    "1967"
+   ],
+   "release_year": 1971,
+   "energy": "dark"
+  },
+  {
+   "category": "career_stat",
+   "question": "Record company behind the group?",
+   "question_long": "Which record company released 'Smiling Faces Sometimes'?",
+   "choices": [
+    "Philadelphia Int'l",
+    "Atlantic",
+    "Stax",
+    "Motown"
+   ],
+   "correct_index": 3,
+   "correction": "",
+   "headline": "Motown's psychedelic soul",
+   "full": "The Undisputed Truth recorded for Motown's Gordy label with producer Norman Whitfield.",
+   "choices_long": [
+    "Philadelphia Int'l",
+    "Atlantic",
+    "Stax",
+    "Motown"
+   ],
+   "release_year": 1971,
+   "energy": "dark"
+  },
+  {
+   "category": "true_false",
+   "question": "T/F: The Temptations recorded it first?",
+   "question_long": "True or false: The Temptations recorded 'Smiling Faces Sometimes' before The Undisputed Truth.",
+   "choices": [
+    "True",
+    "False"
+   ],
+   "correct_index": 0,
+   "correction": "",
+   "headline": "A Temptations album track first",
+   "full": "The Temptations recorded a long version of it for their 1971 album 'Sky's the Limit'.",
+   "choices_long": [
+    "True",
+    "False"
+   ],
+   "release_year": 1971,
+   "energy": "dark"
+  }
+ ],
+ "sam & dave - soul man": [
+  {
+   "category": "date",
+   "question": "Year released?",
+   "question_long": "What year was 'Soul Man' by Sam & Dave released?",
+   "choices": [
+    "1961",
+    "1967",
+    "1971",
+    "1976"
+   ],
+   "correct_index": 1,
+   "correction": "",
+   "headline": "Released in 1967",
+   "full": "'Soul Man' by Sam & Dave was released in 1967.",
+   "choices_long": [
+    "1961",
+    "1967",
+    "1971",
+    "1976"
+   ],
+   "release_year": 1967,
+   "energy": "fast"
+  },
+  {
+   "category": "real_name",
+   "question": "Who co-wrote it?",
+   "question_long": "Which future star co-wrote 'Soul Man'?",
+   "choices": [
+    "Isaac Hayes",
+    "Otis Redding",
+    "Smokey Robinson",
+    "Curtis Mayfield"
+   ],
+   "correct_index": 0,
+   "correction": "",
+   "headline": "Hayes and Porter",
+   "full": "Isaac Hayes and David Porter wrote 'Soul Man' for Sam & Dave.",
+   "choices_long": [
+    "Isaac Hayes",
+    "Otis Redding",
+    "Smokey Robinson",
+    "Curtis Mayfield"
+   ],
+   "release_year": 1967,
+   "energy": "fast"
+  },
+  {
+   "category": "true_false",
+   "question": "T/F: The Blues Brothers had a hit cover?",
+   "question_long": "True or false: The Blues Brothers had a hit with a cover of 'Soul Man'.",
+   "choices": [
+    "True",
+    "False"
+   ],
+   "correct_index": 0,
+   "correction": "",
+   "headline": "The Blues Brothers' hit",
+   "full": "The Blues Brothers took 'Soul Man' back into the US Top 20 in 1978-79.",
+   "choices_long": [
+    "True",
+    "False"
+   ],
+   "release_year": 1967,
+   "energy": "fast"
+  }
+ ],
+ "bobby darin - splish splash": [
+  {
+   "category": "date",
+   "question": "Year released?",
+   "question_long": "What year was 'Splish Splash' by Bobby Darin released?",
+   "choices": [
+    "1958",
+    "1964",
+    "1955",
+    "1951"
+   ],
+   "correct_index": 0,
+   "correction": "",
+   "headline": "Released in 1958",
+   "full": "'Splish Splash' by Bobby Darin was released in 1958.",
+   "choices_long": [
+    "1958",
+    "1964",
+    "1955",
+    "1951"
+   ],
+   "release_year": 1958,
+   "energy": "fast"
+  },
+  {
+   "category": "career_stat",
+   "question": "Bobby Darin's later #1 standard?",
+   "question_long": "Which standard gave Bobby Darin a #1 hit in 1959?",
+   "choices": [
+    "That's Life",
+    "Mack the Knife",
+    "Fly Me to the Moon",
+    "Volare"
+   ],
+   "correct_index": 1,
+   "correction": "",
+   "headline": "Then came Mack the Knife",
+   "full": "A year after 'Splish Splash', Bobby Darin had a #1 with 'Mack the Knife'.",
+   "choices_long": [
+    "That's Life",
+    "Mack the Knife",
+    "Fly Me to the Moon",
+    "Volare"
+   ],
+   "release_year": 1958,
+   "energy": "fast"
+  },
+  {
+   "category": "true_false",
+   "question": "T/F: Darin was married to Doris Day?",
+   "question_long": "True or false: Bobby Darin was married to Doris Day.",
+   "choices": [
+    "True",
+    "False"
+   ],
+   "correct_index": 1,
+   "correction": "Bobby Darin was married to actress Sandra Dee",
+   "headline": "Bobby and Sandra",
+   "full": "Bobby Darin married actress Sandra Dee in 1960.",
+   "choices_long": [
+    "True",
+    "False"
+   ],
+   "release_year": 1958,
+   "energy": "fast"
+  }
+ ],
+ "eddie cochran - summertime blues": [
+  {
+   "category": "date",
+   "question": "Year released?",
+   "question_long": "What year was 'Summertime Blues' by Eddie Cochran released?",
+   "choices": [
+    "1958",
+    "1962",
+    "1953",
+    "1947"
+   ],
+   "correct_index": 0,
+   "correction": "",
+   "headline": "Released in 1958",
+   "full": "'Summertime Blues' by Eddie Cochran was released in 1958.",
+   "choices_long": [
+    "1958",
+    "1962",
+    "1953",
+    "1947"
+   ],
+   "release_year": 1958,
+   "energy": "fast"
+  },
+  {
+   "category": "career_stat",
+   "question": "Band that covered it at Leeds?",
+   "question_long": "Which band covered 'Summertime Blues' on their 1970 album recorded at Leeds?",
+   "choices": [
+    "The Kinks",
+    "Led Zeppelin",
+    "Cream",
+    "The Who"
+   ],
+   "correct_index": 3,
+   "correction": "",
+   "headline": "Live at Leeds",
+   "full": "The Who's cover of 'Summertime Blues' is on their 1970 album 'Live at Leeds'.",
+   "choices_long": [
+    "The Kinks",
+    "Led Zeppelin",
+    "Cream",
+    "The Who"
+   ],
+   "release_year": 1958,
+   "energy": "fast"
+  },
+  {
+   "category": "true_false",
+   "question": "T/F: Cochran died in a UK car crash at 21?",
+   "question_long": "True or false: Eddie Cochran died at 21 in a car crash in England.",
+   "choices": [
+    "True",
+    "False"
+   ],
+   "correct_index": 0,
+   "correction": "",
+   "headline": "Gone at 21",
+   "full": "Eddie Cochran died in April 1960, aged 21, after a taxi crash in Chippenham, England.",
+   "choices_long": [
+    "True",
+    "False"
+   ],
+   "release_year": 1958,
+   "energy": "fast"
+  }
+ ],
+ "curtis mayfield - superfly": [
+  {
+   "category": "date",
+   "question": "Year released?",
+   "question_long": "What year was 'Superfly' by Curtis Mayfield released?",
+   "choices": [
+    "1982",
+    "1972",
+    "1977",
+    "1968"
+   ],
+   "correct_index": 1,
+   "correction": "",
+   "headline": "Released in 1972",
+   "full": "'Superfly' by Curtis Mayfield was released in 1972.",
+   "choices_long": [
+    "1982",
+    "1972",
+    "1977",
+    "1968"
+   ],
+   "release_year": 1972,
+   "energy": "fast"
+  },
+  {
+   "category": "career_stat",
+   "question": "Curtis Mayfield's earlier group?",
+   "question_long": "Which group did Curtis Mayfield lead before going solo?",
+   "choices": [
+    "The Impressions",
+    "The Miracles",
+    "The Drifters",
+    "The Dells"
+   ],
+   "correct_index": 0,
+   "correction": "",
+   "headline": "From The Impressions",
+   "full": "Curtis Mayfield led The Impressions through hits like 'People Get Ready' before going solo.",
+   "choices_long": [
+    "The Impressions",
+    "The Miracles",
+    "The Drifters",
+    "The Dells"
+   ],
+   "release_year": 1972,
+   "energy": "fast"
+  },
+  {
+   "category": "true_false",
+   "question": "T/F: Curtis Mayfield was from Chicago?",
+   "question_long": "True or false: Curtis Mayfield was from Chicago.",
+   "choices": [
+    "True",
+    "False"
+   ],
+   "correct_index": 0,
+   "correction": "",
+   "headline": "Chicago soul",
+   "full": "Curtis Mayfield was born and raised in Chicago.",
+   "choices_long": [
+    "True",
+    "False"
+   ],
+   "release_year": 1972,
+   "energy": "fast"
+  }
+ ],
+ "stevie wonder - superstition": [
+  {
+   "category": "date",
+   "question": "Year released?",
+   "question_long": "What year was 'Superstition' by Stevie Wonder released?",
+   "choices": [
+    "1972",
+    "1968",
+    "1977",
+    "1963"
+   ],
+   "correct_index": 0,
+   "correction": "",
+   "headline": "Released in 1972",
+   "full": "'Superstition' by Stevie Wonder was released in 1972.",
+   "choices_long": [
+    "1972",
+    "1968",
+    "1977",
+    "1963"
+   ],
+   "release_year": 1972,
+   "energy": "fast"
+  },
+  {
+   "category": "career_stat",
+   "question": "Guitarist it was first meant for?",
+   "question_long": "'Superstition' was first intended for which guitarist?",
+   "choices": [
+    "Carlos Santana",
+    "Jeff Beck",
+    "Jimmy Page",
+    "Eric Clapton"
+   ],
+   "correct_index": 1,
+   "correction": "",
+   "headline": "Meant for Jeff Beck",
+   "full": "Stevie Wonder first offered 'Superstition' to Jeff Beck, but Motown had Stevie's own version out first.",
+   "choices_long": [
+    "Carlos Santana",
+    "Jeff Beck",
+    "Jimmy Page",
+    "Eric Clapton"
+   ],
+   "release_year": 1972,
+   "energy": "fast"
+  },
+  {
+   "category": "true_false",
+   "question": "T/F: Stevie plays the drums on it?",
+   "question_long": "True or false: Stevie Wonder plays the drums on 'Superstition'.",
+   "choices": [
+    "True",
+    "False"
+   ],
+   "correct_index": 0,
+   "correction": "",
+   "headline": "Stevie on drums",
+   "full": "Stevie Wonder played the drums on 'Superstition' as well as the clavinet and the bass synthesizer.",
+   "choices_long": [
+    "True",
+    "False"
+   ],
+   "release_year": 1972,
+   "energy": "fast"
+  }
+ ],
+ "elvis presley - suspicious minds": [
+  {
+   "category": "date",
+   "question": "Year released?",
+   "question_long": "What year was 'Suspicious Minds' by Elvis Presley released?",
+   "choices": [
+    "1978",
+    "1963",
+    "1973",
+    "1969"
+   ],
+   "correct_index": 3,
+   "correction": "",
+   "headline": "Released in 1969",
+   "full": "'Suspicious Minds' by Elvis Presley was released in 1969.",
+   "choices_long": [
+    "1978",
+    "1963",
+    "1973",
+    "1969"
+   ],
+   "release_year": 1969,
+   "energy": "fast"
+  },
+  {
+   "category": "geography",
+   "question": "City where Elvis recorded it?",
+   "question_long": "In which city did Elvis Presley record 'Suspicious Minds'?",
+   "choices": [
+    "Nashville",
+    "Los Angeles",
+    "Memphis",
+    "Las Vegas"
+   ],
+   "correct_index": 2,
+   "correction": "",
+   "headline": "Back home in Memphis",
+   "full": "Elvis recorded 'Suspicious Minds' at American Sound Studio in Memphis in January 1969.",
+   "choices_long": [
+    "Nashville",
+    "Los Angeles",
+    "Memphis",
+    "Las Vegas"
+   ],
+   "release_year": 1969,
+   "energy": "fast"
+  },
+  {
+   "category": "true_false",
+   "question": "T/F: Elvis's last US #1 in his lifetime?",
+   "question_long": "True or false: 'Suspicious Minds' was Elvis Presley's last US #1 single during his lifetime.",
+   "choices": [
+    "True",
+    "False"
+   ],
+   "correct_index": 0,
+   "correction": "",
+   "headline": "The last #1",
+   "full": "'Suspicious Minds' was Elvis Presley's final #1 on the Hot 100, in November 1969.",
+   "choices_long": [
+    "True",
+    "False"
+   ],
+   "release_year": 1969,
+   "energy": "fast"
+  }
+ ],
+ "double exposure - ten percent": [
+  {
+   "category": "date",
+   "question": "Year released?",
+   "question_long": "What year was 'Ten Percent' by Double Exposure released?",
+   "choices": [
+    "1976",
+    "1965",
+    "1971",
+    "1980"
+   ],
+   "correct_index": 0,
+   "correction": "",
+   "headline": "Released in 1976",
+   "full": "'Ten Percent' by Double Exposure was released in 1976.",
+   "choices_long": [
+    "1976",
+    "1965",
+    "1971",
+    "1980"
+   ],
+   "release_year": 1976,
+   "energy": "fast"
+  },
+  {
+   "category": "career_stat",
+   "question": "Label that released it?",
+   "question_long": "Which disco label released 'Ten Percent'?",
+   "choices": [
+    "TK Records",
+    "Salsoul",
+    "Motown",
+    "Casablanca"
+   ],
+   "correct_index": 1,
+   "correction": "",
+   "headline": "A Salsoul classic",
+   "full": "'Ten Percent' came out on Salsoul Records in 1976.",
+   "choices_long": [
+    "TK Records",
+    "Salsoul",
+    "Motown",
+    "Casablanca"
+   ],
+   "release_year": 1976,
+   "energy": "fast"
+  },
+  {
+   "category": "true_false",
+   "question": "T/F: Cited as the first 12-inch on sale?",
+   "question_long": "True or false: 'Ten Percent' is widely cited as the first 12-inch single sold commercially.",
+   "choices": [
+    "True",
+    "False"
+   ],
+   "correct_index": 0,
+   "correction": "",
+   "headline": "The first 12-inch",
+   "full": "Walter Gibbons' mix of 'Ten Percent' is widely cited as the first commercially sold 12-inch single.",
+   "choices_long": [
+    "True",
+    "False"
+   ],
+   "release_year": 1976,
+   "energy": "fast"
+  }
+ ],
+ "the isley brothers - that lady": [
+  {
+   "category": "date",
+   "question": "Year released?",
+   "question_long": "What year was 'That Lady' by The Isley Brothers released?",
+   "choices": [
+    "1978",
+    "1969",
+    "1983",
+    "1973"
+   ],
+   "correct_index": 3,
+   "correction": "",
+   "headline": "Released in 1973",
+   "full": "'That Lady' by The Isley Brothers was released in 1973.",
+   "choices_long": [
+    "1978",
+    "1969",
+    "1983",
+    "1973"
+   ],
+   "release_year": 1973,
+   "energy": "fast"
+  },
+  {
+   "category": "real_name",
+   "question": "Isley who plays the guitar solo?",
+   "question_long": "Which Isley brother plays the guitar solo on 'That Lady'?",
+   "choices": [
+    "Ronald Isley",
+    "Marvin Isley",
+    "Rudolph Isley",
+    "Ernie Isley"
+   ],
+   "correct_index": 3,
+   "correction": "",
+   "headline": "Ernie's guitar",
+   "full": "Younger brother Ernie Isley plays the fuzz-toned guitar lead on 'That Lady'.",
+   "choices_long": [
+    "Ronald Isley",
+    "Marvin Isley",
+    "Rudolph Isley",
+    "Ernie Isley"
+   ],
+   "release_year": 1973,
+   "energy": "fast"
+  },
+  {
+   "category": "true_false",
+   "question": "T/F: A remake of their own 1964 song?",
+   "question_long": "True or false: 'That Lady' is a remake of a song The Isley Brothers first recorded in 1964.",
+   "choices": [
+    "True",
+    "False"
+   ],
+   "correct_index": 0,
+   "correction": "",
+   "headline": "Who's That Lady, take two",
+   "full": "The Isley Brothers first recorded it as 'Who's That Lady' in 1964.",
+   "choices_long": [
+    "True",
+    "False"
+   ],
+   "release_year": 1973,
+   "energy": "fast"
+  }
+ ],
+ "kc & the sunshine band - that's the way (i like it)": [
+  {
+   "category": "date",
+   "question": "Year released?",
+   "question_long": "What year was 'That's the Way (I Like It)' by KC & The Sunshine Band released?",
+   "choices": [
+    "1975",
+    "1980",
+    "1971",
+    "1985"
+   ],
+   "correct_index": 0,
+   "correction": "",
+   "headline": "Released in 1975",
+   "full": "'That's the Way (I Like It)' by KC & The Sunshine Band was released in 1975.",
+   "choices_long": [
+    "1975",
+    "1980",
+    "1971",
+    "1985"
+   ],
+   "release_year": 1975,
+   "energy": "fast"
+  },
+  {
+   "category": "real_name",
+   "question": "KC's real name?",
+   "question_long": "What is the real name of 'KC' of KC & The Sunshine Band?",
+   "choices": [
+    "Kevin Carter",
+    "Harry Wayne Casey",
+    "Kenneth Charles",
+    "Keith Cooper"
+   ],
+   "correct_index": 1,
+   "correction": "",
+   "headline": "KC is for Casey",
+   "full": "KC is Harry Wayne Casey, who founded the band with Richard Finch.",
+   "choices_long": [
+    "Kevin Carter",
+    "Harry Wayne Casey",
+    "Kenneth Charles",
+    "Keith Cooper"
+   ],
+   "release_year": 1975,
+   "energy": "fast"
+  },
+  {
+   "category": "true_false",
+   "question": "T/F: The band came from Kansas City?",
+   "question_long": "True or false: KC & The Sunshine Band came from Kansas City.",
+   "choices": [
+    "True",
+    "False"
+   ],
+   "correct_index": 1,
+   "correction": "They came from Hialeah, Florida, near Miami",
+   "headline": "KC is not Kansas City",
+   "full": "The 'KC' is singer Harry Wayne Casey; the band came from Hialeah, Florida.",
+   "choices_long": [
+    "True",
+    "False"
+   ],
+   "release_year": 1975,
+   "energy": "fast"
+  }
+ ],
+ "gil scott-heron, brian jackson - the bottle": [
+  {
+   "category": "date",
+   "question": "Year released?",
+   "question_long": "What year was 'The Bottle' by Gil Scott-Heron, Brian Jackson released?",
+   "choices": [
+    "1974",
+    "1963",
+    "1969",
+    "1978"
+   ],
+   "correct_index": 0,
+   "correction": "",
+   "headline": "Released in 1974",
+   "full": "'The Bottle' by Gil Scott-Heron, Brian Jackson was released in 1974.",
+   "choices_long": [
+    "1974",
+    "1963",
+    "1969",
+    "1978"
+   ],
+   "release_year": 1974,
+   "energy": "fast"
+  },
+  {
+   "category": "song_meaning",
+   "question": "What is 'The Bottle' about?",
+   "question_long": "What is Gil Scott-Heron's 'The Bottle' about?",
+   "choices": [
+    "A baseball game",
+    "Alcohol addiction",
+    "A broken romance",
+    "Ocean pollution"
+   ],
+   "correct_index": 1,
+   "correction": "",
+   "headline": "A song about drinking",
+   "full": "'The Bottle' is about alcoholism and the people Scott-Heron saw at a liquor store near his home.",
+   "choices_long": [
+    "A baseball game",
+    "Alcohol addiction",
+    "A broken romance",
+    "Ocean pollution"
+   ],
+   "release_year": 1974,
+   "energy": "fast"
+  },
+  {
+   "category": "true_false",
+   "question": "T/F: He wrote 'The Revolution Will Not...'?",
+   "question_long": "True or false: Gil Scott-Heron wrote 'The Revolution Will Not Be Televised'.",
+   "choices": [
+    "True",
+    "False"
+   ],
+   "correct_index": 0,
+   "correction": "",
+   "headline": "The Revolution man",
+   "full": "Gil Scott-Heron wrote and recorded 'The Revolution Will Not Be Televised'.",
+   "choices_long": [
+    "True",
+    "False"
+   ],
+   "release_year": 1974,
+   "energy": "fast"
+  }
+ ],
+ "the platters - the great pretender": [
+  {
+   "category": "date",
+   "question": "Year released?",
+   "question_long": "What year was 'The Great Pretender' by The Platters released?",
+   "choices": [
+    "1955",
+    "1948",
+    "1961",
+    "1952"
+   ],
+   "correct_index": 0,
+   "correction": "",
+   "headline": "Released in 1955",
+   "full": "'The Great Pretender' by The Platters was released in 1955.",
+   "choices_long": [
+    "1955",
+    "1948",
+    "1961",
+    "1952"
+   ],
+   "release_year": 1955,
+   "energy": "slow"
+  },
+  {
+   "category": "career_stat",
+   "question": "Who covered it in 1987?",
+   "question_long": "Which rock singer had a hit with a cover of 'The Great Pretender' in 1987?",
+   "choices": [
+    "Freddie Mercury",
+    "Rod Stewart",
+    "Elton John",
+    "George Michael"
+   ],
+   "correct_index": 0,
+   "correction": "",
+   "headline": "Freddie's cover",
+   "full": "Freddie Mercury had a UK Top 5 hit with 'The Great Pretender' in 1987.",
+   "choices_long": [
+    "Freddie Mercury",
+    "Rod Stewart",
+    "Elton John",
+    "George Michael"
+   ],
+   "release_year": 1955,
+   "energy": "slow"
+  },
+  {
+   "category": "true_false",
+   "question": "T/F: Lead singer Tony Williams wrote it?",
+   "question_long": "True or false: The Platters' lead singer Tony Williams wrote 'The Great Pretender'.",
+   "choices": [
+    "True",
+    "False"
+   ],
+   "correct_index": 1,
+   "correction": "The group's manager, Buck Ram, wrote it",
+   "headline": "Written by the manager",
+   "full": "The Platters' manager Buck Ram wrote 'The Great Pretender'.",
+   "choices_long": [
+    "True",
+    "False"
+   ],
+   "release_year": 1955,
+   "energy": "slow"
+  }
+ ],
+ "the isley brothers - shout": [
+  {
+   "category": "date",
+   "question": "Year released?",
+   "question_long": "What year was 'Shout' by The Isley Brothers released?",
+   "choices": [
+    "1959",
+    "1954",
+    "1948",
+    "1963"
+   ],
+   "correct_index": 0,
+   "correction": "",
+   "headline": "Released in 1959",
+   "full": "'Shout' by The Isley Brothers was released in 1959.",
+   "choices_long": [
+    "1959",
+    "1954",
+    "1948",
+    "1963"
+   ],
+   "release_year": 1959,
+   "energy": "fast"
+  },
+  {
+   "category": "career_stat",
+   "question": "1978 film that revived it?",
+   "question_long": "Which 1978 film comedy revived 'Shout'?",
+   "choices": [
+    "American Graffiti",
+    "Grease",
+    "The Blues Brothers",
+    "Animal House"
+   ],
+   "correct_index": 3,
+   "correction": "",
+   "headline": "The toga party song",
+   "full": "'Shout' is performed at the toga party in 'National Lampoon's Animal House' (1978).",
+   "choices_long": [
+    "American Graffiti",
+    "Grease",
+    "The Blues Brothers",
+    "Animal House"
+   ],
+   "release_year": 1959,
+   "energy": "fast"
+  },
+  {
+   "category": "true_false",
+   "question": "T/F: It was a Top 10 pop hit in 1959?",
+   "question_long": "True or false: 'Shout' was a Top 10 pop hit when it was released in 1959.",
+   "choices": [
+    "True",
+    "False"
+   ],
+   "correct_index": 1,
+   "correction": "It only reached #47 on the Hot 100",
+   "headline": "A slow starter",
+   "full": "'Shout' peaked at just #47 on the Hot 100 in 1959 and became a standard later.",
+   "choices_long": [
+    "True",
+    "False"
+   ],
+   "release_year": 1959,
+   "energy": "fast"
+  }
+ ],
+ "the box tops - the letter": [
+  {
+   "category": "date",
+   "question": "Year released?",
+   "question_long": "What year was 'The Letter' by The Box Tops released?",
+   "choices": [
+    "1967",
+    "1962",
+    "1956",
+    "1971"
+   ],
+   "correct_index": 0,
+   "correction": "",
+   "headline": "Released in 1967",
+   "full": "'The Letter' by The Box Tops was released in 1967.",
+   "choices_long": [
+    "1967",
+    "1962",
+    "1956",
+    "1971"
+   ],
+   "release_year": 1967,
+   "energy": "fast"
+  },
+  {
+   "category": "real_name",
+   "question": "The band's teenage lead singer?",
+   "question_long": "Who was the teenage lead singer of The Box Tops?",
+   "choices": [
+    "Gary Puckett",
+    "Mark Lindsay",
+    "Alex Chilton",
+    "Steve Winwood"
+   ],
+   "correct_index": 2,
+   "correction": "",
+   "headline": "A 16-year-old singer",
+   "full": "Alex Chilton was 16 when he sang 'The Letter'. He later led the band Big Star.",
+   "choices_long": [
+    "Gary Puckett",
+    "Mark Lindsay",
+    "Alex Chilton",
+    "Steve Winwood"
+   ],
+   "release_year": 1967,
+   "energy": "fast"
+  },
+  {
+   "category": "true_false",
+   "question": "T/F: It runs under two minutes?",
+   "question_long": "True or false: 'The Letter' runs for less than two minutes.",
+   "choices": [
+    "True",
+    "False"
+   ],
+   "correct_index": 0,
+   "correction": "",
+   "headline": "Short and sweet",
+   "full": "At under two minutes, 'The Letter' is one of the shortest #1 hits of the rock era.",
+   "choices_long": [
+    "True",
+    "False"
+   ],
+   "release_year": 1967,
+   "energy": "fast"
+  }
+ ],
+ "the supremes - baby love": [
+  {
+   "category": "date",
+   "question": "Year released?",
+   "question_long": "What year was 'Baby Love' by The Supremes released?",
+   "choices": [
+    "1960",
+    "1964",
+    "1969",
+    "1955"
+   ],
+   "correct_index": 1,
+   "correction": "",
+   "headline": "Released in 1964",
+   "full": "'Baby Love' by The Supremes was released in 1964.",
+   "choices_long": [
+    "1960",
+    "1964",
+    "1969",
+    "1955"
+   ],
+   "release_year": 1964,
+   "energy": "fast"
+  },
+  {
+   "category": "real_name",
+   "question": "Motown writing team behind it?",
+   "question_long": "Which Motown writing team wrote 'Baby Love'?",
+   "choices": [
+    "Gamble & Huff",
+    "Goffin & King",
+    "Holland-Dozier-Holland",
+    "Leiber & Stoller"
+   ],
+   "correct_index": 2,
+   "correction": "",
+   "headline": "Holland-Dozier-Holland",
+   "full": "Holland-Dozier-Holland wrote and produced 'Baby Love' and most of The Supremes' #1 hits.",
+   "choices_long": [
+    "Gamble & Huff",
+    "Goffin & King",
+    "Holland-Dozier-Holland",
+    "Leiber & Stoller"
+   ],
+   "release_year": 1964,
+   "energy": "fast"
+  },
+  {
+   "category": "true_false",
+   "question": "T/F: The Supremes were from Chicago?",
+   "question_long": "True or false: The Supremes were from Chicago.",
+   "choices": [
+    "True",
+    "False"
+   ],
+   "correct_index": 1,
+   "correction": "The Supremes were from Detroit",
+   "headline": "Detroit's own",
+   "full": "The Supremes formed in Detroit and grew up in its Brewster-Douglass housing projects.",
+   "choices_long": [
+    "True",
+    "False"
+   ],
+   "release_year": 1964,
+   "energy": "fast"
+  }
+ ],
+ "smokey robinson & the miracles - the tracks of my tears": [
+  {
+   "category": "date",
+   "question": "Year released?",
+   "question_long": "What year was 'The Tracks of My Tears' by Smokey Robinson & The Miracles released?",
+   "choices": [
+    "1974",
+    "1965",
+    "1969",
+    "1959"
+   ],
+   "correct_index": 1,
+   "correction": "",
+   "headline": "Released in 1965",
+   "full": "'The Tracks of My Tears' by Smokey Robinson & The Miracles was released in 1965.",
+   "choices_long": [
+    "1974",
+    "1965",
+    "1969",
+    "1959"
+   ],
+   "release_year": 1965,
+   "energy": "slow"
+  },
+  {
+   "category": "real_name",
+   "question": "Miracles guitarist who co-wrote it?",
+   "question_long": "Which Miracles guitarist co-wrote 'The Tracks of My Tears'?",
+   "choices": [
+    "Marv Tarplin",
+    "Eddie Willis",
+    "Joe Messina",
+    "Robert White"
+   ],
+   "correct_index": 0,
+   "correction": "",
+   "headline": "It began with a guitar riff",
+   "full": "The song grew from a guitar figure by Miracles guitarist Marv Tarplin.",
+   "choices_long": [
+    "Marv Tarplin",
+    "Eddie Willis",
+    "Joe Messina",
+    "Robert White"
+   ],
+   "release_year": 1965,
+   "energy": "slow"
+  },
+  {
+   "category": "true_false",
+   "question": "T/F: Linda Ronstadt had a hit cover?",
+   "question_long": "True or false: Linda Ronstadt had a hit with a cover of 'The Tracks of My Tears' in the 1970s.",
+   "choices": [
+    "True",
+    "False"
+   ],
+   "correct_index": 0,
+   "correction": "",
+   "headline": "Ronstadt's cover",
+   "full": "Linda Ronstadt's cover of 'The Tracks of My Tears' was a US Top 40 hit in the mid-1970s.",
+   "choices_long": [
+    "True",
+    "False"
+   ],
+   "release_year": 1965,
+   "energy": "slow"
+  }
+ ],
+ "isaac hayes - theme from shaft": [
+  {
+   "category": "date",
+   "question": "Year released?",
+   "question_long": "What year was 'Theme from Shaft' by Isaac Hayes released?",
+   "choices": [
+    "1971",
+    "1977",
+    "1968",
+    "1964"
+   ],
+   "correct_index": 0,
+   "correction": "",
+   "headline": "Released in 1971",
+   "full": "'Theme from Shaft' by Isaac Hayes was released in 1971.",
+   "choices_long": [
+    "1971",
+    "1977",
+    "1968",
+    "1964"
+   ],
+   "release_year": 1971,
+   "energy": "fast"
+  },
+  {
+   "category": "career_stat",
+   "question": "Major award it won in 1972?",
+   "question_long": "Which major award did 'Theme from Shaft' win in 1972?",
+   "choices": [
+    "Tony Award",
+    "Emmy Award",
+    "Academy Award",
+    "Pulitzer Prize"
+   ],
+   "correct_index": 2,
+   "correction": "",
+   "headline": "An Oscar winner",
+   "full": "'Theme from Shaft' won the Academy Award for Best Original Song in 1972.",
+   "choices_long": [
+    "Tony Award",
+    "Emmy Award",
+    "Academy Award",
+    "Pulitzer Prize"
+   ],
+   "release_year": 1971,
+   "energy": "fast"
+  },
+  {
+   "category": "true_false",
+   "question": "T/F: Isaac Hayes voiced Chef on TV?",
+   "question_long": "True or false: Isaac Hayes voiced the character Chef on 'South Park'.",
+   "choices": [
+    "True",
+    "False"
+   ],
+   "correct_index": 0,
+   "correction": "",
+   "headline": "Hello there, children",
+   "full": "Isaac Hayes voiced Chef on 'South Park' from 1997 to 2006.",
+   "choices_long": [
+    "True",
+    "False"
+   ],
+   "release_year": 1971,
+   "energy": "fast"
+  }
+ ],
+ "nancy sinatra - these boots are made for walkin'": [
+  {
+   "category": "real_name",
+   "question": "Who wrote it?",
+   "question_long": "Who wrote 'These Boots Are Made for Walkin''?",
+   "choices": [
+    "Lee Hazlewood",
+    "Neil Diamond",
+    "Burt Bacharach",
+    "Jimmy Webb"
+   ],
+   "correct_index": 0,
+   "correction": "",
+   "headline": "A Lee Hazlewood song",
+   "full": "Lee Hazlewood wrote and produced 'These Boots Are Made for Walkin'' for Nancy Sinatra.",
+   "choices_long": [
+    "Lee Hazlewood",
+    "Neil Diamond",
+    "Burt Bacharach",
+    "Jimmy Webb"
+   ],
+   "release_year": 1966,
+   "energy": "fast"
+  },
+  {
+   "category": "career_stat",
+   "question": "Bond theme Nancy Sinatra sang?",
+   "question_long": "Which James Bond theme did Nancy Sinatra sing?",
+   "choices": [
+    "Diamonds Are Forever",
+    "Goldfinger",
+    "Thunderball",
+    "You Only Live Twice"
+   ],
+   "correct_index": 3,
+   "correction": "",
+   "headline": "A Bond theme too",
+   "full": "Nancy Sinatra sang the theme to the 1967 James Bond film 'You Only Live Twice'.",
+   "choices_long": [
+    "Diamonds Are Forever",
+    "Goldfinger",
+    "Thunderball",
+    "You Only Live Twice"
+   ],
+   "release_year": 1966,
+   "energy": "fast"
+  },
+  {
+   "category": "true_false",
+   "question": "T/F: It reached #1 in the US and UK?",
+   "question_long": "True or false: 'These Boots Are Made for Walkin'' reached #1 in both the US and the UK.",
+   "choices": [
+    "True",
+    "False"
+   ],
+   "correct_index": 0,
+   "correction": "",
+   "headline": "#1 on both sides of the Atlantic",
+   "full": "The song went to #1 in both the US and the UK in 1966.",
+   "choices_long": [
+    "True",
+    "False"
+   ],
+   "release_year": 1966,
+   "energy": "fast"
+  }
+ ],
+ "the isley brothers - this old heart of mine (is weak for you)": [
+  {
+   "category": "date",
+   "question": "Year released?",
+   "question_long": "What year was 'This Old Heart of Mine (Is Weak for You)' by The Isley Brothers released?",
+   "choices": [
+    "1961",
+    "1966",
+    "1970",
+    "1955"
+   ],
+   "correct_index": 1,
+   "correction": "",
+   "headline": "Released in 1966",
+   "full": "'This Old Heart of Mine (Is Weak for You)' by The Isley Brothers was released in 1966.",
+   "choices_long": [
+    "1961",
+    "1966",
+    "1970",
+    "1955"
+   ],
+   "release_year": 1966,
+   "energy": "fast"
+  },
+  {
+   "category": "career_stat",
+   "question": "Record company that released it?",
+   "question_long": "Which record company released 'This Old Heart of Mine'?",
+   "choices": [
+    "Stax",
+    "Chess",
+    "Atlantic",
+    "Motown"
+   ],
+   "correct_index": 3,
+   "correction": "",
+   "headline": "The Isleys at Motown",
+   "full": "The Isley Brothers recorded 'This Old Heart of Mine' during their short spell at Motown.",
+   "choices_long": [
+    "Stax",
+    "Chess",
+    "Atlantic",
+    "Motown"
+   ],
+   "release_year": 1966,
+   "energy": "fast"
+  },
+  {
+   "category": "true_false",
+   "question": "T/F: Rod Stewart later covered it?",
+   "question_long": "True or false: Rod Stewart later recorded a cover of 'This Old Heart of Mine'.",
+   "choices": [
+    "True",
+    "False"
+   ],
+   "correct_index": 0,
+   "correction": "",
+   "headline": "Rod Stewart's cover",
+   "full": "Rod Stewart recorded the song in 1975 and again in 1989 as a duet with Ronald Isley.",
+   "choices_long": [
+    "True",
+    "False"
+   ],
+   "release_year": 1966,
+   "energy": "fast"
+  }
+ ],
+ "the righteous brothers - unchained melody": [
+  {
+   "category": "date",
+   "question": "Year released?",
+   "question_long": "What year was 'Unchained Melody' by The Righteous Brothers released?",
+   "choices": [
+    "1975",
+    "1965",
+    "1970",
+    "1961"
+   ],
+   "correct_index": 1,
+   "correction": "",
+   "headline": "Released in 1965",
+   "full": "'Unchained Melody' by The Righteous Brothers was released in 1965.",
+   "choices_long": [
+    "1975",
+    "1965",
+    "1970",
+    "1961"
+   ],
+   "release_year": 1965,
+   "energy": "slow"
+  },
+  {
+   "category": "career_stat",
+   "question": "1990 film that revived it?",
+   "question_long": "Which 1990 film made 'Unchained Melody' a hit again?",
+   "choices": [
+    "Dirty Dancing",
+    "Top Gun",
+    "Pretty Woman",
+    "Ghost"
+   ],
+   "correct_index": 3,
+   "correction": "",
+   "headline": "The pottery wheel scene",
+   "full": "The 1990 film 'Ghost' sent The Righteous Brothers' recording back up the charts.",
+   "choices_long": [
+    "Dirty Dancing",
+    "Top Gun",
+    "Pretty Woman",
+    "Ghost"
+   ],
+   "release_year": 1965,
+   "energy": "slow"
+  },
+  {
+   "category": "true_false",
+   "question": "T/F: Both brothers sing on it?",
+   "question_long": "True or false: Both Righteous Brothers sing on 'Unchained Melody'.",
+   "choices": [
+    "True",
+    "False"
+   ],
+   "correct_index": 1,
+   "correction": "Bobby Hatfield sings it alone",
+   "headline": "A solo performance",
+   "full": "'Unchained Melody' is a solo vocal by Bobby Hatfield; Bill Medley does not sing on it.",
+   "choices_long": [
+    "True",
+    "False"
+   ],
+   "release_year": 1965,
+   "energy": "slow"
+  }
+ ],
+ "stevie wonder - uptight (everything's alright)": [
+  {
+   "category": "date",
+   "question": "Year released?",
+   "question_long": "What year was 'Uptight (Everything's Alright)' by Stevie Wonder released?",
+   "choices": [
+    "1970",
+    "1956",
+    "1961",
+    "1965"
+   ],
+   "correct_index": 3,
+   "correction": "",
+   "headline": "Released in 1965",
+   "full": "'Uptight (Everything's Alright)' by Stevie Wonder was released in 1965.",
+   "choices_long": [
+    "1970",
+    "1956",
+    "1961",
+    "1965"
+   ],
+   "release_year": 1965,
+   "energy": "fast"
+  },
+  {
+   "category": "real_name",
+   "question": "Stevie Wonder's birth surname?",
+   "question_long": "What was Stevie Wonder's surname at birth?",
+   "choices": [
+    "Judkins",
+    "Johnson",
+    "Williams",
+    "Robinson"
+   ],
+   "correct_index": 0,
+   "correction": "",
+   "headline": "Born Stevland Judkins",
+   "full": "Stevie Wonder was born Stevland Hardaway Judkins in Saginaw, Michigan.",
+   "choices_long": [
+    "Judkins",
+    "Johnson",
+    "Williams",
+    "Robinson"
+   ],
+   "release_year": 1965,
+   "energy": "fast"
+  },
+  {
+   "category": "true_false",
+   "question": "T/F: Stevie was 15 when it came out?",
+   "question_long": "True or false: Stevie Wonder was 15 years old when 'Uptight' was released.",
+   "choices": [
+    "True",
+    "False"
+   ],
+   "correct_index": 0,
+   "correction": "",
+   "headline": "A hit at 15",
+   "full": "Stevie Wonder was 15 when 'Uptight (Everything's Alright)' came out in late 1965.",
+   "choices_long": [
+    "True",
+    "False"
+   ],
+   "release_year": 1965,
+   "energy": "fast"
+  }
+ ],
+ "van mccoy - the hustle": [
+  {
+   "category": "date",
+   "question": "Year released?",
+   "question_long": "What year was 'The Hustle' by Van McCoy released?",
+   "choices": [
+    "1972",
+    "1968",
+    "1981",
+    "1975"
+   ],
+   "correct_index": 3,
+   "correction": "",
+   "headline": "Released in 1975",
+   "full": "'The Hustle' by Van McCoy was released in 1975.",
+   "choices_long": [
+    "1972",
+    "1968",
+    "1981",
+    "1975"
+   ],
+   "release_year": 1975,
+   "energy": "fast"
+  },
+  {
+   "category": "career_stat",
+   "question": "Grammy category it won?",
+   "question_long": "In which category did 'The Hustle' win a Grammy?",
+   "choices": [
+    "Disco Recording",
+    "Pop Instrumental",
+    "Record of the Year",
+    "R&B Song"
+   ],
+   "correct_index": 1,
+   "correction": "",
+   "headline": "A Grammy-winning instrumental",
+   "full": "'The Hustle' won the Grammy for Best Pop Instrumental Performance.",
+   "choices_long": [
+    "Disco Recording",
+    "Pop Instrumental",
+    "Record of the Year",
+    "R&B Song"
+   ],
+   "release_year": 1975,
+   "energy": "fast"
+  },
+  {
+   "category": "true_false",
+   "question": "T/F: It reached #1 on the Hot 100?",
+   "question_long": "True or false: 'The Hustle' reached #1 on the US Hot 100.",
+   "choices": [
+    "True",
+    "False"
+   ],
+   "correct_index": 0,
+   "correction": "",
+   "headline": "Do the Hustle!",
+   "full": "'The Hustle' reached #1 on the Hot 100 in July 1975.",
+   "choices_long": [
+    "True",
+    "False"
+   ],
+   "release_year": 1975,
+   "energy": "fast"
+  }
+ ],
+ "dan hartman - vertigo / relight my fire": [
+  {
+   "category": "date",
+   "question": "Year released?",
+   "question_long": "What year was 'Vertigo / Relight My Fire' by Dan Hartman released?",
+   "choices": [
+    "1983",
+    "1979",
+    "1974",
+    "1968"
+   ],
+   "correct_index": 1,
+   "correction": "",
+   "headline": "Released in 1979",
+   "full": "'Vertigo / Relight My Fire' by Dan Hartman was released in 1979.",
+   "choices_long": [
+    "1983",
+    "1979",
+    "1974",
+    "1968"
+   ],
+   "release_year": 1979,
+   "energy": "fast"
+  },
+  {
+   "category": "career_stat",
+   "question": "Who sings the guest vocal?",
+   "question_long": "Who sings the guest vocal on Dan Hartman's 'Relight My Fire'?",
+   "choices": [
+    "Gloria Gaynor",
+    "Chaka Khan",
+    "Loleatta Holloway",
+    "Donna Summer"
+   ],
+   "correct_index": 2,
+   "correction": "",
+   "headline": "Loleatta's big moment",
+   "full": "Loleatta Holloway sings the 'strong enough to walk on through the night' section.",
+   "choices_long": [
+    "Gloria Gaynor",
+    "Chaka Khan",
+    "Loleatta Holloway",
+    "Donna Summer"
+   ],
+   "release_year": 1979,
+   "energy": "fast"
+  },
+  {
+   "category": "true_false",
+   "question": "T/F: Take That & Lulu took it to UK #1?",
+   "question_long": "True or false: Take That and Lulu took 'Relight My Fire' to #1 in the UK.",
+   "choices": [
+    "True",
+    "False"
+   ],
+   "correct_index": 0,
+   "correction": "",
+   "headline": "Take That and Lulu",
+   "full": "Take That's cover featuring Lulu reached #1 in the UK in 1993.",
+   "choices_long": [
+    "True",
+    "False"
+   ],
+   "release_year": 1979,
+   "energy": "fast"
+  }
+ ],
+ "the everly brothers - wake up little susie": [
+  {
+   "category": "date",
+   "question": "Year released?",
+   "question_long": "What year was 'Wake Up Little Susie' by The Everly Brothers released?",
+   "choices": [
+    "1962",
+    "1953",
+    "1967",
+    "1957"
+   ],
+   "correct_index": 3,
+   "correction": "",
+   "headline": "Released in 1957",
+   "full": "'Wake Up Little Susie' by The Everly Brothers was released in 1957.",
+   "choices_long": [
+    "1962",
+    "1953",
+    "1967",
+    "1957"
+   ],
+   "release_year": 1957,
+   "energy": "fast"
+  },
+  {
+   "category": "song_meaning",
+   "question": "Where do the couple fall asleep?",
+   "question_long": "In 'Wake Up Little Susie', where do Susie and her date fall asleep?",
+   "choices": [
+    "At a dance",
+    "At the beach",
+    "On a train",
+    "At the movies"
+   ],
+   "correct_index": 3,
+   "correction": "",
+   "headline": "The movie wasn't so hot",
+   "full": "The couple fall asleep at the movies and wake at four in the morning.",
+   "choices_long": [
+    "At a dance",
+    "At the beach",
+    "On a train",
+    "At the movies"
+   ],
+   "release_year": 1957,
+   "energy": "fast"
+  },
+  {
+   "category": "true_false",
+   "question": "T/F: Some radio stations banned it?",
+   "question_long": "True or false: Some radio stations banned 'Wake Up Little Susie'.",
+   "choices": [
+    "True",
+    "False"
+   ],
+   "correct_index": 0,
+   "correction": "",
+   "headline": "Banned in Boston",
+   "full": "Some stations, notably in Boston, banned the song over its suggestive story.",
+   "choices_long": [
+    "True",
+    "False"
+   ],
+   "release_year": 1957,
+   "energy": "fast"
+  }
+ ],
+ "sister sledge - we are family": [
+  {
+   "category": "date",
+   "question": "Year released?",
+   "question_long": "What year was 'We Are Family' by Sister Sledge released?",
+   "choices": [
+    "1979",
+    "1970",
+    "1984",
+    "1975"
+   ],
+   "correct_index": 0,
+   "correction": "",
+   "headline": "Released in 1979",
+   "full": "'We Are Family' by Sister Sledge was released in 1979.",
+   "choices_long": [
+    "1979",
+    "1970",
+    "1984",
+    "1975"
+   ],
+   "release_year": 1979,
+   "energy": "fast"
+  },
+  {
+   "category": "career_stat",
+   "question": "Baseball team that adopted it?",
+   "question_long": "Which baseball team adopted 'We Are Family' as its anthem in 1979?",
+   "choices": [
+    "Pittsburgh Pirates",
+    "Philadelphia Phillies",
+    "New York Yankees",
+    "Baltimore Orioles"
+   ],
+   "correct_index": 0,
+   "correction": "",
+   "headline": "The Pirates' anthem",
+   "full": "The Pittsburgh Pirates adopted 'We Are Family' on their way to winning the 1979 World Series.",
+   "choices_long": [
+    "Pittsburgh Pirates",
+    "Philadelphia Phillies",
+    "New York Yankees",
+    "Baltimore Orioles"
+   ],
+   "release_year": 1979,
+   "energy": "fast"
+  },
+  {
+   "category": "true_false",
+   "question": "T/F: The members were real sisters?",
+   "question_long": "True or false: The members of Sister Sledge were real sisters.",
+   "choices": [
+    "True",
+    "False"
+   ],
+   "correct_index": 0,
+   "correction": "",
+   "headline": "Really sisters",
+   "full": "Sister Sledge were four sisters from Philadelphia: Debbie, Joni, Kim and Kathy Sledge.",
+   "choices_long": [
+    "True",
+    "False"
+   ],
+   "release_year": 1979,
+   "energy": "fast"
+  }
+ ],
+ "marvin gaye - what's going on": [
+  {
+   "category": "date",
+   "question": "Year released?",
+   "question_long": "What year was 'What's Going On' by Marvin Gaye released?",
+   "choices": [
+    "1968",
+    "1971",
+    "1977",
+    "1964"
+   ],
+   "correct_index": 1,
+   "correction": "",
+   "headline": "Released in 1971",
+   "full": "'What's Going On' by Marvin Gaye was released in 1971.",
+   "choices_long": [
+    "1968",
+    "1971",
+    "1977",
+    "1964"
+   ],
+   "release_year": 1971,
+   "energy": "slow"
+  },
+  {
+   "category": "real_name",
+   "question": "Four Tops member who co-wrote it?",
+   "question_long": "Which member of the Four Tops co-wrote 'What's Going On'?",
+   "choices": [
+    "Duke Fakir",
+    "Levi Stubbs",
+    "Lawrence Payton",
+    "Obie Benson"
+   ],
+   "correct_index": 3,
+   "correction": "",
+   "headline": "A Four Top's idea",
+   "full": "Renaldo 'Obie' Benson of the Four Tops began the song after seeing police clash with protesters.",
+   "choices_long": [
+    "Duke Fakir",
+    "Levi Stubbs",
+    "Lawrence Payton",
+    "Obie Benson"
+   ],
+   "release_year": 1971,
+   "energy": "slow"
+  },
+  {
+   "category": "true_false",
+   "question": "T/F: Berry Gordy loved it right away?",
+   "question_long": "True or false: Motown boss Berry Gordy loved 'What's Going On' as soon as he heard it.",
+   "choices": [
+    "True",
+    "False"
+   ],
+   "correct_index": 1,
+   "correction": "Gordy at first refused to release it",
+   "headline": "Motown said no",
+   "full": "Berry Gordy at first refused to release 'What's Going On'; it became one of Motown's biggest sellers.",
+   "choices_long": [
+    "True",
+    "False"
+   ],
+   "release_year": 1971,
+   "energy": "slow"
+  }
+ ],
+ "percy sledge - when a man loves a woman": [
+  {
+   "category": "date",
+   "question": "Year released?",
+   "question_long": "What year was 'When a Man Loves a Woman' by Percy Sledge released?",
+   "choices": [
+    "1970",
+    "1955",
+    "1961",
+    "1966"
+   ],
+   "correct_index": 3,
+   "correction": "",
+   "headline": "Released in 1966",
+   "full": "'When a Man Loves a Woman' by Percy Sledge was released in 1966.",
+   "choices_long": [
+    "1970",
+    "1955",
+    "1961",
+    "1966"
+   ],
+   "release_year": 1966,
+   "energy": "slow"
+  },
+  {
+   "category": "career_stat",
+   "question": "Who took it to #1 again in 1991?",
+   "question_long": "Who took 'When a Man Loves a Woman' back to #1 in 1991?",
+   "choices": [
+    "Rod Stewart",
+    "Bryan Adams",
+    "Michael Bolton",
+    "Joe Cocker"
+   ],
+   "correct_index": 2,
+   "correction": "",
+   "headline": "Number one twice",
+   "full": "Michael Bolton's cover reached #1 in 1991, 25 years after Percy Sledge's original.",
+   "choices_long": [
+    "Rod Stewart",
+    "Bryan Adams",
+    "Michael Bolton",
+    "Joe Cocker"
+   ],
+   "release_year": 1966,
+   "energy": "slow"
+  },
+  {
+   "category": "true_false",
+   "question": "T/F: Percy Sledge was from Alabama?",
+   "question_long": "True or false: Percy Sledge was from Alabama.",
+   "choices": [
+    "True",
+    "False"
+   ],
+   "correct_index": 0,
+   "correction": "",
+   "headline": "An Alabama hospital orderly",
+   "full": "Percy Sledge was from Leighton, Alabama, and worked as a hospital orderly before the hit.",
+   "choices_long": [
+    "True",
+    "False"
+   ],
+   "release_year": 1966,
+   "energy": "slow"
+  }
+ ],
+ "jerry lee lewis - whole lotta shakin' goin' on": [
+  {
+   "category": "date",
+   "question": "Year released?",
+   "question_long": "What year was 'Whole Lotta Shakin' Goin' On' by Jerry Lee Lewis released?",
+   "choices": [
+    "1961",
+    "1957",
+    "1966",
+    "1951"
+   ],
+   "correct_index": 1,
+   "correction": "",
+   "headline": "Released in 1957",
+   "full": "'Whole Lotta Shakin' Goin' On' by Jerry Lee Lewis was released in 1957.",
+   "choices_long": [
+    "1961",
+    "1957",
+    "1966",
+    "1951"
+   ],
+   "release_year": 1957,
+   "energy": "fast"
+  },
+  {
+   "category": "real_name",
+   "question": "Jerry Lee Lewis's nickname?",
+   "question_long": "What was Jerry Lee Lewis's nickname?",
+   "choices": [
+    "The Boss",
+    "The Hawk",
+    "The Duke",
+    "The Killer"
+   ],
+   "correct_index": 3,
+   "correction": "",
+   "headline": "The Killer",
+   "full": "Jerry Lee Lewis was known as 'The Killer'.",
+   "choices_long": [
+    "The Boss",
+    "The Hawk",
+    "The Duke",
+    "The Killer"
+   ],
+   "release_year": 1957,
+   "energy": "fast"
+  },
+  {
+   "category": "true_false",
+   "question": "T/F: Jerry Lee Lewis was from Tennessee?",
+   "question_long": "True or false: Jerry Lee Lewis was from Tennessee.",
+   "choices": [
+    "True",
+    "False"
+   ],
+   "correct_index": 1,
+   "correction": "Jerry Lee Lewis was from Ferriday, Louisiana",
+   "headline": "Louisiana piano",
+   "full": "Jerry Lee Lewis was born in Ferriday, Louisiana; he recorded at Sun Studio in Memphis.",
+   "choices_long": [
+    "True",
+    "False"
+   ],
+   "release_year": 1957,
+   "energy": "fast"
+  }
+ ],
+ "the beach boys - wouldn't it be nice": [
+  {
+   "category": "date",
+   "question": "Year released?",
+   "question_long": "What year was 'Wouldn't It Be Nice' by The Beach Boys released?",
+   "choices": [
+    "1966",
+    "1970",
+    "1960",
+    "1975"
+   ],
+   "correct_index": 0,
+   "correction": "",
+   "headline": "Released in 1966",
+   "full": "'Wouldn't It Be Nice' by The Beach Boys was released in 1966.",
+   "choices_long": [
+    "1966",
+    "1970",
+    "1960",
+    "1975"
+   ],
+   "release_year": 1966,
+   "energy": "fast"
+  },
+  {
+   "category": "career_stat",
+   "question": "Album it opens?",
+   "question_long": "'Wouldn't It Be Nice' is the opening track of which Beach Boys album?",
+   "choices": [
+    "Pet Sounds",
+    "Smiley Smile",
+    "Surfin' U.S.A.",
+    "Surf's Up"
+   ],
+   "correct_index": 0,
+   "correction": "",
+   "headline": "Track one of Pet Sounds",
+   "full": "'Wouldn't It Be Nice' opens the Beach Boys' 1966 album 'Pet Sounds'.",
+   "choices_long": [
+    "Pet Sounds",
+    "Smiley Smile",
+    "Surfin' U.S.A.",
+    "Surf's Up"
+   ],
+   "release_year": 1966,
+   "energy": "fast"
+  },
+  {
+   "category": "true_false",
+   "question": "T/F: The Beach Boys formed in Florida?",
+   "question_long": "True or false: The Beach Boys formed in Florida.",
+   "choices": [
+    "True",
+    "False"
+   ],
+   "correct_index": 1,
+   "correction": "They formed in Hawthorne, California",
+   "headline": "California boys",
+   "full": "The Beach Boys formed in Hawthorne, California, in 1961.",
+   "choices_long": [
+    "True",
+    "False"
+   ],
+   "release_year": 1966,
+   "energy": "fast"
+  }
+ ],
+ "village people - y.m.c.a.": [
+  {
+   "category": "date",
+   "question": "Year released?",
+   "question_long": "What year was 'Y.M.C.A.' by Village People released?",
+   "choices": [
+    "1978",
+    "1969",
+    "1974",
+    "1983"
+   ],
+   "correct_index": 0,
+   "correction": "",
+   "headline": "Released in 1978",
+   "full": "'Y.M.C.A.' by Village People was released in 1978.",
+   "choices_long": [
+    "1978",
+    "1969",
+    "1974",
+    "1983"
+   ],
+   "release_year": 1978,
+   "energy": "fast"
+  },
+  {
+   "category": "geography",
+   "question": "Village People's home city?",
+   "question_long": "In which city were the Village People formed?",
+   "choices": [
+    "New York",
+    "San Francisco",
+    "Miami",
+    "Los Angeles"
+   ],
+   "correct_index": 0,
+   "correction": "",
+   "headline": "Named for Greenwich Village",
+   "full": "The Village People were formed in New York and named after Greenwich Village.",
+   "choices_long": [
+    "New York",
+    "San Francisco",
+    "Miami",
+    "Los Angeles"
+   ],
+   "release_year": 1978,
+   "energy": "fast"
+  },
+  {
+   "category": "true_false",
+   "question": "T/F: It hit #1 on the US Hot 100?",
+   "question_long": "True or false: 'Y.M.C.A.' reached #1 on the US Hot 100.",
+   "choices": [
+    "True",
+    "False"
+   ],
+   "correct_index": 1,
+   "correction": "It peaked at #2 in the US",
+   "headline": "Stuck at #2",
+   "full": "'Y.M.C.A.' peaked at #2 in the US in early 1979, though it went to #1 in the UK.",
+   "choices_long": [
+    "True",
+    "False"
+   ],
+   "release_year": 1978,
+   "energy": "fast"
+  }
+ ],
+ "the coasters - yakety yak": [
+  {
+   "category": "date",
+   "question": "Year released?",
+   "question_long": "What year was 'Yakety Yak' by The Coasters released?",
+   "choices": [
+    "1958",
+    "1947",
+    "1962",
+    "1953"
+   ],
+   "correct_index": 0,
+   "correction": "",
+   "headline": "Released in 1958",
+   "full": "'Yakety Yak' by The Coasters was released in 1958.",
+   "choices_long": [
+    "1958",
+    "1947",
+    "1962",
+    "1953"
+   ],
+   "release_year": 1958,
+   "energy": "fast"
+  },
+  {
+   "category": "real_name",
+   "question": "Sax player on it?",
+   "question_long": "Who plays the saxophone on 'Yakety Yak'?",
+   "choices": [
+    "Clarence Clemons",
+    "King Curtis",
+    "Boots Randolph",
+    "Junior Walker"
+   ],
+   "correct_index": 1,
+   "correction": "",
+   "headline": "King Curtis on sax",
+   "full": "King Curtis played the famous saxophone breaks on 'Yakety Yak'.",
+   "choices_long": [
+    "Clarence Clemons",
+    "King Curtis",
+    "Boots Randolph",
+    "Junior Walker"
+   ],
+   "release_year": 1958,
+   "energy": "fast"
+  },
+  {
+   "category": "true_false",
+   "question": "T/F: Written by Leiber and Stoller?",
+   "question_long": "True or false: 'Yakety Yak' was written by Leiber and Stoller.",
+   "choices": [
+    "True",
+    "False"
+   ],
+   "correct_index": 0,
+   "correction": "",
+   "headline": "Leiber and Stoller comedy",
+   "full": "Jerry Leiber and Mike Stoller wrote and produced 'Yakety Yak' for The Coasters.",
+   "choices_long": [
+    "True",
+    "False"
+   ],
+   "release_year": 1958,
+   "energy": "fast"
+  }
+ ],
+ "bee gees - you should be dancing": [
+  {
+   "category": "date",
+   "question": "Year released?",
+   "question_long": "What year was 'You Should Be Dancing' by Bee Gees released?",
+   "choices": [
+    "1972",
+    "1976",
+    "1986",
+    "1981"
+   ],
+   "correct_index": 1,
+   "correction": "",
+   "headline": "Released in 1976",
+   "full": "'You Should Be Dancing' by Bee Gees was released in 1976.",
+   "choices_long": [
+    "1972",
+    "1976",
+    "1986",
+    "1981"
+   ],
+   "release_year": 1976,
+   "energy": "fast"
+  },
+  {
+   "category": "real_name",
+   "question": "Brother who sings the falsetto lead?",
+   "question_long": "Which Gibb brother sings the falsetto lead on 'You Should Be Dancing'?",
+   "choices": [
+    "Barry Gibb",
+    "Andy Gibb",
+    "Robin Gibb",
+    "Maurice Gibb"
+   ],
+   "correct_index": 0,
+   "correction": "",
+   "headline": "Barry's falsetto",
+   "full": "Barry Gibb sings the falsetto lead on 'You Should Be Dancing'.",
+   "choices_long": [
+    "Barry Gibb",
+    "Andy Gibb",
+    "Robin Gibb",
+    "Maurice Gibb"
+   ],
+   "release_year": 1976,
+   "energy": "fast"
+  },
+  {
+   "category": "true_false",
+   "question": "T/F: It reached #1 on the Hot 100?",
+   "question_long": "True or false: 'You Should Be Dancing' reached #1 on the US Hot 100.",
+   "choices": [
+    "True",
+    "False"
+   ],
+   "correct_index": 0,
+   "correction": "",
+   "headline": "A #1 before the Fever",
+   "full": "'You Should Be Dancing' hit #1 in 1976, a year before it was used in 'Saturday Night Fever'.",
+   "choices_long": [
+    "True",
+    "False"
+   ],
+   "release_year": 1976,
+   "energy": "fast"
+  }
+ ],
+ "candi staton - young hearts run free": [
+  {
+   "category": "date",
+   "question": "Year released?",
+   "question_long": "What year was 'Young Hearts Run Free' by Candi Staton released?",
+   "choices": [
+    "1976",
+    "1965",
+    "1971",
+    "1980"
+   ],
+   "correct_index": 0,
+   "correction": "",
+   "headline": "Released in 1976",
+   "full": "'Young Hearts Run Free' by Candi Staton was released in 1976.",
+   "choices_long": [
+    "1976",
+    "1965",
+    "1971",
+    "1980"
+   ],
+   "release_year": 1976,
+   "energy": "fast"
+  },
+  {
+   "category": "geography",
+   "question": "Candi Staton's home state?",
+   "question_long": "Which US state is Candi Staton from?",
+   "choices": [
+    "Alabama",
+    "Tennessee",
+    "Mississippi",
+    "Georgia"
+   ],
+   "correct_index": 0,
+   "correction": "",
+   "headline": "An Alabama singer",
+   "full": "Candi Staton was born in Hanceville, Alabama.",
+   "choices_long": [
+    "Alabama",
+    "Tennessee",
+    "Mississippi",
+    "Georgia"
+   ],
+   "release_year": 1976,
+   "energy": "fast"
+  },
+  {
+   "category": "true_false",
+   "question": "T/F: A cover is in 1996's Romeo + Juliet?",
+   "question_long": "True or false: A cover of 'Young Hearts Run Free' features in the 1996 film 'Romeo + Juliet'.",
+   "choices": [
+    "True",
+    "False"
+   ],
+   "correct_index": 0,
+   "correction": "",
+   "headline": "Romeo + Juliet",
+   "full": "Kym Mazelle's cover of 'Young Hearts Run Free' is in Baz Luhrmann's 'Romeo + Juliet' (1996).",
+   "choices_long": [
+    "True",
+    "False"
+   ],
+   "release_year": 1976,
+   "energy": "fast"
+  }
+ ]
+}

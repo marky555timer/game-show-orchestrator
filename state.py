@@ -371,7 +371,10 @@ class State:
         # (drivers/light_prefs_engine.py::resolve_idle_theme).
         self.idle_theme_base = config.IDLE_THEME_DEFAULT
         self.idle_theme_auto = config.IDLE_THEME_AUTO_BY_ENERGY_DEFAULT
-        self.idle_theme_source = "general"  # "song" | "slow" | "fast" | "general" -- why idle_theme is what it is
+        self.idle_theme_source = "general"  # "song" | "decade" | "slow" | "fast" | "dark" | "general" -- why idle_theme is what it is
+        # This song's energy tag: inside a theme, animations marked for
+        # "slow" or "fast" only are dealt to matching songs (graphics/animations.py).
+        self.idle_theme_energy = ""
 
         # --- Era-trivia once-per-game scheduling (drivers/factoid_engine.py) ---
         # game_active tracks whether we're mid-game (reset False whenever

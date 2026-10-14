@@ -626,7 +626,7 @@
       </div>
 
       <div class="subhead">Idle Animation Theme</div>
-      <label style="display:block;margin:2px 0 8px;font-size:.85rem"><input type="checkbox" id="auto-theme-checkbox" checked onchange="autoThemeSet(this.checked)"> Slow songs &rarr; Love, fast songs &rarr; Technical Dreams</label>
+      <label style="display:block;margin:2px 0 8px;font-size:.85rem"><input type="checkbox" id="auto-theme-checkbox" checked onchange="autoThemeSet(this.checked)"> Pick by song: dark &rarr; Dark, 1950s&ndash;1990s &rarr; its decade, slow &rarr; Love, fast &rarr; Technical Dreams</label>
       <div class="row">
         <!-- Options must track config.IDLE_ANIMATION_THEMES; "selected"
              must track config.IDLE_THEME_DEFAULT ("Question Marks"). -->
@@ -637,6 +637,12 @@
             <option value="Question Marks" selected>Question Marks</option>
             <option value="Technical Dreams">Technical Dreams</option>
             <option value="Love">Love</option>
+            <option value="50s">50s</option>
+            <option value="60s">60s</option>
+            <option value="70s">70s</option>
+            <option value="80s">80s</option>
+            <option value="90s">90s</option>
+            <option value="Dark">Dark</option>
           </select>
         </label>
       </div>
@@ -1847,7 +1853,8 @@ function songThemeShow(d) {
   }
   if (document.activeElement !== sel) sel.value = d.saved || '';
   sel.disabled = !d.track_key;
-  const why = {song: 'set for this song', slow: 'slow song', fast: 'fast song', general: 'general theme'}[d.source] || d.source;
+  const why = {song: 'set for this song', slow: 'slow song', fast: 'fast song', dark: 'dark song',
+               decade: d.decade + 's song', general: 'general theme'}[d.source] || d.source;
   document.getElementById('song-theme-status').textContent = d.track_key ? 'Showing: ' + d.showing + ' (' + why + ')' : 'Waiting for the song to be identified';
   const gen = document.getElementById('idle-theme-select');
   if (document.activeElement !== gen) gen.value = d.general;

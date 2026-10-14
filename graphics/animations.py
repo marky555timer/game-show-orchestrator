@@ -1,12 +1,19 @@
 import math
 import random
+import numpy as np
 import pygame
 from config import (
     RED_FULL, RED_DIM, BLACK, BTN1_STATUS_PULSE_INTERVAL_SECONDS,
     IDLE_ANIMATION_THEMES, IDLE_THEME_DEFAULT,
+    TEMPO_PERIOD_DEFAULT_SECONDS as BEAT_SECONDS,
 )
 from state import state
-from graphics import technical_dreams, love_theme
+from graphics import (
+    technical_dreams, love_theme, fifties_theme, sixties_theme, seventies_theme,
+    eighties_theme, nineties_theme, dark_theme,
+)
+from graphics.love_theme import _outline
+from graphics.technical_dreams import blit_mask, _grid, _stamp, sprite, plot
 
 # NOTE ON CLIPPING: render_panel_animation() sets a clip rect around the
 # panel before calling an animation, and pygame's draw.* primitives honour
@@ -15,23 +22,24 @@ from graphics import technical_dreams, love_theme
 # to draw.* so a stray coordinate can't bleed into a neighbouring panel.
 
 
-def anim_scanner(surface, rect, t, seed=0.0):
-    """KITT-style bar sweeping back and forth across the panel."""
+def anim_jellyfish(surface, rect, t, seed=0.0):
+    """A jellyfish pulsing its way around the panel, tentacles trailing."""
     x0, y0, w, h = rect
-    period = 2.4
-    phase = ((t + seed) % period) / period
-    tri = phase * 2 if phase < 0.5 else 2 - phase * 2  # triangle wave 0->1->0
-
-    bar_w = 4
-    max_x = w - bar_w
-    bar_x = int(tri * max_x)
-    mid_y = h // 2
-
-    pygame.draw.rect(surface, RED_FULL, (x0 + bar_x, y0 + mid_y - 1, bar_w, 3))
-    for i in range(1, 4):
-        trail_x = bar_x - i * 2
-        if 0 <= trail_x <= max_x:
-            pygame.draw.rect(surface, RED_DIM, (x0 + trail_x, y0 + mid_y - 1, 1, 3))
+    yy, xx = _grid(h, w)
+    tt = t + seed
+    pulse = math.sin(tt * 3.0)                       # the bell squeezes, then relaxes
+    cx = w / 2 - 0.5 + 7 * math.sin(tt * 0.31)
+    cy = 6.5 + 1.5 * math.sin(tt * 0.47) - 0.8 * pulse
+    rx, ry = 7.0 - 1.3 * pulse, 5.6 + 0.8 * pulse
+    bell = (((xx - cx) / rx) ** 2 + ((yy - cy) / ry) ** 2 <= 1) & (yy <= cy)
+    m = _outline(bell)
+    m |= bell & (np.abs(xx - cx) < rx * 0.45) & (np.abs(yy - (cy - ry * 0.5)) < 0.6)   # markings
+    ys = np.arange(int(cy) + 1, h)
+    for j in range(5):
+        n = 6 + (j % 2) * 3
+        drift = (0.3 + 0.22 * (ys - cy)) * np.sin((ys - cy) * 0.7 - tt * 4 + j * 0.9)
+        plot(m, (cx + (j - 2) * rx * 0.42 + drift)[:n], ys[:n])
+    blit_mask(surface, x0, y0, m)
 
 
 def anim_equalizer(surface, rect, t, seed=0.0):
@@ -69,49 +77,37 @@ def anim_rain(surface, rect, t, seed=0.0):
                 surface.set_at((x0 + col, y0 + ty), RED_DIM)
 
 
-def anim_pulse_rings(surface, rect, t, seed=0.0):
-    """Expanding square ring pulsing out from the panel center."""
+def anim_engine(surface, rect, t, seed=0.0):
+    """Locomotive wheels turning under a coupling rod, steam puffing off on the beat."""
     x0, y0, w, h = rect
-    cx, cy = w // 2, h // 2
-    period = 2.0
-    phase = ((t + seed) % period) / period
-    max_r = max(w, h) // 2 + 2
-    r = int(phase * max_r)
-    color = RED_DIM if phase > 0.6 else RED_FULL
-    ring = (x0 + cx - r, y0 + cy - r, r * 2, r * 2)
-    pygame.draw.rect(surface, color, ring, 1)
-
-
-def anim_dancing_cat(surface, rect, t, seed=0.0):
-    """Bobbing/leaning cat face -- shown on the DJ-mode status panel when
-    the AI factoid/quiz request has failed or is unavailable, so the
-    failure is visible on the matrix itself, not just in the console."""
-    x0, y0, w, h = rect
-    cx = w // 2
-    bob = int(math.sin(t * 4.0 + seed) * 1.5)
-    lean = int(math.sin(t * 2.2 + seed) * 2)
-    fx = x0 + cx + lean
-    fy = y0 + h // 2 + bob
-
-    pygame.draw.polygon(surface, RED_FULL, [(fx - 5, fy - 3), (fx - 3, fy - 6), (fx - 1, fy - 3)])
-    pygame.draw.polygon(surface, RED_FULL, [(fx + 1, fy - 3), (fx + 3, fy - 6), (fx + 5, fy - 3)])
-    pygame.draw.rect(surface, RED_FULL, (fx - 5, fy - 3, 10, 7))
-
-    blink = int(t * 1.5) % 5 == 0
-    eye_color = RED_DIM if blink else BLACK
-    surface.set_at((fx - 2, fy), eye_color)
-    surface.set_at((fx + 2, fy), eye_color)
-
-    wig = int(math.sin(t * 6.0) * 1)
-    pygame.draw.line(surface, RED_DIM, (fx - 6, fy + 2 + wig), (fx - 9, fy + 1 + wig))
-    pygame.draw.line(surface, RED_DIM, (fx + 6, fy + 2 + wig), (fx + 9, fy + 1 + wig))
+    yy, xx = _grid(h, w)
+    a = (t + seed) * 3.2
+    m = np.zeros((h, w), bool)
+    for cx in (5.5, 16.0, 26.5):
+        d = np.hypot(xx - cx, yy - 9.5)
+        th = np.arctan2(yy - 9.5, xx - cx)
+        m |= (d <= 5.0) & ((d > 3.9) | (d <= 1.0) | (np.abs(np.cos(2 * (th - a))) > 0.95))
+    px, py = 2.6 * math.cos(a), 9.5 + 2.6 * math.sin(a)       # the crank pins, all in step
+    ry = int(round(py))
+    m[ry, int(round(5.5 + px)):int(round(26.5 + px)) + 1] = True
+    for cx in (5.5, 16.0, 26.5):
+        qx = int(round(cx + px))
+        m[max(0, ry - 1):ry + 2, max(0, qx - 1):qx + 2] = True
+    beat = t / BEAT_SECONDS
+    for i in range(3):                               # steam, one puff a beat, drifting back
+        age = (beat + i) % 3.0
+        sx, sy = int(28 - age * 9), int(round(2.5 - 0.4 * age))
+        if 0 <= sx < w - 1 and age < 2.6:
+            r = 1 if age < 1.5 else 0
+            m[max(0, sy - r):sy + 1, sx:sx + 2 + r] = True
+    m[15] = True
+    blit_mask(surface, x0, y0, m)
 
 
 def anim_coin_pop(surface, rect, t, seed=0.0):
     """A coin popping and fading -- shown on the DJ-mode status panel
     right after a Btn2 quiz-fetch attempt comes back with "no credits"
-    (any API failure triggered by an explicit fetch request), distinct
-    from the passive anim_dancing_cat failure indicator."""
+    (any API failure triggered by an explicit fetch request)."""
     x0, y0, w, h = rect
     cx, cy = x0 + w // 2, y0 + h // 2
     period = 0.8
@@ -132,31 +128,6 @@ def anim_coin_pop(surface, rect, t, seed=0.0):
     coin_y = cy - rise
     pygame.draw.circle(surface, color, (cx, coin_y), r, 1)
     pygame.draw.line(surface, color, (cx - 1, coin_y), (cx + 1, coin_y))
-
-
-def anim_star_burst(surface, rect, t, seed=0.0):
-    """Five-point star that bursts outward from center then resets --
-    shown on the DJ-mode status panel once a real AI-sourced question
-    has loaded for the currently-playing track."""
-    x0, y0, w, h = rect
-    cx, cy = w // 2, h // 2
-    period = 1.6
-    phase = ((t + seed) % period) / period
-    max_r = min(w, h) // 2
-
-    if phase < 0.15:
-        r = 1
-        color = RED_FULL
-    else:
-        burst_phase = (phase - 0.15) / 0.85
-        r = 1 + int(burst_phase * (max_r - 1))
-        color = RED_FULL if burst_phase < 0.6 else RED_DIM
-
-    for i in range(5):
-        ang = (2 * math.pi * i / 5) - math.pi / 2
-        px = x0 + cx + int(math.cos(ang) * r)
-        py = y0 + cy + int(math.sin(ang) * r)
-        pygame.draw.line(surface, color, (x0 + cx, y0 + cy), (px, py), 1)
 
 
 # ==========================================
@@ -426,35 +397,55 @@ def anim_squirrel(surface, rect, t, seed=0.0):
         pygame.draw.line(surface, RED_DIM, (fx + lx, fy), (fx + lx, fy + 2 - ly_off))
 
 
+_DUCK = sprite(
+    "........###..",
+    ".......#####.",
+    ".......##.###",
+    "#.......###..",
+    "##.....####..",
+    "###########..",
+    ".####...###..",
+    "..########...",
+)
+_DUCK_FLAP = sprite(
+    "........###..",
+    ".......#####.",
+    "..##...##.###",
+    "#.###...###..",
+    "##.###.####..",
+    "###########..",
+    ".##########..",
+    "..########...",
+)
+_DUCKLING = sprite("..##.", "..###", "####.", ".###.")
+
+
 def anim_duck(surface, rect, t, seed=0.0):
-    """A duck waddles side to side, bobbing its tail and flapping a wing,
-    with a bright bill out front."""
+    """A mother duck paddling along with her ducklings in tow, each one
+    bobbing on the ripples; the last keeps falling behind and catching up."""
     x0, y0, w, h = rect
-    cx = x0 + w // 2 + int(math.sin(t * 0.8 + seed) * 8)
-    waddle = int(math.sin(t * 7.0 + seed) * 1)
-    cy = y0 + h - 5 + waddle
-    facing_right = math.cos(t * 0.8 + seed) >= 0
+    tt = t + seed
+    xs = np.arange(w)
 
-    pygame.draw.ellipse(surface, RED_FULL, (cx - 5, cy - 3, 10, 6))          # body
-    pygame.draw.circle(surface, RED_FULL, (cx + (4 if facing_right else -4), cy - 5), 3)  # head
-    bill_dx = 3 if facing_right else -3
-    pygame.draw.rect(surface, RED_DIM,
-                      (cx + (4 if facing_right else -4) + bill_dx - (1 if facing_right else 2),
-                       cy - 5, 3, 2))
+    def level(x):
+        return 12.6 + 0.7 * np.sin(x * 0.4 + tt * 2.4) + 0.3 * np.sin(x * 0.21 + tt * 1.1)
 
-    # Flapping wing.
-    flap = int((math.sin(t * 6.0 + seed) + 1.0) * 1.5)
-    pygame.draw.line(surface, RED_DIM, (cx, cy - 2), (cx - 2, cy - 2 - flap))
-
-    # Tail bob.
-    tail_dx = -6 if facing_right else 6
-    pygame.draw.line(surface, RED_DIM, (cx + tail_dx // 2, cy - 3), (cx + tail_dx, cy - 4 - waddle))
-
-    # Webbed feet, alternating.
-    step = int(t * 7.0) % 2
-    for i, lx in enumerate((-2, 2)):
-        if i == step:
-            pygame.draw.line(surface, RED_DIM, (cx + lx, cy + 3), (cx + lx, cy + 4))
+    m = np.zeros((h, w), bool)
+    plot(m, xs, level(xs))
+    rx = int(w + 3 - (tt * 5) % (w + 12))            # a reed drifting past
+    if 0 <= rx < w:
+        m[5:13, rx] = True
+        m[4:8, max(0, rx - 1):rx + 1] = True
+    mx = 18 + 1.2 * math.sin(tt * 0.4)
+    flap = (tt % 5.0) < 0.8 and int(tt * 8) % 2 == 0
+    duck = _DUCK_FLAP if flap else _DUCK
+    my = int(round(level(mx + 6))) - 7
+    _stamp(m, duck, int(mx), my)
+    for i in range(3):
+        lag = 3.0 * max(0.0, math.sin(tt * 0.9)) if i == 2 else 0.0
+        dx = mx - 6 - i * 6 - lag
+        _stamp(m, _DUCKLING, int(dx), int(round(level(dx + 2))) - 3)
+    blit_mask(surface, x0, y0, m)
 
 
 def anim_celtic_cross(surface, rect, t, seed=0.0):
@@ -837,10 +828,10 @@ def anim_qmark_bounce(surface, rect, t, seed=0.0):
 # (operator-controlled, see web/remote_server.py::/api/idle/theme) -- e.g.
 # "Halloween" pool = GENERAL_IDLE_ANIMATIONS + IDLE_THEMES["Halloween"].
 GENERAL_IDLE_ANIMATIONS = [
-    anim_scanner,
+    anim_jellyfish,
     anim_equalizer,
     anim_rain,
-    anim_pulse_rings,
+    anim_engine,
     anim_squirrel,
     anim_duck,
     anim_dancing_pixelman,
@@ -878,6 +869,14 @@ IDLE_THEMES = {
     "Technical Dreams": technical_dreams.ANIMATIONS,
     # Slow songs and ballads (graphics/love_theme.py).
     "Love": love_theme.ANIMATIONS,
+    # By release decade, and for "dark" songs (graphics/fifties_theme.py ...
+    # nineties_theme.py, dark_theme.py).
+    "50s": fifties_theme.ANIMATIONS,
+    "60s": sixties_theme.ANIMATIONS,
+    "70s": seventies_theme.ANIMATIONS,
+    "80s": eighties_theme.ANIMATIONS,
+    "90s": nineties_theme.ANIMATIONS,
+    "Dark": dark_theme.ANIMATIONS,
 }
 # Keeps config.IDLE_ANIMATION_THEMES (the admin panel's dropdown source of
 # truth) and this dict from silently drifting apart -- fails loudly at
@@ -894,16 +893,22 @@ _panel_deal = {}
 
 def _current_theme_pool():
     themed = IDLE_THEMES.get(state.idle_theme) or IDLE_THEMES[IDLE_THEME_DEFAULT]
+    energy = state.idle_theme_energy
+    if energy in ("slow", "fast"):
+        # A slow song skips a theme's fast-only animations, and the reverse
+        # (technical_dreams.for_energy); unmarked ones suit any song.
+        themed = [fn for fn in themed if energy in getattr(fn, "energies", (energy,))]
     return GENERAL_IDLE_ANIMATIONS + themed
 
 
-def set_effective_theme(theme):
+def set_effective_theme(theme, energy=""):
     """Switch what panels 3-6 show (per-song theme resolution); re-deals
-    straight away only when it actually changes."""
+    straight away only when the theme or the song's energy actually changes."""
     if theme not in IDLE_THEMES:
         theme = IDLE_THEME_DEFAULT
-    if theme != state.idle_theme:
+    if theme != state.idle_theme or energy != state.idle_theme_energy:
         state.idle_theme = theme
+        state.idle_theme_energy = energy
         deal_panel_animations()
 
 

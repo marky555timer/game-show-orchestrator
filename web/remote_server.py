@@ -2507,6 +2507,8 @@ if app is not None:
         prefs = light_prefs_engine.get_prefs_for(key) if key else None
         return {"ok": True, "track_key": key, "saved": (prefs or {}).get("idle_theme", ""),
                 "energy": (prefs or {}).get("energy", ""), "showing": state.idle_theme,
+                "decade": light_prefs_engine.decade_for(key) if key else None,
+                "by_decade": config.IDLE_THEME_BY_DECADE,
                 "source": state.idle_theme_source, "general": state.idle_theme_base,
                 "auto": state.idle_theme_auto, "themes": config.IDLE_ANIMATION_THEMES,
                 "by_energy": config.IDLE_THEME_BY_ENERGY}
