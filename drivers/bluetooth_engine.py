@@ -81,8 +81,8 @@ def _reconnect_worker():
 
 
 def reconnect_paired_devices_async():
-    """Physical blue-button hook (drivers/simon_engine.py::
-    _poll_setup_hardware(), show_phase == "setup"): runs
+    """Gamepad-reconnect hook (drivers/recovery_button.py, the web remote's
+    RECONNECT GAMEPAD): runs
     reconnect_paired_devices() on a background thread -- the same blocking
     subprocess.run() calls that function makes (up to ~5s list + ~8s per
     paired device) would otherwise stall the single-threaded main loop, the

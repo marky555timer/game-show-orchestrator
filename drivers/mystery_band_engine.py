@@ -89,6 +89,24 @@ def _start_mystery(artist_key, artist_display):
     from inputs import gamepad
     gamepad._maybe_reset_after_win()
 
+    # 2026-10-15: the teaser's own presentation (sparkling "Who is this?" ->
+    # "Is this:" -> option cascade) only renders in DJ mode. If the previous
+    # song's quiz was still on screen when this song's teaser armed (Game Mode
+    # running through a track change), the identify question used to land in
+    # that plain quiz view instead -- static "Who is this?" + four answers --
+    # and the teaser then sat unresolved behind it (update() skips Game Mode)
+    # until the quiz ended, when a stale "Reveal timeout" re-graded it and
+    # flashed the reversed artist/title. Drop out of the stale quiz first so
+    # the song's first question always gets the teaser presentation.
+    if state.mode == state.MODE_GAME:
+        print("[MYSTERY BAND] Previous quiz still on screen at the new song's teaser -- "
+              "returning to DJ mode so the teaser presents properly.")
+        state.mode = state.MODE_DJ
+        state.fixture1_mode = "off"
+        state.quiz_locked = False
+        state.quiz_selected_index = -1
+        state.active_option = None
+
     state.mystery_active = True
     state.mystery_resolved = False
     state.mystery_started_at = time.time()
@@ -175,6 +193,14 @@ def update(now):
         return
 
     if state.mode == state.MODE_GAME:
+        if state.factoid_category != "identify_band":
+            # Game Mode moved on to other questions (the identify question
+            # was graded/replaced) -- this teaser can no longer resolve on
+            # its own, and left armed it would later re-grade a finished
+            # round and flash a stale reveal. Retire it.
+            state.mystery_active = False
+            state.mystery_resolved = False
+            state.mystery_identify_question = None
         return  # entered via enter_game_from_mystery(); rendering already switched over
 
     elapsed = now - state.mystery_started_at

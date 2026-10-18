@@ -89,19 +89,170 @@ def play(path, *, block=False):
     return proc
 
 
+_LEFT_CACHE = {}
+_hw_level = None  # what we last set the card's "Speaker" control to
+
+
+def _set_speaker(level):
+    """Sets the USB card's hardware 'Speaker' control ('100%' or a raw step
+    like '14'; the card has 0-37 steps, 0 dB at 37). Skipped if already set."""
+    global _hw_level
+    if _hw_level == level:
+        return
+    _hw_level = level
+    try:
+        subprocess.run(["amixer", "-q", "-c", config.SFX_ALSA_CARD_NAME, "sset", "Speaker", level, "unmute"],
+                       stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=3)
+    except Exception:
+        pass
+
+
+def _max_volume_once():
+    """Forces the USB card's hardware volume to 100% (game SFX / Simon)."""
+    _set_speaker("100%")
+
+
+def _left_only(path):
+    """Cached copy of `path` mixed down and panned FULL LEFT (right channel
+    silent) -- aplay has no pan control, so it's baked into the file. Falls
+    back to the original path on any error."""
+    if path in _LEFT_CACHE:
+        return _LEFT_CACHE[path]
+    out = path
+    try:
+        import os, tempfile, wave
+        import numpy as np
+        with wave.open(path, "rb") as w:
+            ch, width, rate, frames = w.getnchannels(), w.getsampwidth(), w.getframerate(), w.readframes(w.getnframes())
+        if width == 2:
+            a = np.frombuffer(frames, dtype="<i2").astype(np.int32).reshape(-1, ch)
+            left = np.clip(a.sum(axis=1), -32768, 32767).astype("<i2")
+            st = np.zeros((len(left), 2), dtype="<i2")
+            st[:, 0] = left
+            d = os.path.join(tempfile.gettempdir(), "sfx_left")
+            os.makedirs(d, exist_ok=True)
+            out = os.path.join(d, f"{abs(hash(path))}_{os.path.basename(path)}")
+            with wave.open(out, "wb") as o:
+                o.setnchannels(2); o.setsampwidth(2); o.setframerate(rate)
+                o.writeframes(st.tobytes())
+    except Exception as e:
+        print(f"[SFX] left-pan render failed for {path}: {e}")
+        out = path
+    _LEFT_CACHE[path] = out
+    return out
+
+
+_SCALED_CACHE = {}
+
+
+def _scaled(path, gain):
+    """Cached copy of a 16-bit .wav at `gain` x amplitude (aplay has no
+    volume control). Falls back to the original path on any error."""
+    key = (path, gain)
+    if key in _SCALED_CACHE:
+        return _SCALED_CACHE[key]
+    out = path
+    try:
+        import os, tempfile, wave
+        import numpy as np
+        with wave.open(path, "rb") as w:
+            ch, width, rate, frames = w.getnchannels(), w.getsampwidth(), w.getframerate(), w.readframes(w.getnframes())
+        if width == 2:
+            a = np.frombuffer(frames, dtype="<i2").astype(np.float32) * gain
+            d = os.path.join(tempfile.gettempdir(), "sfx_scaled")
+            os.makedirs(d, exist_ok=True)
+            out = os.path.join(d, f"{int(gain * 100)}_{os.path.basename(path)}")
+            with wave.open(out, "wb") as o:
+                o.setnchannels(ch); o.setsampwidth(2); o.setframerate(rate)
+                o.writeframes(np.clip(a, -32768, 32767).astype("<i2").tobytes())
+    except Exception as e:
+        print(f"[SFX] volume scale failed for {path}: {e}")
+        out = path
+    _SCALED_CACHE[key] = out
+    return out
+
+
+_loop_gen = 0  # bumped by every play_replacing()/stop_current(); a loop thread exits when its token goes stale
+
+
+def stop_current():
+    """Cuts whatever this engine is playing right now (no-op if nothing)."""
+    global _loop_gen
+    with _lock:
+        _loop_gen += 1
+        proc = _current_proc
+    if proc is not None and proc.poll() is None:
+        try:
+            proc.terminate()
+            proc.wait(timeout=1.0)  # the plughw device is exclusive -- must be released before the next open
+        except Exception:
+            pass
+
+
+def is_busy():
+    """True while the clip started by play()/play_replacing() is still playing."""
+    with _lock:
+        proc = _current_proc
+    return proc is not None and proc.poll() is None
+
+
+def play_replacing(path, *, loop=False, then=()):
+    """Plays `path` on the SFX amp, cutting off whatever was playing first
+    (the device is exclusive, so overlapping clips would fail "busy" --
+    last sound wins, which is what Simon's rapid presses want). `loop=True`
+    repeats the clip until the next play_replacing()/stop_current() call
+    (Simon's held-button tone). Returns False if aplay isn't available
+    (Windows dev) so the caller can fall back to pygame."""
+    global _loop_gen
+    if _APLAY is None:
+        return False
+    stop_current()
+    if state.blackout_active:
+        return True
+    _max_volume_once()
+    path = _left_only(path)
+    then = tuple(_left_only(t) for t in then)
+    with _lock:
+        token = _loop_gen
+    if not loop and not then:
+        play(path)
+        return True
+    if not loop:
+        def _chain():
+            for p in (path, *then):
+                with _lock:
+                    if token != _loop_gen:
+                        return
+                proc = play(p)
+                if proc is None:
+                    return
+                proc.wait()
+        threading.Thread(target=_chain, daemon=True, name="sfx-chain").start()
+        return True
+
+    def _run():
+        while True:
+            with _lock:
+                if token != _loop_gen:
+                    return
+            proc = play(path)
+            if proc is None:
+                return
+            proc.wait()
+            if proc.returncode != 0:
+                return  # don't spin on a failing device
+
+    threading.Thread(target=_run, daemon=True, name="sfx-loop").start()
+    return True
+
+
 def cleanup():
     """Called from main.py's shutdown teardown, alongside the other
     drivers' own cleanup() calls -- kills whatever SFX playback is still
     in flight so a graceful shutdown doesn't leave an orphaned aplay
     holding the (exclusive) device for the next run to collide with. See
     _current_proc's docstring for what happens without this."""
-    with _lock:
-        proc = _current_proc
-    if proc is not None and proc.poll() is None:
-        try:
-            proc.terminate()
-        except Exception:
-            pass
+    stop_current()
 
 
 _SHOW_START_POLL_S = 0.1  # how often to check for an interrupt -- see _startup_once() below
@@ -112,13 +263,10 @@ def _startup_once():
     then polls state.show_phase every _SHOW_START_POLL_S while it's still
     playing and interrupts it immediately -- kills the aplay child outright
     rather than letting it finish -- the instant any show start actually
-    fires. "Any show start" covers both real triggers that move show_phase
-    off its "setup" default, the one condition this checks: a normal start
-    (drivers/show_engine.py::enter_dark(), the operator's "Start Game" /
-    scheduled-countdown-reaching-zero path) and an auto start (that same
-    module's _enter_unattended_autoplay(), the unattended-idle-timeout
-    autoplay) -- both flip show_phase away from "setup" already, so no
-    separate hook into either path is needed here, just the poll.
+    fires. "Any show start" = show_phase leaving its "setup" (panel menu)
+    default, the one condition this checks: drivers/show_engine.py::
+    start_show() from the panel menu, its hands-off timer, or the web remote
+    -- so no separate hook into any of those paths is needed, just the poll.
 
     2026-09-20 redesign: previously looped the clip for as long as "setup"
     lasted and let an in-flight playthrough finish naturally once the
@@ -138,7 +286,11 @@ def _startup_once():
         return
     _kill_stray_aplay()
     print(f"[SFX] Playing startup sound once on ALSA card '{config.SFX_ALSA_CARD_NAME}'.")
-    proc = play(config.SFX_STARTUP_SOUND, block=False)
+    # The card's hardware volume sits at max for game SFX; the startup sound
+    # keeps its original quiet hardware step (14/37 = -23 dB, what it always
+    # played at) and is scaled by SFX_STARTUP_VOLUME on top of that.
+    _set_speaker(config.SFX_STARTUP_HW_STEP)
+    proc = play(_scaled(config.SFX_STARTUP_SOUND, config.SFX_STARTUP_VOLUME), block=False)
     if proc is None:
         return
     while proc.poll() is None:

@@ -17,6 +17,13 @@ anthropic_key.txt
 
 # Large media -- lives on the device, not in git
 audio/music/
+# Song batches waiting to be ingested (tools/add_tracks)
+audio/Add Tracks */
+# Sound Forge peak files, downloaded Python wheels
+*.sfk
+*.whl
+# Per-song last played / last edited -- runtime data (drivers/track_record.py)
+track_stats.json
 # Demucs instrumental stems (~30 MB each) -- made on the PC, copied to the Pi
 audio/MedleyStems/
 # Generated cue-out audition clips
@@ -24,3 +31,9 @@ cue_previews/
 
 # Personal Claude Code overrides (permissions, local allow-lists) -- not shared
 .claude/settings.local.json
+
+# Web Show Designer (2026-10-18): browser preview copies made by tools/web_previews.py,
+# and the Pi's login state (password hash from triviacade.com, admin sessions)
+web_previews/
+web_auth.json
+admin_sessions.json

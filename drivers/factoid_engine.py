@@ -306,6 +306,9 @@ def _apply_active_question(data, source):
         state.game_question_count = 0
         state.era_question_used_this_game = False
     state.game_question_count += 1
+    state.autoadv_questions_asked += 1
+    state.autoadv_need_leaderboard = True
+    state.autoadv_leaderboard_reviewed = False
     if data.get("category") == "era":
         state.era_question_used_this_game = True
 

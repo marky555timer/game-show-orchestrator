@@ -140,8 +140,10 @@
       <a href="/">Remote</a>
       <a href="/library" class="active">File Manager</a>
       <a href="/setup">Setup</a>
+      <a href="/designer">Show Designer</a>
       <a href="/joyassign">Joy Assign</a>
       <a href="/questions">Questions</a>
+      <a href="#" onclick="fetch('/auth/logout',{method:'POST'}).then(()=>location.reload());return false">Log out</a>
     </div>
   </div>
   <h1>File Manager</h1>

@@ -1,3 +1,6 @@
+import json
+import math
+import os
 import random
 import time
 
@@ -6,6 +9,7 @@ from state import state
 from drivers import simon_hardware
 from drivers import midi_driver
 from drivers import relay_engine
+from drivers import sfx_engine
 from audio.audio_engine import (
     simon_sounds, simon_intro_sound, play_processed_sound, raw_buzzer, pick_random_applause,
 )
@@ -36,11 +40,89 @@ from audio.audio_engine import (
 # instead, since they're this engine's own hardware, not a renderer's.
 
 _PADS = 4
+# Simon's own sound effects (pad tones, intro jingle, wrong-answer buzzer)
+# play on the auxiliary USB sound card via drivers/sfx_engine.py, NOT the
+# main pygame mixer -- the DJ music keeps playing untouched on the main
+# output the whole game (no ducking). On a machine without aplay (Windows
+# dev) they fall back to the pygame mixer so the game still makes noise.
+_PAD_WAVS = [config.resource_path("audio", "Simon", f"{c}.wav") for c in ("green", "red", "yellow", "blue")]
+_BUZZER_WAV = config.resource_path("audio", "sound_effects", "buzzer.wav")
+_INTRO_WAV = config.SIMON_INTRO_SOUND_PATH
+_held_on_aux = False
+_intro_on_aux = False
 _last_update_at = None
 _intro_channel = None  # Channel simon_intro_sound is playing on, or None
 _prev_hw_buttons = {}
 _held_channel = None  # Channel a physically-held button's sustained tone is playing on, or None
 _held_color = None    # which color is currently held/sustaining, or None
+
+
+def _aux_play(path, fallback_sound, loop=False, then=()):
+    """Plays on the aux USB card; returns a pygame Channel only when it had
+    to fall back to the main mixer (else None)."""
+    if sfx_engine.play_replacing(path, loop=loop, then=then):
+        return None
+    return play_processed_sound(fallback_sound, volume=config.SIMON_SOUND_VOLUME, loops=-1 if loop else 0)
+
+
+_grid_cache = {"mtime": None, "data": {}}
+_downbeat_at = None  # wall time the pending first note should land on, or None
+
+
+def _song_grid():
+    """(bpm, first_beat_s, downbeat_idx) for the running song from the
+    medley beat analysis, or None if it isn't analysed / the grid is
+    unsure. Beat i lands at first_beat_s + i*60/bpm; beats with i % 4 ==
+    downbeat_idx are the "one" of a bar."""
+    try:
+        path = config.resource_path(config.MEDLEY_ANALYSIS_FILE)
+        m = os.path.getmtime(path)
+        if m != _grid_cache["mtime"]:
+            with open(path, "r", encoding="utf-8") as f:
+                _grid_cache["data"] = json.load(f)
+            _grid_cache["mtime"] = m
+        a = _grid_cache["data"].get(os.path.basename(state.now_playing_path or ""))
+        if not a or a.get("grid_conf", 0) < config.MEDLEY_MIN_GRID_CONF or not state.now_playing_started_at:
+            return None
+        name = os.path.basename(state.now_playing_path)
+        db = config.SIMON_DOWNBEAT_OVERRIDES.get(name, a["downbeat"])
+        return float(a["bpm"]), float(a["beat_phase"]), int(db) % 4
+    except Exception:
+        return None
+
+
+def _next_downbeat(now):
+    """Wall-clock time of the next bar "one" at least ~50ms away, or None."""
+    g = _song_grid()
+    if g is None:
+        return None
+    bpm, first, db = g
+    period = 60.0 / bpm
+    bar = period * 4
+    origin = state.now_playing_started_at + first + db * period + config.SIMON_BEAT_OFFSET_SECONDS
+    k = math.ceil((now + 0.05 - origin) / bar)
+    return origin + k * bar
+
+
+def _beat_step():
+    """(on_seconds, gap_seconds) for one playback step, locked to the running
+    song's tempo (state.dj_tempo_period = seconds per beat): one step = one
+    beat, doubled/halved into a playable 0.45-0.9s range for very fast/slow
+    songs. Only the tempo is known -- there's no beat-phase clock -- so steps
+    run at the song's rate, not aligned to its downbeats. Falls back to the
+    fixed config timing if the tempo is missing/silly."""
+    g = _song_grid()
+    try:
+        p = 60.0 / g[0] if g else float(state.dj_tempo_period)
+    except (TypeError, ValueError, ZeroDivisionError):
+        p = 0.0
+    if not (0.05 < p < 5.0):
+        return config.SIMON_FLASH_ON_SECONDS, config.SIMON_FLASH_GAP_SECONDS
+    while p < 0.45:
+        p *= 2.0
+    while p > 0.9:
+        p /= 2.0
+    return p * 0.62, p * 0.38
 
 
 def _pad_color(pad):
@@ -54,9 +136,10 @@ def _start_held_sound(color, sound):
     natural length just keeps sounding, as one continuous tone, same as
     the real 1978 device. release() below cuts both the instant that
     physical button comes back up -- see poll_hardware()."""
-    global _held_channel, _held_color
+    global _held_channel, _held_color, _held_on_aux
     _stop_held_sound()
-    _held_channel = play_processed_sound(sound, volume=config.SIMON_SOUND_VOLUME, loops=-1)
+    _held_channel = _aux_play(_PAD_WAVS[simon_sounds.index(sound)], sound, loop=True)
+    _held_on_aux = _held_channel is None
     _held_color = color
     simon_hardware.set_led(color, True)
 
@@ -66,9 +149,12 @@ def _stop_held_sound():
     called on release, and defensively on every game-start/game-end
     transition so a held sound can never survive past the hold that
     started it."""
-    global _held_channel, _held_color
+    global _held_channel, _held_color, _held_on_aux
     if _held_channel is not None:
         _held_channel.stop()
+    if _held_on_aux:
+        sfx_engine.stop_current()
+        _held_on_aux = False
     if _held_color is not None:
         simon_hardware.set_led(_held_color, False)
     _held_channel = None
@@ -76,30 +162,56 @@ def _stop_held_sound():
 
 
 def _duck_music():
-    """Fades the DJ deck to silent for the duration of a Simon game (entry
-    through end) -- same shape as Price Game's background-music duck.
-    update_fader_tween() is already pumped every frame by drivers/
-    price_game_engine.py::update() (called unconditionally from inputs/
-    gamepad.py::process_events(), not gated on Price Game being active),
-    so no separate per-frame hook is needed here."""
-    midi_driver.tween_channel_faders_to(0, config.SIMON_MUSIC_DUCK_TWEEN_SECONDS)
+    """Deliberately a no-op: the music keeps playing through a Simon game
+    (operator request 2026-10-15). Simon's sounds go to the aux USB card."""
 
 
 def _restore_music():
-    """Fades the DJ deck back to the admin's live master volume. Called
-    whenever a Simon game actually ENDS (explicit exit, hardware loss, or
-    an input timeout) -- NOT on the joystick combo's auto-restart-after-miss
-    path, which keeps playing (and so stays ducked) into a fresh round."""
-    midi_driver.tween_channel_faders_to(state.music_volume, config.SIMON_MUSIC_RESTORE_TWEEN_SECONDS)
+    """No-op counterpart of _duck_music() -- nothing was ducked."""
 
 
-def _start_playback_step(now):
+_word_pool = None
+
+
+def _maybe_pad_word(pad, now, seconds=None):
+    """Deep rounds: sometimes tag this lit pad with a small word/symbol that
+    graphics/matrix_canvas.py::_render_simon flashes inside the square."""
+    global _word_pool
+    if state.simon_round <= config.SIMON_WORD_AFTER_ROUND or random.random() >= config.SIMON_WORD_CHANCE:
+        return
+    if _word_pool is None:
+        from graphics.text_render import text_width
+        _word_pool = [w for w in config.SIMON_WORD_ADJECTIVES if text_width(w) <= config.SIMON_WORD_MAX_WIDTH_PX]
+    state.simon_word = random.choice(_word_pool)
+    state.simon_word_pad = pad
+    state.simon_word_until = now + (seconds or _beat_step()[0])
+
+
+def _schedule_first_step(now):
+    """Starts a playback's first note on the next bar "one" of the running
+    song (update()'s playback branch fires it); if the song has no usable
+    beat grid, starts immediately as before."""
+    global _downbeat_at
+    t = _next_downbeat(now)
+    if t is None:
+        _downbeat_at = None
+        _start_playback_step(now)
+    else:
+        _downbeat_at = t
+        state.simon_active_pad = None
+        print(f"[SIMON] First note on the downbeat in {t - now:.2f}s")
+
+
+def _start_playback_step(now, ideal=None):
+    """`ideal` = the exact grid time this step belongs to (so frame-rate
+    jitter doesn't accumulate into drift off the beat)."""
     idx = state.simon_playback_index
     pad = state.simon_sequence[idx]
+    _maybe_pad_word(pad, now)
     state.simon_active_pad = pad
-    state.simon_active_pad_until = now + config.SIMON_FLASH_ON_SECONDS
-    play_processed_sound(simon_sounds[pad], volume=config.SIMON_SOUND_VOLUME)
-    simon_hardware.pulse_led(_pad_color(pad), duration=config.SIMON_FLASH_ON_SECONDS)
+    state.simon_active_pad_until = (ideal if ideal is not None else now) + _beat_step()[0]
+    _aux_play(_PAD_WAVS[pad], simon_sounds[pad])
+    simon_hardware.pulse_led(_pad_color(pad), duration=_beat_step()[0])
 
 
 def _start_intro_step(now):
@@ -128,15 +240,16 @@ def _begin_game(now):
     state.simon_active_pad = None
     state.simon_active_pad_held = False
     _stop_held_sound()
-    _start_playback_step(now)
+    _schedule_first_step(now)
 
 
 def enter_simon():
     """Combo entry hook (inputs/gamepad.py): config.SIMON_ENTRY_BUTTONS
     held simultaneously while in DJ_MODE. No intro -- starts playback
     immediately, same as before this module grew a hardware entry path."""
-    global _last_update_at
+    global _last_update_at, _downbeat_at
     now = time.time()
+    _downbeat_at = None
     state.mode = state.MODE_SIMON
     state.simon_source = "joystick"
     _last_update_at = None
@@ -152,8 +265,9 @@ def enter_simon_hardware():
     panels 3-6 (marquee color, matrix accent, and the physical LEDs
     together) while audio/gameMusic/simon.wav plays -- then falls into
     _begin_game() the instant that finishes (see _update_intro())."""
-    global _last_update_at, _intro_channel
+    global _last_update_at, _intro_channel, _intro_on_aux, _downbeat_at
     now = time.time()
+    _downbeat_at = None
     state.mode = state.MODE_SIMON
     state.simon_source = "hardware"
     state.simon_phase = "intro"
@@ -165,7 +279,8 @@ def enter_simon_hardware():
     _stop_held_sound()
     _last_update_at = None
     _duck_music()
-    _intro_channel = play_processed_sound(simon_intro_sound, volume=config.SIMON_SOUND_VOLUME)
+    _intro_channel = _aux_play(_INTRO_WAV, simon_intro_sound)
+    _intro_on_aux = _intro_channel is None
     _start_intro_step(now)
     print("GAME MODE TRANSITION: Simon initialized via hardware button press")
 
@@ -174,6 +289,8 @@ def exit_simon():
     """Exit hook (inputs/gamepad.py, simon_exit_1/simon_exit_2): immediately
     halts the game loop and returns to DJ_MODE -- normal DJ visuals/
     lighting resume on the very next frame, same as Space Invaders exit."""
+    global _downbeat_at
+    _downbeat_at = None
     state.simon_sequence = []
     state.simon_active_pad = None
     state.simon_active_pad_held = False
@@ -201,6 +318,7 @@ def press(pad, hold=False):
     state.simon_active_pad = pad
     state.simon_active_pad_held = hold
     color = _pad_color(pad)
+    _maybe_pad_word(pad, now, 0.6)
     if not hold:
         state.simon_active_pad_until = now + config.SIMON_FLASH_ON_SECONDS
         simon_hardware.pulse_led(color, duration=config.SIMON_FLASH_ON_SECONDS)
@@ -212,10 +330,14 @@ def press(pad, hold=False):
         state.simon_active_pad_held = False  # _update_fail owns simon_active_pad exclusively from here
         # Plays the CORRECT pad's sound (not the pressed one) -- the
         # repeating flash in _update_fail is visual-only after this.
-        if hold:
+        if state.simon_source == "hardware":
+            # Correct tone once, then straight into the wrong-answer buzzer
+            # (one aux-card sequence -- no held loop to be cut by release()).
+            _aux_play(_PAD_WAVS[expected], simon_sounds[expected], then=(_BUZZER_WAV,))
+        elif hold:
             _start_held_sound(color, simon_sounds[expected])
         else:
-            play_processed_sound(simon_sounds[expected], volume=config.SIMON_SOUND_VOLUME)
+            _aux_play(_PAD_WAVS[expected], simon_sounds[expected])
         print(f"[SIMON] Miss on step {state.simon_input_index} -- round {state.simon_round} over")
         if state.simon_source == "hardware":
             # The hardware path is the one that actually ENDS the game
@@ -226,7 +348,6 @@ def press(pad, hold=False):
             # very end. Chains the same wrong-answer buzzer the trivia
             # rounds use straight into a round of applause, and brings the
             # DJ deck back up right now instead of waiting.
-            play_processed_sound(raw_buzzer, volume=config.SIMON_SOUND_VOLUME)
             play_processed_sound(pick_random_applause(), volume=config.SIMON_SOUND_VOLUME)
             _restore_music()
         return
@@ -234,7 +355,7 @@ def press(pad, hold=False):
     if hold:
         _start_held_sound(color, simon_sounds[pad])
     else:
-        play_processed_sound(simon_sounds[pad], volume=config.SIMON_SOUND_VOLUME)
+        _aux_play(_PAD_WAVS[pad], simon_sounds[pad])
     state.simon_input_index += 1
     if state.simon_input_index >= len(state.simon_sequence):
         state.simon_round += 1
@@ -287,12 +408,14 @@ def _update_intro(now):
             state.simon_active_pad = None
             state.simon_playback_step_started_at = now
     else:
-        if now - state.simon_playback_step_started_at >= config.SIMON_FLASH_GAP_SECONDS:
+        if now - state.simon_playback_step_started_at >= _beat_step()[1]:
             state.simon_playback_index += 1
             _start_intro_step(now)
 
     elapsed = now - state.simon_intro_started_at
-    if _intro_channel is not None:
+    if _intro_on_aux:
+        intro_done = not sfx_engine.is_busy()
+    elif _intro_channel is not None:
         intro_done = not _intro_channel.get_busy()
     else:
         intro_done = elapsed >= config.SIMON_INTRO_FALLBACK_SECONDS
@@ -344,7 +467,7 @@ def _update_fail(now):
         state.simon_phase = "playback"
         state.simon_playback_index = 0
         state.simon_playback_step_started_at = now
-        _start_playback_step(now)
+        _schedule_first_step(now)
 
 
 def _update_score_review(now):
@@ -381,7 +504,7 @@ def _handle_input_timeout(now):
 def update(now):
     """Per-frame poll, called from inputs/gamepad.py::process_events() only
     while state.mode == MODE_SIMON."""
-    global _last_update_at
+    global _last_update_at, _downbeat_at
     if _last_update_at is None:
         _last_update_at = now
     _last_update_at = now
@@ -393,7 +516,13 @@ def update(now):
         _update_get_ready(now)
 
     elif state.simon_phase == "playback":
-        if state.simon_playback_index < 0:
+        if _downbeat_at is not None:
+            # Waiting for the bar "one" (see _schedule_first_step()).
+            if now >= _downbeat_at:
+                t = _downbeat_at
+                _downbeat_at = None
+                _start_playback_step(now, ideal=t)
+        elif state.simon_playback_index < 0:
             # Round-break pending (see press()'s round-clear block): first
             # let the player's own final press finish -- a fixed on-screen
             # flash for a joystick press, or the player's own release for a
@@ -409,20 +538,22 @@ def update(now):
                     state.simon_playback_step_started_at = now  # break timer starts now
             elif now - state.simon_playback_step_started_at >= config.SIMON_ROUND_BREAK_SECONDS:
                 state.simon_playback_index = 0
-                _start_playback_step(now)
+                _schedule_first_step(now)
         elif state.simon_active_pad is not None:
             if now >= state.simon_active_pad_until:
                 state.simon_active_pad = None
-                state.simon_playback_step_started_at = now  # gap starts now
+                # Gap measured from the IDEAL end of the pad, not from this
+                # frame, so steps stay on the beat grid.
+                state.simon_playback_step_started_at = state.simon_active_pad_until
         else:
-            if now - state.simon_playback_step_started_at >= config.SIMON_FLASH_GAP_SECONDS:
+            if now - state.simon_playback_step_started_at >= _beat_step()[1]:
                 state.simon_playback_index += 1
                 if state.simon_playback_index >= len(state.simon_sequence):
                     state.simon_phase = "input"
                     state.simon_input_index = 0
                     state.simon_last_input_at = now
                 else:
-                    _start_playback_step(now)
+                    _start_playback_step(now, ideal=state.simon_playback_step_started_at + _beat_step()[1])
 
     elif state.simon_phase == "input":
         # A held hardware press ignores simon_active_pad_until entirely --
@@ -439,39 +570,6 @@ def update(now):
 
     elif state.simon_phase == "score_review":
         _update_score_review(now)
-
-
-def _poll_setup_hardware(pressed_colors, now):
-    """show_phase == "setup" button dispatch (2026-09-16, poll_hardware()
-    below): green opens a "START SHOW NOW?" confirm (rendered by graphics/
-    matrix_canvas.py::_render_setup_confirm) -- panel4/red then confirms,
-    anything else cancels back to the normal AUTO countdown (via
-    show_engine.mark_operator_interaction(), the same "reset the idle
-    clock" hook any operator action already uses). Blue, independent of the
-    confirm, kicks off a Bluetooth gamepad reconnect -- see config.py's
-    Setup-countdown comment for the full timing story.
-
-    Lazy imports: drivers.show_engine and drivers.bluetooth_engine are only
-    ever needed here, and importing either at this module's top level risks
-    the same import-order cycle drivers/mystery_band_engine.py's own lazy
-    `from inputs import gamepad` already works around."""
-    from drivers import show_engine, bluetooth_engine
-    color = pressed_colors[0]
-
-    if not state.setup_confirm_active:
-        if color == "green":
-            state.setup_confirm_active = True
-        elif color == "blue":
-            state.gamepad_connect_feedback_text = "CONNECTING..."
-            state.gamepad_connect_feedback_until = now + config.GAMEPAD_CONNECT_PENDING_MAX_SECONDS
-            bluetooth_engine.reconnect_paired_devices_async()
-        return
-
-    state.setup_confirm_active = False
-    if color == "red":
-        show_engine.trigger_unattended_autoplay_now()
-    else:
-        show_engine.mark_operator_interaction()
 
 
 def _close_trivia_confirm():
@@ -537,8 +635,7 @@ def poll_hardware(now):
     """Per-frame poll, called unconditionally from inputs/gamepad.py::
     process_events() regardless of mode -- the physical arcade buttons work
     as: live player input once any Simon game is in its "input" phase; the
-    Setup-countdown confirm/gamepad-reconnect shortcuts (_poll_setup_
-    hardware() above, 2026-09-16); a general answer-select-and-score input
+    boot panel menu (drivers/panel_menu.py, 2026-10-17); a general answer-select-and-score input
     for ANY live trivia round (2026-09-16, drivers/live_round_engine.py::
     is_round_active()) -- checked ahead of Simon-entry specifically so a
     button press can never accidentally launch Simon instead of scoring,
@@ -565,6 +662,16 @@ def poll_hardware(now):
         panel_led_engine.note_press(color)
     for color in released_colors:
         panel_led_engine.note_release(color, now)
+
+    if state.show_phase == "setup":
+        # Boot menu (drivers/panel_menu.py) owns the buttons: presses and
+        # releases both matter there (long presses act on release).
+        from drivers import panel_menu
+        for color in pressed_colors:
+            panel_menu.on_press(color, now)
+        for color in released_colors:
+            panel_menu.on_release(color, now)
+        return
 
     for color in released_colors:
         release(color)
@@ -596,22 +703,31 @@ def poll_hardware(now):
             press(config.SIMON_HW_COLOR_ORDER.index(pressed_colors[0]), hold=True)
         return
 
-    if state.show_phase == "setup":
-        _poll_setup_hardware(pressed_colors, now)
-        return
-
     if state.show_phase == "dark":
-        # Armed and holding dark: green is the push-button start (same call
-        # as the app's BEGIN button / joystick X-; the Setup page's "skip
-        # intro" box decides whether it plays the intro or goes straight to
-        # the first track).
-        if "green" in pressed_colors:
-            from drivers import show_engine
-            show_engine.begin_intro()
+        # BLACK, a saved show loaded: ANY button starts it (same call as the
+        # app's BEGIN button / joystick X-).
+        from drivers import show_engine
+        show_engine.begin_intro()
         return
 
-    # Lazy imports: same import-order-cycle reasoning as _poll_setup_
-    # hardware()'s own lazy imports above.
+    if state.show_phase == "intro":
+        # Intro theme looping under the host: ANY button moves the show on
+        # (wheel / stab / first song). Ignored once it is already moving.
+        from drivers import show_engine
+        show_engine.skip_intro()
+        return
+
+    if state.show_phase in ("countdown", "outro") or state.show_spin_active:
+        return
+
+    if state.show_background:
+        # After the show, background music: someone wants to play -- encore.
+        from drivers import show_engine
+        show_engine.start_encore()
+        return
+
+    # Lazy import: importing drivers at this module's top level risks the
+    # same import-order cycle drivers/mystery_band_engine.py works around.
     from drivers import live_round_engine
     if live_round_engine.is_round_active():
         from inputs import gamepad
@@ -633,13 +749,27 @@ def poll_hardware(now):
         state.quiz_skip_wait_requested = True
         return
 
+    # Intermission (post-win, between games): RED stays live as the MC's
+    # "next song" button (2026-10-15); green (Simon) / blue (trivia confirm)
+    # stay disabled, same as before.
+    if (state.intermission_active and "red" in pressed_colors and state.mode == state.MODE_DJ
+            and state.show_phase == "live" and not state.price_game_active
+            and not state.westminster_active and not state.win_sequence_active):
+        from drivers import deck_orchestrator
+        deck_orchestrator.trigger_track_move("next")
+        return
+
     # PHYSICAL ARCADE-BUTTON MAP -- one place to spot conflicts when panel
     # button features are added/removed (operator is actively changing them):
-    #   dark phase  : green = start the show (intro, or first track if the
-    #                 Setup "skip intro" box is checked); others ignored
-    #   setup phase : green = "START SHOW NOW?" confirm, blue = gamepad
-    #                 reconnect, (in the confirm) red = yes / other = no
-    #   trivia confirm (auto-start jukebox): green = YES, red/other = NO
+    #   setup phase : the panel menu (drivers/panel_menu.py) -- green/red
+    #                 = PREV/MORE, YES/NO, OLDER/NEWER (dark when nothing to
+    #                 do), yellow/blue = back/next, long presses:
+    #                 yellow = page 1, blue = GO NOW, green = diagnostics
+    #   dark (BLACK): ANY button = start the loaded show
+    #   intro phase : ANY button = move on (wheel / stab / first song)
+    #   wheel spin  : ignored
+    #   background music after the show: ANY button = encore
+    #   trivia confirm (jukebox): green = YES, red/other = NO
     #   live round / Simon input : all four = answer / pad presses
     #   graded round waiting     : any = skip the wait
     #   DJ mode, live, idle      : green = Simon, red = next song (reject),

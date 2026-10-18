@@ -210,8 +210,10 @@
       <a href="/" class="active">Remote</a>
       <a href="/library">File Manager</a>
       <a href="/setup">Setup</a>
+      <a href="/designer">Show Designer</a>
       <a href="/joyassign">Joy Assign</a>
       <a href="/questions">Questions</a>
+      <a href="#" onclick="fetch('/auth/logout',{method:'POST'}).then(()=>location.reload());return false">Log out</a>
     </div>
   </div>
   <h1>Game Show Orchestrator &mdash; Remote</h1>
@@ -320,9 +322,10 @@
        show_engine.begin_intro() the physical joystick's X- axis already
        calls during this phase. -->
   <section id="dark-lockdown" style="display:none">
-    <div class="lockdown-label">Show armed &mdash; holding dark</div>
-    <button class="btn primary big" id="begin-intro-btn" onclick="beginIntro()">BEGIN INTRO</button>
-    <div class="lockdown-hint" id="begin-intro-hint">Starts ShowStart.mp3 and the LED intro choreography.<br>Press when the room's ready for the show to begin. (Green panel button does the same.)</div>
+    <div class="lockdown-label">Show <span id="dark-show-name"></span> loaded &mdash; holding BLACK</div>
+    <button class="btn primary big" id="begin-intro-btn" onclick="beginIntro()">BEGIN</button>
+    <div class="lockdown-hint" id="begin-intro-hint">Starts the show. Any panel button does the same.</div>
+    <button class="btn big" style="margin-top:10px" onclick="backToMenu()">BACK TO SHOW MENU</button>
   </section>
 
   <!-- Show-start lockdown (2026-08-18): shown ONLY while show_phase ==
@@ -336,8 +339,8 @@
        only thing offered here. -->
   <section id="intro-lockdown" style="display:none">
     <div class="lockdown-label">Show is starting &mdash; intro playing</div>
-    <button class="btn primary big" onclick="skipIntro()">PLAY TRACK</button>
-    <div class="lockdown-hint">Cues the first track and hands off to live gameplay.<br>Press when the host's spoken intro is wrapping up.</div>
+    <button class="btn primary big" onclick="skipIntro()">GO TO THE MUSIC</button>
+    <div class="lockdown-hint">The intro theme loops under the host until this (or any panel button):<br>then the wheel or "Let's Play" and the first song.</div>
   </section>
 
   <!-- Full panel: only rendered once show_phase == "live" (see
@@ -348,20 +351,12 @@
        disclosure at the bottom. -->
   <div id="live-panel" style="display:none">
 
-    <!-- Unattended-autoplay fallback (2026-08-19): shown only while
-         state.show_unattended_autoplay is true -- the Setup/"READY" page
-         sat untouched for 30s and the show started itself (straight to a
-         track, no dark pause, no intro choreography). Lets the host tell
-         this apart from a real "Start Game" and drop back to a blank
-         Setup screen instead of leaving an unhosted show running, or
-         instead of ending it via Stop Game (which would run the full
-         champion-banner/ShowEnd.mp3 outro over a show nobody hosted). -->
-    <div id="unattended-banner" style="display:none; background:#4a2f0f; border:1px solid #f5a623; border-radius:10px; padding:12px 14px; margin-bottom:14px;">
-      <div style="font-weight:700; color:#ffd28a; margin-bottom:2px;">&#9888; UNATTENDED AUTOPLAY</div>
-      <div style="font-size:.82rem; color:#ccc; margin-bottom:10px;">
-        Setup sat untouched for 30s, so the show started itself &mdash; running since <span id="unattended-since"></span>.
-      </div>
-      <button class="btn danger" onclick="resetUnattended()">RESET TO SETUP</button>
+    <!-- Saved show running (drivers/show_runner.py) / after-show background
+         music (2026-10-17). BACK TO SHOW MENU = full reset to the panel menu. -->
+    <div id="show-banner" style="display:none; background:#132a3a; border:1px solid #3a7bd5; border-radius:10px; padding:12px 14px; margin-bottom:14px;">
+      <div style="font-weight:700; color:#9cc9ff; margin-bottom:2px;" id="show-banner-title"></div>
+      <div style="font-size:.82rem; color:#ccc; margin-bottom:10px;" id="show-banner-text"></div>
+      <button class="btn" onclick="backToMenu()">BACK TO SHOW MENU</button>
     </div>
 
     <section>
@@ -378,6 +373,10 @@
         <label style="display:flex;align-items:center;gap:6px;font-weight:700;margin-left:8px">
           <input type="checkbox" id="sfx-checkbox" onchange="sfxToggle()">
           SFX (SWEEPERS + GAME)
+        </label>
+        <label style="display:flex;align-items:center;gap:6px;font-weight:700;margin-left:8px">
+          <input type="checkbox" id="autoadvance-checkbox" onchange="autoAdvanceToggle()">
+          AUTO-ADVANCE AFTER QUIZ
         </label>
       </div>
     </section>
@@ -1656,6 +1655,9 @@ function transportPrev() { api('/api/transport/prev', { method: 'POST' }); }
 function announcementsToggle() {
   api('/api/announcement/toggle', { method: 'POST' }).then(refreshGamepadStatus);
 }
+function autoAdvanceToggle() {
+  api('/api/autoadvance/toggle', { method: 'POST' }).then(refreshGamepadStatus);
+}
 function sfxToggle() {
   api('/api/sfx/toggle', { method: 'POST' }).then(refreshGamepadStatus);
 }
@@ -1690,12 +1692,10 @@ function startNewGame() {
   window.location = '/setup';
 }
 
-// Unattended-autoplay fallback (2026-08-19) -- see #unattended-banner
-// above. No confirmation modal like Stop Game gets: unattended autoplay
-// never had a host running it, so there's no in-progress official show to
-// accidentally cut off.
-function resetUnattended() {
-  api('/api/show/reset-unattended', { method: 'POST' }).then(refreshGamepadStatus);
+// Full reset (2026-10-17): stop everything and bring the panel menu back.
+function backToMenu() {
+  if (!confirm('Stop everything and go back to the show menu on the panels?')) return;
+  api('/api/show/back-to-menu', { method: 'POST' }).then(refreshGamepadStatus);
 }
 
 let _winScoreLoaded = false;
@@ -1768,18 +1768,23 @@ async function refreshGamepadStatus() {
   // actually flipped to "live" -- not optimistically the instant a
   // lockdown button is tapped.
   document.getElementById('dark-lockdown').style.display = (d.show_phase === 'dark') ? '' : 'none';
-  document.getElementById('begin-intro-btn').textContent = d.show_skip_intro ? 'START SHOW (first track)' : 'BEGIN INTRO';
-  document.getElementById('begin-intro-hint').innerHTML = d.show_skip_intro
-    ? "Skips the intro and goes straight to the first track.<br>Press when the room's ready. (Green panel button does the same.)"
-    : "Starts ShowStart.mp3 and the LED intro choreography.<br>Press when the room's ready for the show to begin. (Green panel button does the same.)";
+  document.getElementById('dark-show-name').textContent = d.show_selected || '';
   document.getElementById('intro-lockdown').style.display = (d.show_phase === 'intro') ? '' : 'none';
   document.getElementById('live-panel').style.display = (d.show_phase === 'live') ? '' : 'none';
 
-  document.getElementById('unattended-banner').style.display = d.show_unattended_autoplay ? '' : 'none';
-  if (d.show_unattended_autoplay && d.show_unattended_autoplay_started_at) {
-    const since = new Date(d.show_unattended_autoplay_started_at * 1000);
-    document.getElementById('unattended-since').textContent =
-      since.toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'});
+  const banner = document.getElementById('show-banner');
+  if (d.show_background) {
+    banner.style.display = '';
+    document.getElementById('show-banner-title').textContent = 'AFTER THE SHOW — BACKGROUND MUSIC';
+    document.getElementById('show-banner-text').textContent = 'Easy-listening songs. Any panel button starts an encore.';
+  } else if (d.show_running) {
+    banner.style.display = '';
+    document.getElementById('show-banner-title').textContent = 'SHOW: ' + d.show_running;
+    document.getElementById('show-banner-text').textContent = d.show_mode === 'record'
+      ? 'New show — recording the songs as they play.'
+      : 'Playing the saved playlist; it stops after the last song.';
+  } else {
+    banner.style.display = 'none';
   }
 
   if (d.show_phase !== 'live') {
@@ -1787,6 +1792,7 @@ async function refreshGamepadStatus() {
   }
 
   document.getElementById('announcements-checkbox').checked = !!d.auto_announce_enabled;
+  document.getElementById('autoadvance-checkbox').checked = !!d.auto_advance_after_quiz;
   document.getElementById('sfx-checkbox').checked = !!d.sfx_enabled;
 
   const count = d.quiz_player_count || 0;

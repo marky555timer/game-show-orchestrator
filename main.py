@@ -44,6 +44,8 @@ from inputs import joypad_manual
 from web import remote_server
 from web import qr_popup
 from drivers import tunnel_engine
+from drivers import web_sync
+from drivers import status_display_engine
 
 def _handle_sigterm(signum, frame):
     # Fires when the OS itself is shutting down (systemd stopping the
@@ -68,6 +70,8 @@ def main():
     secondary_canvas.init()
     joypad_manual.write_manual()
     tunnel_engine.start()
+    web_sync.start()
+    status_display_engine.start()
     simon_hardware.init()
     recovery_button.init()
     shutdown_button.init()
@@ -76,20 +80,18 @@ def main():
 
     # Sync the DJ engine's internal volume trackers (audio/dj_engine.py's
     # _master_volume, midi_driver's own _current_fader_pct) to state.music_volume
-    # right away, rather than letting the 600ms intro-handoff tween
-    # (show_engine.py::_finish_intro) be the first thing to catch them up --
+    # right away, rather than letting the first song's fade-in tween
+    # (show_engine.py::_start_song) be the first thing to catch them up --
     # otherwise the first live track can briefly play louder than the
     # configured starting volume while that tween is still ramping down
     # from the stale 100%-default trackers.
     set_dj_volume(state.music_volume)
 
-    # Trivia Night show flow (2026-08-13): the deck stays silent at launch
-    # now -- state.show_phase starts at "setup", LEDs show "START UP", and
-    # the first real track only starts once the ShowStart.mp3 intro
-    # choreography finishes (drivers/show_engine.py::_finish_intro(), which
-    # fires the same announced-transition call this used to make here at
-    # boot). See drivers/show_engine.py for the whole Setup -> Countdown ->
-    # scripted open -> live show -> scripted close flow.
+    # The deck stays silent at launch: state.show_phase starts at "setup" --
+    # the panel menu (drivers/panel_menu.py) -- and the first song only
+    # starts once a saved show is run and its open finishes. See
+    # drivers/show_engine.py for the whole menu -> BLACK -> intro -> live ->
+    # outro flow.
 
     print("\n==========================================")
     print(" 6-PANEL LED MATRIX & NATIVE DJ ORCHESTRATOR ")
@@ -110,8 +112,8 @@ def main():
     print("                     Left Arrow (dev shim) = Back track, X- axis or Right Arrow = Next track,")
     print("                     X+ axis = Back track (previous-track, mirrors X-).")
     print("                     TRIVIA NIGHT INTRO: X- axis or Right Arrow = end the intro NOW and start")
-    print("                     the live show (the intro has no fixed end time -- this is the only way")
-    print("                     out of it, so the host's live spoken intro gets as much room as needed).")
+    print("                     the live show (the intro never ends on its own: after the decade wheel")
+    print("                     lands it holds, blinking, until this plays the song cued from that decade).")
     print("                     Btn2 = Normal trivia: instant pull from pre-fetch queue (10s cold-start")
     print("                     timeout -> offline fallback if AI-exhausted, else buzz)")
     print("                     Btn3 TAP = QR popup for the mobile Web Remote (2nd tap or 10s = auto")

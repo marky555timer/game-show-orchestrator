@@ -37,9 +37,28 @@ def stop_previous_audio():
     protects against being auto-*assigned*, not against a blanket call like
     this one. Skipping channels < RESERVED_CHANNEL_COUNT leaves the DJ
     engine's own volume/ramp state as the only thing that ever touches
-    those channels."""
+    those channels.
+
+    2026-10-16: also skips the show intro/end themes -- they share this
+    pool, so a buzzer or ding during the intro (e.g. a leftover mystery
+    round grading itself) was fading the intro theme out mid-play.
+    2026-10-17: same for the show-open music bed (drivers/show_bed.py)."""
+    protected = (show_intro_sound, show_end_sound)
     for i in range(RESERVED_CHANNEL_COUNT, pygame.mixer.get_num_channels()):
-        pygame.mixer.Channel(i).fadeout(250)
+        ch = pygame.mixer.Channel(i)
+        snd = ch.get_sound()
+        if snd is not None and (snd in protected or any(snd is p for p in _protected_sounds)):
+            continue
+        ch.fadeout(250)
+
+
+_protected_sounds = []
+
+
+def protect_sound(sound):
+    """Keeps stop_previous_audio() off `sound` (drivers/show_bed.py)."""
+    if sound is not None and not any(sound is p for p in _protected_sounds):
+        _protected_sounds.append(sound)
 
 def apply_reverb_to_sound(sound, delay_ms=45, decay=0.45, num_reflections=4):
     """Applies a custom delay/reflection DSP reverb filter to a Pygame Sound asset."""
@@ -208,7 +227,7 @@ def pick_random_applause():
 
 # Trivia Night show-flow bookends (drivers/show_engine.py) -- fixed single
 # files, not a folder-of-variants pool like the two above.
-show_start_sound = load_sound(config.SHOW_START_MUSIC_PATH, fallback_freq=440)
+show_intro_sound = load_sound(config.SHOW_INTRO_MUSIC_PATH, fallback_freq=440)
 show_end_sound = load_sound(config.SHOW_END_MUSIC_PATH, fallback_freq=440)
 
 # ------------------------------------------------------------
@@ -487,6 +506,20 @@ def stop_all_arcade_audio():
         sound.stop()
 
 
+# Quiz/game SFX that play on the aux USB speaker (max volume, full left)
+# instead of the main mixer -- see drivers/sfx_engine.py. Only sounds backed
+# by a real file can go; the synthesized ones stay on the main mixer.
+_SFX_DIR = ("audio", "sound_effects")
+_AUX_SFX = {
+    id(raw_buzzer): config.resource_path(*_SFX_DIR, "buzzer.wav"),
+    id(raw_ding): config.resource_path(*_SFX_DIR, "dingSingle.wav"),
+    id(raw_bigwin): config.resource_path(*_SFX_DIR, "bigWin.wav"),
+    id(raw_coin): config.resource_path(*_SFX_DIR, "mario_coin.wav"),
+    id(raw_buzz_short): config.resource_path(*_SFX_DIR, "buzzShort.wav"),
+}
+_AUX_SFX = {k: v for k, v in _AUX_SFX.items() if os.path.exists(v)}
+
+
 def play_processed_sound(sound_asset, volume=1.0, loops=0):
     """Plays audio asset through the active reverb DSP filter if enabled, at
     `volume` (0.0-1.0, a call site's own RELATIVE level -- e.g. Space
@@ -512,8 +545,15 @@ def play_processed_sound(sound_asset, volume=1.0, loops=0):
     Wrapped in try/except so a mixer failure (e.g. exhausted channels) can
     never break game-state logic."""
     try:
+        aux_path = _AUX_SFX.get(id(sound_asset))
+        if aux_path and loops == 0:
+            from drivers import sfx_engine
+            if sfx_engine.play_replacing(aux_path):
+                return None
         target = sound_asset
-        if reverb_enabled:
+        # Show themes skip reverb: a processed copy would be a different Sound
+        # object and lose stop_previous_audio()'s protection.
+        if reverb_enabled and sound_asset not in (show_intro_sound, show_end_sound):
             target = apply_reverb_to_sound(sound_asset)
         master = state.music_volume / 100.0
         final_volume = max(0.0, min(1.0, volume)) * master

@@ -1442,7 +1442,13 @@ def _sync_panel_leds():
             simon_hardware.set_led(color, (flash_on and i == state.factoid_correct_index) or pressed[i])
         _panel_led_state = None  # force a resync once the round goes live again
         return
-    if state.trivia_confirm_active:
+    if state.show_phase == "setup":
+        # Panel menu: a button's LED is lit when it does something on this
+        # page (its panel 3-6 shows the label) -- drivers/panel_menu.py.
+        from drivers import panel_menu
+        labels = panel_menu.view()["buttons"]
+        base = tuple(bool(labels.get(c)) for c in config.SIMON_HW_COLOR_ORDER)
+    elif state.trivia_confirm_active:
         # "TRIVIA QUESTION?": green = yes / red = no are the live answers
         base = tuple(c in ("green", "red") for c in config.SIMON_HW_COLOR_ORDER)
     elif live_round_engine.is_round_active():
@@ -1499,9 +1505,8 @@ def process_events():
 
     for event in pygame.event.get():
         if event.type in (pygame.JOYBUTTONDOWN, pygame.JOYHATMOTION, pygame.KEYDOWN):
-            # Unattended-autoplay fallback (drivers/show_engine.py): any
-            # deliberate physical-rig press resets the Setup-page idle
-            # clock. Cheap no-op outside show_phase == "setup".
+            # Panel menu hands-off rule (drivers/panel_menu.py): any
+            # deliberate physical press means someone is at the rig.
             show_engine.mark_operator_interaction()
 
         if event.type == pygame.QUIT:
@@ -1613,22 +1618,16 @@ def process_events():
                 elif event.axis in (0, 6) and val != last_axis_x:
                     last_axis_x = val
                     if val == -1 and state.show_phase == "dark":
-                        # Trivia Night show flow (2026-08-18): the
-                        # operator's manual cue to leave the silent dark
-                        # pause and actually start the scripted open.
+                        # BLACK: the operator's cue to start the loaded show.
                         # Takes priority over the normal MODE_DJ mapping
                         # below for the same reason the intro-skip branch
                         # does -- nothing useful happens from the deck
                         # during dark/intro anyway.
                         show_engine.begin_intro()
                     elif val == -1 and state.show_phase == "intro":
-                        # Trivia Night show flow (2026-08-13): during the
-                        # scripted open, X- ends the intro immediately and
-                        # hands off into live gameplay -- the intro has no
-                        # fixed end time anymore, so this is the ONLY thing
-                        # that ends it, giving the live host's own spoken
-                        # intro over the ShowStart.mp3 music as much room as
-                        # they need. Takes priority over the normal
+                        # Intro theme looping under the host: X- moves the
+                        # show on (wheel / stab / first song). Takes
+                        # priority over the normal
                         # MODE_DJ "Next Track" mapping below, which
                         # wouldn't do anything useful anyway since the deck
                         # is silent throughout the intro.

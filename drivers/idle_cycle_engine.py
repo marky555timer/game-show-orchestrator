@@ -53,6 +53,15 @@ def update(now):
         # every phase's timeout on the very first frame).
         state.idle_cycle_phase_started_at = now
 
+    # Auto-advance after quiz: after a question round, show the leaderboard
+    # from the top so "reviewed" means it was actually seen.
+    if state.auto_advance_after_quiz and state.autoadv_need_leaderboard:
+        state.autoadv_need_leaderboard = False
+        if state.quiz_players:
+            _enter_phase("leaderboard", now)
+        else:
+            state.autoadv_leaderboard_reviewed = True  # nobody to rank
+
     elapsed = now - state.idle_cycle_phase_started_at
     phase = state.idle_cycle_phase
 
@@ -68,6 +77,7 @@ def update(now):
             page_count = _leaderboard_page_count()
             next_page = state.idle_cycle_leaderboard_page + 1
             if page_count == 0 or next_page >= page_count:
+                state.autoadv_leaderboard_reviewed = state.autoadv_questions_asked > 0
                 _enter_phase("goal", now)
             else:
                 state.idle_cycle_leaderboard_page = next_page

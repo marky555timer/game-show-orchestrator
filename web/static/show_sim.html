@@ -1,0 +1,972 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Show Preview</title>
+<style>
+  :root {
+    color-scheme: dark;
+    --bg: #0b0b0d; --panel: #17171a; --line: #2a2a2e; --text: #f2f2f2; --muted: #8a8a90; --accent: #ff3b30;
+    --cab: #141016; --led-off: #2a0b08; --led-on: #ff2d1c;
+    --green: #22c55e; --red: #ef4444; --yellow: #facc15; --blue: #3b82f6;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text); font-family: -apple-system, Segoe UI, Roboto, sans-serif; }
+  .wrap { display: grid; grid-template-columns: minmax(0, 1fr) 340px; gap: 16px; padding: 16px; max-width: 1400px; margin: 0 auto; }
+  @media (max-width: 900px) { .wrap { grid-template-columns: 1fr; } }
+  h1 { font-size: 1rem; text-transform: uppercase; letter-spacing: .08em; color: var(--accent); margin: 0 0 4px; }
+  .sub { color: var(--muted); font-size: .8rem; margin-bottom: 12px; }
+  .stage { background: #050506; border-radius: 12px; padding: 12px; }
+  canvas { width: 100%; height: auto; display: block; }
+  /* two rows like the cabinet: green red / yellow blue */
+  .buttons { display: grid; grid-template-columns: repeat(2, 64px); justify-content: center; gap: 30px 44px; padding: 14px 0 6px; }
+  .arcade { width: 64px; height: 64px; border-radius: 50%; border: 3px solid #000; cursor: pointer; position: relative;
+            box-shadow: inset 0 -6px 0 rgba(0,0,0,.35); transition: filter .1s, transform .05s; filter: brightness(.35); }
+  .arcade.lit { filter: brightness(1); box-shadow: inset 0 -6px 0 rgba(0,0,0,.35), 0 0 18px var(--glow); }
+  .arcade:active { transform: translateY(2px); }
+  .arcade span { position: absolute; top: 70px; left: 50%; transform: translateX(-50%); font-size: .7rem; color: var(--muted); white-space: nowrap; }
+  .g { background: #22c55e; --glow: #22c55e; } .r { background: #ef4444; --glow: #ef4444; }
+  .y { background: #facc15; --glow: #facc15; } .b { background: #3b82f6; --glow: #3b82f6; }
+  .hint { text-align: center; color: var(--muted); font-size: .75rem; margin-top: 22px; }
+  aside section { background: var(--panel); border-radius: 10px; padding: 12px; margin-bottom: 12px; }
+  h2 { font-size: .72rem; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); margin: 0 0 8px; }
+  .now { font-size: .95rem; font-weight: 700; min-height: 1.3em; overflow-wrap: anywhere; }
+  .now small { display: block; color: var(--muted); font-weight: 400; font-size: .8rem; margin-top: 2px; }
+  .clock { font-variant-numeric: tabular-nums; color: var(--muted); font-size: .8rem; margin-top: 6px; }
+  .bar { height: 4px; background: #2a2a2e; border-radius: 2px; margin-top: 6px; overflow: hidden; }
+  .bar i { display: block; height: 100%; width: 0; background: var(--accent); }
+  .btn { padding: 7px 10px; border-radius: 8px; border: 1px solid #333; background: #202024; color: var(--text); font: inherit;
+         font-size: .8rem; cursor: pointer; }
+  .btn:hover { border-color: #555; } .btn.primary { background: var(--accent); border-color: var(--accent); font-weight: 700; }
+  .btn:disabled { opacity: .35; cursor: default; }
+  .row { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+  label { font-size: .8rem; color: #bbb; display: flex; gap: 6px; align-items: center; }
+  .plist { max-height: 46vh; overflow-y: auto; display: flex; flex-direction: column; gap: 3px; }
+  .it { display: grid; grid-template-columns: 22px minmax(0,1fr) auto; gap: 6px; padding: 5px 7px; border-radius: 6px;
+        background: #1d1d21; font-size: .78rem; cursor: pointer; border: 1px solid transparent; }
+  .it:hover { border-color: #444; }
+  .it.cur { border-color: var(--accent); background: #2a1715; }
+  .it.done { opacity: .5; }
+  .it.skip { opacity: .35; text-decoration: line-through; cursor: default; }
+  .it .n { color: var(--muted); text-align: right; }
+  .it .t { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .it .t small { color: var(--muted); }
+  .it .e { color: var(--muted); font-size: .7rem; }
+  .note { color: var(--muted); font-size: .72rem; margin-top: 6px; line-height: 1.4; }
+  .toast { position: fixed; left: 50%; bottom: 16px; transform: translateX(-50%); background: #202024; border: 1px solid #333;
+           border-radius: 8px; padding: 8px 14px; font-size: .85rem; opacity: 0; transition: opacity .2s; pointer-events: none; }
+  .toast.show { opacity: 1; }
+  .qcard { border: 1px solid #3a3a40; }
+  .qcard[hidden] { display: none; }
+  .qmeta { font-size: .72rem; color: var(--muted); display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+  .qmeta .dot { width: 9px; height: 9px; border-radius: 50%; display: inline-block; }
+  .qtext { font-size: 1.05rem; font-weight: 700; margin: 6px 0 10px; line-height: 1.35; }
+  .qch { display: flex; gap: 10px; align-items: center; width: 100%; text-align: left; padding: 8px 10px; margin-bottom: 5px;
+         border-radius: 8px; border: 1px solid #333; background: #1d1d21; color: var(--text); font: inherit; font-size: .9rem; cursor: pointer; }
+  .qch:hover { border-color: #555; }
+  .qch i { flex: 0 0 18px; height: 18px; border-radius: 50%; }
+  .qch.right { border-color: #22c55e; background: #12301c; }
+  .qch.wrong { border-color: #ef4444; background: #341515; }
+  .qch.dim { opacity: .45; }
+  .qres { font-weight: 700; margin: 8px 0 4px; }
+  .qfact { color: #c9c9cf; font-size: .82rem; line-height: 1.45; }
+  .qnext { color: var(--muted); font-size: .72rem; margin-top: 8px; }
+  .loading { position: absolute; inset: 0; display: grid; place-items: center; color: var(--muted); font-size: .9rem; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <main>
+    <h1 id="title">Show preview</h1>
+    <div class="sub" id="subtitle">Loading…</div>
+    <div class="stage">
+      <canvas id="cab" width="1190" height="1010"></canvas>
+      <div class="buttons">
+        <button class="arcade g" data-c="green" title="Green (key 1)"><span>1</span></button>
+        <button class="arcade r" data-c="red" title="Red (key 2)"><span>2</span></button>
+        <button class="arcade y" data-c="yellow" title="Yellow (key 3)"><span>3</span></button>
+        <button class="arcade b" data-c="blue" title="Blue (key 4)"><span>4</span></button>
+      </div>
+      <div class="hint" id="hint">Press any lit button (or keys 1–4) to start.</div>
+    </div>
+  </main>
+  <aside>
+    <section>
+      <h2>Now</h2>
+      <div class="now" id="now">BLACK — waiting for a button</div>
+      <div class="bar"><i id="bar"></i></div>
+      <div class="clock" id="clock"></div>
+    </section>
+    <section class="qcard" id="qcard" hidden>
+      <h2>Question</h2>
+      <div class="qmeta" id="qmeta"></div>
+      <div class="qtext" id="qtext"></div>
+      <div id="qchoices"></div>
+      <div class="bar"><i id="qbar"></i></div>
+      <div id="qafter"></div>
+    </section>
+    <section>
+      <div class="row">
+        <button class="btn primary" id="restart">RESTART</button>
+        <button class="btn" id="jump" title="Skip ahead to 10 seconds before this song ends">&#9193; 10 s BEFORE THE END</button>
+      </div>
+      <div class="row" style="margin-top:10px">
+        <label><input type="checkbox" id="handsoff"> Hands-off (no host)</label>
+        <label>Vol <input type="range" id="vol" min="0" max="100" value="80"></label>
+      </div>
+      <div class="note" id="note"></div>
+    </section>
+    <section>
+      <h2>Playlist <span id="total" style="float:right"></span></h2>
+      <div class="plist" id="plist"></div>
+    </section>
+    <section>
+      <div class="note">
+        A preview, not the real thing: the panels show the intro, the wheel and the questions the way the
+        show machine draws them (each song's real saved questions), but during songs they show a stand-in (title and a music-driven
+        animation) instead of each song's own look. Music here is a low-quality copy.
+        <span id="where"></span>
+      </div>
+    </section>
+  </aside>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+// ===================================================================== data
+// Served by the Pi at /designer/sim and by triviacade.com/play/designer/?page=sim
+// (tools/publish_web_designer.py copies this file there). Show + song list come
+// from the same endpoints as the Show Designer page.
+const WEB = location.pathname.startsWith('/play/designer');
+const SHOW_NAME = new URLSearchParams(location.search).get('show') || '';
+const EP = WEB ? { shows: 'api.php?a=shows', songs: 'api.php?a=songs', questions: 'api.php?a=questions' }
+                : { shows: '/api/shows', songs: '/api/shows/songs', questions: '/api/shows/questions' };
+let CAT = null, SIM = null, SHOW = null, PLAN = [], QS = { songs: {}, timeout: 30, solo_excluded: [] };
+
+function songUrl(s) { return WEB ? 'api.php?a=audio&id=' + s.pid : '/api/library/audio?filename=' + encodeURIComponent(s.file); }
+function bedUrl(name) { return WEB ? 'api.php?a=audio&id=' + CAT.bed[name] : '/api/shows/bed-audio?name=' + encodeURIComponent(name); }
+async function getJSON(url) {
+  const r = await fetch(url);
+  if (r.status === 401) { location.href = WEB ? location.pathname : '/auth/login?next=' + encodeURIComponent(location.pathname + location.search); throw new Error('login'); }
+  return r.json();
+}
+let _toastT = null;
+function toast(msg) {
+  const el = document.getElementById('toast'); el.textContent = msg; el.classList.add('show');
+  clearTimeout(_toastT); _toastT = setTimeout(() => el.classList.remove('show'), 2200);
+}
+function fmt(sec) {
+  sec = Math.max(0, Math.round(sec || 0));
+  const h = Math.floor(sec / 3600), m = Math.floor((sec % 3600) / 60), s = sec % 60;
+  return h ? `${h}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}` : `${m}:${String(s).padStart(2, '0')}`;
+}
+function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, (c) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function decLabel(d) { return (d && d.startsWith('19')) ? d.slice(2) : (d || ''); }
+function stabRoot(d) { return d && d.startsWith('19') ? d.slice(2) : d; }
+
+// The show as the show machine would run it (drivers/show_runner.py::begin):
+// missing songs are skipped; a spin with no song after it, or whose song's
+// decade has no slot on the wheel, is skipped too.
+function buildPlan() {
+  const byFile = {};
+  CAT.songs.forEach((s) => { byFile[s.file] = s; });
+  const items = (SHOW.items || []).map((it) => {
+    if (it.type === 'song') {
+      const s = byFile[it.file];
+      return s ? { type: 'song', song: s, ending: it.ending || 'full', at: it.at } :
+                 { type: 'song', skip: 'missing from the library', label: it.title || it.file };
+    }
+    return { type: 'spin' };
+  });
+  for (let i = 0; i < items.length; i++) {
+    const it = items[i];
+    if (it.type !== 'spin') continue;
+    const nx = items.slice(i + 1).find((x) => !x.skip);
+    if (!nx || nx.type !== 'song') { it.skip = 'no song after it'; continue; }
+    const dec = nx.song.decade;
+    if (!dec) it.skip = 'next song has no decade';
+    else if (!(CAT.wheel_decades || []).includes(dec)) it.skip = `no ${decLabel(dec)} slot on the wheel`;
+    else it.decade = dec;
+  }
+  return items;
+}
+function endPoint(it) {
+  if (it.ending === 'cut') return Number(it.at) || 0;
+  return it.song.cue_out || it.song.duration || 0;
+}
+
+// =================================================================== audio
+let ctx = null, master = null, musicBus = null, analyser = null, freq = null;
+const BUF = {};             // bed file name -> AudioBuffer
+function initAudio() {
+  if (ctx) return;
+  ctx = new (window.AudioContext || window.webkitAudioContext)();
+  master = ctx.createGain(); master.gain.value = Number(document.getElementById('vol').value) / 100;
+  analyser = ctx.createAnalyser(); analyser.fftSize = 256; analyser.smoothingTimeConstant = 0.75;
+  freq = new Uint8Array(analyser.frequencyBinCount);
+  musicBus = ctx.createGain();
+  musicBus.connect(analyser); analyser.connect(master); master.connect(ctx.destination);
+}
+async function loadBed() {
+  const names = Object.keys(CAT.bed || {});
+  await Promise.all(names.map(async (n) => {
+    try {
+      const r = await fetch(bedUrl(n));
+      BUF[n] = await ctx.decodeAudioData(await r.arrayBuffer());
+    } catch (e) { console.warn('bed', n, e); }
+  }));
+}
+function playBuf(name, { gain = 1, loop = false, loopStart = 0, loopEnd = 0 } = {}) {
+  const b = BUF[name];
+  if (!b) return null;
+  const src = ctx.createBufferSource(); src.buffer = b;
+  if (loop) { src.loop = true; src.loopStart = loopStart; src.loopEnd = loopEnd; }
+  const g = ctx.createGain(); g.gain.value = gain;
+  src.connect(g).connect(musicBus);
+  src.start();
+  return { src, g, dur: b.duration, started: ctx.currentTime };
+}
+function stopNode(n, fade = 0) {
+  if (!n) return;
+  const t = ctx.currentTime;
+  try {
+    n.g.gain.cancelScheduledValues(t); n.g.gain.setValueAtTime(n.g.gain.value, t);
+    n.g.gain.linearRampToValueAtTime(0, t + Math.max(0.02, fade));
+    n.src.stop(t + Math.max(0.02, fade) + 0.05);
+  } catch (e) { /* already stopped */ }
+}
+
+class Deck {
+  constructor(song) {
+    this.song = song;
+    this.el = new Audio(); this.el.preload = 'auto'; this.el.src = songUrl(song);
+    this.node = ctx.createMediaElementSource(this.el);
+    this.g = ctx.createGain(); this.g.gain.value = 0;
+    this.node.connect(this.g).connect(musicBus);
+    this.el.addEventListener('error', () => { this.failed = true; });
+  }
+  play(fadeIn) {
+    const t = ctx.currentTime, g = this.g.gain;
+    g.cancelScheduledValues(t); g.setValueAtTime(fadeIn ? 0.0001 : 1, t);
+    if (fadeIn) g.linearRampToValueAtTime(1, t + fadeIn);
+    return this.el.play().catch((e) => { console.warn(e); this.failed = true; });
+  }
+  fadeOut(sec) {
+    const t = ctx.currentTime, g = this.g.gain;
+    g.cancelScheduledValues(t); g.setValueAtTime(g.value, t); g.linearRampToValueAtTime(0, t + sec);
+    setTimeout(() => this.dispose(), sec * 1000 + 150);
+  }
+  dispose() { try { this.el.pause(); this.el.removeAttribute('src'); this.el.load(); this.node.disconnect(); } catch (e) {} }
+}
+
+// ================================================================== engine
+// Phases: black, intro, spinfade, wheel, song, quiz, end.
+const S = {
+  phase: 'black', idx: -1, t0: 0, introNode: null, introMovedOn: false, introMoveAt: 0, after: null,
+  wheel: null, deck: null, next: null, nextIdx: -1, quiz: null, wipeAt: 0, lastStab: {}, playedUntil: -1,
+  startedAt: 0, asked: new Set(),   // artists already asked "Who is this?" about
+};
+function now() { return ctx ? ctx.currentTime : performance.now() / 1000; }
+function handsOff() { return document.getElementById('handsoff').checked; }
+
+function resetAll() {
+  if (S.introNode) stopNode(S.introNode, 0.3);
+  if (S.wheel && S.wheel.node) stopNode(S.wheel.node, 0.1);
+  if (S.wheel && S.wheel.stab) stopNode(S.wheel.stab, 0.2);
+  if (S.deck) S.deck.fadeOut(0.3);
+  if (S.next && S.next !== S.deck) S.next.dispose();
+  Object.assign(S, { phase: 'black', idx: -1, introNode: null, introMovedOn: false, after: null, wheel: null,
+                     deck: null, next: null, nextIdx: -1, quiz: null, playedUntil: -1, startedAt: 0, asked: new Set() });
+  renderList(); updateNow(); renderQuizCard();
+}
+
+async function startShow() {
+  initAudio();
+  await ctx.resume();
+  S.startedAt = now();
+  if (SHOW.intro) startIntro(); else proceed(0, { from: 'start' });
+}
+
+// intro: introTheme from the top, then loop-in -> loop-out ducked under the host
+function startIntro() {
+  S.phase = 'intro'; S.t0 = now(); S.introMovedOn = false;
+  S.introNode = playBuf(SIM.intro_file, { loop: true, loopStart: SIM.loop_in, loopEnd: SIM.loop_out });
+  if (S.introNode) {
+    const g = S.introNode.g.gain, t = S.t0;
+    g.setValueAtTime(1, t + SIM.loop_in);
+    g.linearRampToValueAtTime(SIM.duck, t + SIM.loop_in + SIM.duck_ramp);
+  }
+  updateNow();
+}
+function moveOnFromIntro(swell) {
+  if (S.phase !== 'intro' || S.introMovedOn) return;
+  S.introMovedOn = true;
+  let delay = 0;
+  if (S.introNode) {
+    const g = S.introNode.g.gain, t = now();
+    g.cancelScheduledValues(t); g.setValueAtTime(g.value, t);
+    const up = swell ? SIM.swell : 0;
+    if (swell) g.linearRampToValueAtTime(1, t + up);
+    g.linearRampToValueAtTime(0, t + up + SIM.release_fade);
+    S.introNode.src.stop(t + up + SIM.release_fade + 0.05);
+    delay = up;
+  }
+  S.introMoveAt = now() + delay;
+  S.after = { at: S.introMoveAt, fn: () => proceed(0, { from: 'intro' }) };
+}
+
+// next playable item from i
+function proceed(i, how) {
+  while (i < PLAN.length && PLAN[i].skip) i++;
+  if (i >= PLAN.length) return endShow();
+  const it = PLAN[i];
+  S.idx = i; renderList();
+  if (it.type === 'spin') return startSpin(i, how);
+  if (how.from === 'intro') {
+    // no wheel: LetsPlayStab, the song comes in 1s before it ends
+    const stab = playBuf(SIM.lets_play_file);
+    const len = stab ? stab.dur : 0;
+    S.wheel = { stab, landedAt: now() };
+    S.phase = 'stab';
+    S.after = { at: now() + Math.max(0, len - SIM.stab_lead), fn: () => startSong(i, SIM.dovetail_fade) };
+    preload(i);
+    return;
+  }
+  startSong(i, how.from === 'song' ? SIM.dovetail_fade : 0, how.from === 'song');
+}
+
+function startSpin(i, how) {
+  preload(nextSongIndex(i));
+  if (how.from === 'song' && S.deck) {
+    S.deck.fadeOut(CAT.spin_fade_seconds || 1.5);
+    S.deck = null;
+    S.phase = 'spinfade';
+    S.after = { at: now() + (CAT.spin_fade_seconds || 1.5), fn: () => startWheel(i) };
+    updateNow();
+    return;
+  }
+  startWheel(i);
+}
+function startWheel(i) {
+  const it = PLAN[i];
+  const node = playBuf(SIM.wheel_file);
+  const spin = Math.max(SIM.wheel_min_spin, node ? node.dur : 0);
+  const panel = 3 + CAT.wheel_decades.indexOf(it.decade);
+  const start = { 4: 0, 6: 90, 5: 180, 3: 270 }[panel];
+  S.wheel = { node, started: now(), spin, panel, decade: it.decade, land: start + 45 + (Math.random() * 50 - 25), landed: false };
+  if (S.introNode && !S.introMovedOn) moveOnFromIntro(false);
+  S.phase = 'wheel'; S.wipeAt = 0;
+  updateNow();
+}
+function landWheel() {
+  const w = S.wheel; w.landed = true; w.landedAt = now();
+  if (w.node) stopNode(w.node, 0.02);
+  const root = stabRoot(w.decade);
+  const names = Object.keys(BUF).filter((n) => n === root + '.wav' || n.startsWith(root + '-v'));
+  let pick = names.filter((n) => n !== S.lastStab[root]);
+  if (!pick.length) pick = names;
+  const name = pick.length ? pick[Math.floor(Math.random() * pick.length)] : SIM.lets_play_file;
+  if (!pick.length) toast(`No ${decLabel(w.decade)} stab yet -- LetsPlayStab instead`);
+  S.lastStab[root] = name;
+  w.stab = playBuf(name);
+  const len = w.stab ? w.stab.dur : 0;
+  const songIdx = nextSongIndex(S.idx);
+  S.after = { at: now() + Math.max(0, len - SIM.stab_lead), fn: () => startSong(songIdx, SIM.dovetail_fade) };
+}
+function nextSongIndex(i) {
+  for (let k = i + 1; k < PLAN.length; k++) if (!PLAN[k].skip && PLAN[k].type === 'song') return k;
+  return -1;
+}
+function preload(i) {
+  if (i < 0 || i >= PLAN.length || PLAN[i].type !== 'song' || PLAN[i].skip) return;
+  if (S.nextIdx === i && S.next) return;
+  if (S.next && S.next !== S.deck) S.next.dispose();
+  S.next = new Deck(PLAN[i].song); S.nextIdx = i;
+}
+function startSong(i, fadeIn, crossfade) {
+  if (i < 0) return endShow();
+  const it = PLAN[i];
+  if (S.introNode && S.phase === 'intro') moveOnFromIntro(false);
+  const deck = (S.nextIdx === i && S.next) ? S.next : new Deck(it.song);
+  S.next = null; S.nextIdx = -1;
+  if (S.deck && S.deck !== deck) S.deck.fadeOut(crossfade ? 1.5 : 0.3);
+  S.deck = deck; S.idx = i; S.phase = 'song'; S.wipeAt = now(); S.quiz = null; S.wheel = null;
+  renderQuizCard();
+  deck.play(fadeIn);
+  S.songEnd = endPoint(it);
+  preload(nextPlayable(i));
+  maybeStartQuestions(it);
+  renderList(); updateNow();
+}
+function nextPlayable(i) {
+  for (let k = i + 1; k < PLAN.length; k++) if (!PLAN[k].skip) return PLAN[k].type === 'song' ? k : nextSongIndex(k);
+  return -1;
+}
+function songDone() {
+  // the song reached its ending: next item (a spin fades it out itself)
+  const i = S.idx;
+  S.playedUntil = i;
+  let k = i + 1;
+  while (k < PLAN.length && PLAN[k].skip) k++;
+  if (k >= PLAN.length) return endShow();
+  proceed(k, { from: 'song' });
+}
+function endShow() {
+  if (S.deck) S.deck.fadeOut(2.5);
+  S.deck = null; S.phase = 'end'; S.endAt = now(); S.idx = PLAN.length;
+  renderList(); updateNow();
+}
+
+// arcade buttons -- what each does depends on the moment, like the real panel
+function buttonsLit() {
+  switch (S.phase) {
+    case 'black': case 'intro': return COLORS;
+    case 'song':
+      // a question up: one button per choice (true/false = green + red);
+      // after grading any button moves on; otherwise red = next song
+      if (S.quiz) return !S.quiz.answered ? COLORS.slice(0, curQ().c.length) : COLORS;
+      return ['red'];
+    default: return [];
+  }
+}
+function press(color) {
+  if (!CAT) return;
+  switch (S.phase) {
+    case 'black': startShow(); break;
+    case 'intro': moveOnFromIntro(true); break;
+    case 'song':
+      if (S.quiz) answerQuiz(color);
+      else if (color === 'red') { toast('Next song'); songDone(); }
+      break;
+  }
+  updateButtons();
+}
+// ==================================================================== quiz
+// Like the real show (drivers/mystery_band_engine.py + the Game Mode loop):
+// the first song by an artist not asked about yet opens straight away with
+// "Who is this?" (sparkle -> "Is this:" -> four artists cascade in, 15 s),
+// then runs that song's saved questions back to back (priority order:
+// geography, date, true/false, real name, the rest), 30 s each, ~5 s on the
+// answer. Answers are in button order green / red / yellow / blue; after
+// grading any button skips the wait. A "quiz" ending moves on once they're done.
+const COLORS = ['green', 'red', 'yellow', 'blue'];
+const BULB_RGB = { green: [0, 255, 0], red: [255, 0, 0], yellow: [255, 140, 20], blue: [0, 0, 255] };
+const PRIORITY = { geography: 0, date: 1, true_false: 2, real_name: 3 };
+function T(k, dflt) { return SIM[k] != null ? SIM[k] : dflt; }
+const STAGES = {
+  generated: ['#ef4444', 'not checked yet'], edited: ['#ef4444', 'edited, not checked yet'],
+  audited_corrected: ['#f59e0b', 'corrected by AI, needs your check'], audited_flagged: ['#f59e0b', 'flagged, needs your check'],
+  audited_ok: ['#a3e635', 'AI says OK'], verified: ['#22c55e', 'verified'],
+};
+const CATS = { date: 'Date', true_false: 'True or false', career_stat: 'Career', geography: 'Geography',
+               real_name: 'Real name', song_meaning: 'Song meaning', era: 'Era' };
+function curQ() { return S.quiz && S.quiz.list[S.quiz.n]; }
+function whoIsThis(artist) {
+  // drivers/mystery_band_engine.py::_build_identify_question: 3 other library artists
+  const low = artist.trim().toLowerCase();
+  const pool = [...new Set(CAT.songs.map((s) => (s.artist || '').trim()).filter((a) => a && a.toLowerCase() !== low))];
+  const picks = [];
+  while (picks.length < 3 && pool.length) picks.push(pool.splice(Math.floor(Math.random() * pool.length), 1)[0]);
+  const choices = [artist.trim(), ...picks].map((c) => c.slice(0, 24));
+  for (let i = choices.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [choices[i], choices[j]] = [choices[j], choices[i]]; }
+  return { teaser: true, q: 'Who is this?', c: choices, k: choices.indexOf(artist.trim().slice(0, 24)), cat: 'identify_band', full: '' };
+}
+function maybeStartQuestions(it) {
+  S.quiz = null;
+  const artist = (it.song.artist || '').trim();
+  if (!SHOW.questions || !artist || S.asked.has(artist.toLowerCase())) return renderQuizCard();
+  S.asked.add(artist.toLowerCase());
+  const saved = (QS.songs[it.song.file] || []).filter((q) => q.c && q.c.length >= 2)
+    .map((q, i) => [PRIORITY[q.cat] ?? 99, i, q]).sort((a, b) => a[0] - b[0] || a[1] - b[1]).map((x) => x[2]);
+  S.quiz = { list: [whoIsThis(artist), ...saved], n: 0, at: now(), answered: false, ending: it.ending };
+  renderQuizCard();
+}
+function answerQuiz(color) {
+  const z = S.quiz;
+  if (!z) return;
+  if (z.answered) return nextQuestion();
+  const q = curQ(), pick = COLORS.indexOf(color);
+  if (pick >= q.c.length) return;
+  grade(pick, false);
+}
+function grade(pick, timeout) {
+  const z = S.quiz, q = curQ(), right = !timeout && pick === q.k;
+  // how long the answer stays up: teaser reveal blink; T/F correction gets time
+  // to scroll; otherwise the scorecard / wrong-answer hold (config QUIZ_*)
+  let hold = q.teaser ? T('reveal_blink', 3) : T('scorecard_hold', 5);
+  if (!right && q.correction) hold = Math.max(hold, 2 + (textW(q.correction) + 64) / T('scroll_speed', 30));
+  Object.assign(z, { answered: true, pick: timeout ? -1 : pick, right, timeout, answeredAt: now(), hold });
+  renderQuizCard();
+}
+function nextQuestion() {
+  const z = S.quiz;
+  if (z.n + 1 >= z.list.length) return finishQuiz();
+  Object.assign(z, { n: z.n + 1, at: now(), answered: false, pick: -1 });
+  renderQuizCard();
+}
+function finishQuiz() {
+  const ending = S.quiz && S.quiz.ending;
+  S.quiz = null; renderQuizCard(); updateNow();
+  if (ending === 'quiz') songDone();   // otherwise the song carries on
+}
+
+// =================================================================== frame
+function tick() {
+  requestAnimationFrame(tick);
+  const t = now();
+  if (S.after && t >= S.after.at) { const f = S.after.fn; S.after = null; f(); }
+  if (S.phase === 'intro' && handsOff() && !S.introMovedOn && t - S.t0 >= SIM.hands_off_intro) moveOnFromIntro(false);
+  if (S.phase === 'wheel' && !S.wheel.landed && t - S.wheel.started >= S.wheel.spin) landWheel();
+  if (S.phase === 'song' && S.deck) {
+    const pos = S.deck.el.currentTime;
+    if (S.deck.failed) { toast('Could not play ' + S.deck.song.title); S.deck.failed = false; songDone(); }
+    else if (pos >= S.songEnd - 0.05 || S.deck.el.ended) songDone();
+  }
+  if (S.phase === 'song' && S.quiz) {
+    const z = S.quiz, q = curQ();
+    // hands-off: nobody at the buttons, so don't sit out the whole clock
+    const limit = handsOff() ? 6 : q.teaser ? T('mystery_timeout', 15) : QS.timeout || 30;
+    if (!z.answered) {
+      if (t - z.at >= limit) grade(-1, true);
+      else document.getElementById('qbar').style.width = Math.max(0, 100 - 100 * (t - z.at) / limit) + '%';
+    } else if (t - z.answeredAt >= z.hold) nextQuestion();
+  }
+  draw(t);
+  updateClock(t);
+  updateButtons();
+}
+function renderQuizCard() {
+  const card = document.getElementById('qcard'), z = S.quiz, q = curQ();
+  card.hidden = !z;
+  if (!z) return;
+  const meta = document.getElementById('qmeta'), txt = document.getElementById('qtext');
+  const ch = document.getElementById('qchoices'), after = document.getElementById('qafter');
+  if (q.teaser) {
+    meta.innerHTML = `<span>Question 1 of ${z.list.length}</span><span>· Mystery artist — first song by this artist in the show</span>`;
+  } else {
+    const [dot, stage] = STAGES[q.stage] || STAGES.generated;
+    const phonesOnly = (QS.solo_excluded || []).includes(q.cat) ? ' · asked only when players are on phones' : '';
+    meta.innerHTML = `<span>Question ${z.n + 1} of ${z.list.length}</span><span>· ${esc(CATS[q.cat] || 'Question')}</span>
+      <span>·</span><i class="dot" style="background:${dot}"></i><span>${esc(stage)}${phonesOnly}</span>`;
+  }
+  txt.innerHTML = esc(q.ql || q.q) + (q.ql && q.ql !== q.q ? `<div class="qmeta" style="margin-top:4px">Panels: ${esc(q.q)}</div>` : '');
+  const long = q.cl && q.cl.length === q.c.length ? q.cl : q.c;
+  ch.innerHTML = q.c.map((c, i) => {
+    const cls = !z.answered ? '' : i === q.k ? 'right' : i === z.pick ? 'wrong' : 'dim';
+    return `<button class="qch ${cls}" data-c="${COLORS[i]}"><i style="background:var(--${COLORS[i]})"></i>${esc(long[i])}</button>`;
+  }).join('');
+  ch.querySelectorAll('.qch').forEach((b) => b.addEventListener('click', () => { initAudio(); press(b.dataset.c); }));
+  document.getElementById('qbar').style.width = z.answered ? '0' : '100%';
+  if (!z.answered) { after.innerHTML = ''; return; }
+  const res = z.timeout ? 'Time up' : z.right ? 'Correct!' : 'Wrong';
+  const more = z.n + 1 < z.list.length ? 'Next question in a moment (any button: now)'
+    : (z.list.length === 1 ? 'No saved questions for this song yet — the show machine writes some the first time it plays it. ' : '')
+      + (z.ending === 'quiz' ? 'Then the next song.' : 'Then back to the music.');
+  after.innerHTML = `<div class="qres" style="color:${z.right ? '#22c55e' : '#ef4444'}">${res} — the answer is ${esc(long[q.k] ?? '?')}</div>
+    <div class="qfact">${esc(q.full || '')}${q.correction ? ' ' + esc(q.correction) : ''}</div><div class="qnext">${more}</div>`;
+}
+
+// ============================================================ LED panels
+// 64 x 48 one-bit matrix (panels 1+2 on top, 3+4, 5+6), like the real ones.
+const W = 64, H = 48;
+let M = new Uint8Array(W * H);
+function px(x, y) { if (x >= 0 && x < W && y >= 0 && y < H) M[y * W + x] = 1; }
+function clr(x, y) { if (x >= 0 && x < W && y >= 0 && y < H) M[y * W + x] = 0; }
+function glyph(ch) { const F = SIM.font; return F[ch] || F[ch.toUpperCase()] || F[ch.toLowerCase()] || F[' ']; }
+function textW(s) { let w = 0; for (const ch of String(s)) w += glyph(ch)[0].length + 1; return Math.max(0, w - 1); }
+function text(s, x, y, clip, off) {
+  let cx = x;
+  for (const ch of String(s)) {
+    const g = glyph(ch);
+    for (let r = 0; r < g.length; r++) for (let c = 0; c < g[r].length; c++) {
+      if (g[r][c] !== '1') continue;
+      const X = cx + c, Y = y + r;
+      if (clip && (X < clip[0] || X >= clip[0] + clip[2] || Y < clip[1] || Y >= clip[1] + clip[3])) continue;
+      off ? clr(X, Y) : px(X, Y);
+    }
+    cx += g[0].length + 1;
+  }
+}
+const _scrollT = {};
+function marquee(key, s, box, t, inv) {
+  // centered if it fits; else pause -> scroll left -> loop (graphics/text_render.py)
+  // inv: dark letters on a lit block
+  const tw = textW(s), [x0, y0, w, h] = box, y = y0 + Math.floor((h - 7) / 2);
+  if (inv) for (let yy = y0; yy < y0 + h; yy++) for (let xx = x0; xx < x0 + w; xx++) px(xx, yy);
+  if (tw <= w) { delete _scrollT[key]; return text(s, x0 + Math.floor((w - tw) / 2), y, box, inv); }
+  if (!_scrollT[key] || _scrollT[key].s !== s) _scrollT[key] = { s, t };
+  const run = tw + 6, el = t - _scrollT[key].t, cycle = SIM.scroll_pause + run / SIM.scroll_speed;
+  const p = el % cycle, off = p < SIM.scroll_pause ? 0 : Math.floor((p - SIM.scroll_pause) * SIM.scroll_speed);
+  text(s, x0 - off, y, box, inv); text(s, x0 - off + run, y, box, inv);
+}
+const TOP = [0, 0, 64, 16];
+const PANEL = { 1: [0, 0, 32, 16], 2: [32, 0, 32, 16], 3: [0, 16, 32, 16], 4: [32, 16, 32, 16], 5: [0, 32, 32, 16], 6: [32, 32, 32, 16] };
+function wrap2(s, w) {
+  const words = s.split(' '); let a = '';
+  while (words.length && textW((a ? a + ' ' : '') + words[0]) <= w) a = (a ? a + ' ' : '') + words.shift();
+  return [a, words.join(' ')];
+}
+function introText(s, shift = 0) {
+  const lines = textW(s) <= 64 ? [s] : wrap2(s, 64).filter(Boolean);
+  const ys = lines.length === 1 ? [4] : [0, 9];
+  lines.forEach((ln, k) => text(ln, Math.max(0, Math.floor((64 - textW(ln)) / 2)) + shift, ys[k], TOP));
+}
+let _assemble = null;
+function introAssemble(s, el) {
+  if (!_assemble) {
+    const save = M; M = new Uint8Array(W * H); introText(s);
+    _assemble = [];
+    let seed = 20261014; const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+    for (let y = 0; y < 16; y++) for (let x = 0; x < 64; x++) if (M[y * W + x]) _assemble.push([x, y, rnd() * 63, rnd() * 15, rnd()]);
+    M = save;
+  }
+  const total = SIM.assemble;
+  for (const [tx, ty, sx, sy, r] of _assemble) {
+    let p = (el - r * 0.4 * total) / (0.6 * total);
+    if (p <= 0) continue;
+    p = Math.min(1, p); const e = 1 - Math.pow(1 - p, 3);
+    px(Math.round(sx + (tx - sx) * e), Math.round(sy + (ty - sy) * e));
+  }
+}
+function drawIntro(el) {
+  // graphics/matrix_canvas.py::_render_show_intro
+  const slide = 0.4;
+  if (el >= SIM.lets_play_at) {
+    introText("Let's Play");
+    if (el >= SIM.trivia_at) { const w = textW('Trivia'); text('Trivia', 32 - w, 16 + 4, PANEL[3]); }
+    if (el >= SIM.cade_at) text('cade', 32, 16 + 4, PANEL[4]);
+    return;
+  }
+  const l1 = 'Get Ready!', l2 = "It's trivia time!";
+  const sIn = (p) => Math.floor(64 * (1 - Math.max(0, Math.min(1, p))));
+  const sOut = (p) => Math.floor(-64 * Math.max(0, Math.min(1, p)));
+  if (el < SIM.assemble) introAssemble(l1, el);
+  else if (el < SIM.line2_at - slide) introText(l1);
+  else if (el < SIM.line2_at) { const p = (el - (SIM.line2_at - slide)) / slide; introText(l1, sOut(p)); introText(l2, sIn(p)); }
+  else if (el < SIM.line2_out_at - slide) introText(l2);
+  else if (el < SIM.line2_out_at) introText(l2, sOut((el - (SIM.line2_out_at - slide)) / slide));
+}
+// the decade wheel on panels 3-6 (graphics/matrix_canvas.py::_draw_intro_wheel)
+let _quad = null;
+function wheelGeom() {
+  if (_quad) return _quad;
+  const cx = 31.5, cy = 15.5, rx = 31.5, ry = 15.5;
+  _quad = { 3: [], 4: [], 5: [], 6: [], ring: [] };
+  for (let y = 0; y < 32; y++) for (let x = 0; x < 64; x++) {
+    const v = ((x - cx) / rx) ** 2 + ((y - cy) / ry) ** 2;
+    if (v <= 1) _quad[(y < 16 ? 3 : 5) + (x < 32 ? 0 : 1)].push([x, y]);
+  }
+  for (let a = 0; a < 720; a++) { const r = a * Math.PI / 360; _quad.ring.push([Math.round(cx + rx * Math.cos(r)), Math.round(cy + ry * Math.sin(r))]); }
+  return _quad;
+}
+function panelAt(angle) { const a = ((angle % 360) + 360) % 360; return a < 90 ? 4 : a < 180 ? 6 : a < 270 ? 5 : 3; }
+function wheelState(t) {
+  const w = S.wheel, el = t - w.started, p = Math.min(1, el / Math.max(0.1, w.spin)), e = 1 - Math.pow(1 - p, 3);
+  const angle = e * (SIM.wheel_turns * 360 + w.land);
+  const landed = p >= 1, since = Math.max(0, el - w.spin);
+  const lit = landed ? Math.floor(since / (SIM.wheel_blink / 2)) % 2 === 0 : true;
+  return { angle, hot: panelAt(angle), landed, lit };
+}
+function drawWheel(t) {
+  introText('spin the wheel');
+  const q = wheelGeom(), st = wheelState(t), oy = 16;
+  if (st.lit) for (const [x, y] of q[st.hot]) px(x, y + oy);
+  const dividerOn = !(st.landed && st.lit);
+  for (let y = 0; y < 32; y++) dividerOn ? px(31, y + oy) : clr(31, y + oy);
+  for (let x = 0; x < 64; x++) dividerOn ? px(x, 15 + oy) : clr(x, 15 + oy);
+  for (const [x, y] of q.ring) px(x, y + oy);
+  CAT.wheel_decades.forEach((d, k) => {
+    const panel = 3 + k, [ox, oy2] = { 3: [0, 0], 4: [32, 0], 5: [0, 16], 6: [32, 16] }[panel];
+    const label = d.slice(2, 4) + 's', onLit = st.lit && panel === st.hot;
+    const x = ox + Math.floor((32 - textW(label)) / 2), y = oy + oy2 + 4;
+    if (st.landed && panel !== st.hot) return;               // the others go dark
+    if (onLit && st.landed) text(label, x, y, null, true);   // black on the lit square
+    else if (!onLit) text(label, x, y);                      // (lit-on-lit is invisible on the real panel)
+  });
+  if (!st.landed) {
+    const r = st.angle * Math.PI / 180;
+    for (let k = 0; k <= 40; k++) { const f = k / 40; px(Math.round(31.5 + 31.5 * Math.sin(r) * f), Math.round(15.5 - 15.5 * Math.cos(r) * f) + oy); }
+  }
+}
+function drawSong(t) {
+  const it = PLAN[S.idx];
+  if (!it || !it.song) return;
+  marquee('np1', it.song.title, [0, 0, 64, 8], t);
+  marquee('np2', it.song.artist || '', [0, 8, 64, 8], t);
+  // stand-in animation: 16 music-driven bars across panels 3-6
+  if (analyser) analyser.getByteFrequencyData(freq);
+  for (let b = 0; b < 16; b++) {
+    const v = freq ? freq[Math.min(freq.length - 1, Math.floor(Math.pow(b / 16, 1.6) * 90) + 1)] / 255 : 0;
+    const hgt = Math.round(v * 32);
+    for (let y = 0; y < hgt; y++) for (let x = 0; x < 3; x++) px(b * 4 + x, 47 - y);
+  }
+}
+function drawQuiz(t) {
+  // short (LED) wording: question on panels 1+2, choices on 3-6 in button order,
+  // revealed one at a time (QUESTION_CASCADE_STEP_SECONDS)
+  const z = S.quiz, q = curQ(), st = quizStage(t);
+  if (!z.answered) {
+    if (st.stage === 'sparkle') {
+      // sparkly "Who is this?" (matrix_canvas: random invert flicker)
+      const inv = Math.random() < 0.3;
+      if (inv) for (let y = 0; y < 16; y++) for (let x = 0; x < 64; x++) px(x, y);
+      const w = textW('Who is this?');
+      text('Who is this?', Math.floor((64 - w) / 2), 4, TOP, inv);
+      return;
+    }
+    if (q.teaser) introText('Is this:');
+    else {
+      const [a, b] = wrap2(q.q, 64);
+      if (textW(b) <= 64) { text(a, Math.floor((64 - textW(a)) / 2), b ? 0 : 4, TOP); if (b) text(b, Math.floor((64 - textW(b)) / 2), 9, TOP); }
+      else marquee('qq' + z.n, q.q, TOP, t);
+    }
+    q.c.forEach((c, i) => { if (i < st.shown) marquee(`qc${z.n}_${i}`, c, PANEL[3 + i], t); });
+    return;
+  }
+  // graded: a wrong true/false scrolls its correction, else the verdict;
+  // the right answer blinks once a second (matrix_canvas correct-answer flash)
+  if (!z.right && q.correction) marquee('qx' + z.n, q.correction, TOP, t);
+  else introText(z.timeout ? 'TIME UP' : z.right ? 'CORRECT!' : 'WRONG');
+  const on = (t - z.answeredAt) % 2 < 1;
+  if (on && q.c[q.k] !== undefined) marquee(`qc${z.n}_${q.k}`, q.c[q.k], PANEL[3 + q.k], t);
+}
+function quizStage(t) {
+  // reveal timing: "Who is this?" has its sparkle + "Is this:" beat and a slow
+  // cascade (MYSTERY_*); other questions cascade fast (QUESTION_CASCADE_STEP)
+  const z = S.quiz, q = curQ(), el = t - z.at;
+  if (z.answered) return { stage: 'graded', shown: q.c.length };
+  if (!q.teaser) return { stage: 'ask', shown: Math.floor(el / T('cascade_step', 0.35)) };
+  const sp = T('mystery_sparkle', 1.5), so = T('mystery_solid', 1.0);
+  if (el < sp) return { stage: 'sparkle', shown: 0 };
+  if (el < sp + so) return { stage: 'solid', shown: 0 };
+  return { stage: 'ask', shown: Math.floor((el - sp - so) / T('mystery_step', 1.2)) + 1 };
+}
+function drawEnd(t) { marquee('end', SIM.contact || 'THANK YOU', TOP, t); }
+
+function composeMatrix(t) {
+  M.fill(0);
+  switch (S.phase) {
+    case 'intro': drawIntro(t - S.t0); break;
+    case 'stab': drawIntro(Math.max(SIM.cade_at, t - S.t0)); break;
+    case 'wheel': drawWheel(t); break;
+    case 'song': S.quiz ? drawQuiz(t) : drawSong(t); break;
+    case 'end': drawEnd(t); break;
+  }
+  // song change: the new board slides in from the right (matrix board wipe)
+  if (S.phase === 'song' && S.wipeAt && t - S.wipeAt < 0.6) {
+    const shift = Math.round(64 * (1 - (t - S.wipeAt) / 0.6)), old = M; M = new Uint8Array(W * H);
+    for (let y = 0; y < H; y++) for (let x = 0; x + shift < W; x++) M[y * W + x + shift] = old[y * W + x];
+  }
+}
+
+// ================================================================ cabinet
+// Drawn in the photo coordinates of config.MARQUEE_LAYOUT: each panel sits
+// inside its loop of marquee bulbs.
+const cv = document.getElementById('cab'), g2 = cv.getContext('2d');
+const OX = 150, OY = 420;     // photo -> canvas offset
+let RECTS = null;
+function layout() {
+  const fit = (pts, aspect) => {
+    const xs = pts.map((p) => p[0]), ys = pts.map((p) => p[1]);
+    let x0 = Math.min(...xs) + 42, x1 = Math.max(...xs) - 42, y0 = Math.min(...ys) + 40, y1 = Math.max(...ys) - 40;
+    let w = x1 - x0, h = y1 - y0;
+    if (w / h > aspect) { const nw = h * aspect; x0 += (w - nw) / 2; w = nw; } else { const nh = w / aspect; y0 += (h - nh) / 2; h = nh; }
+    return [x0 - OX, y0 - OY, w, h];
+  };
+  const mq = SIM.marquee;
+  RECTS = { top: fit(mq.title, 4), 3: fit(mq.panel3, 2), 4: fit(mq.panel4, 2), 5: fit(mq.panel5, 2), 6: fit(mq.panel6, 2) };
+}
+function drawPanelBlock(rect, mx, my, cols, rows) {
+  const [x0, y0, w, h] = rect, pitch = w / cols, rad = pitch * 0.36;
+  g2.fillStyle = '#0a0606'; g2.fillRect(x0 - pitch * 0.4, y0 - pitch * 0.4, w + pitch * 0.8, h + pitch * 0.8);
+  for (let y = 0; y < rows; y++) for (let x = 0; x < cols; x++) {
+    const on = M[(my + y) * W + mx + x];
+    g2.fillStyle = on ? '#ff2d1c' : '#2a0b08';
+    g2.beginPath(); g2.arc(x0 + (x + 0.5) * pitch, y0 + (y + 0.5) * pitch, rad, 0, Math.PI * 2); g2.fill();
+  }
+}
+// marquee bulbs: a generic look per moment (the real board has a look per song)
+function hue(file) { let h = 0; for (const c of file) h = (h * 31 + c.charCodeAt(0)) % 360; return h; }
+function bulbColor(seg, k, n, t) {
+  const p = S.phase;
+  if (p === 'black' || p === 'spinfade') return null;
+  if (p === 'intro' || p === 'stab') {
+    const el = t - S.t0;
+    if (el < SIM.lets_play_at) return ((k + Math.floor(el * 8)) % 4 === 0) ? [255, 240, 210, 1] : [255, 240, 210, 0.15];
+    if (el < 10) return null;
+    const ramp = el < 14 ? (el - 10) / 4 : el < 15 ? 1 : Math.max(0, 1 - (el - 15));
+    const tw = (Math.sin(k * 12.9898 + t * 3.1) * 43758.5453) % 1;
+    return ramp > 0 ? [255, 250, 235, ramp * Math.max(0, Math.abs(tw) - 0.3) * 1.4] : null;
+  }
+  if (p === 'wheel') {
+    const st = wheelState(t);
+    if (seg === 'title') return ((k + Math.floor(t * 10)) % 3 === 0) ? [255, 190, 40, 1] : [255, 190, 40, 0.2];
+    return seg === 'panel' + st.hot && st.lit ? [255, 255, 255, 1] : null;
+  }
+  if (p === 'song' && S.quiz) {
+    // wled_engine question marquee: top strip dark (white twinkle during the
+    // "Who is this?" sparkle), each answer's panel loop chases in its button
+    // colour as it appears; once graded only the right answer's loop blinks
+    const st = quizStage(t), q = curQ();
+    if (seg === 'title') {
+      if (st.stage !== 'sparkle') return null;
+      return Math.random() < 0.25 ? [255, 255, 255, 1] : null;
+    }
+    const i = ['panel3', 'panel4', 'panel5', 'panel6'].indexOf(seg);
+    if (i < 0 || i >= q.c.length) return null;
+    const rgb = BULB_RGB[COLORS[i]];
+    if (st.stage === 'graded') return i === q.k && (t - S.quiz.answeredAt) % 2 < 1 ? [...rgb, 1] : null;
+    if (i >= st.shown) return null;
+    return (k + Math.floor(t * 10)) % 3 === 0 ? [...rgb, 1] : [...rgb, 0.25];
+  }
+  if (p === 'end') { const v = 0.5 + 0.5 * Math.sin(t * 1.5); return [...hsl((t * 30 + k * 6) % 360), 0.3 + v * 0.5]; }
+  if (p === 'song' && PLAN[S.idx]) {
+    const h0 = hue(PLAN[S.idx].song.file), lvl = analyser ? Math.min(1, levelNow() * 2.2) : 0.6;
+    const wave = 0.5 + 0.5 * Math.sin((k / 12 - t / 3) * Math.PI * 2);
+    return [...hsl((h0 + k * 3) % 360), 0.25 + 0.75 * wave * (0.4 + 0.6 * lvl)];
+  }
+  return null;
+}
+function hsl(h) {
+  const f = (n) => { const k = (n + h / 30) % 12; return 255 * (0.5 - 0.5 * Math.max(-1, Math.min(k - 3, 9 - k, 1))); };
+  return [f(0), f(8), f(4)];
+}
+function levelNow() {
+  if (!freq) return 0;
+  let s = 0; for (let k = 2; k < 24; k++) s += freq[k]; return s / (22 * 255);
+}
+function drawBulbs(t) {
+  for (const [seg, pts] of Object.entries(SIM.marquee)) {
+    pts.forEach(([x, y], k) => {
+      const c = bulbColor(seg, k, pts.length, t), X = x - OX, Y = y - OY;
+      g2.fillStyle = '#1c1714'; g2.beginPath(); g2.arc(X, Y, 15, 0, Math.PI * 2); g2.fill();
+      if (!c || c[3] <= 0.02) return;
+      const [r, gg, b, a] = c;
+      const grd = g2.createRadialGradient(X, Y, 2, X, Y, 34);
+      grd.addColorStop(0, `rgba(${r},${gg},${b},${Math.min(1, a)})`); grd.addColorStop(1, `rgba(${r},${gg},${b},0)`);
+      g2.fillStyle = grd; g2.beginPath(); g2.arc(X, Y, 34, 0, Math.PI * 2); g2.fill();
+      g2.fillStyle = `rgba(${Math.min(255, r + 60)},${Math.min(255, gg + 60)},${Math.min(255, b + 60)},${Math.min(1, a + 0.1)})`;
+      g2.beginPath(); g2.arc(X, Y, 11, 0, Math.PI * 2); g2.fill();
+    });
+  }
+}
+function draw(t) {
+  if (!RECTS) return;
+  composeMatrix(t);
+  g2.fillStyle = '#141016'; g2.fillRect(0, 0, cv.width, cv.height);
+  drawPanelBlock(RECTS.top, 0, 0, 64, 16);
+  drawPanelBlock(RECTS[3], 0, 16, 32, 16); drawPanelBlock(RECTS[4], 32, 16, 32, 16);
+  drawPanelBlock(RECTS[5], 0, 32, 32, 16); drawPanelBlock(RECTS[6], 32, 32, 32, 16);
+  drawBulbs(t);
+}
+
+// ================================================================ sidebar
+const BTN = {};
+document.querySelectorAll('.arcade').forEach((b) => { BTN[b.dataset.c] = b; b.addEventListener('click', () => press(b.dataset.c)); });
+document.addEventListener('keydown', (e) => {
+  const c = { '1': 'green', '2': 'red', '3': 'yellow', '4': 'blue' }[e.key];
+  if (c) press(c);
+});
+function updateButtons() {
+  const lit = buttonsLit();
+  for (const [c, b] of Object.entries(BTN)) b.classList.toggle('lit', lit.includes(c));
+  const hint = { black: 'Press any lit button (or keys 1–4) to start.', intro: 'The host talks over the intro loop — press any button to move on.',
+                 song: !S.quiz ? 'Red = next song.' : !S.quiz.answered ? 'Answer with the buttons (or keys 1–4, or tap an answer).'
+                   : 'Any button: skip the wait.' }[S.phase] || '';
+  document.getElementById('hint').textContent = hint;
+}
+function updateNow() {
+  const el = document.getElementById('now'), it = PLAN[S.idx];
+  const label = {
+    black: 'BLACK — waiting for a button',
+    intro: 'Intro — host talks over the loop',
+    stab: "Let's Play",
+    spinfade: 'Fading out for the wheel',
+    wheel: S.wheel ? `Wheel spin → ${decLabel(S.wheel.decade)}` : 'Wheel spin',
+    end: 'Show over',
+  }[S.phase];
+  if (S.phase === 'song' && it && it.song) {
+    const end = it.ending === 'cut' ? `cut at ${fmt(it.at)}` : it.ending === 'quiz' ? (SHOW.questions ? 'after the questions' : 'full (questions are off)') : 'full';
+    el.innerHTML = `${esc(it.song.title)}<small>${esc(it.song.artist)} · ${decLabel(it.song.decade)} · ending: ${end}${S.quiz ? ' · QUESTIONS' : ''}</small>`;
+  } else el.textContent = label || '';
+}
+function updateClock(t) {
+  const c = document.getElementById('clock'), bar = document.getElementById('bar');
+  if (S.phase === 'song' && S.deck) {
+    const pos = S.deck.el.currentTime;
+    c.textContent = `${fmt(pos)} / ${fmt(S.songEnd)} · show ${fmt(t - S.startedAt)}`;
+    bar.style.width = Math.min(100, 100 * pos / Math.max(1, S.songEnd)) + '%';
+  } else {
+    c.textContent = S.startedAt && S.phase !== 'black' ? `show ${fmt(t - S.startedAt)}` : '';
+    bar.style.width = '0';
+  }
+  document.getElementById('jump').disabled = !(S.phase === 'song' && S.deck);
+}
+function renderList() {
+  const el = document.getElementById('plist');
+  let n = 0;
+  el.innerHTML = PLAN.map((it, i) => {
+    const cls = ['it', i === S.idx ? 'cur' : '', i < S.idx && !it.skip ? 'done' : '', it.skip ? 'skip' : ''].join(' ');
+    if (it.type === 'spin') {
+      return `<div class="${cls}" data-i="${i}" title="${esc(it.skip || '')}"><span class="n">&#127905;</span>
+        <span class="t">WHEEL SPIN <small>${it.skip ? '— skipped: ' + esc(it.skip) : '→ ' + decLabel(it.decade)}</small></span><span class="e"></span></div>`;
+    }
+    n++;
+    if (it.skip) return `<div class="${cls}"><span class="n">${n}</span><span class="t">${esc(it.label)} <small>— ${esc(it.skip)}</small></span><span></span></div>`;
+    const e = it.ending === 'cut' ? '✂ ' + fmt(it.at) : it.ending === 'quiz' ? 'quiz' : fmt(endPoint(it));
+    return `<div class="${cls}" data-i="${i}"><span class="n">${n}</span>
+      <span class="t">${esc(it.song.title)} <small>— ${esc(it.song.artist)}</small></span><span class="e">${e}</span></div>`;
+  }).join('');
+  el.querySelectorAll('.it[data-i]').forEach((row) => row.addEventListener('click', () => jumpTo(Number(row.dataset.i))));
+  const cur = el.querySelector('.cur'); if (cur) cur.scrollIntoView({ block: 'nearest' });
+}
+async function jumpTo(i) {
+  if (PLAN[i].skip) return;
+  initAudio(); await ctx.resume();
+  if (S.introNode) stopNode(S.introNode, 0.2);
+  if (S.wheel && S.wheel.node) stopNode(S.wheel.node, 0.05);
+  if (S.wheel && S.wheel.stab) stopNode(S.wheel.stab, 0.1);
+  S.introNode = null; S.after = null; S.quiz = null; renderQuizCard();
+  // picking a song by hand always gets its questions, even if its artist came up already
+  if (PLAN[i].song) S.asked.delete((PLAN[i].song.artist || '').trim().toLowerCase());
+  if (!S.startedAt || S.phase === 'black') S.startedAt = now();
+  proceed(i, { from: S.deck ? 'song' : 'start' });
+}
+document.getElementById('restart').addEventListener('click', () => { resetAll(); });
+document.getElementById('jump').addEventListener('click', () => {
+  if (S.phase === 'song' && S.deck) S.deck.el.currentTime = Math.max(0, S.songEnd - 10);
+});
+document.getElementById('vol').addEventListener('input', (e) => { if (master) master.gain.value = Number(e.target.value) / 100; });
+
+// =================================================================== start
+(async function init() {
+  try {
+    const [shows, cat, qs] = await Promise.all([getJSON(EP.shows), getJSON(EP.songs),
+                                                getJSON(EP.questions).catch(() => null)]);
+    CAT = cat; SIM = cat.sim || {};
+    if (qs && qs.ok) QS = Object.assign(QS, qs);
+    SHOW = (shows.shows || []).find((s) => s.name === SHOW_NAME);
+    if (!SHOW) { document.getElementById('subtitle').textContent = 'Show not found: ' + SHOW_NAME; return; }
+    PLAN = buildPlan();
+    document.title = 'Preview ' + SHOW.name;
+    document.getElementById('title').textContent = 'Preview: ' + SHOW.name;
+    const songs = PLAN.filter((x) => x.type === 'song' && !x.skip);
+    document.getElementById('subtitle').textContent =
+      `${songs.length} songs · intro ${SHOW.intro ? 'on' : 'off'} · questions ${SHOW.questions ? 'on' : 'off'}`;
+    document.getElementById('total').textContent = fmt(songs.reduce((a, it) => a + endPoint(it), 0));
+    document.getElementById('where').textContent = WEB ? '' : '(On the show machine this plays the full-quality files.)';
+    if (!songs.length) document.getElementById('note').textContent = 'This show has no songs yet — add some in the Show Designer.';
+    layout(); renderList(); updateNow(); updateButtons();
+    initAudio();
+    document.getElementById('subtitle').textContent += ' · loading sounds…';
+    await loadBed();
+    document.getElementById('subtitle').textContent = document.getElementById('subtitle').textContent.replace(' · loading sounds…', '');
+    requestAnimationFrame(tick);
+  } catch (e) {
+    if (String(e.message) !== 'login') document.getElementById('subtitle').textContent = 'Could not load: ' + e.message;
+  }
+})();
+</script>
+</body>
+</html>

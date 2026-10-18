@@ -722,6 +722,7 @@ ACCENT_EFFECT_NAMES = [
     "PS Fire 1D", "PS Sonic Stream", "PS Sonic Boom", "PS Springy", "PS Galaxy",
     "Color Clouds", "Slow Transition",
 ]
+ACCENT_FX_PUDDLES = 134  # "Puddles" (WLED sound-reactive effect) -- the show open's outline look; index into ACCENT_EFFECT_NAMES
 ACCENT_FX_SOLID = 0  # "Solid" -- used for the white/Price-Game look and flash() confirmations
 
 # WLED's own built-in multi-color gradient palettes (2026-09-26), selectable
@@ -928,11 +929,6 @@ ACCENT_FLASH_FADE_DS = 4             # ...then fade from white into it
 ACCENT_STYLED_WINDOW_S = 6.0         # only the first look change this soon after a new track is styled
 ACCENT_PREVIEW_HOLD_S = 2.5          # remote Preview: time on white before transitioning back
 
-# Fastest WLED "sx" speed value -- the show-intro scene's "movie style"
-# marquee chase on the outline strip (2026-09-27 request) wants this at
-# full pace, not whatever state.accent_speed the operator last left it at.
-ACCENT_INTRO_CHASE_SPEED = 255
-
 # Total LED count on the accent strip. Confirmed live 2026-09-25 against
 # this board's own GET /json/info ("leds":{"count":423,...}, MAC-matched to
 # config.ACCENT_WLED_MAC to be sure it's this board) -- NOT the "120 lamp
@@ -962,9 +958,7 @@ ACCENT_TOP_SEGMENT_LED_COUNT = 30
 # (drivers/lighting_engine.py) -- show-phase gating, DJ-color sync, a game-
 # mode chase, win/loss flashes, and Westminster twinkle, but NOT yet the
 # mystery-sting/song-intro-sparkle branches DMX also handles. Reuses the
-# DMX rig's own intro-flash timing constants (SHOW_INTRO_DMX_FLASH_AT_
-# SECONDS etc., further down this file) so the two rigs' flashes land in
-# the same instant rather than drifting apart.
+# DMX rig's intro timing (SHOW_INTRO_* further down this file).
 MARQUEE_FLASH_SECONDS = 0.25
 MARQUEE_DJ_BREATHE_PERIOD_SECONDS = 4.0
 
@@ -1204,6 +1198,29 @@ SI_PLAYER_Y_FROM_BOTTOM = 3            # px up from the bottom edge
 SIMON_ENTRY_BUTTONS = (0, 1)
 SIMON_FLASH_ON_SECONDS = 0.45     # a pad lit/sounding, playback step or input echo
 SIMON_FLASH_GAP_SECONDS = 0.25    # dark pause between playback steps
+# Beat-locked playback (drivers/simon_engine.py): the first note of every
+# playback comes in on the "one" of a bar of the running song (beat grid from
+# medley_analysis.json) and steps stay on that grid. This nudges the landing
+# time later (+) / earlier (-) to line up with what's HEARD -- the music's
+# output buffer lags the song-position clock while the aux-card tone spawns
+# quickly. Tune by ear.
+SIMON_BEAT_OFFSET_SECONDS = 0.20
+# Songs whose auto-detected bar "one" (which of the 4 beats) is wrong, keyed
+# by music file name -> beat index 0-3 within the grid. "Hits from the Bong"
+# was landing 2 beats late (detected 3, true 1) -- 2026-10-15.
+# Trippy lit pad (graphics/simon_trip.py on the 1-bit LED panels,
+# drivers/wled_engine.py::_apply_simon on the marquee bulbs): effect level
+# climbs from round 1 (plain) to full on this round.
+SIMON_TRIP_ROUNDS_TO_MAX = 10
+# Deep-round surprise: past this many rounds, a lit pad sometimes flashes a
+# small word or symbol INSIDE the square (where the player is looking), in
+# sTraNgE cAsE. Chance is per lit step (playback or echoed press).
+SIMON_WORD_AFTER_ROUND = 5
+SIMON_WORD_CHANCE = 0.3
+SIMON_WORD_MAX_WIDTH_PX = 28   # pad is 32px wide
+SIMON_WORD_ADJECTIVES = ['*', '!?', '?!', '%%', ':)', '#', '&', '%', 'fuzzy', 'swirly', 'hazy', 'funky', 'dizzy', 'kooky', 'wavy', 'lucid', 'liquid', 'wild', 'neon', 'acid', 'high', 'deep', 'wow', 'zen', 'bold', 'oooh', 'far', 'lit', 'wet', 'pop', '!!!', '???', '(*)', ':O']
+SIMON_TRIP_STRAIGHT_ROUNDS = 2   # rounds 1..N play plain; the effect starts the round after
+SIMON_DOWNBEAT_OVERRIDES = {"10 Hits from the Bong.mp3": 1}
 SIMON_FAIL_HOLD_SECONDS = 1.5     # correct-answer flash hold before the game ends/restarts
 SIMON_SOUND_VOLUME = 0.9
 
@@ -1893,6 +1910,9 @@ PRICE_GAME_PRODUCT_COOLDOWN_ROUNDS = 20
 # Auto-DJ is on by default at launch; Gamepad Btn4 (inputs/gamepad.py,
 # JOYBUTTONDOWN index 3, DJ mode only) toggles it. See drivers/auto_dj_engine.py.
 AUTODJ_ENABLED_BY_DEFAULT = True
+# Skip to the next song once all the track's questions are in and the leaderboard
+# has been shown (cancels a running Simon game). Toggle on the web remote.
+AUTO_ADVANCE_AFTER_QUIZ_BY_DEFAULT = True
 
 # Used when a track has no usable duration metadata (rekordbox.xml's
 # TotalTime attribute, looked up via drivers/rekordbox_driver.py).
@@ -2131,6 +2151,19 @@ TUNNEL_REDIRECT_SECRET = "m8YaRwCJ_cmRybVu0VGhNbKuvyU9T_xqw4c79ZjXQlQ"
 # hasn't changed, so cloudflare_redirect/'s staleness check (STALE_AFTER_
 # SECONDS in its config.php) never times out while the app is running.
 TUNNEL_HEARTBEAT_SECONDS = 60.0
+TUNNEL_REPORT_RETRY_SECONDS = 5.0   # until the redirector accepts a new URL (cold boot), retry this often
+
+# Web Show Designer (2026-10-18): https://triviacade.com/play/designer/ -- make
+# shows while the Pi is off. drivers/web_sync.py keeps it in step (Pi only);
+# web/remote_auth.py uses the same password for the admin pages.
+WEB_DESIGNER_URL = "https://triviacade.com/play/designer/"
+WEB_DESIGNER_API_URL = "https://triviacade.com/play/designer/api.php"
+WEB_SYNC_FIRST_DELAY_SECONDS = 20.0  # after boot, let WiFi/DNS settle first
+WEB_SYNC_INTERVAL_SECONDS = 120.0
+WEB_SYNC_EDIT_SETTLE_SECONDS = 4.0   # a local show edit syncs this long after the last change
+WEB_PREVIEW_BITRATE = "24k"          # browser preview copies: Opus, mono
+WEB_PREVIEW_PER_PASS = 3             # previews the Pi encodes + uploads per sync pass
+ADMIN_SESSION_DAYS = 400             # an admin login lasts until logout or the rig's public IP changes
 
 # How long tunnel_engine.py waits before respawning cloudflared after it
 # exits (e.g. launched before the network was up on a cold boot). Short
@@ -2306,13 +2339,15 @@ HOUR_CLOCK_BELL_DIR = resource_path("audio", "HourClockBell")
 # a future SFX trigger genuinely needs to play concurrently with another.
 SFX_ALSA_CARD_NAME = "Device"
 SFX_STARTUP_SOUND = resource_path("audio", "sound_effects", "startup.wav")
+SFX_STARTUP_VOLUME = 0.10   # startup sound level relative to how loud it always played (1.0 = unchanged)
+SFX_STARTUP_HW_STEP = "14"  # card hardware step it plays at (0-37; this was the card's original setting, -23 dB)
 
 # ==========================================
 # TRIVIA NIGHT SHOW FLOW (2026-08-13): Setup -> Countdown -> scripted open
 # -> live show -> scripted close. See drivers/show_engine.py.
 # ==========================================
 TRIVIA_NIGHT_MUSIC_DIR = resource_path("audio", "TriviaNightMusic")
-SHOW_START_MUSIC_PATH = os.path.join(TRIVIA_NIGHT_MUSIC_DIR, "ShowStart.mp3")
+SHOW_INTRO_MUSIC_PATH = resource_path("audio", "gameMusic", "introTheme.wav")
 SHOW_END_MUSIC_PATH = os.path.join(TRIVIA_NIGHT_MUSIC_DIR, "ShowEnd.mp3")
 
 # Planning-tool estimate only (Setup page's "~N rounds" readout) -- average
@@ -2327,57 +2362,50 @@ SHOW_AVG_ROUND_MINUTES = 10.0
 SHOW_TIME_SLIDER_STEP_MINUTES = 30
 SHOW_TIME_SLIDER_MAX_HOURS_AHEAD = 5.0
 
-# Fixed show-open script, timed against ShowStart.mp3's own playback clock
-# (not per-frame-derived -- these are the exact beats requested). Each
-# entry is (seconds_into_clip, text) -- the LED slide-text machine in
-# graphics/matrix_canvas.py slides the previous line out and this one in
-# the instant its timestamp is reached. "Mark Yannitell!" flashes instead
-# of holding steady (see SHOW_INTRO_FLASH_BEAT_INDEX below).
-SHOW_INTRO_BEATS = [
-    (2.6, "Do you know what song this is?"),
-    (6.7, "Get your phone out and play along!"),
-    (11.0, "It's Trivia Night!"),
-    (13.7, "Here's the star of trivia night"),
-    (17.05, "Mark Yannitell!"),
-    (25.0, ""),               # LED clears -- gives the live host's spoken
-                               # intro room to breathe once the last slide's
-                               # text has made its point.
-    (28.0, "Trivia Nite!"),   # LAST beat -- holds indefinitely (no window
-                               # end, no slide-out). The intro no longer
-                               # auto-ends at a fixed timestamp; it only
-                               # ends via skip_intro() (Joy X-,
-                               # inputs/gamepad.py), whenever the host's
-                               # live speech over the ShowStart.mp3 music
-                               # actually wraps up.
-]
-# Index into SHOW_INTRO_BEATS whose text flashes on/off instead of holding
-# solid once slid in (the DJ-name reveal).
-SHOW_INTRO_FLASH_BEAT_INDEX = 4
-SHOW_INTRO_FLASH_PERIOD_SECONDS = 0.3
-
-# DMX beat: hard flash all-white-to-black, then a second white flash
-# transitioning into a green marquee chase that holds for the rest of the
-# intro (reuses the existing chase pattern/color machinery in
-# drivers/lighting_engine.py -- theme index 1's chase, forced green).
-SHOW_INTRO_DMX_FLASH_AT_SECONDS = 10.77
-SHOW_INTRO_DMX_FLASH_SECONDS = 0.15
-# Animation period fed into drivers/lighting_engine.py::_dj_theme_frame()
-# for the post-flash green marquee chase (a snappier pace than a normal
-# tap-tempo-driven chase, for the "marquee lights" energy requested).
+# Show open (2026-10-14 rewrite), choreographed against audio/gameMusic/
+# introTheme.wav (~24s). Every time below is seconds from the instant
+# drivers/show_engine.py::begin_intro() starts the clip; the four rigs read
+# them off state.show_phase_started_at independently:
+#   LED panels 1+2 : pixels assemble into "Get Ready!", slide to "It's trivia
+#                    time!", hard-cut "Let's Play" at 9s; panel 3 "Trivia"
+#                    (flush right) 9.5s, panel 4 "cade" (flush left) 10.4s;
+#                    held while the host talks; "spin the wheel" once the
+#                    show moves on (if the playlist opens with a spin).
+#   Marquee lamps  : white movie chase, off at 9s, white twinkle ramping up
+#                    10-14s, fading out from 15s, then the wheel spin.
+#   Outline strip  : dark, WLED "Puddles" fading up 10-14s, fade out at 15s,
+#                    then steady white at 60%.
+#   DMX uplights   : white chase the whole time.
+#   Panels 3-6     : the decade wheel (60s/70s/80s/90s) spins for one pass of
+#                    wheelTheme.wav, lands on the next song's decade, blinks
+#                    through the decade stab (drivers/show_engine.py).
+SHOW_INTRO_ASSEMBLE_SECONDS = 2.0        # 0 -> 2s: pixels fly together into the first line
+SHOW_INTRO_LINE2_AT_SECONDS = 5.0        # "Get Ready!" slides out, "It's trivia time!" slides in
+SHOW_INTRO_LINE2_OUT_AT_SECONDS = 8.0    # "It's trivia time!" slides out
+SHOW_INTRO_LETS_PLAY_AT_SECONDS = 9.0    # hard cut-in; marquee lamps go out on the same beat
+SHOW_INTRO_TRIVIA_AT_SECONDS = 9.5       # panel 3, flush right
+SHOW_INTRO_CADE_AT_SECONDS = 10.4        # panel 4, flush left
+SHOW_INTRO_TWINKLE_START_SECONDS = 10.0  # marquee twinkle + outline puddles begin their ramp
+SHOW_INTRO_TWINKLE_FULL_SECONDS = 14.0   # ...and reach full brightness
+SHOW_INTRO_TWINKLE_SPEED = 0.75          # twinkle roll rate relative to the normal 100%
+SHOW_INTRO_FADE_OUT_AT_SECONDS = 15.0    # twinkle + puddles fade out
+SHOW_INTRO_FADE_OUT_SECONDS = 1.0
+SHOW_INTRO_WHITE_FADE_UP_SECONDS = 1.5   # outline: black -> steady white after the puddles are gone
+SHOW_INTRO_WHITE_BRIGHTNESS = 0.60       # outline steady-white level (of full)
+SHOW_INTRO_WHEEL_TURNS = 2                # whole extra revolutions of the pointer before it settles
+SHOW_INTRO_WHEEL_BLINK_PERIOD_SECONDS = 0.4
+SHOW_INTRO_WHEEL_DECADES = ["1960s", "1970s", "1980s", "1990s"]  # panels 3, 4, 5, 6 in that order
+SHOW_INTRO_SLIDE_SECONDS = 0.4
+SHOW_INTRO_PUDDLES_SPEED = 128           # WLED "sx" for the outline's Puddles
+SHOW_INTRO_PUDDLES_PALETTE = 0           # index into ACCENT_PALETTE_NAMES; 0 = Default (the white color slot)
+# Animation period fed into drivers/lighting_engine.py::_dj_theme_frame() for
+# the DMX white chase (a snappier pace than a normal tap-tempo-driven chase).
 SHOW_INTRO_CHASE_PERIOD_SECONDS = 0.35
 
-# No fixed intro end-time constant anymore -- the intro holds open-ended
-# (SHOW_INTRO_BEATS' last beat has no window end) until the operator ends
-# it manually via Joy X- (inputs/gamepad.py -> drivers/show_engine.py::
-# skip_intro()), giving the live host's spoken intro as much room as they
-# need instead of a fixed cutoff.
+# No fixed intro end-time constant -- with the host there the intro theme
+# loops (SHOW_INTRO_LOOP_*) until a button press (drivers/show_engine.py::
+# skip_intro()); a hands-off boot moves on after SHOW_HANDS_OFF_INTRO_SECONDS.
 
-# How long ShowStart.mp3 fades out, and the deck's channel fader tweens
-# back UP to state.music_volume (from wherever a previous show's outro
-# left it at 0), right as _finish_intro() hands off into the first real
-# track -- a quick crossfade-like handoff rather than either audio source
-# hard-cutting.
-SHOW_INTRO_HANDOFF_FADE_MS = 600
 
 # How long a still-playing outro (ShowEnd.mp3 + applause) fades out if
 # "Start Game"/schedule_start() re-enters "dark" before that outro ever
@@ -2398,30 +2426,44 @@ SHOW_END_LED_CONTACT_TEXT = "DJ MARK TRIVIA 740-396-8036"
 # intro's hard-cut flashes -- "when song stops, fade out DMX").
 SHOW_OUTRO_DMX_FADE_SECONDS = 2.5
 
-# Setup-phase LED text (state.show_phase == "setup"/"countdown") -- held
-# statically on panels 1+2 while the operator configures the Setup page or
-# waits on a scheduled start, from app launch until "Start Game" is pressed.
-SHOW_SETUP_LED_TEXT = "READY"
+# ==========================================
+# PANEL SHOW MAKER + SAVED SHOWS (2026-10-17, docs/panel_show_maker_design.md)
+# drivers/panel_menu.py (boot pages on the LED panels + arcade buttons),
+# drivers/show_library.py (shows.json), drivers/show_runner.py (playback/recording),
+# drivers/show_bed.py (intro/wheel/stab music), web/static/designer.html.
+# ==========================================
+MENU_NETWORK_WAIT_SECONDS = 30.0      # network page moves on after this even if not all good
+MENU_HANDS_OFF_SECONDS = 90.0         # untouched since boot -> run the last played show
+MENU_LONG_PRESS_SECONDS = 1.0         # acts on release
+MENU_BLINK_PERIOD_SECONDS = 0.8       # one on+off cycle of SAVED AS / NETWORK STILL DOWN
+MENU_SAVED_BLINKS = 4
+MENU_NETWORK_DOWN_BLINKS = 2
+# Outline strip colour while a menu button is held (drivers/accent_engine.py).
+MENU_OUTLINE_COLORS = {"green": (0, 255, 0), "red": (255, 0, 0), "yellow": (255, 170, 0), "blue": (0, 0, 255)}
 
-# Unattended-autoplay fallback (2026-08-19): if the Setup/"READY" screen
-# sits untouched -- no physical rig input, no web remote action -- for this
-# long, the show starts itself: straight to live/the first track, no dark
-# pause, no ShowStart.mp3/LED intro choreography, so the room doesn't sit
-# on dead air if the host hasn't shown up yet. See drivers/show_engine.py::
-# _update_unattended_autoplay().
-SHOW_UNATTENDED_AUTOPLAY_TIMEOUT_SECONDS = 60.0
+# Intro theme loop (Mark, 2026-10-17 -- hard-coded for now): from the loop-in
+# point it repeats loop-in -> loop-out, ducked under the host, until the show
+# moves on; then it swells back to full fast and fades out under what follows.
+SHOW_INTRO_LOOP_IN_SECONDS = 15.549
+SHOW_INTRO_LOOP_OUT_SECONDS = 41.875
+SHOW_INTRO_DUCK_LEVEL = 0.40
+SHOW_INTRO_DUCK_RAMP_SECONDS = 1.5
+SHOW_INTRO_SWELL_SECONDS = 0.3
+SHOW_INTRO_RELEASE_FADE_SECONDS = 1.0
+SHOW_HANDS_OFF_INTRO_SECONDS = 10.0   # hands-off boot: the intro moves on by itself after this
+SHOW_WHEEL_THEME_PATH = resource_path("audio", "gameMusic", "wheelTheme.wav")
+SHOW_LETS_PLAY_STAB_PATH = resource_path("audio", "gameMusic", "LetsPlayStab.wav")
+SHOW_STAB_LEAD_SECONDS = 1.0          # the next song starts this long before a stab ends
+SHOW_SONG_DOVETAIL_FADE_SECONDS = 0.5 # that song's fade-in
+SHOW_SPIN_DECK_FADE_SECONDS = 1.5     # mid-show spin: the playing song fades out first
+SHOW_WHEEL_MIN_SPIN_SECONDS = 3.0     # wheel spins for one pass of wheelTheme, at least this long
 
-# Blink rate for the "AUTO :NN" countdown banner (panels 1+2) and the
-# final-10s "SHOW WILL START NOW" panels (3-6) -- shared by both so they
-# flash in sync rather than drifting against each other. 0.5s on/off (1s
-# full cycle) -- clearly noticeable without being frantic.
-SHOW_UNATTENDED_FLASH_PERIOD_SECONDS = 0.5
-
-# Inside this many remaining seconds, panels 3-6 (normally the DMX/LED/
-# tunnel/network status chips) switch to a flashing "SHOW WILL START NOW",
-# one word per panel -- an unmissable last warning right before the
-# unattended-autoplay fallback actually fires.
-SHOW_UNATTENDED_FINAL_WARNING_SECONDS = 10.0
+# After the outro: the rig keeps playing easy-listening background music
+# (energy_rank <= this); a panel press starts an on-the-fly encore with the
+# energy back up (energy_rank >= SHOW_ENCORE_ENERGY_MIN for its first song).
+SHOW_BACKGROUND_ENERGY_MAX = 2
+SHOW_BACKGROUND_VOLUME_PCT = 60
+SHOW_ENCORE_ENERGY_MIN = 4
 
 # Auto-start (unattended) show = jukebox until trivia is opted into (see
 # state.questions_suppressed): how long the red-button "TRIVIA QUESTION?"
@@ -2537,18 +2579,9 @@ SHUTDOWN_BUTTON_DARK_SECONDS = 0.5
 # released once after that before a press counts.
 SHUTDOWN_BUTTON_STARTUP_IGNORE_SECONDS = 90.0
 
-# How long the deck fades out when the host hits "Reset to Setup" on an
-# unattended-autoplay show (web remote only, live-panel banner) -- no
-# outro fanfare, since this wasn't a real hosted show, just a fast fade
-# back to the blank Setup screen.
-SHOW_UNATTENDED_RESET_FADE_SECONDS = 2.0
-
-# Setup-countdown physical-button interactions (2026-09-16): green opens a
-# "START SHOW NOW?" confirm (panel3/green=No, panel4/red=Yes -- see
-# drivers/simon_engine.py::_poll_setup_hardware()); blue kicks off a
-# Bluetooth gamepad reconnect (drivers/bluetooth_engine.py::
-# reconnect_paired_devices_async()) and holds its CONNECTING/SUCCESS/NO
-# GAMEPAD feedback on panels 1+2 for this long once it resolves.
+# Bluetooth gamepad reconnect feedback (drivers/bluetooth_engine.py::
+# reconnect_paired_devices_async(), drivers/recovery_button.py): how long its
+# CONNECTING/SUCCESS/NO GAMEPAD text is held once the attempt resolves.
 GAMEPAD_CONNECT_FEEDBACK_HOLD_SECONDS = 3.0
 # Safety ceiling for the "CONNECTING..." message shown the instant blue is
 # pressed, before the background reconnect attempt (which can itself take
@@ -2638,6 +2671,7 @@ FONT_5X7 = {
     ' ': ["000","000","000","000","000","000","000"],  # narrow -- avoids huge whitespace gaps
     '-': ["00000","00000","00000","11111","00000","00000","00000"],
     '>': ["10000","01000","00100","00010","00100","01000","10000"],
+    '<': ["00001","00010","00100","01000","00100","00010","00001"],
     '.': ["00000","00000","00000","00000","00000","01100","01100"],
     ',': ["00000","00000","00000","00000","00000","01100","01000"],
     "'": ["01100","01100","01000","00000","00000","00000","00000"],
@@ -2648,3 +2682,19 @@ FONT_5X7 = {
     '/': ["00001","00010","00010","00100","01000","01000","10000"],
     '%': ["11001","11010","00010","00100","01000","01011","10011"],
 }
+
+
+# --- Rig status OLED + current sensor (drivers/status_display_engine.py, 2026-10-14) ---
+# 128x64 I2C OLED and an INA219/INA226 on the Pi's I2C bus 1 (header pins 3/5).
+# Harmlessly does nothing until the hardware + `pip install luma.oled smbus2` exist.
+STATUS_DISPLAY_ENABLED = True
+STATUS_DISPLAY_CONTROLLER = "ssd1306"        # or "sh1106" (common on 1.3" boards)
+STATUS_DISPLAY_ADDR = 0x3C
+STATUS_DISPLAY_CONTRAST = 80                 # 0-255; low = longer OLED life
+STATUS_DISPLAY_SENSOR_ADDR = 0x40
+STATUS_DISPLAY_SHUNT_OHMS = 0.1              # 0.1 on stock INA219 boards; match your shunt
+STATUS_DISPLAY_TUNNEL_WARN_AFTER_SECONDS = 90.0
+# Battery-time estimate: remaining Wh = capacity x linear(volts empty..full)
+STATUS_DISPLAY_BATTERY_WH = 100.0            # PLACEHOLDER -- set to the real pack
+STATUS_DISPLAY_BATTERY_EMPTY_V = 10.5        # PLACEHOLDER
+STATUS_DISPLAY_BATTERY_FULL_V = 12.6         # PLACEHOLDER

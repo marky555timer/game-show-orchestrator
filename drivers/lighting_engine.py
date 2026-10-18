@@ -13,7 +13,6 @@ from config import (
     DMX_MYSTERY_FADE_IN_SECONDS,
     ENERGY_COLOR_INDICES, ENERGY_THEME_INDICES,
     WESTMINSTER_STROBE_INTERVAL_SECONDS, WESTMINSTER_UV_RAMP_SECONDS,
-    SHOW_INTRO_DMX_FLASH_AT_SECONDS, SHOW_INTRO_DMX_FLASH_SECONDS,
     SHOW_INTRO_CHASE_PERIOD_SECONDS, SHOW_OUTRO_DMX_FADE_SECONDS,
     MARQUEE_DJ_RAINBOW_SPEED,
 )
@@ -664,33 +663,12 @@ def _render_show_dmx(now):
 
 
 def _render_show_intro_dmx(now):
-    elapsed = now - state.show_phase_started_at
-    if elapsed < SHOW_INTRO_DMX_FLASH_AT_SECONDS:
-        # White twinkle -- the Sparkle pattern, forced white regardless of
-        # the current DJ color (same "force this theme/color" approach as
-        # _render_attention_sparkle's song-intro use of Sparkle).
-        frame = _dj_theme_frame(now, DMX_SPARKLE_PERIOD_SECONDS, theme=_SPARKLE_THEME_INDEX)
-        for i, dimmer in enumerate(frame):
-            dmx.set_uplight(i + 2, dimmer, dimmer, dimmer, dimmer, white=dimmer)
-        dmx.set_fixture1(0, 0, 0, 0)
-        return
-
-    # White flash -> black -> white flash -> green marquee chase (holds for
-    # the rest of the intro).
-    beat = elapsed - SHOW_INTRO_DMX_FLASH_AT_SECONDS
-    f = SHOW_INTRO_DMX_FLASH_SECONDS
-    if beat < f:
-        dmx.set_all_uplights(255, 255, 255, 255, white=255)
-    elif beat < f * 2:
-        dmx.set_all_uplights(0, 0, 0, 0)
-    elif beat < f * 3:
-        dmx.set_all_uplights(255, 255, 255, 255, white=255)
-    else:
-        green = DJ_COLOR_PALETTE[3]  # matches config's named "green" entry
-        r, g, b = green
-        frame = _dj_theme_frame(now, SHOW_INTRO_CHASE_PERIOD_SECONDS, theme=1)
-        for i, dimmer in enumerate(frame):
-            dmx.set_uplight(i + 2, dimmer, r, g, b)
+    """Show open (2026-10-14): a white chase across the uplights from the
+    first beat to the end of the intro -- the same _dj_theme_frame() chase
+    theme the old intro used, forced white."""
+    frame = _dj_theme_frame(now, SHOW_INTRO_CHASE_PERIOD_SECONDS, theme=1)
+    for i, dimmer in enumerate(frame):
+        dmx.set_uplight(i + 2, dimmer, dimmer, dimmer, dimmer, white=dimmer)
     dmx.set_fixture1(0, 0, 0, 0)
 
 

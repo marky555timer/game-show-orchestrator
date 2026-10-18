@@ -128,6 +128,13 @@ def _pick_next_track():
     tracks = music_library.all_tracks()
     if not tracks:
         return None
+    # A cued song is what plays next, so preload that one (2026-10-17: a saved
+    # show's next song, or the song after a stab, must already be decoded to
+    # start on time).
+    if _cued_track_paths[0] is not None:
+        cued = next((t for t in tracks if t["path"] == _cued_track_paths[0]), None)
+        if cued is not None:
+            return cued
     recent_paths = {t["path"] for t in _history[-_TRACK_HISTORY_SIZE:]}
     candidates = [t for t in tracks if t["path"] not in recent_paths]
     if not candidates:
@@ -168,7 +175,8 @@ def _apply_show_filters(candidates):
     rotation for a partially-tagged library."""
     if not (state.show_exclude_explicit or state.show_exclude_slow_dance
             or state.show_exclude_never_charted or state.show_allowed_genres
-            or state.show_allowed_decades):
+            or state.show_allowed_decades or state.show_require_decade
+            or state.show_energy_max):
         return candidates  # no filters active -- skip the metadata lookup entirely
 
     from drivers.music_metadata_engine import get_metadata_for
@@ -178,7 +186,14 @@ def _apply_show_filters(candidates):
     for t in candidates:
         meta = get_metadata_for(sanitize_track_key(t["title"], t["artist"]))
         if meta is None:
-            out.append(t)
+            # A show only plays songs with a known decade (2026-10-17 design);
+            # background music only plays known low-energy songs.
+            if not (state.show_require_decade or state.show_energy_max):
+                out.append(t)
+            continue
+        if state.show_require_decade and not meta.get("decade"):
+            continue
+        if state.show_energy_max and not (meta.get("energy_rank") and meta["energy_rank"] <= state.show_energy_max):
             continue
         if state.show_exclude_explicit and meta.get("explicit"):
             continue
@@ -203,8 +218,15 @@ def set_cued_track(path):
     been. Resolved fresh (and consumed) inside _begin_move() at the moment
     "next" is actually pressed, not here, so it's correct regardless of
     whatever got speculatively preloaded in between (see _begin_move).
-    Only ever touches slot 0 -- see queue_cued_track_after_next() for slot 1."""
+    Only ever touches slot 0 -- see queue_cued_track_after_next() for slot 1.
+
+    A preload of some other song is dropped so the cued one gets decoded
+    ahead of time instead (update() restarts the preload once nothing is in
+    flight)."""
+    global _preloaded_track
     _cued_track_paths[0] = path
+    if path and _preloaded_track is not None and _preloaded_track["track"]["path"] != path:
+        _preloaded_track = None
 
 
 def queue_cued_track_after_next(path):
@@ -347,6 +369,10 @@ def _start_preloading_next_track():
         global _preloaded_track, _preload_in_flight
         _lower_current_thread_priority()
         sound = load_out_of_process(track["path"], _decode_process)
+        cued = _cued_track_paths[0]
+        if cued is not None and cued != track["path"]:
+            _preload_in_flight = False   # a cue landed meanwhile -- update() preloads that instead
+            return
         _preloaded_track = {"track": track, "sound": sound}
         _preload_in_flight = False
         print(f"[DECK ORCHESTRATOR] Preloaded next track: '{track['title']}'")
@@ -382,7 +408,7 @@ def preview_announcement():
     return True
 
 
-def _begin_reactive_move(inactive, track, announced, direction, label, sweeper_only=False):
+def _begin_reactive_move(inactive, track, announced, direction, label, sweeper_only=False, dovetail=False):
     """Loads `track` in the background and starts the transition once it's
     ready -- used for history navigation and as the no-preload fallback,
     neither of which have a pre-decoded Sound sitting around waiting."""
@@ -395,6 +421,7 @@ def _begin_reactive_move(inactive, track, announced, direction, label, sweeper_o
         "busy_until": None,
         "announced": announced,
         "sweeper_only": sweeper_only,
+        "dovetail": dovetail,
     }
 
     def _load_in_background():
@@ -410,11 +437,32 @@ def _begin_reactive_move(inactive, track, announced, direction, label, sweeper_o
           f"'{track['title']}' onto Deck {inactive} in the background.")
 
 
-def _begin_move(direction, announced, sweeper_only=False):
+def _begin_move(direction, announced, sweeper_only=False, dovetail=False, bypass=False):
+    """`bypass` = drivers/show_engine.py starting a song itself (after the
+    intro, a stab or a mid-show spin); every other move goes past the saved
+    show first (drivers/show_runner.py::intercept_next) -- that is where a
+    spin runs and where the playlist ends."""
     global _pending, _preloaded_track, _history_index
     if _pending is not None:
         print("[DECK ORCHESTRATOR] Move already in flight -- ignoring duplicate trigger.")
         return
+    from drivers import show_runner
+    if not bypass:
+        if state.show_spin_active:
+            print("[DECK ORCHESTRATOR] Wheel spin running -- ignoring the move.")
+            return
+        if direction == "next":
+            verdict = show_runner.intercept_next()
+            if verdict == "stop":
+                from drivers import show_engine
+                print("[DECK ORCHESTRATOR] Saved show's last song is done -- ending the show.")
+                show_engine.stop_show()
+                return
+            if verdict:
+                from drivers import show_engine
+                show_engine.start_spin(verdict[1], verdict[2])
+                return
+    show_runner.note_move()
     if state.medley_active:
         # A normal next/back while a Dance Medley runs: the medley's deck is
         # about to be crossfaded away, so stop feeding it (medley_engine).
@@ -431,7 +479,7 @@ def _begin_move(direction, announced, sweeper_only=False):
         track = _history[_history_index]
         state.deck_change_count += 1
         notify_deck_change()
-        _begin_reactive_move(inactive, track, announced, direction, "replaying", sweeper_only)
+        _begin_reactive_move(inactive, track, announced, direction, "replaying", sweeper_only, dovetail)
         return
 
     # Cue (2026-08-12): resolved fresh right here, at the moment "next" is
@@ -462,7 +510,7 @@ def _begin_move(direction, announced, sweeper_only=False):
                 _pending = {
                     "phase": "ready", "target_deck": inactive, "track": track,
                     "sound": sound, "busy_until": None, "announced": announced,
-                    "sweeper_only": sweeper_only,
+                    "sweeper_only": sweeper_only, "dovetail": dovetail,
                 }
                 print(f"[DECK ORCHESTRATOR] NEXT -> cued '{track['title']}' (already preloaded).")
                 return
@@ -476,7 +524,7 @@ def _begin_move(direction, announced, sweeper_only=False):
             _history_index = len(_history) - 1
             state.deck_change_count += 1
             notify_deck_change()
-            _begin_reactive_move(inactive, cued_track, announced, direction, "cued", sweeper_only)
+            _begin_reactive_move(inactive, cued_track, announced, direction, "cued", sweeper_only, dovetail)
             return
         print(f"[DECK ORCHESTRATOR] Cued track no longer in the library -- "
               f"falling back to a normal pick.")
@@ -488,7 +536,7 @@ def _begin_move(direction, announced, sweeper_only=False):
         track = _history[_history_index]
         state.deck_change_count += 1
         notify_deck_change()
-        _begin_reactive_move(inactive, track, announced, direction, "replaying", sweeper_only)
+        _begin_reactive_move(inactive, track, announced, direction, "replaying", sweeper_only, dovetail)
         return
 
     if _preloaded_track is not None:
@@ -508,6 +556,7 @@ def _begin_move(direction, announced, sweeper_only=False):
             "busy_until": None,
             "announced": announced,
             "sweeper_only": sweeper_only,
+            "dovetail": dovetail,
         }
         print(f"[DECK ORCHESTRATOR] {direction.upper()} -> using preloaded '{track['title']}' "
               f"onto Deck {inactive} (already decoded, no load-time hitch).")
@@ -528,7 +577,7 @@ def _begin_move(direction, announced, sweeper_only=False):
 
     state.deck_change_count += 1
     notify_deck_change()
-    _begin_reactive_move(inactive, track, announced, direction, "no preload ready, loading", sweeper_only)
+    _begin_reactive_move(inactive, track, announced, direction, "no preload ready, loading", sweeper_only, dovetail)
 
 
 def trigger_track_move(direction):
@@ -548,30 +597,24 @@ def trigger_announced_track_move():
     _begin_move("next", announced=True)
 
 
-def trigger_sweeper_only_track_move():
-    """Sweeper "whoosh" transition with NO spoken announcement, regardless
-    of state.auto_announce_enabled -- used for the Trivia Night show
-    flow's first-song handoff (drivers/show_engine.py::_finish_intro()),
-    where the sweeper's attention-grabbing transition is still wanted but
-    a spoken announcement would step on the live host's own intro. The LED
-    banner for this specific transition is forced to "GET READY" (see
-    state.announcement_banner_text_override) since there's no announcement
-    file to caption it from. Every later transition that night goes back
-    to the normal trigger_track_move()/Auto-DJ behavior, unaffected by
-    this."""
-    global _get_ready_next
-    _get_ready_next = True  # only this handoff shows "GET READY"; a plain SFX-only change has no banner
-    _begin_move("next", announced=False, sweeper_only=True)
+def trigger_dovetail_move():
+    """drivers/show_engine.py: the show's next song starts under the tail of a
+    stab (or straight after the intro) -- no sweeper, no VO, a short fade-in.
+    Bypasses the saved-show intercept (the show engine already decided)."""
+    _begin_move("next", announced=False, sweeper_only=False, dovetail=True, bypass=True)
 
 
-_get_ready_next = False
+def trigger_plain_move():
+    """Plain crossfade with no sweeper/VO (after-show background music)."""
+    _begin_move("next", announced=False, sweeper_only=False, bypass=True)
 
 
 def update(now):
     """Per-frame pump -- called once per frame from
     inputs/gamepad.py::process_events(), same as under the old MIDI version."""
-    global _pending, _get_ready_next
+    global _pending
     if _pending is None:
+        _start_preloading_next_track()   # no-op if one is ready or in flight
         return
 
     if _pending["phase"] == "loading":
@@ -594,7 +637,10 @@ def update(now):
         # crossfade has no announcement to wait for, so the mystery teaser
         # should arm immediately for it, same as always.
         state.mystery_defer_until = 0.0
-        if _pending.get("sweeper_only") and not state.sfx_enabled:
+        if _pending.get("dovetail"):
+            fade_duration = config.SHOW_SONG_DOVETAIL_FADE_SECONDS
+            dj_engine.crossfade_decks(outgoing_name, incoming_name, fade_duration)
+        elif _pending.get("sweeper_only") and not state.sfx_enabled:
             dj_engine.crossfade_decks(outgoing_name, incoming_name, CROSSFADE_SECONDS)
         elif _pending.get("sweeper_only"):
             # Trivia Night show flow's first-song handoff (2026-08-14):
@@ -683,19 +729,18 @@ def update(now):
         # operator wanted it filling), only when a real announcement VO
         # actually played this transition (not a plain crossfade). Held for
         # at least the wipe's own duration so it doesn't vanish before the
-        # screen even comes back. Sweeper-only transitions get the same
-        # banner treatment but with fixed "GET READY" text (see
-        # state.announcement_banner_text_override) since there's no
-        # announcement file here to caption it from.
-        if played_announcement:
+        # screen even comes back.
+        if state.intermission_active:
+            # Intermission (2026-10-15): the MC is switching songs between
+            # games -- no "GET READY"/announcement caption on the panels.
+            # Clear any banner window already open so none lingers.
+            state.announcement_banner_text_override = ""
+            state.announcement_banner_from = 0.0
+            state.announcement_banner_until = 0.0
+        elif played_announcement:
             state.announcement_banner_text_override = ""  # clear any stale sweeper-only override
             state.announcement_banner_from = now
             state.announcement_banner_until = now + max(config.ANNOUNCEMENT_BANNER_HOLD_SECONDS, wipe_hold)
-        elif played_sweeper_only and _get_ready_next:
-            state.announcement_banner_text_override = "GET READY"
-            state.announcement_banner_from = now
-            state.announcement_banner_until = now + max(config.ANNOUNCEMENT_BANNER_HOLD_SECONDS, wipe_hold)
-        _get_ready_next = False
 
         state.blank_lower_marquees = True  # default for every new song; a saved exception is re-applied once it is identified
         state.marquee_transition_start = time.time()  # marquee wipe on every song change

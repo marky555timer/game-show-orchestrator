@@ -62,6 +62,8 @@ _status = "disabled"
 _current_tunnel_url = ""
 _lock = threading.Lock()
 _last_report_result = None   # last redirector POST outcome ("ok"/"HTTP 404"/...), for change-only logging
+_accepted_url = None         # the tunnel URL the redirector last said "ok" to
+_last_post_at = 0.0
 
 
 def get_status():
@@ -108,7 +110,8 @@ def _set_status(value):
 def _post_update(url):
     if requests is None or not config.TUNNEL_REDIRECT_UPDATE_URL:
         return
-    global _last_report_result
+    global _last_report_result, _accepted_url, _last_post_at
+    _last_post_at = time.monotonic()
     try:
         r = requests.post(
             config.TUNNEL_REDIRECT_UPDATE_URL,
@@ -116,8 +119,14 @@ def _post_update(url):
             timeout=5.0,
         )
         result = "ok" if r.status_code == 200 else f"HTTP {r.status_code}"
+        if result == "ok":
+            # the reply carries the admin-login epoch (a new public IP = logged out)
+            from drivers import web_sync
+            web_sync.note_epoch((r.json() or {}).get("epoch"))
     except Exception as e:
         result = f"error: {e}"
+    if result == "ok":
+        _accepted_url = url
     # Heartbeats run every minute: log only when the outcome changes, so a
     # redirector that starts answering 404/403 (e.g. wiped by a site
     # redeploy, 2026-10-10) shows up once instead of hiding or spamming.
@@ -305,11 +314,17 @@ def _heartbeat_loop():
     """Independent of _reader_loop (which only wakes on new subprocess
     output) -- re-POSTs the current URL on a plain wall-clock timer so
     cloudflare_redirect/'s staleness check never times out during a long
-    quiet stretch with no new cloudflared log lines."""
+    quiet stretch with no new cloudflared log lines. Until the redirector has
+    accepted the current URL (a cold boot's first POST often fails while
+    WiFi/DNS are still coming up, 2026-10-17), it retries every
+    config.TUNNEL_REPORT_RETRY_SECONDS instead -- otherwise the QR sends
+    guests to the previous boot's dead tunnel for up to a minute."""
     while True:
-        time.sleep(config.TUNNEL_HEARTBEAT_SECONDS)
+        time.sleep(config.TUNNEL_REPORT_RETRY_SECONDS)
         url = get_current_tunnel_url()
-        if url:
+        if not url:
+            continue
+        if url != _accepted_url or time.monotonic() - _last_post_at >= config.TUNNEL_HEARTBEAT_SECONDS:
             _post_update(url)
 
 

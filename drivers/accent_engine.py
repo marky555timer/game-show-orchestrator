@@ -242,16 +242,30 @@ def _target_look():
         # keep the outline strip fully off rather than showing whatever DJ
         # color/theme happened to be selected the last time the show ran
         # (2026-09-27 request), same phases drivers/wled_engine.py's own
-        # marquee already blanks for.
+        # marquee already blanks for. Exception: in the panel menu, the
+        # strip glows the colour of the arcade button being held (the LED
+        # panels themselves are one colour).
+        if state.show_phase == "setup":
+            from drivers import panel_menu
+            held = panel_menu.held()
+            if held:
+                r, g, b = config.MENU_OUTLINE_COLORS[held]
+                # tt 1 = snaps on (0.1s) even for a quick tap; release fades out normally
+                return (config.ACCENT_FX_SOLID, r, g, b, state.accent_speed, None, None, None, 0, 1)
         return (config.ACCENT_FX_SOLID, 0, 0, 0, state.accent_speed, None, None, None, 0, None)
     if state.show_phase == "intro":
-        # Show-intro scene (2026-09-27 request): a fast, plain white
-        # "movie style" marquee chase -- WLED's built-in Theater Chase at
-        # full speed, same look drivers/wled_engine.py's Simon top-strip
-        # pattern and set_movie_chase() use for this board, just always-on
-        # for the whole scene rather than a manual bring-up test.
-        return (config.ACCENT_FX_THEATER, 255, 255, 255, config.ACCENT_INTRO_CHASE_SPEED,
-                None, None, None, 0, None)
+        # Show open (2026-10-14, timings in config.SHOW_INTRO_*): dark until
+        # the twinkle beat, then WLED's "Puddles" effect (brightness ramps
+        # via _intro_brightness()), and once it has faded back out a steady
+        # white. All brightness motion rides on the "bri" channel, so each
+        # look change happens at (near) zero brightness and never pops.
+        el = time.time() - state.show_phase_started_at
+        if el < config.SHOW_INTRO_TWINKLE_START_SECONDS:
+            return (config.ACCENT_FX_SOLID, 0, 0, 0, state.accent_speed, None, None, None, 0, None)
+        if el < config.SHOW_INTRO_FADE_OUT_AT_SECONDS + config.SHOW_INTRO_FADE_OUT_SECONDS:
+            return (config.ACCENT_FX_PUDDLES, 255, 255, 255, config.SHOW_INTRO_PUDDLES_SPEED,
+                    None, None, None, config.SHOW_INTRO_PUDDLES_PALETTE, None)
+        return (config.ACCENT_FX_SOLID, 255, 255, 255, state.accent_speed, None, None, None, 0, None)
     if (state.mode == state.MODE_GAME and state.quiz_locked and not state.quiz_players
             and state.factoid_choices and state.quiz_graded_at
             and state.quiz_graded_at != _last_captured_grade_at):
@@ -459,6 +473,33 @@ def _note_track_change(now):
         _track_styled = False
 
 
+def _intro_brightness():
+    """Outline strip brightness (1-255) for the show open, from
+    config.SHOW_INTRO_*: ramps up with the puddles (10-14s), holds, ramps
+    down from 15s, then ramps up again to the steady-white level. Never 0
+    -- WLED treats bri 0 as "off", and a look change at 1 is invisible."""
+    c = config
+    el = time.time() - state.show_phase_started_at
+    white = c.SHOW_INTRO_WHITE_BRIGHTNESS * 255.0
+    if el < c.SHOW_INTRO_TWINKLE_START_SECONDS:
+        level = 1.0
+    elif el < c.SHOW_INTRO_TWINKLE_FULL_SECONDS:
+        level = 1.0 + 254.0 * (el - c.SHOW_INTRO_TWINKLE_START_SECONDS) / (
+            c.SHOW_INTRO_TWINKLE_FULL_SECONDS - c.SHOW_INTRO_TWINKLE_START_SECONDS)
+    elif el < c.SHOW_INTRO_FADE_OUT_AT_SECONDS:
+        level = 255.0
+    elif el < c.SHOW_INTRO_FADE_OUT_AT_SECONDS + c.SHOW_INTRO_FADE_OUT_SECONDS:
+        level = 255.0 - 254.0 * (el - c.SHOW_INTRO_FADE_OUT_AT_SECONDS) / c.SHOW_INTRO_FADE_OUT_SECONDS
+    else:
+        up = min(1.0, (el - c.SHOW_INTRO_FADE_OUT_AT_SECONDS - c.SHOW_INTRO_FADE_OUT_SECONDS)
+                 / c.SHOW_INTRO_WHITE_FADE_UP_SECONDS)
+        level = 1.0 + (white - 1.0) * up
+    return max(1, min(255, int(round(level))))
+
+
+_intro_bri_sent_at = 0.0
+
+
 def sync_to_show_state():
     """Call once per frame from main.py (mirrors wled_engine.update()'s own
     per-frame call shape) -- cheap no-op unless the target look actually
@@ -567,6 +608,11 @@ def sync_to_show_state():
                 # every other look change stays this board's normal instant
                 # cut. See config.ACCENT_QUIZ_CELEBRATION_DISSOLVE_TT_DS.
                 payload["tt"] = tt
+            if state.show_phase == "intro":
+                # Same payload as the look so a new effect never shows for
+                # a frame at whatever brightness the board had before.
+                payload["bri"] = _intro_brightness()
+                payload["tt"] = 0
             _send(payload)
         _last_sent_look = look
         _last_sent_bri = None  # force the brightness check below to resend -- see docstring
@@ -586,6 +632,16 @@ def sync_to_show_state():
             targets = sorted({0, *(config.ACCENT_PRESET_OVERRIDE_TARGETS.get(look[1]) or [])})
             _send({"seg": [{"id": sid, "sx": sx} for sid in targets]})
             _last_sent_preset_speed = sx
+    global _intro_bri_sent_at
+    if state.show_phase == "intro":
+        # Scripted ramps (see _intro_brightness()): changes go out at most
+        # ~12/s, instantly (tt 0), rather than one serial write per frame.
+        bri = _intro_brightness()
+        if bri != _last_sent_bri and now - _intro_bri_sent_at >= 0.08:
+            _send({"bri": bri, "tt": 0})
+            _last_sent_bri = bri
+            _intro_bri_sent_at = now
+        return
     bri = max(0, min(255, state.accent_brightness))
     if bri != _last_sent_bri:
         _send({"bri": bri})

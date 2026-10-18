@@ -1,0 +1,646 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Game Show Remote &mdash; Show Designer</title>
+<style>
+  :root { color-scheme: dark; }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; padding: 16px 16px 48px;
+    background: #0b0b0d; color: #f2f2f2;
+    font-family: -apple-system, Segoe UI, Roboto, sans-serif;
+  }
+  h1 { font-size: 1.1rem; text-transform: uppercase; letter-spacing: .08em; color: #ff3b30; margin: 0 0 16px; }
+  h2 { font-size: .8rem; text-transform: uppercase; letter-spacing: .06em; color: #999; margin: 0 0 10px; }
+  section { background: #17171a; border-radius: 10px; padding: 14px; margin-bottom: 14px; }
+  button { cursor: pointer; font: inherit; }
+  .btn { padding: 8px 12px; border-radius: 8px; border: 1px solid #333; background: #202024; color: #f2f2f2; font-size: .85rem; }
+  .btn:hover { border-color: #555; }
+  .btn.primary { background: #ff3b30; border-color: #ff3b30; color: #fff; font-weight: 700; }
+  .btn.danger { border-color: #7a2a26; color: #ff8a80; }
+  .btn.small { padding: 3px 8px; font-size: .75rem; }
+  .btn:disabled { opacity: .35; cursor: default; }
+  .nav-bar { display: flex; align-items: center; gap: 10px; margin-bottom: 4px; position: relative; }
+  .hamburger-btn { background: none; border: 1px solid #333; border-radius: 8px; color: #f2f2f2;
+    font-size: 1.2rem; line-height: 1; padding: 6px 12px; cursor: pointer; }
+  .nav-menu { display: none; position: absolute; top: 42px; left: 0; background: #17171a;
+    border: 1px solid #333; border-radius: 8px; z-index: 300; overflow: hidden; min-width: 170px; }
+  .nav-menu.open { display: block; }
+  .nav-menu a { display: block; padding: 12px 16px; color: #f2f2f2; text-decoration: none;
+    font-size: .9rem; border-bottom: 1px solid #2a2a2e; }
+  .nav-menu a:last-child { border-bottom: none; }
+  .nav-menu a:hover { background: #202024; }
+  .nav-menu a.active { color: #ff3b30; font-weight: 700; }
+
+  .layout { display: grid; grid-template-columns: 220px minmax(0, 1fr) 380px; gap: 14px; align-items: start; }
+  @media (max-width: 1100px) { .layout { grid-template-columns: 200px minmax(0, 1fr); } .picker { grid-column: 1 / -1; } }
+  @media (max-width: 700px) { .layout { grid-template-columns: 1fr; } }
+
+  .show-list { display: flex; flex-direction: column; gap: 6px; max-height: 70vh; overflow-y: auto; }
+  .show-item { padding: 8px 10px; border-radius: 8px; background: #202024; border: 1px solid transparent; cursor: pointer; }
+  .show-item:hover { border-color: #444; }
+  .show-item.active { border-color: #ff3b30; }
+  .show-item .nm { font-weight: 700; font-size: .9rem; }
+  .show-item .meta { color: #888; font-size: .72rem; margin-top: 2px; }
+  .badge { display: inline-block; font-size: .65rem; padding: 1px 6px; border-radius: 999px; background: #2b3b52; color: #9cc9ff; margin-left: 4px; vertical-align: 1px; }
+  .badge.run { background: #1f3d25; color: #8fe39b; }
+
+  .head { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+  .name-input { font-size: 1.2rem; font-weight: 700; background: #111; color: #f2f2f2; border: 1px solid #333;
+    border-radius: 8px; padding: 6px 10px; width: 12ch; }
+  .name-input.bad { border-color: #ff3b30; }
+  .save-state { color: #777; font-size: .75rem; margin-left: auto; }
+  .settings { display: flex; gap: 18px; flex-wrap: wrap; margin-top: 12px; align-items: center; }
+  .settings label { font-size: .8rem; color: #aaa; display: flex; align-items: center; gap: 6px; }
+  .seg { display: inline-flex; border: 1px solid #333; border-radius: 8px; overflow: hidden; }
+  .seg button { background: #202024; color: #bbb; border: 0; padding: 5px 10px; font-size: .8rem; }
+  .seg button.on { background: #ff3b30; color: #fff; font-weight: 700; }
+  select { background: #111; color: #f2f2f2; border: 1px solid #333; border-radius: 6px; padding: 4px 6px; font-size: .8rem; }
+
+  .totals { display: flex; gap: 16px; align-items: baseline; margin: 4px 0 10px; font-size: .85rem; color: #aaa; flex-wrap: wrap; }
+  .totals .big { font-size: 1.3rem; font-weight: 700; color: #f2f2f2; }
+  .playlist { display: flex; flex-direction: column; gap: 4px; min-height: 60px; }
+  .row { display: grid; grid-template-columns: 26px minmax(0, 1fr) auto auto auto; gap: 8px; align-items: center;
+    padding: 6px 8px; border-radius: 8px; background: #202024; border: 1px solid transparent; }
+  .row.drag-over { border-color: #ff3b30; }
+  .row.spin { background: #241c33; }
+  .row .num { color: #666; font-size: .75rem; text-align: right; cursor: grab; }
+  .row .ttl { font-size: .88rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .row .ttl small { color: #888; }
+  .row .len { color: #aaa; font-size: .78rem; min-width: 52px; text-align: right; font-variant-numeric: tabular-nums; }
+  .row .ops { display: flex; gap: 3px; }
+  .dec { display: inline-block; font-size: .68rem; padding: 1px 6px; border-radius: 4px; background: #333; color: #ddd; margin-left: 6px; }
+  .warn { color: #ffb74d; font-size: .75rem; }
+  .ending { display: flex; gap: 4px; align-items: center; }
+  .ending input { width: 62px; background: #111; color: #f2f2f2; border: 1px solid #333; border-radius: 6px; padding: 3px 5px; font-size: .78rem; }
+  .ending input.bad { border-color: #ff3b30; }
+  .insert-bar { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
+  .empty { color: #777; font-size: .85rem; padding: 14px; text-align: center; border: 1px dashed #333; border-radius: 8px; }
+
+  .search { width: 100%; padding: 8px 10px; background: #111; color: #f2f2f2; border: 1px solid #333; border-radius: 8px; font-size: .9rem; }
+  .filters { display: flex; gap: 8px; align-items: center; margin: 8px 0; font-size: .75rem; color: #999; flex-wrap: wrap; }
+  .songs { max-height: 68vh; overflow-y: auto; display: flex; flex-direction: column; gap: 3px; }
+  .song { display: grid; grid-template-columns: minmax(0, 1fr) auto auto auto; gap: 6px; align-items: center; padding: 5px 8px; border-radius: 6px; background: #1d1d21; }
+  .song:hover { background: #26262b; }
+  .song .ttl { font-size: .82rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .song .ttl small { color: #888; }
+  .song .len { color: #888; font-size: .72rem; font-variant-numeric: tabular-nums; }
+  .song.undated .ttl { color: #666; }
+  .song.undated .ttl small { color: #555; }
+  .chips { grid-column: 1 / -1; display: flex; gap: 3px; flex-wrap: wrap; }
+  .chip { font-size: .66rem; padding: 2px 6px; border-radius: 4px; border: 1px solid #444; background: #151518; color: #bbb; cursor: pointer; }
+  .chip:hover { border-color: #ff3b30; color: #fff; }
+  .muted { color: #777; font-size: .75rem; }
+  .toast { position: fixed; left: 50%; bottom: 16px; transform: translateX(-50%); background: #202024; border: 1px solid #333;
+    border-radius: 8px; padding: 8px 14px; font-size: .85rem; opacity: 0; transition: opacity .2s; pointer-events: none; z-index: 200; }
+  .toast.show { opacity: 1; }
+  .web-note { color: #888; font-size: .75rem; margin: -8px 0 14px; }
+  .web-note b { color: #bbb; font-weight: 600; }
+  .play-btn { background: none; border: 1px solid #333; color: #bbb; border-radius: 6px; padding: 1px 6px; font-size: .7rem; cursor: pointer; }
+  .play-btn.on { border-color: #ff3b30; color: #ff3b30; }
+  .web-only { display: none; }
+  body.web .web-only { display: initial; }
+  body.web .pi-only { display: none !important; }
+</style>
+</head>
+<body>
+  <div class="nav-bar">
+    <button class="hamburger-btn" onclick="toggleNavMenu()">&#9776;</button>
+    <div class="nav-menu" id="nav-menu">
+      <a href="/" class="pi-only">Remote</a>
+      <a href="/library" class="pi-only">File Manager</a>
+      <a href="/setup" class="pi-only">Setup</a>
+      <a href="/designer" class="active">Show Designer</a>
+      <a href="/joyassign" class="pi-only">Joy Assign</a>
+      <a href="/questions" class="pi-only">Questions</a>
+      <a href="/play/admin.php" class="web-only">Show machine</a>
+      <a href="#" onclick="logout();return false">Log out</a>
+    </div>
+  </div>
+  <h1>Show Designer</h1>
+  <div class="web-note web-only" id="web-note"></div>
+
+  <div class="layout">
+    <section>
+      <h2>Saved shows</h2>
+      <button class="btn primary" style="width:100%;margin-bottom:10px" onclick="newShow()">+ NEW SHOW</button>
+      <div class="show-list" id="show-list"></div>
+    </section>
+
+    <section id="editor">
+      <div class="empty" id="no-show">Pick a show on the left, or make a new one.</div>
+      <div id="show-editor" style="display:none">
+        <div class="head">
+          <input class="name-input" id="name-input" maxlength="10" title="1-10 letters or numbers"
+                 onkeydown="if(event.key==='Enter')this.blur()" onblur="renameShow()">
+          <button class="btn" onclick="duplicateShow()" title="A copy with a new name">DUPLICATE</button>
+          <button class="btn" onclick="previewShow()" title="Play the show here in the browser: music, panels, marquee">PREVIEW</button>
+          <button class="btn pi-only" onclick="selectShow()" title="The panel's BLACK screen and the Setup page start this one">USE NEXT</button>
+          <button class="btn pi-only" onclick="runShow()" title="Load it now and hold BLACK">RUN NOW</button>
+          <button class="btn danger" onclick="deleteShow()">DELETE</button>
+          <span class="save-state" id="save-state"></span>
+        </div>
+        <div class="settings">
+          <label>Intro <span class="seg" id="seg-intro"><button data-v="1">YES</button><button data-v="0">NO</button></span></label>
+          <label>Questions <span class="seg" id="seg-questions"><button data-v="1">YES</button><button data-v="0">NO</button></span></label>
+          <label>Decades <select id="low-sel"></select> to <select id="high-sel"></select></label>
+        </div>
+        <div class="muted" style="margin-top:6px">The decade range only matters while a show without songs is being recorded (songs are then picked from it).</div>
+
+        <h2 style="margin-top:18px">Playlist</h2>
+        <div class="totals">
+          <span>Running time <span class="big" id="total-time">0:00</span></span>
+          <span id="total-detail"></span>
+        </div>
+        <div class="playlist" id="playlist"></div>
+        <div class="insert-bar">
+          <button class="btn" onclick="insertSpin()">+ INSERT WHEEL SPIN</button>
+          <span class="muted" id="insert-hint">Inserts at the end. Click a row first to insert above it.</span>
+        </div>
+      </div>
+    </section>
+
+    <section class="picker">
+      <h2>Songs</h2>
+      <input class="search" id="search" placeholder="Search title or artist" oninput="renderSongs()">
+      <div class="filters">
+        <label><input type="checkbox" id="only-range" onchange="renderSongs()"> only the show's decades</label>
+        <span id="song-count"></span>
+      </div>
+      <div class="songs" id="songs"></div>
+    </section>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+<script>
+// One page, two homes: the Pi serves it at /designer, and triviacade.com/play/designer/
+// serves a copy (tools/publish_web_designer.py) so shows can be made while the Pi is off.
+// The web copy talks to api.php there, which syncs with the Pi when it is on.
+const WEB = location.pathname.startsWith('/play/designer');
+if (WEB) document.body.classList.add('web');
+const _HOME = WEB ? location.pathname : '/designer';
+const _WEB_ACTIONS = {'/api/shows/songs': 'songs', '/api/shows/tag-decade': 'tag-decade'};
+function ep(path) {
+  if (!WEB) return path;
+  return 'api.php?a=' + (_WEB_ACTIONS[path] || path.replace('/api/', ''));
+}
+function audioUrl(song) {
+  return WEB ? 'api.php?a=audio&id=' + song.pid : '/api/library/audio?filename=' + encodeURIComponent(song.file);
+}
+async function logout() {
+  await fetch(WEB ? 'api.php?a=logout' : '/auth/logout', { method: 'POST' });
+  location.reload();
+}
+const _ADMIN_FALLBACK_URL = 'https://triviacade.com/play/admin.php';
+let _apiFailStreak = 0, _apiFailRedirecting = false;
+function _onApiFailure() {
+  if (_apiFailRedirecting || !location.hostname.endsWith('trycloudflare.com')) return;
+  if (++_apiFailStreak >= 5) { _apiFailRedirecting = true; location.href = _ADMIN_FALLBACK_URL; }
+}
+async function api(path, opts) {
+  try {
+    const res = await fetch(ep(path), opts);
+    if (res.status === 401) { location.reload(); return null; }
+    const data = await res.json();
+    _apiFailStreak = 0;
+    return data;
+  } catch (e) { console.error(path, e); _onApiFailure(); return null; }
+}
+function post(path, body) {
+  return api(path, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(body || {}) });
+}
+let _toastTimer = null;
+function showToast(msg) {
+  const el = document.getElementById('toast');
+  el.textContent = msg; el.classList.add('show');
+  clearTimeout(_toastTimer); _toastTimer = setTimeout(() => el.classList.remove('show'), 2500);
+}
+function toggleNavMenu() { document.getElementById('nav-menu').classList.toggle('open'); }
+document.addEventListener('click', (e) => {
+  const menu = document.getElementById('nav-menu');
+  if (menu.classList.contains('open') && !menu.contains(e.target) && !e.target.closest('.hamburger-btn')) menu.classList.remove('open');
+});
+function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, (c) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function decLabel(d) { return (d && d.startsWith('19')) ? d.slice(2) : (d || ''); }
+function fmt(sec) {
+  sec = Math.max(0, Math.round(sec));
+  const h = Math.floor(sec / 3600), m = Math.floor((sec % 3600) / 60), s = sec % 60;
+  return h ? `${h}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}` : `${m}:${String(s).padStart(2,'0')}`;
+}
+function parseTime(txt) {
+  txt = String(txt || '').trim();
+  if (!txt) return null;
+  const parts = txt.split(':').map(Number);
+  if (parts.some(isNaN)) return null;
+  return parts.length === 2 ? parts[0] * 60 + parts[1] : parts[0];
+}
+
+// ------------------------------------------------------------- state
+let _shows = [], _meta = {}, _show = null, _songs = [], _byFile = {};
+let _spinSeconds = 12, _spinFade = 1.5, _insertAt = null;
+let _saveTimer = null, _saving = false, _dirty = false;
+
+async function loadShows(selectName) {
+  const d = await api('/api/shows');
+  if (!d) return;
+  _shows = d.shows || [];
+  _meta = d;
+  renderShowList();
+  renderWebNote();
+  const name = selectName || (_show && _show.name) || new URLSearchParams(location.search).get('show') || d.selected || d.last_played;
+  const sh = _shows.find((x) => x.name === name);
+  if (sh && (!_show || _show.name !== sh.name)) openShow(sh);
+}
+function ago(ts) {
+  if (!ts) return 'never';
+  const m = Math.round((Date.now() / 1000 - ts) / 60);
+  if (m < 2) return 'just now';
+  if (m < 120) return m + ' min ago';
+  if (m < 48 * 60) return Math.round(m / 60) + ' h ago';
+  return Math.round(m / 1440) + ' days ago';
+}
+function renderWebNote() {
+  if (!WEB) return;
+  document.getElementById('web-note').innerHTML =
+    `Web copy — changes reach the show machine the next time it is on (newest edit wins). ` +
+    `Show machine last seen <b>${ago(_meta.pi_seen)}</b> · song list from <b>${ago(_meta.catalog_at)}</b>.`;
+}
+function previewShow() {
+  if (!_show) return;
+  if (_dirty) flushSave();
+  window.open((WEB ? _HOME + '?page=sim&' : '/designer/sim?') + 'show=' + encodeURIComponent(_show.name), 'tc_sim');
+}
+function renderShowList() {
+  const el = document.getElementById('show-list');
+  if (!_shows.length) { el.innerHTML = '<div class="muted">No saved shows yet.</div>'; return; }
+  el.innerHTML = _shows.map((s) => {
+    const songs = (s.items || []).filter((i) => i.type === 'song').length;
+    const badges = (s.name === _meta.running ? '<span class="badge run">RUNNING</span>' : '') +
+                   (s.name === _meta.selected ? '<span class="badge">NEXT</span>' : '');
+    return `<div class="show-item ${_show && _show.name === s.name ? 'active' : ''}" onclick="openByName(${_shows.indexOf(s)})">
+      <div class="nm">${esc(s.name)}${badges}</div>
+      <div class="meta">${songs ? songs + ' songs' : 'not recorded yet'} · ${decLabel(s.low)}–${decLabel(s.high)}${s.last_played ? ' · played ' + esc(s.last_played.slice(0, 16)) : ''}</div>
+    </div>`;
+  }).join('');
+}
+function openByName(idx) {
+  if (_dirty) flushSave();
+  const sh = _shows[idx];
+  if (sh) openShow(sh);
+}
+function openShow(sh) {
+  _show = JSON.parse(JSON.stringify(sh));
+  _insertAt = null;
+  history.replaceState(null, '', _HOME + '?show=' + encodeURIComponent(_show.name));
+  document.getElementById('no-show').style.display = 'none';
+  document.getElementById('show-editor').style.display = '';
+  document.getElementById('name-input').value = _show.name;
+  document.getElementById('name-input').classList.remove('bad');
+  setSeg('seg-intro', _show.intro); setSeg('seg-questions', _show.questions);
+  fillDecadeSelect('low-sel', _show.low); fillDecadeSelect('high-sel', _show.high);
+  document.getElementById('save-state').textContent = 'Saved';
+  renderShowList(); renderPlaylist(); renderSongs();
+}
+
+// ---------------------------------------------------------- settings
+function setSeg(id, on) {
+  document.querySelectorAll(`#${id} button`).forEach((b) => b.classList.toggle('on', (b.dataset.v === '1') === !!on));
+}
+['seg-intro', 'seg-questions'].forEach((id) => {
+  document.getElementById(id).addEventListener('click', (e) => {
+    const b = e.target.closest('button'); if (!b || !_show) return;
+    const key = id === 'seg-intro' ? 'intro' : 'questions';
+    _show[key] = b.dataset.v === '1'; setSeg(id, _show[key]); scheduleSave();
+  });
+});
+function fillDecadeSelect(id, value) {
+  const sel = document.getElementById(id);
+  sel.innerHTML = (_meta.decades || []).map((d) => `<option value="${d}">${decLabel(d)}</option>`).join('');
+  sel.value = value;
+}
+function onDecadeChange(which) {
+  if (!_show) return;
+  const decs = _meta.decades || [];
+  _show[which] = document.getElementById(which + '-sel').value;
+  if (decs.indexOf(_show.low) > decs.indexOf(_show.high)) {   // LOW and HIGH push each other
+    if (which === 'low') _show.high = _show.low; else _show.low = _show.high;
+    fillDecadeSelect('low-sel', _show.low); fillDecadeSelect('high-sel', _show.high);
+  }
+  scheduleSave(); renderSongs();
+}
+document.getElementById('low-sel').addEventListener('change', () => onDecadeChange('low'));
+document.getElementById('high-sel').addEventListener('change', () => onDecadeChange('high'));
+
+// ------------------------------------------------------------ autosave
+function scheduleSave() {
+  _dirty = true;
+  document.getElementById('save-state').textContent = 'Editing…';
+  clearTimeout(_saveTimer);
+  _saveTimer = setTimeout(flushSave, 600);
+}
+async function flushSave() {
+  clearTimeout(_saveTimer);
+  if (!_show || !_dirty) return;
+  _dirty = false; _saving = true;
+  document.getElementById('save-state').textContent = 'Saving…';
+  const r = await post('/api/shows/save', {
+    name: _show.name, intro: _show.intro, questions: _show.questions,
+    low: _show.low, high: _show.high, items: _show.items,
+  });
+  _saving = false;
+  if (r && r.ok) {
+    document.getElementById('save-state').textContent = 'Saved ' + new Date().toLocaleTimeString();
+    const i = _shows.findIndex((x) => x.name === _show.name);
+    if (i >= 0) _shows[i] = r.show;
+    _show.updated_at = r.show.updated_at;
+    renderShowList();
+  } else {
+    _dirty = true;
+    document.getElementById('save-state').textContent = 'NOT SAVED — ' + ((r && r.reason) || 'no connection');
+  }
+}
+window.addEventListener('beforeunload', () => { if (_dirty) flushSave(); });
+
+// ------------------------------------------------------------- shows
+async function newShow() {
+  if (_dirty) await flushSave();
+  const r = await post('/api/shows/new');
+  if (r && r.ok) { await loadShows(r.show.name); openShow(r.show); showToast('New show ' + r.show.name); }
+}
+async function renameShow() {
+  if (!_show) return;
+  const input = document.getElementById('name-input');
+  const nv = input.value.trim();
+  if (nv === _show.name) { input.classList.remove('bad'); return; }
+  if (_dirty) await flushSave();
+  const r = await post('/api/shows/rename', { name: _show.name, new_name: nv });
+  if (r && r.ok) {
+    input.classList.remove('bad');
+    _show.name = r.name;
+    await loadShows(r.name);
+    history.replaceState(null, '', _HOME + '?show=' + encodeURIComponent(r.name));
+    showToast('Renamed to ' + r.name);
+  } else {
+    input.classList.add('bad');
+    showToast((r && r.reason) || 'Could not rename.');
+  }
+}
+async function duplicateShow() {
+  if (!_show) return;
+  if (_dirty) await flushSave();
+  const r = await post('/api/shows/duplicate', { name: _show.name });
+  if (r && r.ok) { await loadShows(r.show.name); openShow(r.show); showToast('Copied as ' + r.show.name); }
+}
+async function deleteShow() {
+  if (!_show || !confirm(`Delete the show "${_show.name}"? This can't be undone.`)) return;
+  clearTimeout(_saveTimer); _dirty = false;
+  const r = await post('/api/shows/delete', { name: _show.name });
+  if (r && r.ok) {
+    _show = null;
+    document.getElementById('show-editor').style.display = 'none';
+    document.getElementById('no-show').style.display = '';
+    history.replaceState(null, '', _HOME);
+    await loadShows();
+    showToast('Deleted.');
+  } else showToast((r && r.reason) || 'Could not delete.');
+}
+async function selectShow() {
+  if (!_show) return;
+  if (_dirty) await flushSave();
+  const r = await post('/api/shows/select', { name: _show.name });
+  if (r && r.ok) { await loadShows(); showToast(_show.name + ' starts next'); }
+}
+async function runShow() {
+  if (!_show) return;
+  if (_dirty) await flushSave();
+  const r = await post('/api/shows/run', { name: _show.name });
+  if (r && r.ok) { showToast(_show.name + ' loaded — BLACK, any panel button starts it'); loadShows(); }
+  else showToast((r && r.reason) || 'Could not start.');
+}
+
+// ---------------------------------------------------------- playlist
+function songInfo(file) { return _byFile[file] || null; }
+function nextSongIndex(items, from) {
+  for (let i = from + 1; i < items.length; i++) if (items[i].type === 'song') return i;
+  return -1;
+}
+function itemSeconds(it) {
+  if (it.type === 'spin') return _spinSeconds + _spinFade;
+  if (it.ending === 'cut') return Number(it.at) || 0;
+  const info = songInfo(it.file);
+  return info ? (info.cue_out || info.duration) : 0;
+}
+function renderPlaylist() {
+  const el = document.getElementById('playlist');
+  const items = _show.items || [];
+  if (!items.length) {
+    el.innerHTML = '<div class="empty">No songs yet. Add songs from the list on the right — or leave it empty and the show records itself the first time it runs.</div>';
+  } else {
+    let n = 0;
+    el.innerHTML = items.map((it, i) => {
+      const ops = `<div class="ops">
+        <button class="btn small" ${i === 0 ? 'disabled' : ''} onclick="moveItem(${i},-1)" title="Up">&#9650;</button>
+        <button class="btn small" ${i === items.length - 1 ? 'disabled' : ''} onclick="moveItem(${i},1)" title="Down">&#9660;</button>
+        <button class="btn small danger" onclick="removeItem(${i})" title="Remove">&#10005;</button></div>`;
+      const sel = _insertAt === i ? ' style="border-color:#3a7bd5"' : '';
+      if (it.type === 'spin') {
+        const nx = nextSongIndex(items, i);
+        let land = '<span class="warn">no song after it — skipped</span>';
+        if (nx >= 0) {
+          const info = songInfo(items[nx].file);
+          const dec = info ? info.decade : '';
+          if (!dec) land = '<span class="warn">next song has no decade — skipped</span>';
+          else if (!(_meta.wheel_decades || []).includes(dec)) land = `<span class="warn">the wheel has no ${decLabel(dec)} slot yet — skipped</span>`;
+          else land = `lands on <b>${decLabel(dec)}</b> (the next song's decade)`;
+        }
+        return `<div class="row spin" draggable="true" data-i="${i}" onclick="pickRow(event,${i})"${sel}>
+          <span class="num">&#8597;</span>
+          <span class="ttl">&#127905; WHEEL SPIN &nbsp;<small>${land}</small></span>
+          <span></span><span class="len">${fmt(itemSeconds(it))}</span>${ops}</div>`;
+      }
+      n++;
+      const info = songInfo(it.file);
+      const title = info ? info.title : (it.title || it.file);
+      const artist = info ? info.artist : (it.artist || '');
+      const dec = info && info.decade ? `<span class="dec">${decLabel(info.decade)}</span>` : '<span class="warn"> no decade</span>';
+      const missing = info ? '' : ' <span class="warn">missing from the library — skipped</span>';
+      const cut = it.ending === 'cut';
+      const ending = `<div class="ending">
+        <select onchange="setEnding(${i}, this.value)">
+          <option value="full" ${it.ending === 'full' ? 'selected' : ''}>Play full</option>
+          <option value="quiz" ${it.ending === 'quiz' ? 'selected' : ''}>After quiz</option>
+          <option value="cut" ${cut ? 'selected' : ''}>Cut at</option>
+        </select>
+        ${cut ? `<input value="${fmt(it.at || 0)}" onchange="setCut(${i}, this)" title="mm:ss into the song">` : ''}</div>`;
+      return `<div class="row" draggable="true" data-i="${i}" onclick="pickRow(event,${i})"${sel}>
+        <span class="num">${n}</span>
+        <span class="ttl">${esc(title)} <small>— ${esc(artist)}</small>${dec}${missing}</span>
+        ${ending}<span class="len">${fmt(itemSeconds(it))}${it.ending === 'quiz' ? '*' : ''}</span>${ops}</div>`;
+    }).join('');
+    wireDrag();
+  }
+  document.getElementById('insert-hint').textContent = _insertAt === null
+    ? 'Inserts at the end. Click a row first to insert above it.'
+    : `Inserts above row ${_insertAt + 1}. Click it again to go back to the end.`;
+  renderTotals();
+}
+function renderTotals() {
+  const items = _show.items || [];
+  const total = items.reduce((a, it) => a + itemSeconds(it), 0);
+  const songs = items.filter((i) => i.type === 'song').length;
+  const spins = items.filter((i) => i.type === 'spin').length;
+  const quiz = items.filter((i) => i.type === 'song' && i.ending === 'quiz').length;
+  document.getElementById('total-time').textContent = fmt(total);
+  document.getElementById('total-detail').textContent =
+    `${songs} song${songs === 1 ? '' : 's'}, ${spins} spin${spins === 1 ? '' : 's'}` +
+    (_show.intro ? ' · plus the intro (host-paced)' : '') +
+    (quiz ? ` · * ${quiz} "after quiz" song${quiz === 1 ? '' : 's'} counted at full length (may end sooner)` : '');
+}
+function pickRow(e, i) {
+  if (e.target.closest('button, select, input')) return;
+  _insertAt = (_insertAt === i) ? null : i;
+  renderPlaylist();
+}
+function insertItem(item) {
+  if (!_show.items) _show.items = [];
+  if (_insertAt === null) _show.items.push(item);
+  else { _show.items.splice(_insertAt, 0, item); _insertAt++; }
+  renderPlaylist(); scheduleSave();
+}
+function insertSpin() { if (_show) insertItem({ type: 'spin' }); }
+function moveItem(i, d) {
+  const items = _show.items, j = i + d;
+  if (j < 0 || j >= items.length) return;
+  [items[i], items[j]] = [items[j], items[i]];
+  if (_insertAt === i) _insertAt = j;
+  renderPlaylist(); scheduleSave();
+}
+function removeItem(i) {
+  _show.items.splice(i, 1);
+  if (_insertAt !== null && _insertAt >= _show.items.length) _insertAt = null;
+  renderPlaylist(); scheduleSave();
+}
+function setEnding(i, v) {
+  const it = _show.items[i];
+  it.ending = v;
+  if (v === 'cut' && !it.at) { const info = songInfo(it.file); it.at = Math.round(info ? (info.cue_out || info.duration) / 2 : 60); }
+  if (v !== 'cut') delete it.at;
+  renderPlaylist(); scheduleSave();
+}
+function setCut(i, input) {
+  const sec = parseTime(input.value);
+  if (sec === null || sec < 1) { input.classList.add('bad'); showToast('Use mm:ss, e.g. 1:35'); return; }
+  _show.items[i].at = sec;
+  renderPlaylist(); scheduleSave();
+}
+// drag to reorder (desktop)
+let _dragFrom = null;
+function wireDrag() {
+  document.querySelectorAll('#playlist .row').forEach((row) => {
+    row.addEventListener('dragstart', (e) => { _dragFrom = Number(row.dataset.i); e.dataTransfer.effectAllowed = 'move'; });
+    row.addEventListener('dragover', (e) => { e.preventDefault(); row.classList.add('drag-over'); });
+    row.addEventListener('dragleave', () => row.classList.remove('drag-over'));
+    row.addEventListener('drop', (e) => {
+      e.preventDefault(); row.classList.remove('drag-over');
+      const to = Number(row.dataset.i);
+      if (_dragFrom === null || _dragFrom === to) return;
+      const [it] = _show.items.splice(_dragFrom, 1);
+      _show.items.splice(to, 0, it);
+      _dragFrom = null; _insertAt = null;
+      renderPlaylist(); scheduleSave();
+    });
+  });
+}
+
+// -------------------------------------------------------------- songs
+async function loadSongs() {
+  const d = await api('/api/shows/songs');
+  if (!d) return;
+  _songs = d.songs || [];
+  _byFile = {}; _songs.forEach((s) => { _byFile[s.file] = s; });
+  _spinSeconds = d.spin_seconds || 12; _spinFade = d.spin_fade_seconds || 1.5;
+  renderSongs();
+  if (_show) renderPlaylist();
+}
+function renderSongs() {
+  const q = document.getElementById('search').value.trim().toLowerCase();
+  const onlyRange = document.getElementById('only-range').checked && _show;
+  const decs = _meta.decades || [];
+  let lo = 0, hi = decs.length - 1;
+  if (onlyRange) { lo = decs.indexOf(_show.low); hi = decs.indexOf(_show.high); }
+  const list = _songs.filter((s) => {
+    if (q && !(s.title.toLowerCase().includes(q) || s.artist.toLowerCase().includes(q))) return false;
+    if (onlyRange && s.decade) { const k = decs.indexOf(s.decade); if (k < lo || k > hi) return false; }
+    return true;
+  });
+  const shown = list.slice(0, 400);
+  document.getElementById('song-count').textContent =
+    `${list.length} song${list.length === 1 ? '' : 's'}` + (list.length > shown.length ? ` (first ${shown.length} shown — search to narrow)` : '') +
+    ` · ${_songs.filter((s) => !s.decade).length} without a decade`;
+  document.getElementById('songs').innerHTML = shown.map((s) => {
+    const len = fmt(s.cue_out || s.duration);
+    if (!s.decade) {
+      return `<div class="song undated" title="No decade yet: shows only play songs with a decade. Tap one to tag it.">
+        <span class="ttl">${esc(s.title)} <small>— ${esc(s.artist)}</small></span><span class="len">${len}</span>${listenBtn(s)}<span></span>
+        <div class="chips">${decs.map((d) => `<span class="chip" onclick="tagDecade(${_songs.indexOf(s)},'${d}')">${decLabel(d)}</span>`).join('')}</div></div>`;
+    }
+    return `<div class="song">
+      <span class="ttl">${esc(s.title)} <small>— ${esc(s.artist)}</small><span class="dec">${decLabel(s.decade)}</span></span>
+      <span class="len">${len}</span>${listenBtn(s)}
+      <button class="btn small" ${_show ? '' : 'disabled'} onclick="addSong(${_songs.indexOf(s)})">ADD</button></div>`;
+  }).join('');
+}
+// listen to a song in the picker (the web copy plays a low-bitrate preview)
+const _listen = new Audio();
+let _listenIdx = -1;
+_listen.addEventListener('ended', () => { _listenIdx = -1; renderSongs(); });
+function listenBtn(s) {
+  const i = _songs.indexOf(s);
+  if (WEB && !s.audio) return '<span class="muted" title="No preview uploaded yet">–</span>';
+  return `<button class="play-btn ${i === _listenIdx ? 'on' : ''}" onclick="listen(${i})" title="Listen">${i === _listenIdx ? '&#9632;' : '&#9654;'}</button>`;
+}
+function listen(i) {
+  if (i === _listenIdx) { _listen.pause(); _listenIdx = -1; renderSongs(); return; }
+  const s = _songs[i]; if (!s) return;
+  _listen.src = audioUrl(s);
+  _listen.currentTime = 0;
+  _listen.play().catch(() => showToast('Could not play that one.'));
+  _listenIdx = i; renderSongs();
+}
+function addSong(idx) {
+  const s = _songs[idx]; if (!s || !_show) return;
+  insertItem({ type: 'song', file: s.file, title: s.title, artist: s.artist, ending: 'full' });
+}
+async function tagDecade(idx, decade) {
+  const s = _songs[idx]; if (!s) return;
+  const r = await post('/api/shows/tag-decade', { filename: s.file, decade });
+  if (r && r.ok) {
+    s.decade = decade;
+    renderSongs(); if (_show) renderPlaylist();
+    showToast('Tagged ' + decLabel(decade));
+  } else showToast((r && r.reason) || 'Could not tag.');
+}
+
+(async function init() {
+  await loadShows();
+  await loadSongs();
+  setInterval(async () => {   // keep badges (RUNNING / NEXT) and recorded songs current
+    if (_dirty || _saving) return;
+    const d = await api('/api/shows');
+    if (!d) return;
+    _meta = d; _shows = d.shows || [];
+    renderShowList();
+    if (_show) {
+      const fresh = _shows.find((x) => x.name === _show.name);
+      if (fresh && fresh.updated_at !== _show.updated_at && document.activeElement.tagName !== 'INPUT') {
+        _show = JSON.parse(JSON.stringify(fresh)); renderPlaylist();
+      }
+    }
+  }, 5000);
+})();
+</script>
+</body>
+</html>

@@ -17,8 +17,8 @@ class State:
         self.active_track = "NO TRACK LOADED"
         
         # Crossfader & Deck Track Storage
-        self.deck1_track = ("READY FOR DECK 1", "")
-        self.deck2_track = ("READY FOR DECK 2", "")
+        self.deck1_track = ("", "")  # no placeholder text: nothing may show before the first song
+        self.deck2_track = ("", "")
         self.active_deck = 1  # 1 or 2
         self.now_playing_duration = 0.0  # exact length (sec) of the active deck's track
         self.now_playing_path = ""       # audio file path of the active deck's track
@@ -317,6 +317,14 @@ class State:
         self.auto_dj_overlay_text = ""          # "AUTO ON" / "AUTO OFF", panel 3
         self.auto_dj_overlay_until = 0.0
 
+        # --- Auto-advance after quiz: once every question for the track has been
+        # asked AND the leaderboard has been shown, skip ahead to the next song
+        # (drivers/auto_dj_engine.py::_quiz_done_advance_due). Remote toggle.
+        self.auto_advance_after_quiz = config.AUTO_ADVANCE_AFTER_QUIZ_BY_DEFAULT
+        self.autoadv_questions_asked = 0          # questions shown on the current track
+        self.autoadv_need_leaderboard = False     # a question ran; idle cycle must show the leaderboard
+        self.autoadv_leaderboard_reviewed = False # leaderboard has fully played since the last question
+
         # --- Auto-DJ: overlapping station-announcement transition ---
         self.auto_dj_announcement_played = False  # True once this cycle's VO has fired
         self.auto_dj_transition_at = 0.0           # scheduled time to fire the deck-start+TrackSearch transition (0 = not scheduled)
@@ -496,6 +504,9 @@ class State:
         self.simon_last_input_at = 0.0  # reset on entering "input" and on every press -- drives the 20s no-input timeout
         self.simon_get_ready_started_at = 0.0
         self.simon_score_review_started_at = 0.0
+        self.simon_word = ""              # surprise adjective flashed on the top strip in deep rounds
+        self.simon_word_until = 0.0
+        self.simon_word_pad = -1
 
         # --- Web remote virtual D-pad (no-hardware-gamepad fallback) ---
         # Mirrors a physical held direction: inputs/gamepad.py's
@@ -542,6 +553,13 @@ class State:
         # "live" -- this only owns the bookends. See drivers/show_engine.py.
         self.show_phase = "setup"  # "setup" | "countdown" | "dark" | "intro" | "live" | "outro"
         self.show_phase_started_at = 0.0
+        # Decade wheel of the scripted open (drivers/show_engine.py): the
+        # target is rolled when the intro starts so the LED wheel can spin to
+        # it; the chosen decade is only "set" (and a song cued from it) once
+        # the wheel lands. Both reset by begin_intro().
+        self.show_wheel_target = ""        # e.g. "1970s" -- where the wheel will stop
+        self.show_wheel_landed = False     # True once the wheel has stopped and the decade is set
+        self.show_chosen_decade = ""       # the landed decade, kept after the intro ends
         # Epoch timestamp for a scheduled "Start Game at 7PM" -- 0 means no
         # scheduled start is armed (operator used "Start Game" immediately,
         # or hasn't started anything yet).
@@ -556,50 +574,27 @@ class State:
         self.show_outro_message = ""
         self.show_outro_music_ends_at = 0.0
 
-        # --- Unattended-autoplay fallback (2026-08-19) ---
-        # 0.0 sentinel -- lazily set the first frame show_phase == "setup"
-        # is observed (drivers/show_engine.py::_update_unattended_autoplay()),
-        # same pattern as drivers/idle_cycle_engine.py's phase clock, so it
-        # never computes elapsed time against the Unix epoch. Reset to 0.0
-        # any time an operator (physical rig or web remote) does something,
-        # or the moment show_phase leaves "setup".
-        #
-        # time.monotonic(), NOT time.time() (2026-09-21 fix): this clock
-        # starts ticking the instant the app launches into Setup, which on a
-        # cold boot is exactly the window a Pi with no RTC battery can still
-        # be running a wrong pre-NTP-sync wall clock. A time.time() step
-        # when NTP corrects it mid-countdown made this fire instantly --
-        # confirmed live, the on-screen "AUTO :NN" countdown never actually
-        # reached zero before the show started. time.monotonic() only ever
-        # advances at real-time pace regardless of wall-clock adjustments,
-        # so it can't be fooled by that jump. graphics/matrix_canvas.py's
-        # _unattended_remaining_seconds() (the on-screen countdown) must use
-        # the same clock or the display and the actual fire condition drift
-        # apart again.
-        self.last_operator_interaction_at = 0.0
-        # True once SHOW_UNATTENDED_AUTOPLAY_TIMEOUT_SECONDS of Setup-page
-        # inactivity auto-started the show -- lets the host tell a real
-        # "Start Game" apart from the timeout fallback and reset back to
-        # Setup instead of it running through a full outro as if someone
-        # had actually hosted it.
-        self.show_unattended_autoplay = False
-        self.show_unattended_autoplay_started_at = 0.0
+        # --- Panel Show Maker + saved shows (2026-10-17, docs/panel_show_maker_design.md) ---
+        # show_phase "setup" is now the boot menu on the LED panels
+        # (drivers/panel_menu.py); the old Setup screen, its AUTO countdown and
+        # the unattended jukebox auto-start are gone.
+        self.show_selected = ""            # saved show (drivers/show_library.py) the next start runs
+        self.show_hands_off = False        # this show was started by the 90s hands-off timer
+        self.show_intro_waiting = False    # intro theme looping under the host until a button press
+        self.show_song_ending = ""         # saved ending of the playing song: "" | "full" | "quiz" | "cut"
+        self.show_spin_active = False      # a wheel spin (or the fade/stab around it) owns the show right now
+        self.show_wheel_started_at = 0.0   # when the wheel began spinning (0 = not spinning)
+        self.show_wheel_spin_seconds = 3.0 # how long this spin lasts before it lands
+        self.show_require_decade = False   # a show only plays songs whose decade is tagged
+        self.show_energy_max = 0           # after-show background music: energy_rank cap (0 = off)
+        self.show_background = False       # after the outro: easy-listening music until a panel press
+        self.board_wipe_fresh = False      # next song wipe starts from a black board (no snapshot)
 
-        # --- Setup-countdown physical-button interactions (2026-09-16) ---
-        # Green, while show_phase == "setup" and this is False, opens a
-        # "START SHOW NOW?" confirm (drivers/simon_engine.py::
-        # _poll_setup_hardware(), rendered by graphics/matrix_canvas.py::
-        # _render_setup_confirm()); panel4/red confirms, anything else
-        # cancels back to the normal AUTO countdown.
-        self.setup_confirm_active = False
-
-        # --- Jukebox mode for the unattended (auto-start) show (2026-09-29) ---
-        # While show_unattended_autoplay is on and this is False, no questions
-        # are asked (no Mystery Band teaser, no white/dark question lighting) --
-        # the rig is just a jukebox. The red arcade button opens a "TRIVIA
-        # QUESTION?" confirm (trivia_confirm_active, rendered by
-        # graphics/matrix_canvas.py); green = yes sets this True for the rest
-        # of that autoplay session, red/anything else cancels.
+        # --- Jukebox mode (2026-09-29): while questions_suppressed is True no
+        # questions are asked (no Mystery Band teaser, no white/dark question
+        # lighting) -- the rig is just a jukebox. The blue arcade button opens
+        # a "TRIVIA QUESTION?" confirm (trivia_confirm_active, rendered by
+        # graphics/matrix_canvas.py); green = yes turns questions on.
         self.medley_active = False
         self.medley_count = 0              # songs in the running medley (progress bar on panels 1+2)
         self.medley_pos = 0                # 1-based index of the hook playing now (0 = not started)
@@ -614,9 +609,7 @@ class State:
         self.medley_bed_hold = False       # vocal-drop bed: winner screen held until any panel button
         self.medley_songs_total = 0
         self.medley_sweeper_mode = config.MEDLEY_SWEEPER_MODE_DEFAULT  # "off" | "medley" | "all"
-        self.questions_suppressed = False  # jukebox mode: no questions asked (auto-start, or the Setup "suppress questions" box)
-        self.show_suppress_questions = True   # Setup page checkbox (pre-checked): start the show as a jukebox
-        self.show_skip_intro = False          # Setup page checkbox: dark -> first track directly, no intro
+        self.questions_suppressed = False  # jukebox mode: no questions asked (a show saved with QUESTIONS NO, or the encore)
         self.trivia_confirm_active = False
         self.trivia_confirm_until = 0.0
         # Blue, same "setup" window: kicks off a Bluetooth gamepad reconnect

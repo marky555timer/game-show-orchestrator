@@ -827,25 +827,26 @@ def anim_qmark_bounce(surface, rect, t, seed=0.0):
 # IDLE_THEMES layers a themed set on top, selected by state.idle_theme
 # (operator-controlled, see web/remote_server.py::/api/idle/theme) -- e.g.
 # "Halloween" pool = GENERAL_IDLE_ANIMATIONS + IDLE_THEMES["Halloween"].
+#
+# RETIRED 2026-10-15 (operator: "very stiff early old animations") -- still
+# defined above, just no longer dealt: squirrel + duck (walk back and forth
+# on a line), dancing_pixelman (blocky), qmark_scatter/_bounce/_pulse_grow
+# (drift/bounce/plain growing), bat_swarm + witch_flyby (cross the panel on
+# a rail), party_hat (stiff wobble). Add one back to its list to revive it.
 GENERAL_IDLE_ANIMATIONS = [
     anim_jellyfish,
     anim_equalizer,
     anim_rain,
     anim_engine,
-    anim_squirrel,
-    anim_duck,
-    anim_dancing_pixelman,
 ]
 
 IDLE_THEMES = {
     "Halloween": [
-        anim_bat_swarm,
         anim_ghost_float,
         anim_jack_o_lantern,
         anim_spider_drop,
         anim_lightning_flash,
         anim_grave_hand,
-        anim_witch_flyby,
         anim_skull_chatter,
         anim_celtic_cross,
     ],
@@ -854,16 +855,12 @@ IDLE_THEMES = {
         anim_birthday_cake,
         anim_confetti_burst,
         anim_gift_box,
-        anim_party_hat,
         anim_streamer_wave,
         anim_sparkler,
         anim_party_popper,
     ],
     "Question Marks": [
         anim_qmark_float_up,
-        anim_qmark_scatter,
-        anim_qmark_pulse_grow,
-        anim_qmark_bounce,
     ],
     # Demoscene effects + the four-panel demo (graphics/technical_dreams.py).
     "Technical Dreams": technical_dreams.ANIMATIONS,

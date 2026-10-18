@@ -51,6 +51,7 @@ from graphics.animations import (
 )
 from graphics import overlay_panel
 from graphics import technical_dreams
+from graphics import simon_trip
 from graphics import secondary_canvas
 
 # Initialize Pygame Display Engine
@@ -1314,7 +1315,20 @@ def _render_simon(t):
     for i, pid in enumerate(_SIMON_PANEL_IDS):
         rect = PANELS[pid]
         if state.simon_active_pad == i:
-            pygame.draw.rect(matrix_surface, RED_FULL, rect)
+            # Solid in round 1, trippier every round after (graphics/simon_trip.py).
+            rnd = state.simon_round if state.simon_phase in ("playback", "input", "fail") else 1
+            simon_trip.draw_pad(matrix_surface, rect, t, rnd, i)
+            if state.simon_word_pad == i and t < state.simon_word_until and state.simon_word:
+                # Small flashing word/symbol inside the lit square, letters
+                # re-cased at random ~10x/s (sTraNgE cAsE) on a black knock-out.
+                k = int(t * 10)
+                word = "".join(c.upper() if (hash((j, k)) % 2) else c.lower()
+                               for j, c in enumerate(state.simon_word))
+                tw = text_width(word)
+                px = rect[0] + (rect[2] - tw) // 2
+                py = rect[1] + (rect[3] - GLYPH_HEIGHT) // 2
+                pygame.draw.rect(matrix_surface, BLACK, (px - 2, py - 1, tw + 4, GLYPH_HEIGHT + 2))
+                draw_bitmap_text(matrix_surface, word, px, py, clip_rect=rect)
         else:
             pygame.draw.rect(matrix_surface, RED_DIM, rect, 1)
 
@@ -1389,7 +1403,13 @@ def trigger_board_wipe(hold_seconds):
     update_matrix_canvas() this frame, so the snapshot still holds
     whatever was on screen the instant before the transition."""
     global _board_wipe_started_at, _board_wipe_hold_seconds, _board_wipe_snapshots
-    _board_wipe_snapshots = {pid: matrix_surface.subsurface(rect).copy() for pid, rect in PANELS.items()}
+    # Clear the buffer before wiping in (2026-10-17): coming out of the intro,
+    # a spin or the menu there is nothing of the old song to slide out.
+    fresh = (state.board_wipe_fresh or state.show_spin_active
+             or not state.now_playing_path or state.show_phase != "live")
+    state.board_wipe_fresh = False
+    _board_wipe_snapshots = {} if fresh else {
+        pid: matrix_surface.subsurface(rect).copy() for pid, rect in PANELS.items()}
     _board_wipe_started_at = time.time()
     _board_wipe_hold_seconds = hold_seconds
 
@@ -1444,20 +1464,27 @@ def _render_board_wipe(t):
 # phase machine this reads; "live" phase isn't handled here at all -- it
 # falls straight through to the normal dispatch below, unmodified.
 # ------------------------------------------------------------
-_SHOW_INTRO_SLIDE_SECONDS = 0.4
+def _intro_lines(text):
+    """One centered line if `text` fits the 64px top strip, else two stacked."""
+    w = TOP_COMBINED[2]
+    if text_width(text) <= w:
+        return [text]
+    line1, line2 = wrap_two_lines(text, w)
+    return [line1, line2] if line2 else [line1]
 
 
-def _draw_show_headline(text, x_shift=0):
-    """Draws one line of (unscrolled) headline text across TOP_COMBINED,
-    centered plus an extra x_shift pixels -- the shift is how the intro's
-    slide-in/out effect works (no generic slide primitive exists elsewhere
-    in this codebase, so this is purpose-built here, same as
-    _render_board_wipe's own slide math just above)."""
+def _draw_intro_text(text, x_shift=0, surface=None):
+    """Show-open headline across TOP_COMBINED, centered plus x_shift pixels
+    (the shift is how the slide-in/out works). Lines wider than the strip are
+    stacked on two rows instead of scrolling -- the open is timed to the
+    second, so nothing here may scroll."""
+    surface = surface or matrix_surface
     x0, y0, w, h = TOP_COMBINED
-    tw = text_width(text)
-    center_x = x0 + max(0, (w - tw) // 2)
-    draw_y = y0 + max(0, (h - GLYPH_HEIGHT) // 2)
-    draw_bitmap_text(matrix_surface, text, center_x + x_shift, draw_y, clip_rect=TOP_COMBINED)
+    lines = _intro_lines(text)
+    ys = [y0 + (h - GLYPH_HEIGHT) // 2] if len(lines) == 1 else [y0, y0 + h - GLYPH_HEIGHT]
+    for line, y in zip(lines, ys):
+        x = x0 + max(0, (w - text_width(line)) // 2) + x_shift
+        draw_bitmap_text(surface, line, x, y, clip_rect=TOP_COMBINED)
 
 
 def _slide_in_shift(progress):
@@ -1472,62 +1499,165 @@ def _slide_out_shift(progress):
     return int(-TOP_COMBINED[2] * progress)
 
 
-def _show_intro_beat_window(elapsed):
-    """Which config.SHOW_INTRO_BEATS entry (if any) is active at `elapsed`
-    seconds into the intro. Returns (beat_index, local_elapsed, window_len)
-    or None before the first beat's own timestamp (screen stays blank).
-    The LAST beat's window never ends (float('inf')) -- the intro has no
-    fixed end time anymore, so its final line (config.SHOW_INTRO_BEATS[-1])
-    just holds until drivers/show_engine.py::skip_intro() ends the phase."""
-    beats = config.SHOW_INTRO_BEATS
-    for i, (start, _text) in enumerate(beats):
-        window_end = beats[i + 1][0] if i + 1 < len(beats) else float("inf")
-        if start <= elapsed < window_end:
-            return i, elapsed - start, window_end - start
-    return None
+_intro_assemble_cache = {}
+
+
+def _draw_intro_assemble(text, elapsed):
+    """Pixel-assemble: every lit pixel of `text` starts somewhere random in
+    the top strip and flies to its place (staggered, ease-out), so the strip
+    begins blank and the words build themselves. Done by
+    config.SHOW_INTRO_ASSEMBLE_SECONDS."""
+    pixels = _intro_assemble_cache.get(text)
+    if pixels is None:
+        scratch = pygame.Surface((TOP_COMBINED[2], TOP_COMBINED[3]))
+        scratch.fill(BLACK)
+        _draw_intro_text(text, surface=scratch)
+        rng = random.Random(20261014)
+        pixels = []
+        for y in range(scratch.get_height()):
+            for x in range(scratch.get_width()):
+                if tuple(scratch.get_at((x, y)))[:3] != BLACK:
+                    pixels.append((x, y, rng.uniform(0, scratch.get_width() - 1),
+                                   rng.uniform(0, scratch.get_height() - 1), rng.random()))
+        _intro_assemble_cache[text] = pixels
+    total = config.SHOW_INTRO_ASSEMBLE_SECONDS
+    x0, y0 = TOP_COMBINED[0], TOP_COMBINED[1]
+    for tx, ty, sx, sy, r in pixels:
+        p = (elapsed - r * 0.4 * total) / (0.6 * total)
+        if p <= 0.0:
+            continue  # this pixel hasn't launched yet
+        p = min(1.0, p)
+        e = 1.0 - (1.0 - p) ** 3
+        px = int(round(sx + (tx - sx) * e))
+        py = int(round(sy + (ty - sy) * e))
+        matrix_surface.set_at((x0 + px, y0 + py), RED_FULL)
+
+
+def _draw_intro_panel_word(panel_id, word, align):
+    """`word` in one panel, flush to its right (panel 3) or left (panel 4)
+    edge -- together they read "Triviacade" across the seam."""
+    x0, y0, w, h = PANELS[panel_id]
+    tw = text_width(word)
+    x = x0 + (w - tw if align == "right" else 0)
+    draw_bitmap_text(matrix_surface, word, x, y0 + max(0, (h - GLYPH_HEIGHT) // 2), clip_rect=PANELS[panel_id])
+
+
+# The decade wheel: a 64x32 scratch surface (panels 3-6 without the
+# simulator's 4px row seam) drawn once per frame, then split back onto the
+# two rows. Quadrant -> panel: 3 = top-left, 4 = top-right, 5 = bottom-left,
+# 6 = bottom-right (geometry/timing live in drivers/intro_wheel.py).
+_WHEEL_W, _WHEEL_H = PANEL_W * 2, PANEL_H * 2
+_wheel_surface = None
+_wheel_quadrant_pixels = None   # panel id -> pixels inside the ellipse and that quadrant
+_WHEEL_QUADRANT_ORIGIN = {3: (0, 0), 4: (PANEL_W, 0), 5: (0, PANEL_H), 6: (PANEL_W, PANEL_H)}
+
+
+def _wheel_geometry():
+    global _wheel_surface, _wheel_quadrant_pixels
+    if _wheel_surface is None:
+        _wheel_surface = pygame.Surface((_WHEEL_W, _WHEEL_H))
+        cx, cy = (_WHEEL_W - 1) / 2.0, (_WHEEL_H - 1) / 2.0
+        rx, ry = _WHEEL_W / 2.0 - 0.5, _WHEEL_H / 2.0 - 0.5
+        _wheel_quadrant_pixels = {}
+        for panel, (ox, oy) in _WHEEL_QUADRANT_ORIGIN.items():
+            pts = []
+            for y in range(oy, oy + PANEL_H):
+                for x in range(ox, ox + PANEL_W):
+                    if ((x - cx) / rx) ** 2 + ((y - cy) / ry) ** 2 <= 1.0:
+                        pts.append((x, y))
+            _wheel_quadrant_pixels[panel] = pts
+    return _wheel_surface, _wheel_quadrant_pixels
+
+
+def _draw_intro_wheel(elapsed):
+    """The "spin the wheel" picker on panels 3-6: an outline circle around
+    all four, a cross dividing it into the four decade squares, a sweeping
+    pointer with the square under it lit, easing to a stop on the rolled
+    decade, which then blinks until the next-song trigger."""
+    from drivers import intro_wheel
+    surf, quads = _wheel_geometry()
+    angle, hot_panel, landed = intro_wheel.pointer(elapsed)
+    lit = intro_wheel.blink_on(elapsed) if landed else True
+    surf.fill(BLACK)
+
+    # the square under the pointer (or the landed one, blinking)
+    if lit:
+        for x, y in quads[hot_panel]:
+            surf.set_at((x, y), RED_FULL if landed else RED_DIM)
+
+    cx, cy = (_WHEEL_W - 1) / 2.0, (_WHEEL_H - 1) / 2.0
+    rx, ry = _WHEEL_W / 2.0 - 0.5, _WHEEL_H / 2.0 - 0.5
+    divider = BLACK if (landed and lit) else RED_DIM
+    pygame.draw.line(surf, divider, (_WHEEL_W // 2 - 1, 0), (_WHEEL_W // 2 - 1, _WHEEL_H - 1))
+    pygame.draw.line(surf, divider, (0, _WHEEL_H // 2 - 1), (_WHEEL_W - 1, _WHEEL_H // 2 - 1))
+    pygame.draw.ellipse(surf, RED_FULL, (0, 0, _WHEEL_W, _WHEEL_H), 1)
+
+    # decade labels, one per square
+    for i, decade in enumerate(config.SHOW_INTRO_WHEEL_DECADES):
+        panel = 3 + i
+        ox, oy = _WHEEL_QUADRANT_ORIGIN[panel]
+        label = decade[2:4] + "s"   # "1960s" -> "60s"
+        on_lit_square = lit and panel == hot_panel
+        if landed and panel != hot_panel:
+            color = RED_OFF
+        elif on_lit_square and landed:
+            color = BLACK
+        elif on_lit_square:
+            color = RED_FULL
+        else:
+            color = RED_DIM
+        draw_bitmap_text(surf, label, ox + (PANEL_W - text_width(label)) // 2,
+                         oy + (PANEL_H - GLYPH_HEIGHT) // 2, color=color)
+
+    if not landed:
+        rad = math.radians(angle)
+        tip = (cx + rx * math.sin(rad), cy - ry * math.cos(rad))
+        pygame.draw.line(surf, RED_FULL, (cx, cy), tip)
+        pygame.draw.circle(surf, RED_FULL, (int(round(cx)), int(round(cy))), 1)
+
+    matrix_surface.blit(surf, (0, PANELS[3][1]), (0, 0, _WHEEL_W, PANEL_H))
+    matrix_surface.blit(surf, (0, PANELS[5][1]), (0, PANEL_H, _WHEEL_W, PANEL_H))
 
 
 def _render_show_intro(t):
-    """ShowStart.mp3 choreography (config.SHOW_INTRO_BEATS): each line
-    slides in, holds, then slides out as the next line's timestamp arrives
-    -- except the DJ-name reveal beat (config.SHOW_INTRO_FLASH_BEAT_INDEX),
-    which slides in and then flashes instead of holding/sliding out, and
-    the LAST beat, which just holds forever (see _show_intro_beat_window).
-    The intro ends only via drivers/show_engine.py::skip_intro() (Joy X-,
-    inputs/gamepad.py) -- there's no fixed end timestamp to cut to blank at
-    anymore, so the live host's own spoken intro sets the pace."""
-    elapsed = t - state.show_phase_started_at
-    window = _show_intro_beat_window(elapsed)
-    if window is None:
-        return
-    beat_index, local_elapsed, window_len = window
-    text = config.SHOW_INTRO_BEATS[beat_index][1]
+    """introTheme.wav choreography (timings: config.SHOW_INTRO_*): pixels
+    assemble into "Get Ready!", which slides out for "It's trivia time!",
+    which slides out; "Let's Play" cuts in at 9s with "Trivia" / "cade"
+    popping onto panels 3 / 4 and holds while the host talks. Once the show
+    moves on and the playlist opens with a spin, "spin the wheel" takes the
+    top strip while the decade wheel spins on panels 3-6, lands and blinks
+    through the decade stab (drivers/show_engine.py)."""
+    c = config
+    el = t - state.show_phase_started_at
+    slide = c.SHOW_INTRO_SLIDE_SECONDS
 
-    # Most of these lines are wider than the 64px combined panel (a
-    # centered static draw would crop BOTH ends, showing only whatever
-    # middle fragment happens to land in frame -- worse than either a full
-    # truncation or a scroll). The slide-in/out flourish uses the custom
-    # x-shift math above; the held middle uses draw_marquee's existing
-    # auto-scroll-if-it-doesn't-fit behavior instead, same tool every other
-    # long headline in this app already reads through.
-    key = f"show_intro_beat_{beat_index}"
-
-    if beat_index == config.SHOW_INTRO_FLASH_BEAT_INDEX:
-        if local_elapsed < _SHOW_INTRO_SLIDE_SECONDS:
-            _draw_show_headline(text, _slide_in_shift(local_elapsed / _SHOW_INTRO_SLIDE_SECONDS))
-        else:
-            flash_phase = (local_elapsed - _SHOW_INTRO_SLIDE_SECONDS) / config.SHOW_INTRO_FLASH_PERIOD_SECONDS
-            if int(flash_phase) % 2 == 0:
-                draw_marquee(matrix_surface, key, text, TOP_COMBINED, align="center")
+    if state.show_wheel_started_at:
+        _render_spin(t)
         return
 
-    if local_elapsed < _SHOW_INTRO_SLIDE_SECONDS:
-        _draw_show_headline(text, _slide_in_shift(local_elapsed / _SHOW_INTRO_SLIDE_SECONDS))
-    elif local_elapsed >= window_len - _SHOW_INTRO_SLIDE_SECONDS:
-        out_progress = (local_elapsed - (window_len - _SHOW_INTRO_SLIDE_SECONDS)) / _SHOW_INTRO_SLIDE_SECONDS
-        _draw_show_headline(text, _slide_out_shift(out_progress))
-    else:
-        draw_marquee(matrix_surface, key, text, TOP_COMBINED, align="center")
+    if el >= c.SHOW_INTRO_LETS_PLAY_AT_SECONDS:
+        _draw_intro_text("Let's Play")
+        if el >= c.SHOW_INTRO_TRIVIA_AT_SECONDS:
+            _draw_intro_panel_word(3, "Trivia", "right")
+        if el >= c.SHOW_INTRO_CADE_AT_SECONDS:
+            _draw_intro_panel_word(4, "cade", "left")
+        return
+
+    line1, line2 = "Get Ready!", "It's trivia time!"
+    if el < c.SHOW_INTRO_ASSEMBLE_SECONDS:
+        _draw_intro_assemble(line1, el)
+    elif el < c.SHOW_INTRO_LINE2_AT_SECONDS - slide:
+        _draw_intro_text(line1)
+    elif el < c.SHOW_INTRO_LINE2_AT_SECONDS:
+        p = (el - (c.SHOW_INTRO_LINE2_AT_SECONDS - slide)) / slide
+        _draw_intro_text(line1, _slide_out_shift(p))
+        _draw_intro_text(line2, _slide_in_shift(p))
+    elif el < c.SHOW_INTRO_LINE2_OUT_AT_SECONDS - slide:
+        _draw_intro_text(line2)
+    elif el < c.SHOW_INTRO_LINE2_OUT_AT_SECONDS:
+        p = (el - (c.SHOW_INTRO_LINE2_OUT_AT_SECONDS - slide)) / slide
+        _draw_intro_text(line2, _slide_out_shift(p))
+    # else: 8s -> 9s blank, the beat before "Let's Play" cuts in
 
 
 def _render_show_outro(t):
@@ -1544,165 +1674,31 @@ def _render_show_outro(t):
                      TOP_COMBINED, align="center")
 
 
-def _draw_setup_status_chips():
-    """At-a-glance connectivity chips on physical panels 3-6, while the
-    operator is standing at the rig itself setting up -- the same signals
-    graphics/overlay_panel.py's desktop overlay and the web Setup page's
-    status row already show, just small enough to fit the matrix.
-    scroll=False (truncate, not marquee) since these are meant to be read
-    all at once, not waited on.
-
-    Panel 3 carries two stacked chips (2026-08-18): LED transport (USB/
-    UDP) on top, joystick connection (JOY:Y/N) below -- the joystick is
-    what actually drives the show (dark->intro->live handoffs, DJ
-    transport, game input), so its connection state belongs at-a-glance
-    here too, not just discoverable via RECONNECT GAMEPAD after the fact."""
-    from inputs import gamepad  # lazy: avoids a hard import-order dependency
-
-    transport = led_bridge.current_transport()
-    led_label = "USB" if transport.startswith("SERIAL") else "UDP"
-    joy_label = "JOY:Y" if gamepad.joysticks else "JOY:N"
-
-    x0, y0, w, h = PANELS[3]
-    top_half = (x0, y0, w, h // 2)
-    bottom_half = (x0, y0 + h // 2, w, h - h // 2)
-    draw_marquee(matrix_surface, "setup_status_3_top", led_label,
-                 top_half, align="center", scroll=False)
-    draw_marquee(matrix_surface, "setup_status_3_bottom", joy_label,
-                 bottom_half, align="center", scroll=False)
-
-    chips = (
-        (4, "DMX:Y" if dmx.active else "DMX:N"),
-        (5, "TUN:Y" if tunnel_engine.get_current_tunnel_url() else "TUN:N"),
-        (6, "NET:Y" if tunnel_engine.internet_reachable() else "NET:N"),
-    )
-    for panel_id, label in chips:
-        draw_marquee(matrix_surface, f"setup_status_{panel_id}", label,
-                     PANELS[panel_id], align="center", scroll=False)
-
-
-_SHOW_WILL_START_WORDS = {3: "Show", 4: "will", 5: "start", 6: "now"}
-
-
-def _unattended_remaining_seconds():
-    """Seconds left before drivers/show_engine.py's unattended-autoplay
-    fallback fires, or the full timeout if the idle clock hasn't actually
-    started ticking yet this instant (0.0 sentinel -- see
-    state.last_operator_interaction_at, lazily initialized on the first
-    frame show_phase == "setup" is observed).
-
-    Takes no `now` argument (unlike most of this module's per-frame
-    renders) -- must use time.monotonic() to match
-    state.last_operator_interaction_at exactly (see that field's own
-    comment for why time.time() isn't safe here), not whatever wall-clock
-    `t` the caller's render pass happens to be using."""
-    if state.last_operator_interaction_at == 0.0:
-        return config.SHOW_UNATTENDED_AUTOPLAY_TIMEOUT_SECONDS
-    elapsed = time.monotonic() - state.last_operator_interaction_at
-    return max(0.0, config.SHOW_UNATTENDED_AUTOPLAY_TIMEOUT_SECONDS - elapsed)
-
-
-def _unattended_flash_on(now):
-    """Shared blink clock for both the "AUTO :NN" banner and the final-10s
-    "SHOW WILL START NOW" panels, so the two flash in sync rather than
-    drifting against each other."""
-    return int(now / config.SHOW_UNATTENDED_FLASH_PERIOD_SECONDS) % 2 == 0
-
-
-def _draw_unattended_countdown_bar(remaining):
-    """Shrinking bar along the bottom few rows of the "AUTO :NN" banner
-    (panels 1+2) -- visual countdown to the unattended-autoplay fallback,
-    so someone standing at the rig can see how much idle time is left
-    before the show starts itself, appliance-style, without needing a
-    phone or laptop open. Always solid (not gated by the flash clock --
-    only the banner TEXT blinks, a continuously shrinking bar reads better
-    than a flickering one).
-
-    Sits clear of the banner text above it: draw_marquee() vertically
-    centers 7px-tall (GLYPH_HEIGHT) text in TOP_COMBINED's 16px height,
-    landing at rows 4-10 -- this bar uses rows 13-15, a comfortable 2px
-    gap below the text with room to spare."""
-    remaining_frac = remaining / config.SHOW_UNATTENDED_AUTOPLAY_TIMEOUT_SECONDS
-    x0, y0, w, h = TOP_COMBINED
-    bar_h = 3
-    bar_y = y0 + h - bar_h
-    bar_w = int(round(w * remaining_frac))
-    if bar_w > 0:
-        pygame.draw.rect(matrix_surface, RED_FULL, (x0, bar_y, bar_w, bar_h))
-
-
-def _draw_unattended_final_warning(now):
-    """Inside config.SHOW_UNATTENDED_FINAL_WARNING_SECONDS of the
-    unattended-autoplay fallback firing: replaces the status chips
-    (panels 3-6) with a flashing "SHOW WILL START NOW", one word per
-    panel -- an unmissable last warning right before the show starts
-    itself. Skips drawing entirely on the "off" half of the flash --
-    matrix_surface is already filled BLACK by update_matrix_canvas()
-    before this runs, so panels 3-6 just go dark that frame, same as the
-    "dark" show phase does elsewhere."""
-    if not _unattended_flash_on(now):
-        return
-    for panel_id, word in _SHOW_WILL_START_WORDS.items():
-        draw_marquee(matrix_surface, f"unattended_final_{panel_id}", word,
-                     PANELS[panel_id], align="center", scroll=False)
-
-
-def _render_setup_confirm(t):
-    """"START SHOW NOW?" confirm (2026-09-16, drivers/simon_engine.py::
-    _poll_setup_hardware(), green button during the Setup-page idle
-    countdown): panel3(green)="NO", panel4(red)="YES", panels 5/6 blank --
-    same panel3-first/panel4-second convention True/False questions already
-    use (_draw_answer_choice_panels, choices=["True","False"])."""
-    draw_marquee(matrix_surface, "setup_confirm_banner", "START SHOW NOW?", TOP_COMBINED, align="center")
-    draw_marquee(matrix_surface, "setup_confirm_no", "NO", PANELS[3], align="center")
-    draw_marquee(matrix_surface, "setup_confirm_yes", "YES", PANELS[4], align="center")
-    draw_marquee(matrix_surface, "setup_confirm_blank5", "", PANELS[5])
-    draw_marquee(matrix_surface, "setup_confirm_blank6", "", PANELS[6])
+def _render_spin(t):
+    """A wheel spin (show open or mid-show, drivers/show_engine.py)."""
+    _draw_intro_text("spin the wheel")
+    if state.show_wheel_started_at:
+        _draw_intro_wheel(t - state.show_wheel_started_at)
 
 
 def _render_show_phase(t):
-    """Setup/Countdown share a static held screen (nothing dramatic should
-    happen on the physical rig just because the operator is filling out
-    the Setup form or waiting on a scheduled start) -- Intro/Outro run
-    their scripted choreography above. "Dark" (2026-08-18) deliberately
-    renders nothing at all -- matrix_surface is already filled BLACK by
-    update_matrix_canvas() before this is called, so the panels just go
-    fully blank for the audience-anticipation pause between "Start Game"
-    and the operator actually cueing the intro (show_engine.begin_intro())."""
+    """Setup = the panel menu (drivers/panel_menu.py, drawn by
+    graphics/menu_pages.py). Countdown = a web-scheduled start. "Dark" (BLACK)
+    deliberately renders nothing -- matrix_surface is already filled BLACK by
+    update_matrix_canvas() before this is called. Intro/Outro run their
+    scripted choreography above."""
     phase = state.show_phase
     if phase == "setup":
-        # Unattended-autoplay idle countdown (2026-08-19) -- "countdown"
-        # (a scheduled start the operator already armed) doesn't get any
-        # of this; that idle clock only runs during "setup" (see
-        # show_engine._update_unattended_autoplay()).
-        #
-        # Green/blue physical-button interactions (2026-09-16, drivers/
-        # simon_engine.py::_poll_setup_hardware()) take over this screen
-        # entirely while active -- checked ahead of the normal AUTO banner
-        # below, mutually exclusive with each other (blue only does
-        # anything while the confirm isn't already open).
-        if state.setup_confirm_active:
-            _render_setup_confirm(t)
-        elif t < state.gamepad_connect_feedback_until:
-            draw_marquee(matrix_surface, "gamepad_connect_feedback",
-                         state.gamepad_connect_feedback_text, TOP_COMBINED, align="center")
-        else:
-            remaining = _unattended_remaining_seconds()
-            seconds_display = min(int(config.SHOW_UNATTENDED_AUTOPLAY_TIMEOUT_SECONDS) - 1, int(remaining))
-            # Solid, not flashing (2026-08-19: the blink read as "too much" on
-            # the physical rig) -- only the final-10s panels 3-6 warning below
-            # still flashes.
-            draw_marquee(matrix_surface, "show_setup_banner", f"AUTO :{seconds_display:02d}",
-                         TOP_COMBINED, align="center")
-            _draw_unattended_countdown_bar(remaining)
-            if remaining <= config.SHOW_UNATTENDED_FINAL_WARNING_SECONDS:
-                _draw_unattended_final_warning(t)
-            else:
-                _draw_setup_status_chips()
+        from graphics import menu_pages
+        menu_pages.draw(matrix_surface)
     elif phase == "countdown":
-        draw_marquee(matrix_surface, "show_setup_banner", config.SHOW_SETUP_LED_TEXT,
-                     TOP_COMBINED, align="center")
-        _draw_setup_status_chips()
+        remaining = max(0, int(state.show_scheduled_start_at - t))
+        h, rem = divmod(remaining, 3600)
+        m, sec = divmod(rem, 60)
+        clock = f"{h}:{m:02d}:{sec:02d}" if h else f"{m}:{sec:02d}"
+        x0, y0, w, hh = TOP_COMBINED
+        draw_marquee(matrix_surface, "show_countdown_1", "SHOW STARTS IN", (x0, y0, w, hh // 2), align="center")
+        draw_marquee(matrix_surface, "show_countdown_2", clock, (x0, y0 + hh // 2, w, hh - hh // 2), align="center")
     elif phase == "dark":
         pass
     elif phase == "intro":
@@ -2036,8 +2032,15 @@ def _render_matrix_canvas_content():
         _render_show_phase(t)
         return
 
+    if state.show_spin_active:
+        _render_spin(t)   # mid-show wheel spin (blank while the song fades out)
+        return
+
     if _render_board_wipe(t):
         return
+
+    if not state.now_playing_path and not state.medley_active:
+        return   # no song yet -- nothing stale may show before the first one wipes in
 
     if state.win_sequence_active:
         # A win was just graded (drivers/win_sequence_engine.py is now

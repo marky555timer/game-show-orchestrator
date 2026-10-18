@@ -90,6 +90,15 @@ def _cue_for(path, duration):
     return None
 
 
+def planned_length(path, duration):
+    """Roughly how long a song plays before Auto-DJ moves on (its cue-out
+    minus the pre-switch lead) -- the Show Designer's running time."""
+    if not duration:
+        return 0.0
+    cue = _cue_for(path, float(duration)) or float(duration)
+    return max(0.0, cue - config.AUTODJ_PRE_SWITCH_SECONDS)
+
+
 def _analyze_in_background(path, track_key, duration):
     """Track missing from the cue cache (a late addition): analyze it off the
     main thread and, if it's still the playing track, tighten the timer."""
@@ -143,6 +152,9 @@ def _start_timer(track_key, title):
     state.auto_dj_track_duration = _lookup_duration(title)
     state.auto_dj_announcement_played = False
     state.auto_dj_transition_at = 0.0
+    state.autoadv_questions_asked = 0
+    state.autoadv_need_leaderboard = False
+    state.autoadv_leaderboard_reviewed = False
     dur = state.now_playing_duration
     if (config.TRACK_CUES_ENABLED and state.now_playing_path and dur
             and dur >= config.AUTODJ_MIN_PLAUSIBLE_DURATION_SECONDS
@@ -231,6 +243,13 @@ def notify_manual_track_move():
     print("[AUTO-DJ] Manual track move -- auto-advance timer reset.")
 
 
+def _cancel_simon():
+    """Advancing to the next song ends any running Simon game."""
+    if state.mode == state.MODE_SIMON:
+        from drivers import simon_engine
+        simon_engine.exit_simon()
+
+
 def _fire_transition(track_key):
     """Plain crossfade, no VO (Auto-Announcement OFF, or the manual/no-VO
     path). Re-arms the timer immediately so this doesn't fire again every
@@ -244,6 +263,7 @@ def _fire_transition(track_key):
         return
     _last_fired_cycle = _transition_cycle
 
+    _cancel_simon()
     deck_orchestrator.trigger_track_move("next")
     title, _artist = get_rekordbox_track()
     _start_timer(track_key, title)
@@ -259,9 +279,45 @@ def _fire_announced_transition(track_key):
     _last_fired_cycle = _transition_cycle
 
     state.auto_dj_announcement_played = True
+    _cancel_simon()
     deck_orchestrator.trigger_announced_track_move()
     title, _artist = get_rekordbox_track()
     _start_timer(track_key, title)
+
+
+def advance_now():
+    """Move to the next song right away, the way Auto-DJ would (announced when
+    announcements are on). Used by drivers/show_runner.py for a saved show's
+    "cut at mm:ss" song endings."""
+    track_key = state.factoid_track_key
+    if not track_key:
+        _cancel_simon()
+        deck_orchestrator.trigger_track_move("next")
+        return
+    if track_key != state.auto_dj_track_key:
+        title, _artist = get_rekordbox_track()
+        _start_timer(track_key, title)  # opens a fresh single-trigger window
+    if state.auto_announce_enabled:
+        _fire_announced_transition(track_key)
+    else:
+        _fire_transition(track_key)
+
+
+def _quiz_done_advance_due():
+    """True once the track's questions are all asked, the last round is over,
+    and the leaderboard has fully played (remote-toggled, default on). A saved
+    show overrides the checkbox per song: only songs set to end this way
+    advance early."""
+    rule = state.show_song_ending
+    enabled = (rule == "quiz") if rule else state.auto_advance_after_quiz
+    if not enabled or not state.autoadv_leaderboard_reviewed:
+        return False
+    if state.autoadv_questions_asked <= 0 or state.autoadv_need_leaderboard:
+        return False
+    if state.mode not in (state.MODE_DJ, state.MODE_SIMON):
+        return False  # a question round (or other game) is still running
+    from drivers import factoid_engine
+    return not factoid_engine.has_next_queued_question()
 
 
 def update(now):
@@ -283,15 +339,23 @@ def update(now):
         return
     if deck_orchestrator.has_pending_move():
         return  # a crossfade (manual or auto) is already in flight
+    if state.show_song_ending == "cut":
+        return  # the saved show ends this song itself (drivers/show_runner.py)
 
+    from drivers import show_runner
     elapsed = now - state.auto_dj_track_started_at
     trigger_at = max(0.0, state.auto_dj_track_duration - config.AUTODJ_PRE_SWITCH_SECONDS)
     if elapsed < trigger_at:
-        return
+        if not _quiz_done_advance_due():
+            return
+        print("[AUTO-DJ] All questions in and leaderboard reviewed -- advancing early.")
+        show_runner.note_ending("quiz")
+    else:
+        show_runner.note_ending("full")
 
-    if not state.auto_announce_enabled:
+    if not state.auto_announce_enabled or state.show_background:
         print(f"[AUTO-DJ] {state.auto_dj_track_duration:.0f}s track duration reached -- "
-              f"auto-advancing (Auto-Announcement OFF).")
+              f"auto-advancing (plain crossfade).")
         _fire_transition(track_key)
         return
 

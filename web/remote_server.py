@@ -38,6 +38,8 @@ from drivers import music_metadata_engine
 from drivers import youtube_import_engine
 from drivers import win_sequence_engine
 from drivers import show_engine
+from drivers import show_library
+from drivers import show_runner
 from drivers.dmx_driver import dmx
 from drivers import led_bridge
 from drivers import tunnel_engine
@@ -86,22 +88,29 @@ _SETUP_HTML_PATH = os.path.join(_STATIC_DIR, "setup.html")
 _MEDLEY_EDIT_HTML_PATH = os.path.join(_STATIC_DIR, "medley_edit.html")
 _COUNTDOWN_HTML_PATH = os.path.join(_STATIC_DIR, "countdown.html")
 _JOYASSIGN_HTML_PATH = os.path.join(_STATIC_DIR, "joyassign.html")
+_DESIGNER_HTML_PATH = os.path.join(_STATIC_DIR, "designer.html")
+_SIM_HTML_PATH = os.path.join(_STATIC_DIR, "show_sim.html")
+_ADMIN_PAGES = {"/", "/setup", "/designer", "/library", "/questions", "/medley-edit", "/joyassign", "/countdown"}
 
 app = FastAPI(title="Game Show Orchestrator Remote") if FastAPI else None
 
 if app is not None:
     @app.middleware("http")
     async def _mark_operator_interaction_middleware(request: Request, call_next):
-        # Unattended-autoplay fallback (drivers/show_engine.py): any
-        # mutating web-remote action resets the Setup-page idle clock.
-        # Scoped to everything EXCEPT /api/player/* -- those are guest
-        # actions from play.html on a player's own phone, not evidence an
-        # operator is actually present. Cheap no-op outside show_phase ==
-        # "setup". Marked before the handler runs, not after -- a no-op/
-        # failed action still means someone touched the remote.
-        if request.method == "POST" and not request.url.path.startswith("/api/player/"):
-            show_engine.mark_operator_interaction()
+        # Panel menu hands-off rule (drivers/panel_menu.py): the admin
+        # opening one of its pages, or any admin action, means someone is
+        # running the rig -- no 90s hands-off start this boot. Guest actions
+        # (/play, /api/player/*) from players' phones don't count.
+        path = request.url.path
+        if ((request.method == "POST" and not path.startswith("/api/player/"))
+                or (request.method == "GET" and path in _ADMIN_PAGES)):
+            from drivers import panel_menu
+            panel_menu.mark_touched("admin remote")
         return await call_next(request)
+
+    # Admin password (web/remote_auth.py) -- added last, so it runs first.
+    from web import remote_auth
+    remote_auth.install(app)
 
 
 # ICY metadata (2026-08-19, /api/audio/stream) -- see that endpoint's
@@ -254,11 +263,9 @@ if app is not None:
         exclude_slow_dance: bool = False
         exclude_never_charted: bool = False
         allowed_genres: list[str] = []
-        allowed_decades: list[str] = []
         auto_final_round: bool = False
         rounds_estimate: int = 0  # computed client-side from the time-range slider
-        suppress_questions: bool = True   # Setup "start as a jukebox" box (pre-checked)
-        skip_intro: bool = False          # Setup "skip intro, first track directly" box
+        show_name: str = ""       # saved show to run (drivers/show_library.py); "" = last played
 
     class ShowSchedule(ShowSetupSave):
         target_epoch: float
@@ -1242,7 +1249,7 @@ if app is not None:
             "enabled": state.auto_dj_enabled,
             "remaining_seconds": max(0.0, remaining),
             "duration_seconds": state.auto_dj_track_duration,
-            "unattended": state.show_unattended_autoplay,
+            "background": state.show_background,
             "live": state.show_phase == "live",
             "jukebox": state.questions_suppressed,
         }
@@ -1825,6 +1832,14 @@ if app is not None:
         # accident -- see inputs/gamepad.py's JOYBUTTONDOWN dispatch).
         auto_dj_engine.toggle_auto_dj()
         return {"ok": True, "enabled": state.auto_dj_enabled}
+
+    @app.post("/api/autoadvance/toggle")
+    def autoadvance_toggle():
+        # Remote checkbox: skip to the next song once all questions are in and
+        # the leaderboard has been shown (auto_dj_engine._quiz_done_advance_due).
+        state.auto_advance_after_quiz = not state.auto_advance_after_quiz
+        print(f"[AUTO-DJ] Auto-advance after quiz -> {state.auto_advance_after_quiz}")
+        return {"ok": True, "enabled": state.auto_advance_after_quiz}
 
     @app.post("/api/announcement/toggle")
     def announcement_toggle():
@@ -2604,6 +2619,7 @@ if app is not None:
             "ai_suppressed": state.ai_suppressed,
             "auto_dj_enabled": state.auto_dj_enabled,
             "auto_announce_enabled": state.auto_announce_enabled,
+            "auto_advance_after_quiz": state.auto_advance_after_quiz,
             "sfx_enabled": state.sfx_enabled,
             "quiz_player_count": len(state.quiz_players),
             "round_roster": _build_round_roster(),
@@ -2614,9 +2630,11 @@ if app is not None:
             "intermission_paused": state.intermission_paused,
             "intermission_remaining_seconds": win_sequence_engine.get_intermission_remaining_seconds(time.time()),
             "show_phase": state.show_phase,
-            "show_skip_intro": state.show_skip_intro,
-            "show_unattended_autoplay": state.show_unattended_autoplay,
-            "show_unattended_autoplay_started_at": state.show_unattended_autoplay_started_at,
+            "show_selected": state.show_selected,
+            "show_running": show_runner.running_name(),
+            "show_mode": show_runner.mode(),
+            "show_background": state.show_background,
+            "show_spin_active": state.show_spin_active,
         }
 
     @app.post("/api/game/price-game")
@@ -2652,15 +2670,18 @@ if app is not None:
     # Game. See drivers/show_engine.py for the phase machine these drive.
     # ------------------------------------------
     def _apply_show_setup(body):
-        state.game_win_score = max(1, int(body.win_score))
-        state.intermission_minutes = max(1, int(body.intermission_minutes))
-        state.show_exclude_explicit = bool(body.exclude_explicit)
-        state.show_exclude_slow_dance = bool(body.exclude_slow_dance)
-        state.show_exclude_never_charted = bool(body.exclude_never_charted)
-        state.show_allowed_genres = [g for g in body.allowed_genres if g in config.MUSIC_GENRES]
-        state.show_allowed_decades = [d for d in body.allowed_decades if d in config.MUSIC_DECADES]
-        state.show_suppress_questions = bool(body.suppress_questions)
-        state.show_skip_intro = bool(body.skip_intro)
+        """Setup page: these game settings are saved into the chosen show
+        (drivers/show_library.py), which the start then runs."""
+        show = show_engine.resolve_show(body.show_name or None)
+        show_library.update(show["name"], {"settings": {
+            "win_score": max(1, int(body.win_score)),
+            "intermission_minutes": max(1, int(body.intermission_minutes)),
+            "exclude_explicit": bool(body.exclude_explicit),
+            "exclude_slow_dance": bool(body.exclude_slow_dance),
+            "exclude_never_charted": bool(body.exclude_never_charted),
+            "allowed_genres": [g for g in body.allowed_genres if g in config.MUSIC_GENRES],
+        }})
+        state.show_selected = show["name"]
         state.show_final_round_number = (
             max(1, int(body.rounds_estimate))
             if body.auto_final_round and body.rounds_estimate else None
@@ -2685,8 +2706,7 @@ if app is not None:
             "allowed_genres": state.show_allowed_genres,
             "allowed_decades": state.show_allowed_decades,
             "music_decades": [{"value": d, "label": config.MUSIC_DECADE_LABELS.get(d, d)} for d in config.MUSIC_DECADES],
-            "suppress_questions": state.show_suppress_questions,
-            "skip_intro": state.show_skip_intro,
+            "show_selected": state.show_selected,
             "auto_final_round": state.show_final_round_number is not None,
             "final_round_number": state.show_final_round_number,
             "game_round_number": state.game_round_number,
@@ -2703,8 +2723,8 @@ if app is not None:
     @app.post("/api/show/save-and-start-now")
     def show_save_and_start_now(body: ShowSetupSave):
         _apply_show_setup(body)
-        show_engine.enter_dark()
-        return {"ok": True}
+        ok = show_engine.start_show(state.show_selected)
+        return {"ok": ok}
 
     @app.post("/api/show/save-and-schedule")
     def show_save_and_schedule(body: ShowSchedule):
@@ -2715,10 +2735,10 @@ if app is not None:
     @app.post("/api/show/start-now")
     def show_start_now():
         # Countdown page's "Start Now" -- settings were already saved by
-        # save-and-schedule above; this just fires straight to the dark
-        # phase immediately instead of waiting out the rest of the countdown.
-        show_engine.enter_dark()
-        return {"ok": True}
+        # save-and-schedule above; this just loads the show (BLACK)
+        # immediately instead of waiting out the rest of the countdown.
+        ok = show_engine.start_show(state.show_selected)
+        return {"ok": ok}
 
     @app.post("/api/show/begin-intro")
     def show_begin_intro():
@@ -2752,15 +2772,140 @@ if app is not None:
         ok = show_engine.stop_show()
         return {"ok": ok, "reason": None if ok else "Show isn't live."}
 
-    @app.post("/api/show/reset-unattended")
-    def show_reset_unattended():
-        # "Reset to Setup" -- live-panel banner shown only while
-        # state.show_unattended_autoplay is True (see gamepad_status()
-        # above). Fast fade, no outro fanfare -- see
-        # show_engine.reset_unattended_autoplay()'s docstring for why this
-        # is a separate path from the normal Stop Game -> outro flow.
-        ok = show_engine.reset_unattended_autoplay()
-        return {"ok": ok, "reason": None if ok else "Not currently in unattended autoplay."}
+    @app.post("/api/show/back-to-menu")
+    def show_back_to_menu():
+        # Admin full reset (2026-10-17): stop everything, panel menu back up.
+        show_engine.back_to_menu()
+        return {"ok": True}
+
+    # ------------------------------------------
+    # SHOW DESIGNER (2026-10-17): saved shows = playlists. Desktop page
+    # web/static/designer.html; storage drivers/show_library.py.
+    # ------------------------------------------
+    @app.get("/designer")
+    def designer_page():
+        return FileResponse(_DESIGNER_HTML_PATH)
+
+    class ShowName(BaseModel):
+        name: str
+
+    class ShowRename(BaseModel):
+        name: str
+        new_name: str
+
+    class ShowSave(BaseModel):
+        name: str
+        intro: Optional[bool] = None
+        questions: Optional[bool] = None
+        low: Optional[str] = None
+        high: Optional[str] = None
+        items: Optional[list[dict]] = None
+
+    class DecadeTag(BaseModel):
+        filename: str
+        decade: str
+
+    @app.get("/api/shows")
+    def shows_list():
+        last = show_library.last_played()
+        return {"ok": True, "shows": show_library.all_shows("created"),
+                "selected": state.show_selected, "last_played": last["name"] if last else "",
+                "running": show_runner.running_name(), "decades": show_library.DECADES,
+                "wheel_decades": config.SHOW_INTRO_WHEEL_DECADES, "name_max": show_library.NAME_MAX}
+
+    @app.get("/api/shows/get")
+    def shows_get(name: str):
+        show = show_library.get(name)
+        return {"ok": bool(show), "show": show}
+
+    @app.post("/api/shows/new")
+    def shows_new():
+        return {"ok": True, "show": show_library.create()}
+
+    @app.post("/api/shows/save")
+    def shows_save(body: ShowSave):
+        fields = {k: v for k, v in body.dict().items() if k != "name" and v is not None}
+        show = show_library.update(body.name, fields)
+        if show is None:
+            return {"ok": False, "reason": "Show not found."}
+        return {"ok": True, "show": show, "saved_at": show["updated_at"]}
+
+    @app.post("/api/shows/rename")
+    def shows_rename(body: ShowRename):
+        err = show_library.rename(body.name, body.new_name)
+        return {"ok": err is None, "reason": err, "name": body.new_name.strip() if err is None else body.name}
+
+    @app.post("/api/shows/delete")
+    def shows_delete(body: ShowName):
+        if show_runner.running_name() == body.name:
+            return {"ok": False, "reason": "That show is running right now."}
+        ok = show_library.delete(body.name)
+        if ok and state.show_selected == body.name:
+            state.show_selected = ""
+        return {"ok": ok}
+
+    @app.post("/api/shows/duplicate")
+    def shows_duplicate(body: ShowName):
+        show = show_library.duplicate(body.name)
+        return {"ok": bool(show), "show": show}
+
+    @app.post("/api/shows/select")
+    def shows_select(body: ShowName):
+        if not show_library.get(body.name):
+            return {"ok": False, "reason": "Show not found."}
+        state.show_selected = body.name
+        return {"ok": True}
+
+    @app.post("/api/shows/run")
+    def shows_run(body: ShowName):
+        if not show_library.get(body.name):
+            return {"ok": False, "reason": "Show not found."}
+        ok = show_engine.start_show(body.name)
+        return {"ok": ok, "reason": None if ok else "A show is already running -- stop it first."}
+
+    @app.get("/api/shows/songs")
+    def shows_songs():
+        """Song picker: every library track with its decade (undated ones are
+        greyed out on the page until tagged) and planned length, plus what the
+        preview player needs. The web Show Designer gets the same list
+        (drivers/web_sync.py)."""
+        from drivers import web_sync
+        return dict(web_sync.catalog(), ok=True)
+
+    @app.get("/api/shows/questions")
+    def shows_questions():
+        """The preview asks each song's saved questions (the web gets the same)."""
+        from drivers import web_sync
+        return dict(web_sync.questions(), ok=True)
+
+    @app.get("/designer/sim")
+    def designer_sim_page():
+        """Show preview: plays a saved show in the browser (music, panels,
+        marquee). The web Show Designer serves the same page."""
+        return FileResponse(_SIM_HTML_PATH)
+
+    @app.get("/api/shows/bed-audio")
+    def shows_bed_audio(name: str):
+        """Intro theme / wheel theme / stabs for the preview player."""
+        from drivers import web_sync
+        path = web_sync.bed_path(name)
+        if path is None:
+            return JSONResponse({"ok": False, "reason": "not found"}, status_code=404)
+        return FileResponse(path)
+
+    @app.post("/api/shows/tag-decade")
+    def shows_tag_decade(body: DecadeTag):
+        """Quick decade chip on the Show Designer: a decade set by hand counts as verified."""
+        if body.decade not in config.MUSIC_DECADES:
+            return {"ok": False, "reason": "unknown decade"}
+        path = _safe_music_path(body.filename)
+        track = next((t for t in music_library.all_tracks() if t["path"] == path), None) if path else None
+        if track is None:
+            return {"ok": False, "reason": "file not found in library"}
+        music_metadata_engine.save_metadata_for(sanitize_track_key(track["title"], track["artist"]),
+                                                decade=body.decade)
+        track_record.touch_edited(path)
+        return {"ok": True, "decade": body.decade}
 
     @app.post("/api/game/intermission-pause")
     def intermission_pause():

@@ -752,31 +752,81 @@ def _twinkle_segment(name, r, g, b):
     _twinkle(r, g, b, pixels=range(seg["start"], seg["start"] + seg["count"]))
 
 
+_intro_twinkle_levels = [1.0] * config.MARQUEE_TOTAL_LEDS
+_intro_twinkle_next = 0.0
+
+
+def _intro_ramp(el):
+    """0..1 brightness of the show open's twinkle: up from SHOW_INTRO_TWINKLE_
+    START to _FULL, held, then down over SHOW_INTRO_FADE_OUT_SECONDS from
+    SHOW_INTRO_FADE_OUT_AT_SECONDS. Shared shape with drivers/accent_engine.py's
+    outline ramp."""
+    c = config
+    if el < c.SHOW_INTRO_TWINKLE_START_SECONDS:
+        return 0.0
+    if el < c.SHOW_INTRO_TWINKLE_FULL_SECONDS:
+        return (el - c.SHOW_INTRO_TWINKLE_START_SECONDS) / (
+            c.SHOW_INTRO_TWINKLE_FULL_SECONDS - c.SHOW_INTRO_TWINKLE_START_SECONDS)
+    if el < c.SHOW_INTRO_FADE_OUT_AT_SECONDS:
+        return 1.0
+    return max(0.0, 1.0 - (el - c.SHOW_INTRO_FADE_OUT_AT_SECONDS) / c.SHOW_INTRO_FADE_OUT_SECONDS)
+
+
+def _intro_twinkle(now, level):
+    """The "Twinkle Base" look in white at config.SHOW_INTRO_TWINKLE_SPEED:
+    a dim wash with occasional brighter sparkles, re-rolled at that fraction
+    of the normal rate, all scaled by `level` (0..1) every frame so the
+    brightness ramp is smooth between rolls."""
+    global _intro_twinkle_next
+    if now >= _intro_twinkle_next:
+        _intro_twinkle_next = max(_intro_twinkle_next + _DANCE_FRAME_S / config.SHOW_INTRO_TWINKLE_SPEED,
+                                  now - _DANCE_FRAME_S)
+        density = 0.08
+        for i in range(config.MARQUEE_TOTAL_LEDS):
+            _intro_twinkle_levels[i] = random.uniform(0.6, 1.0) if random.random() < density else 0.25
+    for i in range(config.MARQUEE_TOTAL_LEDS):
+        v = 255 * _intro_twinkle_levels[i] * level
+        set_pixel(i, v, v, v)
+
+
 def _apply_intro(now):
-    """Show-intro scene -- scoped to the "title" segment (panels 1+2) only
-    since 2026-09-27; the lower four display panels (panel3-6, the Simon
-    panels) stay dark throughout, same as _blackout_lower_panels()'s other
-    callers, rather than flashing/twinkling along with the top strip."""
-    elapsed = now - state.show_phase_started_at
-    if elapsed < config.SHOW_INTRO_DMX_FLASH_AT_SECONDS:
-        _twinkle_segment("title", 255, 255, 255)
-    else:
-        beat = elapsed - config.SHOW_INTRO_DMX_FLASH_AT_SECONDS
-        f = config.SHOW_INTRO_DMX_FLASH_SECONDS
-        if beat < f:
-            set_segment("title", 255, 255, 255)
-        elif beat < f * 2:
-            set_segment("title", 0, 0, 0)
-        elif beat < f * 3:
-            set_segment("title", 255, 255, 255)
+    """Show open (2026-10-14, timings in config.SHOW_INTRO_*): white movie
+    chase on every segment while the top strip's words play, lights out as
+    "Let's Play" cuts in at 9s, white twinkle ramping up 10-14s and fading out
+    from 15s, dark while the host talks, then the wheel spin when the show
+    moves on (_apply_wheel)."""
+    c = config
+    el = now - state.show_phase_started_at
+    if state.show_wheel_started_at:
+        _apply_wheel(now)
+    elif el < c.SHOW_INTRO_LETS_PLAY_AT_SECONDS:
+        for name in c.MARQUEE_SEGMENTS:
+            _theater_chase_segment(name, now, 255, 255, 255)
+    elif el < c.SHOW_INTRO_FADE_OUT_AT_SECONDS + c.SHOW_INTRO_FADE_OUT_SECONDS:
+        level = _intro_ramp(el)
+        if level > 0.0:
+            _intro_twinkle(now, level)
         else:
-            # Matches the DMX rig's post-flash green marquee chase's color
-            # (drivers/lighting_engine.py::_render_show_intro_dmx) -- solid
-            # rather than a moving chase for the same reason
-            # _twinkle_segment() above avoids one.
-            r, g, b = _resolve_marquee_color(config.DJ_COLOR_PALETTE[3])
-            set_segment("title", r, g, b)
-    _blackout_lower_panels()
+            fill(0, 0, 0)
+    else:
+        fill(0, 0, 0)
+
+
+def _apply_wheel(now):
+    """A wheel spin: every lower-panel outline chases white with the square
+    under the pointer solid; after the stop only the landed panel's outline
+    blinks (in step with its LED square, drivers/intro_wheel.py)."""
+    from drivers import intro_wheel
+    wheel_el = now - state.show_wheel_started_at
+    _angle, hot, landed = intro_wheel.pointer(wheel_el)
+    fill(0, 0, 0)
+    if landed:
+        if intro_wheel.blink_on(wheel_el):
+            set_segment(f"panel{hot}", 255, 255, 255)
+    else:
+        for name in _SIMON_PANEL_SEGMENTS:
+            _theater_chase_segment(name, now, 255, 255, 255)
+        set_segment(f"panel{hot}", 255, 255, 255)
 
 
 def _apply_outro(now):
@@ -1147,6 +1197,44 @@ def _double_pulse_level(now, period=3.0, floor=2 / 3):
     return floor + (1 - floor) * bump
 
 
+def _trip_segment(name, i, now, rnd):
+    """The lit pad's marquee loop, getting trippier every round (round 1 =
+    the plain solid block). Per bulb along the loop: travelling brightness
+    waves (more of them, faster, and counter-rotating as rounds climb), the
+    pad's own colour drifting into a rotating rainbow from mid-rounds, a
+    beat strobe, and white sparkle bulbs late. Always keeps some bulbs lit in
+    the pad's colour so the player can still read which pad it is."""
+    seg = config.MARQUEE_SEGMENTS[name]
+    n = seg["count"]
+    trip = 0.0 if rnd <= config.SIMON_TRIP_STRAIGHT_ROUNDS else min(1.0, max(0.0, (rnd - 1) / (config.SIMON_TRIP_ROUNDS_TO_MAX - 1))) ** 0.75
+    br, bg, bb = _steady_panel_color(config.SIMON_HW_COLOR_ORDER[i])
+    if trip <= 0.0:
+        set_segment(name, br, bg, bb)
+        return
+    period = max(0.2, state.dj_tempo_period or 0.5)
+    kick = math.exp(-((now / period) % 1.0) * 5.0)
+    waves = 1 + int(trip * 4)
+    direction = 1 if i % 2 == 0 else -1
+    for off in range(n):
+        u = off / n
+        w1 = math.sin(2 * math.pi * (u * waves - direction * now * (0.5 + 2.5 * trip)))
+        w2 = math.sin(2 * math.pi * (u * (waves + 1) + direction * now * (0.8 + 1.5 * trip)))
+        v = 0.5 + 0.25 * w1 + 0.25 * w2
+        amp = min(1.0, trip * 1.6)
+        lvl = 1.0 - amp * (1.0 - v)
+        if trip > 0.65:                                   # hard-edged late
+            lvl = 1.0 if lvl > 0.55 else 0.0
+        r, g, b = br, bg, bb
+        mix = max(0.0, trip - 0.3) * 1.3                  # rainbow creeps in
+        if mix > 0:
+            hr, hg, hb = colorsys.hsv_to_rgb((u + now * 0.35 * direction) % 1.0, 1.0, 1.0)
+            r, g, b = (br * (1 - mix) + 255 * hr * mix, bg * (1 - mix) + 255 * hg * mix, bb * (1 - mix) + 255 * hb * mix)
+        lvl = min(1.0, lvl + kick * 0.5 * trip)
+        if trip > 0.5 and hash((off, int(now * 14))) % 11 == 0:
+            r, g, b, lvl = 255, 255, 255, 1.0              # sparkle
+        set_pixel(_segment_pixel_index(seg, off), r * lvl, g * lvl, b * lvl)
+
+
 def _apply_simon(now):
     """Simon mini-game (drivers/simon_engine.py), any phase (intro,
     playback, input, or the loss sequence): panels 3-6 show a solid block
@@ -1181,8 +1269,11 @@ def _apply_simon(now):
 
     for i, name in enumerate(_SIMON_PANEL_SEGMENTS):
         if state.simon_active_pad == i:
-            r, g, b = _steady_panel_color(config.SIMON_HW_COLOR_ORDER[i])
-            set_segment(name, r, g, b)
+            if state.simon_phase in ("playback", "input", "fail"):
+                _trip_segment(name, i, now, state.simon_round)
+            else:
+                r, g, b = _steady_panel_color(config.SIMON_HW_COLOR_ORDER[i])
+                set_segment(name, r, g, b)
         else:
             set_segment(name, 0, 0, 0)
 
@@ -1558,6 +1649,11 @@ def update(now):
             _apply_intro(now)
         elif phase == "outro":
             _apply_outro(now)
+        elif state.show_spin_active:
+            if state.show_wheel_started_at:
+                _apply_wheel(now)
+            else:
+                fill(0, 0, 0)   # the song fading out before a mid-show spin
         elif state.westminster_active:
             _twinkle(255, 180, 0)
         elif state.mode == state.MODE_SIMON:
