@@ -197,6 +197,11 @@ if app is not None:
     class ShowSchedule(ShowSetupSave):
         target_epoch: float
 
+    class DmxHoldSet(BaseModel):
+        enabled: bool | None = None
+        color_index: int | None = None
+        brightness: int | None = None  # percent, 0-100
+
     class OverlayHold(BaseModel):
         active: bool
 
@@ -1866,6 +1871,22 @@ if app is not None:
             if body.auto_final_round and body.rounds_estimate else None
         )
 
+    def _dmx_hold_status():
+        return {"enabled": state.show_dmx_hold,
+                "color_index": state.show_dmx_hold_color_index,
+                "brightness": state.show_dmx_hold_brightness}
+
+    @app.post("/api/show/dmx-hold")
+    def show_dmx_hold_set(body: DmxHoldSet):
+        if body.enabled is not None:
+            state.show_dmx_hold = body.enabled
+        if body.color_index is not None:
+            state.show_dmx_hold_color_index = body.color_index % len(config.DJ_COLOR_PALETTE)
+        if body.brightness is not None:
+            state.show_dmx_hold_brightness = max(0, min(100, body.brightness))
+        print(f"[WEB REMOTE] DMX hold -> {_dmx_hold_status()}")
+        return {"ok": True, **_dmx_hold_status()}
+
     @app.get("/api/show/status")
     def show_status():
         now = time.time()
@@ -1885,6 +1906,7 @@ if app is not None:
             "allowed_genres": state.show_allowed_genres,
             "suppress_questions": state.show_suppress_questions,
             "skip_intro": state.show_skip_intro,
+            "dmx_hold": _dmx_hold_status(),
             "auto_final_round": state.show_final_round_number is not None,
             "final_round_number": state.show_final_round_number,
             "game_round_number": state.game_round_number,

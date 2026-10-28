@@ -577,6 +577,13 @@ class State:
         self.questions_suppressed = False  # jukebox mode: no questions asked (auto-start, or the Setup "suppress questions" box)
         self.show_suppress_questions = True   # Setup page checkbox (pre-checked): start the show as a jukebox
         self.show_skip_intro = False          # Setup page checkbox: dark -> first track directly, no intro
+        # Show-wide "hold the DMX uplights solid" override (remote Show panel):
+        # while on, the uplights stay one color at one brightness and every
+        # flash/chase/theme effect is suppressed. A show setting, so it
+        # survives game resets like the other show_* fields.
+        self.show_dmx_hold = False
+        self.show_dmx_hold_color_index = 0
+        self.show_dmx_hold_brightness = 100   # percent, 0-100
         self.trivia_confirm_active = False
         self.trivia_confirm_until = 0.0
         # Blue, same "setup" window: kicks off a Bluetooth gamepad reconnect

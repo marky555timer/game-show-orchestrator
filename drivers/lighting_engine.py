@@ -6,7 +6,8 @@ from config import (
     DJ_THEME_ALL_OFF_INDEX, DJ_THEME_COUNT, DJ_COLOR_PALETTE,
     CHASE_PACE_MID_SECONDS, CHASE_PACE_FAST_SECONDS, CHASE_PACE_SLOW_SECONDS,
     DMX_NUM_FIXTURES,
-    DMX_SONG_INTRO_FLASH_SECONDS, DMX_SONG_INTRO_BLACK_SECONDS,
+    DMX_QUESTION_FLASH_SECONDS, DMX_QUESTION_FADE_OUT_SECONDS,
+    DMX_QUESTION_FADE_IN_SECONDS, DMX_SONG_INTRO_FLASH_SECONDS, DMX_SONG_INTRO_BLACK_SECONDS,
     DMX_SPARKLE_INTRO_SECONDS, DMX_SONG_TRANSITION_FADE_IN_SECONDS,
     DMX_SPARKLE_FADE_IN_SECONDS, DMX_SPARKLE_PERIOD_SECONDS,
     DMX_MYSTERY_FLASH_SECONDS, DMX_MYSTERY_FADE_OUT_SECONDS,
@@ -527,12 +528,47 @@ def _chase_pace_seconds(now):
     return CHASE_PACE_MID_SECONDS
 
 
-def _render_game_chase(t, now):
+def _render_game_chase(t, now, level=1.0):
     pace = _chase_pace_seconds(now)
     step = int(t / pace) % _UPLIGHT_COUNT
     for i in range(_UPLIGHT_COUNT):
         on = (i == step)
-        dmx.set_uplight(i + 2, 255 if on else 15, 255, 255, 255)
+        dmx.set_uplight(i + 2, int((255 if on else 15) * level), 255, 255, 255)
+
+
+def _render_game_uplights(now):
+    """Game Mode uplights. For the first DMX_QUESTION_FLASH_SECONDS after a
+    question starts, the white chase runs as before; then it fades out and
+    the song's own DJ look fades back up and holds for the rest of the
+    question. Price Game phases and a question-less Game Mode keep the plain
+    chase."""
+    started = state.factoid_question_started_at
+    if state.price_game_active or not started:
+        _render_game_chase(now, now)
+        return
+    elapsed = now - started
+    fade_out_at = DMX_QUESTION_FLASH_SECONDS
+    fade_in_at = fade_out_at + DMX_QUESTION_FADE_OUT_SECONDS
+    if elapsed < fade_out_at:
+        _render_game_chase(now, now)
+    elif elapsed < fade_in_at:
+        _render_game_chase(now, now, 1.0 - (elapsed - fade_out_at) / DMX_QUESTION_FADE_OUT_SECONDS)
+    else:
+        _render_dj_uplights(now, min(1.0, (elapsed - fade_in_at) / DMX_QUESTION_FADE_IN_SECONDS))
+
+
+def _render_held_uplights():
+    """Show-wide solid hold (state.show_dmx_hold): every uplight one color at
+    the chosen brightness, no effects. Fixture 1 follows unless it is showing
+    a win/loss lamp."""
+    color = DJ_COLOR_PALETTE[state.show_dmx_hold_color_index % len(DJ_COLOR_PALETTE)]
+    dimmer = int(255 * max(0, min(100, state.show_dmx_hold_brightness)) / 100)
+    r, g, b = color
+    dmx.set_all_uplights(dimmer, r, g, b, white=color.white, amber=color.amber, uv=color.uv)
+    if state.fixture1_mode in ("win", "loss"):
+        _render_fixture1(time.time())
+    else:
+        dmx.set_fixture1(dimmer, r, g, b, white=color.white, amber=color.amber, uv=color.uv)
 
 
 def _render_price_strobe(t):
@@ -740,6 +776,14 @@ def update(now):
         dmx.render()
         return
 
+    if state.show_dmx_hold:
+        # Operator override for events that can't have the venue flashing:
+        # beats the song-intro flash, mystery sting, game chase, everything
+        # below this point.
+        _render_held_uplights()
+        dmx.render()
+        return
+
     # The Mystery Band sting and the song-intro sparkle both drive the DMX
     # rig, a physical system entirely separate from the LED matrix -- so
     # both are checked here, ahead of the DJ/Game mode branch below,
@@ -807,7 +851,7 @@ def update(now):
         # envelope) -- only _render_fixture1() below actually uses it in
         # that case, and only if fixture1_mode happens to be "idle", which
         # it normally isn't mid-round.
-        _render_game_chase(now, now)
+        _render_game_uplights(now)
 
     _render_fixture1(now, brightness)
     dmx.render()

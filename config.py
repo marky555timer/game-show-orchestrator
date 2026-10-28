@@ -1272,6 +1272,12 @@ CHASE_PACE_SLOW_SECONDS = 0.28
 #      it's ready the instant this fade begins. This is also where the
 #      stored/AI-predicted tempo resumes driving the pattern.
 DMX_SONG_INTRO_FLASH_SECONDS = 0.15
+# Game Mode question lighting: the white uplight chase/flashes run for this
+# long from the moment a question starts, then fade out and the song's own
+# DMX look fades back up (lighting_engine._render_game_uplights).
+DMX_QUESTION_FLASH_SECONDS = 5.0
+DMX_QUESTION_FADE_OUT_SECONDS = 1.0
+DMX_QUESTION_FADE_IN_SECONDS = 1.5
 DMX_SONG_INTRO_BLACK_SECONDS = 1.0
 DMX_SPARKLE_INTRO_SECONDS = 15.0
 DMX_SPARKLE_FADE_IN_SECONDS = 1.0
