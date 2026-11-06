@@ -142,9 +142,20 @@ _tx_pending = None  # bytes of the newest frame not yet written
 _tx_error = None  # (exception, link) from the sender, handled on the main thread
 _tx_thread = None
 
+# Write-stall tolerance (2026-11-06, confirmed live): a single 50ms USB write
+# timeout used to drop the link at once -- yet the board's heartbeat was 0.1s
+# old, i.e. it was fine. Dropping it closed the port (which itself blocked
+# 5s on the stuck CP2102), freed it, and the rescan then grabbed the
+# marquee's port: both boards dark ~10s. Now a write timeout only counts as a
+# failure once it has persisted _WRITE_STALL_GIVEUP_S; meanwhile frames keep
+# coming and a partial frame is just rejected by Display.ino's checksum.
+# Readiness still falls back the normal way if heartbeats stop.
+_WRITE_STALL_GIVEUP_S = 3.0
+_write_stall_since = None
+
 
 def _sender_loop():
-    global _tx_pending, _tx_error
+    global _tx_pending, _tx_error, _write_stall_since
     while True:
         with _tx_cond:
             while _tx_pending is None:
@@ -156,8 +167,24 @@ def _sender_loop():
                 continue
             try:
                 link.write(frame)
+            except serial.SerialTimeoutException as e:
+                now = time.monotonic()
+                if _write_stall_since is None:
+                    _write_stall_since = now
+                    print(f"[LED BRIDGE] Write stall on {link.port} -- holding the link. "
+                          f"[{serial_ports.recovery_context()}]", flush=True)
+                if now - _write_stall_since >= _WRITE_STALL_GIVEUP_S:
+                    _write_stall_since = None
+                    _tx_error = (e, link)
+                continue
             except Exception as e:
+                _write_stall_since = None
                 _tx_error = (e, link)
+                continue
+            if _write_stall_since is not None:
+                print(f"[LED BRIDGE] Write stall cleared after "
+                      f"{time.monotonic() - _write_stall_since:.2f}s.", flush=True)
+                _write_stall_since = None
 
 
 def _queue_serial(frame):
@@ -191,7 +218,8 @@ def _log_failure_diagnostics(device):
         print(f"[LED BRIDGE] DIAG write failure on {device}: load={load} "
               f"since_connect={now - _connect_time:.0f}s heartbeat={hb} "
               f"port_exists={os.path.exists(device)} ttyUSB={ports} "
-              f"cpu_temp={temp} threads={threading.active_count()} frames_sent={_frames_sent}", flush=True)
+              f"cpu_temp={temp} threads={threading.active_count()} frames_sent={_frames_sent} "
+              f"[{serial_ports.recovery_context()}]", flush=True)
 
         def _dmesg():
             try:
@@ -205,6 +233,22 @@ def _log_failure_diagnostics(device):
         pass
 
 
+def _close_in_background(link, device, reject=False):
+    """close() on a wedged CP2102 blocks ~5s in the kernel (dmesg "failed
+    set request 0x12 status: -110" = purge timeout) -- that was the 5.2s
+    main-loop freeze. Close on a throwaway thread; the port stays held until
+    it is really closed so no other module opens it half-way."""
+    def work():
+        try:
+            link.close()
+        except Exception:
+            pass
+        serial_ports.release(device)
+        if reject:
+            serial_ports.reject(device)
+    threading.Thread(target=work, daemon=True, name="led-bridge-close").start()
+
+
 def _handle_tx_error():
     """Main thread: the same close-and-fall-back-to-UDP handling the inline
     write used to do, for a failure the sender thread reported."""
@@ -214,14 +258,10 @@ def _handle_tx_error():
     e, link = _tx_error
     with _tx_lock:
         if link is _serial_link and _serial_link is not None:
-            print(f"[LED BRIDGE] Serial write failed ({e}); falling back to WiFi UDP.")
+            print(f"[LED BRIDGE] Serial write failed ({e}); reconnecting.")
             device = _serial_link.port
             _log_failure_diagnostics(device)
-            try:
-                _serial_link.close()
-            except Exception:
-                pass
-            serial_ports.release(device)
+            _close_in_background(_serial_link, device)
             _serial_link = None
         _tx_error = None
 
@@ -245,9 +285,15 @@ def _find_esp32_port():
     ping-ponged between exactly two wrong ports once a third candidate
     existed)."""
     rejected = serial_ports.rejected_ports()
-    candidates = [port.device for port in serial.tools.list_ports.comports()
-                  if (port.vid, port.pid) in config.ESP32_USB_SERIAL_VID_PIDS
-                  and serial_ports.held_by(port.device) is None]
+    ports = [port for port in serial.tools.list_ports.comports()
+             if (port.vid, port.pid) in config.ESP32_USB_SERIAL_VID_PIDS
+             and serial_ports.held_by(port.device) is None]
+    # 2026-11-06: our own proven USB socket first; never a socket another
+    # module (marquee / outline) has proven is its board.
+    for port in ports:
+        if serial_ports.identity_of_location(port.location or port.device) == "led_bridge":
+            return port.device
+    candidates = [port.device for port in ports if not serial_ports.other_owner(port, "led_bridge")]
     non_rejected = [d for d in candidates if d not in rejected]
     if non_rejected:
         return non_rejected[0]
@@ -308,12 +354,7 @@ def _check_never_ready():
     print(f"[LED BRIDGE] No heartbeat from {device} after {_NEVER_READY_TIMEOUT_S:.0f}s -- "
           f"probably the wrong board (see config.ESP32_USB_SERIAL_VID_PIDS). Releasing it.")
     with _tx_lock:
-        try:
-            _serial_link.close()
-        except Exception:
-            pass
-        serial_ports.release(device)
-        serial_ports.reject(device)
+        _close_in_background(_serial_link, device, reject=True)
         _serial_link = None
     _last_scan_time = time.monotonic()
 
@@ -330,6 +371,8 @@ def _drain_heartbeat():
     try:
         waiting = _serial_link.in_waiting
         if waiting and _HEARTBEAT_BYTE in _serial_link.read(waiting):
+            if _last_heartbeat_time == 0.0:
+                serial_ports.claim_identity(_serial_link.port, "led_bridge")
             _last_heartbeat_time = time.monotonic()
     except Exception:
         pass
@@ -420,6 +463,15 @@ def send_frame(matrix_surface):
         checksum ^= b
     payload.append(checksum)
 
+    global _tx_error, _write_stall_since
+    stall = _write_stall_since
+    if (stall is not None and _tx_error is None and _serial_link is not None
+            and time.monotonic() - stall >= _WRITE_STALL_GIVEUP_S):
+        # Stall never cleared and heartbeats stopped too (so no more frames
+        # were queued to trip the sender's own give-up): reconnect now.
+        _write_stall_since = None
+        _tx_error = (serial.SerialTimeoutException(
+            f"write stalled {_WRITE_STALL_GIVEUP_S:.0f}s"), _serial_link)
     _handle_tx_error()
     _check_never_ready()
     if _serial_link is None and time.monotonic() - _last_scan_time >= _SERIAL_RESCAN_INTERVAL_S:

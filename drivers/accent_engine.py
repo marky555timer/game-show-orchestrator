@@ -906,6 +906,8 @@ def _try_find_and_claim():
             continue
         if serial_ports.held_by(port.device) is not None:
             continue
+        if serial_ports.other_owner(port, "accent_engine"):
+            continue  # proven to be another module's board (2026-11-06)
         # Claim BEFORE opening -- see init()'s docstring for why this
         # ordering is the actual fix, not just a style choice.
         serial_ports.hold(port.device, "accent_engine")
@@ -935,6 +937,7 @@ def _try_find_and_claim():
         _last_sent_bri = None
         _last_sent_preset_speed = None
         _preset_segments_active = True
+        serial_ports.claim_identity(port.device, "accent_engine")
         print(f"[ACCENT] Connected over serial on {port.device} (confirmed by MAC).")
         return
 

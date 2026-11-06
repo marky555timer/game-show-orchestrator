@@ -4,6 +4,16 @@ Versioning: `0.MINOR.PATCH` until the first paid gig, which is released as `1.0.
 MINOR = new mode/feature/subsystem, PATCH = fixes and tuning.
 Source of truth: the `VERSION` file.
 
+## 0.9.1 - 2026-11-06
+
+- Marquee "awaiting answer" look: clear brightness pop on the first beat of
+  each bar (track tempo), plus a white diagonal glint across all four answer
+  panels together every 4 bars.
+- USB dropout fix: panel + marquee links ride out write stalls up to 3s,
+  dead ports close off the main loop (was a 5s freeze), each board's proven
+  USB socket is remembered so no driver grabs another's board, and stall logs
+  note the last relay switch (strobe correlation).
+
 ## 0.9.0 - 2026-11-06
 
 First tagged release. Show rig running end to end on the Pi.

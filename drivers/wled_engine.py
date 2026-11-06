@@ -177,6 +177,8 @@ def _find_esp32_port():
             continue
         if serial_ports.held_by(port.device) is not None:
             continue
+        if serial_ports.other_owner(port, "wled_engine"):
+            continue  # proven to be another module's board (2026-11-06)
         result = _mac_verify_result.get(port.device)
         if result is True:
             return port.device
@@ -275,6 +277,7 @@ def _try_connect_serial():
         # gets its own full interval before that timer fires again.
         _serial_connect_time = time.monotonic()
         serial_ports.hold(device, "wled_engine")
+        serial_ports.claim_identity(device, "wled_engine")
         print(f"[WLED] Connected over serial on {device} (confirmed by MAC).")
     except Exception as e:
         print(f"[WLED] Could not open {device}: {e}")
@@ -374,7 +377,8 @@ def _fail_serial_link(link, error):
     power cycle has, just triggered from code instead of a hand on the
     plug."""
     global _serial_link
-    print(f"[WLED] Serial link failed ({error}); falling back to WiFi DDP.")
+    print(f"[WLED] Serial link failed ({error}); falling back to WiFi DDP. "
+          f"[{serial_ports.recovery_context()}]")
     device = link.port
     try:
         link.close()
@@ -557,6 +561,10 @@ def force_reconnect():
     return True
 
 
+_WRITE_STALL_GIVEUP_S = 3.0
+_write_stall_since = None
+
+
 def _serial_sender_loop():
     """Runs forever on its own daemon thread, started once at import -- same
     pattern as _ddp_sender_loop above, just for the serial write instead of
@@ -566,7 +574,7 @@ def _serial_sender_loop():
     access to `link` that frame writes already have here, so piggybacking
     on this loop avoids a second thread contending for the same serial
     connection."""
-    global _serial_pending
+    global _serial_pending, _write_stall_since
     while True:
         _serial_send_ready.wait()
         with _serial_lock:
@@ -578,9 +586,30 @@ def _serial_sender_loop():
         link, frame = pending
         try:
             link.write(frame)
+        except serial.SerialTimeoutException as e:
+            # 2026-11-06: one brief USB stall (a 50ms write timeout) used to
+            # tear the link down on the spot -- the marquee went dark AND its
+            # freed port got grabbed by led_bridge. The board is usually fine;
+            # keep the link and let the next frame through. Only a stall that
+            # persists past _WRITE_STALL_GIVEUP_S (or the 'v' heartbeat going
+            # silent) counts as a real failure. A partial frame just garbles
+            # one Adalight frame; WLED resyncs on the next "Ada" header.
+            now = time.monotonic()
+            if _write_stall_since is None:
+                _write_stall_since = now
+                print(f"[WLED] Write stall on {link.port} -- holding the link. "
+                      f"[{serial_ports.recovery_context()}]")
+            if now - _write_stall_since >= _WRITE_STALL_GIVEUP_S:
+                _write_stall_since = None
+                _fail_serial_link(link, f"{e} for {_WRITE_STALL_GIVEUP_S:.0f}s")
+            continue
         except Exception as e:
+            _write_stall_since = None
             _fail_serial_link(link, e)
             continue
+        if _write_stall_since is not None:
+            print(f"[WLED] Write stall cleared after {time.monotonic() - _write_stall_since:.2f}s.")
+            _write_stall_since = None
         _heartbeat(link, time.monotonic())
         if link is not _serial_link:
             continue
@@ -1294,6 +1323,74 @@ def _double_pulse_level(now, period=3.0, floor=2 / 3):
     return floor + (1 - floor) * bump
 
 
+# Jazz "awaiting answer" look (2026-11-06): replaces the old subtle double
+# pulse on the lit A/B/C/D panels. Locked to the track's tempo
+# (state.dj_tempo_period = seconds per beat, same source the DMX uplights
+# dance to). A 4-beat bar with a backbeat comp on 2 and 4, a soft swung
+# "and-of-3" ghost note, and a gentle downbeat; each hit pops to full and
+# decays fast (clearly visible vs. the old 2/3 -> 1 fade). On top, every
+# few bars each panel in turn gets a diagonal shimmer sweep across it.
+_JAZZ_FLOOR = 0.40
+_JAZZ_HITS = ((0.0, 1.0),)  # (beat in bar, strength): whole-note step only, once per bar
+_JAZZ_DECAY = 4.5            # per beat; higher = snappier
+_JAZZ_SHIMMER_CYCLE = 16.0   # beats between shimmer starts on one panel
+_JAZZ_SHIMMER_LEN = 1.5      # beats a sweep takes
+_JAZZ_SHIMMER_STAGGER = 0.0  # all four panels shimmer together
+_panel_diag = {}
+
+
+def _jazz_beat(now):
+    p = getattr(state, "dj_tempo_period", None) or 0.5
+    return now / max(0.3, min(1.2, p))
+
+
+def _jazz_level(beat):
+    pos = beat % 4.0
+    best = 0.0
+    for hit, strength in _JAZZ_HITS:
+        d = (pos - hit) % 4.0
+        best = max(best, strength * math.exp(-d * _JAZZ_DECAY))
+    return _JAZZ_FLOOR + (1.0 - _JAZZ_FLOOR) * min(1.0, best)
+
+
+def _panel_diag_values(name):
+    """Per-LED diagonal coordinate (0..1, top-left -> bottom-right) within
+    one panel's own bounding box, from the photo-measured bulb map."""
+    cached = _panel_diag.get(name)
+    if cached is not None:
+        return cached
+    seg = config.MARQUEE_SEGMENTS[name]
+    idx = range(seg["start"], seg["start"] + seg["count"])
+    vals = [_bulb_xy[i][0] + _bulb_xy[i][1] for i in idx]
+    lo, hi = min(vals), max(vals)
+    span = (hi - lo) or 1.0
+    out = [(v - lo) / span for v in vals]
+    _panel_diag[name] = out
+    return out
+
+
+def _apply_steady_jazz(name, i, now):
+    """Drive one lit answer panel (index i) with the jazz pulse + shimmer."""
+    seg = config.MARQUEE_SEGMENTS[name]
+    beat = _jazz_beat(now)
+    level = _jazz_level(beat)
+    r, g, b = _steady_panel_color(config.SIMON_HW_COLOR_ORDER[i])
+    t = ((beat - i * _JAZZ_SHIMMER_STAGGER) % _JAZZ_SHIMMER_CYCLE) / _JAZZ_SHIMMER_LEN
+    if t >= 1.0:
+        set_segment(name, r * level, g * level, b * level)
+        return
+    front = -0.2 + 1.4 * t   # band centre sweeps past both corners
+    diag = _panel_diag_values(name)
+    for k in range(seg["count"]):
+        w = math.exp(-((diag[k] - front) / 0.16) ** 2)  # band profile
+        lv = level + (1.0 - level) * w
+        white = 0.65 * w
+        set_pixel(seg["start"] + k,
+                  (r * lv) * (1 - white) + 255 * white,
+                  (g * lv) * (1 - white) + 255 * white,
+                  (b * lv) * (1 - white) + 255 * white)
+
+
 def _trip_segment(name, i, now, rnd):
     """The lit pad's marquee loop, getting trippier every round (round 1 =
     the plain solid block). Per bulb along the loop: travelling brightness
@@ -1437,14 +1534,12 @@ def _apply_mystery_marquee(now):
         reveal_complete_at = (state.mystery_started_at + config.MYSTERY_SPARKLE_SECONDS
                                + config.MYSTERY_SOLID_SECONDS + 4 * config.MYSTERY_CASCADE_STEP_SECONDS)
         still_chasing = now < reveal_complete_at + _FINAL_REVEAL_HOLD_SECONDS
-        level = _double_pulse_level(now)
         for i, name in enumerate(_SIMON_PANEL_SEGMENTS):
             if still_chasing:
                 r, g, b = config.SIMON_HW_COLOR_RGB[config.SIMON_HW_COLOR_ORDER[i]]
                 _theater_chase_segment(name, now, r, g, b)
             else:
-                r, g, b = _steady_panel_color(config.SIMON_HW_COLOR_ORDER[i])
-                set_segment(name, r * level, g * level, b * level)
+                _apply_steady_jazz(name, i, now)
 
 
 def _apply_question_marquee(now):
@@ -1479,7 +1574,6 @@ def _apply_question_marquee(now):
         # timing lines up with question_reveal_count()'s own math.
         reveal_complete_at = state.factoid_question_started_at + len(choices) * config.QUESTION_CASCADE_STEP_SECONDS
         still_chasing = now < reveal_complete_at + _FINAL_REVEAL_HOLD_SECONDS
-        level = _double_pulse_level(now)
         for i, name in enumerate(_SIMON_PANEL_SEGMENTS):
             if i >= len(choices):
                 set_segment(name, 0, 0, 0)
@@ -1487,8 +1581,7 @@ def _apply_question_marquee(now):
                 r, g, b = config.SIMON_HW_COLOR_RGB[config.SIMON_HW_COLOR_ORDER[i]]
                 _theater_chase_segment(name, now, r, g, b)
             else:
-                r, g, b = _steady_panel_color(config.SIMON_HW_COLOR_ORDER[i])
-                set_segment(name, r * level, g * level, b * level)
+                _apply_steady_jazz(name, i, now)
 
 
 def _apply_wrong_answer_marquee(now):

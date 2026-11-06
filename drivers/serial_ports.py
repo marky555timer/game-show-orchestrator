@@ -55,6 +55,53 @@ def held_by(device):
     return _holders.get(device)
 
 
+# Proven identity per PHYSICAL USB socket (2026-11-06). After a transient
+# USB hiccup one module released its port and another module's rescan
+# grabbed it (led_bridge opened the marquee's freed ttyUSB1), taking BOTH
+# boards dark for ~10s. Each module records here which socket it has
+# positively proven (heartbeat / MAC); the others skip it. Keyed on the
+# pyserial `location` (USB path, e.g. "1-1.4:1.0"), which stays with the
+# socket even if a re-enumeration shuffles the ttyUSB numbers.
+_identity = {}  # usb location -> owner name
+
+
+def _location_of(device):
+    try:
+        import serial.tools.list_ports
+        for p in serial.tools.list_ports.comports():
+            if p.device == device:
+                return p.location or device
+    except Exception:
+        pass
+    return device
+
+
+def claim_identity(device, owner):
+    _identity[_location_of(device)] = owner
+
+
+def identity_of_location(location):
+    return _identity.get(location)
+
+
+def other_owner(port, owner):
+    """True if `port` (a pyserial ListPortInfo) is proven to be another
+    module's board."""
+    who = _identity.get(port.location or port.device)
+    return who is not None and who != owner
+
+
+def recovery_context():
+    """One-line snapshot for USB-failure logs: relay + strobe activity."""
+    parts = []
+    try:
+        from drivers import relay_engine
+        parts.append(relay_engine.last_switch_info())
+    except Exception:
+        pass
+    return "; ".join(parts) or "no context"
+
+
 def reject(device):
     """Called only by led_bridge.py when a connection it opened never
     heartbeats -- see module docstring."""

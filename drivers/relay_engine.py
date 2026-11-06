@@ -63,6 +63,19 @@ _RECONNECT_INTERVAL_S = 3.0
 _WRITE_TIMEOUT_S = 0.05
 
 _lock = threading.Lock()
+_last_switch = None  # (monotonic time, channel, state) of the last real on/off CHANGE
+_chan_state = {}     # channel -> last state written (callers re-send every second)
+
+
+def last_switch_info():
+    """For USB-failure diagnostics (2026-11-06): which relay last switched
+    and how long ago, so a failure log shows whether a strobe/siren/honk
+    switch lined up with it."""
+    ls = _last_switch
+    if ls is None:
+        return "relay: none switched yet"
+    t, ch, st = ls
+    return f"relay: ch{ch} {'ON' if st else 'OFF'} {time.monotonic() - t:.2f}s ago"
 _link = None  # serial.Serial once connected+identity-confirmed, else None
 _port = None
 _pulse_off_at = {}  # {channel: time.monotonic() deadline to switch it back off}
@@ -176,12 +189,16 @@ def _send(channel, state):
     """Main-thread-safe: only ever writes to an already-open link (a quick
     op bounded by _WRITE_TIMEOUT_S), never opens/probes one -- see module
     docstring for why that split matters."""
+    global _last_switch
     with _lock:
         if _link is None:
             return
         try:
             _link.write_timeout = _WRITE_TIMEOUT_S
             _link.write(_frame(channel, state))
+            if _chan_state.get(channel) != state:
+                _chan_state[channel] = state
+                _last_switch = (time.monotonic(), channel, state)
         except Exception as e:
             print(f"[RELAY] Write failed on {_port}: {e}")
             _drop_link()
