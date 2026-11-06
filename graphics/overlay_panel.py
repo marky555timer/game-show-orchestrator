@@ -381,7 +381,8 @@ def _render_contents(screen, t):
     _draw_button(screen, "next_track", pygame.Rect(x + half + 8, y, half, 24), "NEXT >>")
     y += 24 + 8
 
-    _draw_button(screen, "test_westminster", pygame.Rect(x, y, w, 24), "TEST WESTMINSTER CLOCK")
-    y += 24 + 8
+    if config.WESTMINSTER_ENABLED:  # retired 2026-10-28
+        _draw_button(screen, "test_westminster", pygame.Rect(x, y, w, 24), "TEST WESTMINSTER CLOCK")
+        y += 24 + 8
 
     _draw_button(screen, "close_app", pygame.Rect(x, y, w, 26), "CLOSE APP", danger=True)

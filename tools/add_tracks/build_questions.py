@@ -1,5 +1,6 @@
-"""build_questions.py <specsN> <questionsN> <out.json> -- turns the hand-written question file into
-track_cache.json entries ({track key: [question, ...]}), checking every LED/phone length limit."""
+"""build_questions.py <specsN> <questionsN> <out.json> [--partial] -- turns the hand-written question file into
+track_cache.json entries ({track key: [question, ...]}), checking every LED/phone length limit.
+--partial: songs with no questions yet are skipped instead of reported (a batch written in parts)."""
 import importlib
 import json
 import random
@@ -28,6 +29,8 @@ def check(title, q):
 
 for prefix, artist, title, year, genre, rank, slow, energy, never in specs:
     items = qmod.Q.get(title)
+    if not items and "--partial" in sys.argv:
+        continue
     if not items:
         problems.append(f"{title}: no questions")
         continue

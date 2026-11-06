@@ -4,7 +4,7 @@ everything: a saved show is a name, a few settings and an ordered playlist.
 
   {"id": "3f9a0c1e7b2d", "name": "RedLime", "created_at": ..., "updated_at": ...,
    "updated_ts": 1760750000.0, "last_played": ...,
-   "intro": true, "questions": false, "low": "1950s", "high": "1980s",
+   "intro": true, "questions": false, "listen": false, "low": "1950s", "high": "1980s",
    "settings": {"win_score": 15, ...},
    "items": [{"type": "spin"},
              {"type": "song", "file": "06 Venus.mp3", "title": "Venus",
@@ -45,7 +45,7 @@ ENDINGS = ("full", "quiz", "cut")
 # Ascending, for the designer's LOW / HIGH decade pages and the web page.
 DECADES = ["1950s", "1960s", "1970s", "1980s", "1990s", "2000s", "2010s", "2020s"]
 
-DEFAULTS = {"intro": True, "questions": False, "low": "1950s", "high": "1980s"}
+DEFAULTS = {"intro": True, "outro": True, "questions": False, "listen": False, "low": "1950s", "high": "1980s"}
 _SETTING_KEYS = ("win_score", "intermission_minutes", "exclude_explicit",
                  "exclude_slow_dance", "exclude_never_charted", "allowed_genres")
 
@@ -194,7 +194,8 @@ def _blank(name):
     now = _now()
     return {"id": _new_id(), "name": name, "created_at": now, "updated_at": now,
             "updated_ts": round(time.time(), 3), "last_played": "",
-            "intro": DEFAULTS["intro"], "questions": DEFAULTS["questions"],
+            "intro": DEFAULTS["intro"], "outro": DEFAULTS["outro"],
+            "questions": DEFAULTS["questions"], "listen": DEFAULTS["listen"],
             "low": DEFAULTS["low"], "high": DEFAULTS["high"],
             "settings": current_settings(), "items": []}
 
@@ -329,8 +330,12 @@ def update(name, fields):
             return None
         if "intro" in fields:
             s["intro"] = bool(fields["intro"])
+        if "outro" in fields:
+            s["outro"] = bool(fields["outro"])
         if "questions" in fields:
             s["questions"] = bool(fields["questions"])
+        if "listen" in fields:
+            s["listen"] = bool(fields["listen"])
         for key in ("low", "high"):
             if fields.get(key) in DECADES:
                 s[key] = fields[key]
@@ -345,7 +350,16 @@ def update(name, fields):
                     st[key] = fields["settings"][key]
         _touch(s)
         _save()
+        _sync_live_flags(s)
         return copy.deepcopy(s)
+
+
+def _sync_live_flags(s):
+    """An edit to the selected/running show takes effect right away."""
+    from state import state
+    if s.get("name") == state.show_selected:
+        state.listen_enabled = bool(s.get("listen", False))
+        state.show_outro_enabled = bool(s.get("outro", True))
 
 
 def append_item(name, item):
@@ -498,6 +512,8 @@ def merge(remote_shows, remote_deleted):
             seen.add(s["name"].lower())
         if changed:
             _save(notify=False)
+            for s in _shows:
+                _sync_live_flags(s)
     return changed
 
 
@@ -507,7 +523,9 @@ def _from_remote(r):
         if r.get(key) is not None:
             s[key] = r[key]
     s["intro"] = bool(r.get("intro", s["intro"]))
+    s["outro"] = bool(r.get("outro", s["outro"]))
     s["questions"] = bool(r.get("questions", s["questions"]))
+    s["listen"] = bool(r.get("listen", s["listen"]))
     for key in ("low", "high"):
         if r.get(key) in DECADES:
             s[key] = r[key]

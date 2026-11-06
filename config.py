@@ -2,6 +2,41 @@ import os
 import sys
 import time
 
+
+# ==========================================
+# VERSION STAMP
+# ==========================================
+# Single source of truth is the VERSION file in the repo root (0.x until the
+# first paid gig, which gets 1.0.0). APP_VERSION adds the short git hash
+# (+dirty if edited) when git is available, e.g. "0.9.0+a1b2c3d".
+def _load_app_version():
+    here = os.path.dirname(os.path.abspath(__file__))
+    try:
+        with open(os.path.join(here, "VERSION"), encoding="utf-8") as f:
+            base = f.read().strip() or "0.0.0"
+    except OSError:
+        base = "0.0.0"
+    try:
+        import subprocess
+        kw = dict(cwd=here, stderr=subprocess.DEVNULL, timeout=3)
+        sha = subprocess.check_output(
+            ["git", "rev-parse", "--short", "HEAD"], **kw).decode().strip()
+        dirty = subprocess.check_output(
+            ["git", "status", "--porcelain", "-uno"], **kw).decode().strip()
+        return f"{base}+{sha}{'-dirty' if dirty else ''}"
+    except Exception:
+        return base
+
+
+APP_VERSION_BASE = ""
+try:
+    with open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "VERSION"),
+              encoding="utf-8") as _vf:
+        APP_VERSION_BASE = _vf.read().strip()
+except OSError:
+    pass
+APP_VERSION = _load_app_version()
+
 # ==========================================
 # STANDALONE .EXE PACKAGING: BUNDLED-RESOURCE / OUTBOARD-FILE PATHS
 # ==========================================
@@ -458,20 +493,30 @@ DMX_HEAD_SMOOTH_SECONDS = 0.5    # low-pass on idle brightness/color so beat fla
 # The old unit was ~1.06 deg/unit, so pan swings were scaled x0.75.
 # Tilt ~0.53 deg/unit (6 = level, 176 = straight up), higher = up; tilt
 # swings were doubled vs. the old unit to keep the same angles.
-DMX_HEAD_PAN_CENTER = 0.0
-DMX_HEAD_TILT_CENTER = 6.0   # level on the replacement unit (old unit: 25); tilt moves swing up-only from here
-DMX_HEAD_SWAY_PAN_UNITS = 6.0     # up to ~8 deg right
-DMX_HEAD_SWAY_TILT_UNITS = 12.0   # up to ~6 deg up
+#
+# 2026-10-28 -- "mannequin head" setup: a foam head rides on the lens of a
+# second unit aimed straight UP (zenith), so pan turns the face and tilt tips
+# it. That unit's menu pan range is 540 deg: 0-255 = 540 deg, ~2.12 deg/unit,
+# so one full turn = DMX_HEAD_PAN_TURN_UNITS (85 units = 180, confirmed).
+# Nose faces the audience at pan 170 (and 0, a full turn back); a spin turns
+# 360 from 170 down to 0 and the next spin turns back -- never needs to unwind. Swings keep
+# the old angles (x0.66 for the coarser pan); tilt motions are kept small so
+# the head only tips slightly.
+DMX_HEAD_PAN_CENTER = 170.0       # nose forward (photo-checked 2026-10-28; 42.5 = right cheek forward, 85 = nose to the back)
+DMX_HEAD_PAN_TURN_UNITS = 170.0   # one 360 turn at the 540-deg pan setting
+DMX_HEAD_TILT_CENTER = 199.0      # lens straight up on the mannequin unit (photo-checked 2026-10-28; 176/185/192 still leaned)
+DMX_HEAD_SWAY_PAN_UNITS = 4.0     # ~8 deg each way
+DMX_HEAD_SWAY_TILT_UNITS = 3.0    # ~1.5 deg -- subtle
 DMX_HEAD_SWAY_BEATS = 4.0         # beats per full pan sway cycle (tilt is 2x as fast)
 DMX_HEAD_SWAY_SPEED = 110         # P/T speed channel while swaying (smooth)
 DMX_HEAD_SCAN_PERIOD_SECONDS = 9.0  # gameplay: one look-around every this many seconds
 DMX_HEAD_SCAN_STOP_SECONDS = 1.1    # hold time at each side (blinks twice)
-DMX_HEAD_SCAN_UNITS = 16.5          # sharp right/left look distance (~23 deg)
+DMX_HEAD_SCAN_UNITS = 11.0          # sharp right/left look distance (~23 deg)
 DMX_HEAD_REACT_SPEED = 0          # P/T speed channel during nod/shake (fast)
 DMX_HEAD_REACT_SECONDS = 1.6      # full-color nod/shake duration
 DMX_HEAD_FADE_SECONDS = 0.6       # fade back to the dim uplight color
-DMX_HEAD_NOD_UNITS = 28.0         # tilt swing of a win nod (~15 deg up)
-DMX_HEAD_SHAKE_UNITS = 16.5       # pan swing of a loss shake (~23 deg)
+DMX_HEAD_NOD_UNITS = 8.0          # tilt swing of a win nod (~4 deg -- subtle)
+DMX_HEAD_SHAKE_UNITS = 11.0       # pan swing of a loss shake (~23 deg)
 DMX_HEAD_REACT_CYCLES = 3
 DMX_HEAD_SPIN_ENABLED = True      # full 360 spin on round start, winner, and right answers
 DMX_HEAD_SPIN_SECONDS = 1.5       # duration of the spin ramp (3.0 was too slow)
@@ -539,9 +584,71 @@ USB_RELAY_PULSE_SECONDS = 0.25
 # ear/feel that every one of the 8 strikes is actually landing at this
 # speed, not just some of them -- tune the split (doesn't have to stay
 # 50/50) if the solenoid can't fully reset between strikes this fast.
-USB_RELAY_BIG_WIN_RING_COUNT = 8
-USB_RELAY_RING_ON_SECONDS = 0.06
-USB_RELAY_RING_OFF_SECONDS = 0.06
+USB_RELAY_BIG_WIN_RING_COUNT = 4   # 2026-10-27 (was 8)
+USB_RELAY_RING_ON_SECONDS = 0.05   # 2026-10-27: short hit so the cap isn't drained (was 0.06, 0.12)
+USB_RELAY_RING_OFF_SECONDS = 0.18   # 2026-10-27: a bit more charge time (0.135 a touch short with the lower resistor; 0.5 = all solid at 50 ohm)
+
+# Duck-call blower (2026-10-18, drivers/honk_engine.py): 12 V blower at 5 V on
+# its own isolated supply, relay channel 4. Honks on the 2nd, 4th, 6th... wrong
+# answer in a row. Measured at 30 fps: spins up in ~0.1 s, full-pitch blast at
+# ~0.33 s, honk dies ~0.77 s after power off -- so open with a long "dash" and
+# keep every off gap short so the motor stays above the honk threshold.
+HONK_ENABLED = True
+HONK_RELAY_CHANNEL = 4
+# Every honk is a fresh random dot/dash pattern (honk_engine._random_pattern),
+# never the same rhythm twice in a row. All (min, max) seconds.
+HONK_SPINUP_ON = (0.45, 0.70)    # the opening dash that gets the call sounding
+HONK_DASH_ON = (0.26, 0.45)
+HONK_DOT_ON = (0.08, 0.16)
+HONK_DASH_SHARE = 0.35           # chance each later element is a dash
+HONK_GAP_OFF = (0.08, 0.16)      # between elements
+HONK_LETTER_GAP_OFF = (0.22, 0.32)  # an occasional longer pause (still under the ~0.77 s die-off)
+HONK_LETTER_GAP_SHARE = 0.25
+HONK_ELEMENTS = (2, 5)           # elements after the spin-up dash
+HONK_MAX_ON_SECONDS = 1.0        # hard cap on any single ON, whatever the pattern says
+HONK_MAX_TOTAL_SECONDS = 3.0     # hard cap on a whole pattern
+# SUPER BLAST when Simon is lost on the real buttons: a long solid, then a
+# random staccato tail. Motor runs 1.75 A steady (3.5 A at start) -- 3 s on is fine. Own caps.
+HONK_SUPER_SOLID_ON = (2.6, 3.0)
+HONK_SUPER_ELEMENTS = (5, 8)
+HONK_SUPER_MAX_ON_SECONDS = 3.0
+HONK_SUPER_MAX_TOTAL_SECONDS = 6.0
+# between honks (contact wear, stuck-button chatter) -- under the ~13 s two quick
+# wrong answers can take, so the 4th/6th... still honk
+HONK_COOLDOWN_SECONDS = 10.0
+
+# Self-flashing green light (2026-10-27, drivers/green_light_engine.py) on USB
+# relay channel 2: contact closed while a graded round's result is on screen,
+# when every connected phone player got it right, or the panel/joystick pick
+# was right. MAX_ON is only a safety cap.
+GREEN_LIGHT_ENABLED = True
+GREEN_LIGHT_RELAY_CHANNEL = 2
+GREEN_LIGHT_MAX_ON_SECONDS = 40.0
+
+# Red self-flashing vehicle strobe (2026-10-19, drivers/strobe_engine.py): 12 V,
+# 175 mA, on USB relay channel 3. It flashes by itself whenever powered; the Pi
+# only switches it on/off, in blocks (quick power cycles step these lights to
+# their next flash pattern).
+STROBE_ENABLED = True
+STROBE_RELAY_CHANNEL = 3
+STROBE_MIN_ON_SECONDS = 3.0
+STROBE_MIN_OFF_SECONDS = 3.0
+STROBE_MAX_ON_SECONDS = 30.0     # hard cap on one ON, whatever wants it
+# Last seconds of a live question (2026-10-23): STROBE_COUNTDOWN_FLASHES short
+# power pulses, each STROBE_COUNTDOWN_ON_SECONDS long with STROBE_COUNTDOWN_GAP_SECONDS
+# dark between them, the last one ending STROBE_COUNTDOWN_END_SECONDS before
+# time's up (3 x 0.5 s + 2 x 2 s + 0.5 s -> the first starts 6 s out). Each
+# pulse plays siren.wav on the USB card (the "internal speaker"). These
+# pulses skip the MIN_ON/MIN_OFF blocks below.
+STROBE_COUNTDOWN_FLASHES = 3
+STROBE_COUNTDOWN_ON_SECONDS = 0.5
+STROBE_COUNTDOWN_GAP_SECONDS = 2.0
+STROBE_COUNTDOWN_END_SECONDS = 0.5
+STROBE_COUNTDOWN_SOUND = resource_path("audio", "sound_effects", "siren.wav")
+STROBE_SIMON_LOST_SECONDS = 6.0  # with the honk's super blast
+STROBE_NO_WINNERS_SECONDS = 4.0  # phone round, nobody right
+STROBE_NET_ON_SECONDS = 4.0      # network red: this long ...
+STROBE_NET_EVERY_SECONDS = 20.0  # ... out of every this long
 
 # ==========================================
 # MARQUEE LIGHTS (2026-08-23, drivers/wled_engine.py)
@@ -724,6 +831,14 @@ ACCENT_EFFECT_NAMES = [
 ]
 ACCENT_FX_PUDDLES = 134  # "Puddles" (WLED sound-reactive effect) -- the show open's outline look; index into ACCENT_EFFECT_NAMES
 ACCENT_FX_SOLID = 0  # "Solid" -- used for the white/Price-Game look and flash() confirmations
+ACCENT_FX_BREATHE = 2       # "Breathe" -- story songs (drivers/oz_story.py)
+ACCENT_FX_CHASE = 28        # "Chase"
+ACCENT_FX_CHASE_FLASH = 31  # "Chase Flash"
+
+# Story songs (drivers/oz_story.py, graphics/oz_scene.py): the top panels, marquee and
+# outline act out a story for one hand-picked song (Pink Floyd's On the Run as the Wizard
+# of Oz tornado). False turns the whole thing off.
+STORY_SONGS_ENABLED = True
 
 # WLED's own built-in multi-color gradient palettes (2026-09-26), selectable
 # per song as an alternative to a flat swatch from DJ_COLOR_PALETTE -- lets
@@ -1232,15 +1347,19 @@ SIMON_SOUND_VOLUME = 0.9
 # wiring notes.
 SIMON_HW_BUTTON_PINS = {
     "green": 17,   # physical pin 11
-    "red": 23,     # physical pin 16 -- swapped with blue 2026-09-13, red/blue leads were crossed on the header
+    # 2026-10-22: panel rewired; the 2026-09-13 red/blue wedge below is commented out
+    # so the pins follow the natural wiring again (red=27/pin 13, blue=23/pin 16).
+    # "red": 23,   # physical pin 16 -- swapped with blue 2026-09-13, red/blue leads were crossed on the header
+    "red": 27,     # physical pin 13
     "yellow": 22,  # physical pin 15
-    "blue": 27,    # physical pin 13 -- swapped with red 2026-09-13, red/blue leads were crossed on the header
+    # "blue": 27,  # physical pin 13 -- swapped with red 2026-09-13, red/blue leads were crossed on the header
+    "blue": 23,    # physical pin 16
 }  # common return: GND, physical pin 14
 SIMON_HW_LED_PINS = {
     "green": 13,   # physical pin 33 -- 2026-09-13 remap (was wired one color off in a 4-way rotation): green/red/yellow/blue each mapped to the next color's old pin
-    "red": 5,      # physical pin 29
+    "red": 12,     # physical pin 32 -- 2026-10-22 red/blue LED outputs swapped (was red 5/pin 29)
     "yellow": 6,   # physical pin 31
-    "blue": 12,    # physical pin 32
+    "blue": 5,     # physical pin 29 -- 2026-10-22 red/blue LED outputs swapped (was blue 12/pin 32)
 }  # common return: GND, physical pin 30 -- LEDs run on 12V through a MOSFET per channel, GPIO only drives the gate
 SIMON_HW_LED_PULSE_SECONDS = 1.0
 
@@ -1504,6 +1623,12 @@ CHASE_PACE_SLOW_SECONDS = 0.28
 #      it's ready the instant this fade begins. This is also where the
 #      stored/AI-predicted tempo resumes driving the pattern.
 DMX_SONG_INTRO_FLASH_SECONDS = 0.15
+# Game Mode question lighting: the white uplight chase/flashes run for this
+# long from the moment a question starts, then fade out and the song's own
+# DMX look fades back up (lighting_engine._render_game_uplights).
+DMX_QUESTION_FLASH_SECONDS = 5.0
+DMX_QUESTION_FADE_OUT_SECONDS = 1.0
+DMX_QUESTION_FADE_IN_SECONDS = 1.5
 DMX_SONG_INTRO_BLACK_SECONDS = 1.0
 DMX_SPARKLE_INTRO_SECONDS = 15.0
 DMX_SPARKLE_FADE_IN_SECONDS = 1.0
@@ -1691,6 +1816,34 @@ MYSTERY_QUESTION_TIMEOUT_SECONDS = 40.0
 # A player counts as "connected" if /api/player/question polled within this
 # many seconds -- play.html polls every 1.2s, so this is a generous ~4x margin.
 CONNECTED_PLAYER_TIMEOUT_SECONDS = 5.0
+
+# ==========================================
+# CONNECTION HEALTH (drivers/net_health_engine.py, 2026-10-18): phones report
+# their poll round trips, the Pi pings its router + the internet. "bad" =
+# admin banner, a blinking warning sign in panel 2's corner, and the next
+# question waits for the network to recover (admin can CONTINUE ANYWAY).
+# ==========================================
+NET_HEALTH_ENABLED = True
+NET_HOLD_QUESTIONS = True
+NET_PING_INTERVAL_SECONDS = 3.0
+NET_PING_WINDOW = 20                 # pings kept (~1 minute)
+NET_INTERNET_PING_HOST = "1.1.1.1"
+NET_PHONE_SLOW_MS = 1500             # one phone's median poll round trip: amber
+NET_PHONE_BAD_MS = 3000              # red
+NET_PHONE_SILENT_SECONDS = 6.0       # polls every 1.2 s; this long without one = "silent"
+NET_PHONE_FORGET_SECONDS = 120.0     # silent this long = left the game
+NET_MIN_PHONES_FOR_SYSTEM = 2        # whole-room judgements need at least this many phones
+NET_SYSTEM_SHARE = 0.5               # this share of polling phones lagging = room-wide problem
+NET_SILENCE_LOOKBACK_SECONDS = 20.0  # phones seen this recently count for "all went quiet at once"
+NET_SILENCE_SHARE = 0.6
+NET_ROUTER_LOSS_WARN = 0.05
+NET_ROUTER_LOSS_BAD = 0.20
+NET_INTERNET_LOSS_WARN = 0.10
+NET_INTERNET_LOSS_BAD = 0.30
+NET_INTERNET_SLOW_MS = 400
+NET_TUNNEL_GRACE_SECONDS = 90.0      # after boot, before "tunnel down" counts
+NET_RED_CONFIRM_SECONDS = 5.0        # trouble must last this long before warning
+NET_GREEN_CONFIRM_SECONDS = 10.0     # and be gone this long before clearing
 
 # ==========================================
 # WIN SEQUENCE (drivers/win_sequence_engine.py): duck music, play applause,
@@ -2238,6 +2391,9 @@ FORCE_PRICE_GAME_COMBO_HOLD_SECONDS = 2.0
 # drivers/westminster_engine.py. Matrix phase machine: flash -> particle
 # scatter -> digital time readout (kept abstract/simple rather than a
 # literal analog clock face, since the rig is a 64x56 red-only LED matrix).
+# Retired 2026-10-28 at the user's request: False stops the top-of-hour
+# trigger and the test triggers. The code is kept; set True to bring it back.
+WESTMINSTER_ENABLED = False
 WESTMINSTER_FLASH_SECONDS = 0.4
 WESTMINSTER_PARTICLE_SECONDS = 1.5
 WESTMINSTER_READOUT_SECONDS = 4.0
@@ -2395,6 +2551,9 @@ SHOW_INTRO_WHITE_BRIGHTNESS = 0.60       # outline steady-white level (of full)
 SHOW_INTRO_WHEEL_TURNS = 2                # whole extra revolutions of the pointer before it settles
 SHOW_INTRO_WHEEL_BLINK_PERIOD_SECONDS = 0.4
 SHOW_INTRO_WHEEL_DECADES = ["1960s", "1970s", "1980s", "1990s"]  # panels 3, 4, 5, 6 in that order
+# ...the default four. Since 2026-10-27 the wheel can land on any decade: a spin
+# outside these slides the four-decade window to it (50s -> 50s-80s, 2000s ->
+# 70s-2000s), see drivers/intro_wheel.py::wheel_decades().
 SHOW_INTRO_SLIDE_SECONDS = 0.4
 SHOW_INTRO_PUDDLES_SPEED = 128           # WLED "sx" for the outline's Puddles
 SHOW_INTRO_PUDDLES_PALETTE = 0           # index into ACCENT_PALETTE_NAMES; 0 = Default (the white color slot)
@@ -2434,6 +2593,7 @@ SHOW_OUTRO_DMX_FADE_SECONDS = 2.5
 # ==========================================
 MENU_NETWORK_WAIT_SECONDS = 30.0      # network page moves on after this even if not all good
 MENU_HANDS_OFF_SECONDS = 90.0         # untouched since boot -> run the last played show
+SHOW_FIRST_SONG_BLACK_MAX_SECONDS = 15.0  # show goes live -> panels black until the first song wipes in (cap)
 MENU_LONG_PRESS_SECONDS = 1.0         # acts on release
 MENU_BLINK_PERIOD_SECONDS = 0.8       # one on+off cycle of SAVED AS / NETWORK STILL DOWN
 MENU_SAVED_BLINKS = 4
@@ -2446,8 +2606,11 @@ MENU_OUTLINE_COLORS = {"green": (0, 255, 0), "red": (255, 0, 0), "yellow": (255,
 # moves on; then it swells back to full fast and fades out under what follows.
 SHOW_INTRO_LOOP_IN_SECONDS = 15.549
 SHOW_INTRO_LOOP_OUT_SECONDS = 41.875
-SHOW_INTRO_DUCK_LEVEL = 0.40
-SHOW_INTRO_DUCK_RAMP_SECONDS = 1.5
+# Duck (Mark, 2026-10-18: 40% was too quiet): to 60%, starting 2 s after the
+# loop-in point, as a slow 3 s fade.
+SHOW_INTRO_DUCK_LEVEL = 0.60
+SHOW_INTRO_DUCK_DELAY_SECONDS = 2.0
+SHOW_INTRO_DUCK_RAMP_SECONDS = 3.0
 SHOW_INTRO_SWELL_SECONDS = 0.3
 SHOW_INTRO_RELEASE_FADE_SECONDS = 1.0
 SHOW_HANDS_OFF_INTRO_SECONDS = 10.0   # hands-off boot: the intro moves on by itself after this
@@ -2457,6 +2620,7 @@ SHOW_STAB_LEAD_SECONDS = 1.0          # the next song starts this long before a 
 SHOW_SONG_DOVETAIL_FADE_SECONDS = 0.5 # that song's fade-in
 SHOW_SPIN_DECK_FADE_SECONDS = 1.5     # mid-show spin: the playing song fades out first
 SHOW_WHEEL_MIN_SPIN_SECONDS = 3.0     # wheel spins for one pass of wheelTheme, at least this long
+SHOW_WHEEL_EXTRA_SECONDS = 0.0        # ...plus this. Tried 1.0 on 2026-10-27: the theme audibly looped; the spin must end with the music
 
 # After the outro: the rig keeps playing easy-listening background music
 # (energy_rank <= this); a panel press starts an on-the-fly encore with the
@@ -2569,7 +2733,9 @@ RECOVERY_BUTTON_COOLDOWN_SECONDS = 5.0
 # sound), then after DARK_SECONDS the same graceful teardown + Pi poweroff as
 # the web remote's SHUT DOWN PI.
 SHUTDOWN_BUTTON_ENABLED = True
-SHUTDOWN_BUTTON_PIN = 26
+# 2026-10-28: swapped with the blackout button -- the kill switch is now the
+# button on GPIO16 (physical pin 36, GND pin 34).
+SHUTDOWN_BUTTON_PIN = 16
 # 2.0 (was 1.0) since 2026-10-08: the pin sees phantom ~0.8-0.9s LOW pulses
 # (logged during startup), uncomfortably close to a 1s hold.
 SHUTDOWN_BUTTON_HOLD_SECONDS = 2.0
@@ -2577,7 +2743,27 @@ SHUTDOWN_BUTTON_DARK_SECONDS = 0.5
 # 2026-10-07: false shutdowns ~25s into the boot load (3x in a row), so the
 # button is ignored for the first 90s after the app starts; it must also read
 # released once after that before a press counts.
-SHUTDOWN_BUTTON_STARTUP_IGNORE_SECONDS = 90.0
+SHUTDOWN_BUTTON_STARTUP_IGNORE_SECONDS = 30.0  # was 90 until 2026-10-28 (pull-up + cap fixed the phantom presses)
+
+# Physical blackout button (drivers/blackout_button.py, 2026-10-28): momentary
+# switch between GPIO16 (physical pin 36) and GND (physical pin 34), internal
+# pull-up, active LOW. Each press toggles the admin blackout (same as the web
+# remote's BLACKOUT). PRESS_SECONDS of solid LOW counts as a press (noise
+# filter); COOLDOWN stops contact bounce double-toggling.
+BLACKOUT_BUTTON_ENABLED = True
+# 2026-10-28: swapped with the kill switch -- blackout is now the closer
+# button on GPIO26 (physical pin 37, GND pin 39).
+BLACKOUT_BUTTON_PIN = 26
+BLACKOUT_BUTTON_PRESS_SECONDS = 0.08
+BLACKOUT_BUTTON_COOLDOWN_SECONDS = 0.5
+BLACKOUT_BUTTON_STARTUP_IGNORE_SECONDS = 5.0
+# BCM -> physical header pin, for log messages.
+GPIO_PHYSICAL_PIN = {4: 7, 16: 36, 24: 18, 25: 22, 26: 37}
+# Backup for the GPIO26 kill switch (2026-10-24): holding the green AND blue
+# arcade buttons together this long, in any mode/phase, runs the same blackout
+# + graceful poweroff (simon_engine.poll_hardware -> shutdown_button.request).
+SHUTDOWN_PANEL_COMBO_COLORS = ("green", "blue")
+SHUTDOWN_PANEL_COMBO_HOLD_SECONDS = 5.0
 
 # Bluetooth gamepad reconnect feedback (drivers/bluetooth_engine.py::
 # reconnect_paired_devices_async(), drivers/recovery_button.py): how long its

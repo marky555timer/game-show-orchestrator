@@ -38,6 +38,9 @@ from drivers import led_bridge
 from drivers import power_monitor
 from drivers.dmx_driver import dmx
 from drivers import tunnel_engine
+from drivers import oz_story
+from graphics import oz_scene
+from drivers import net_health_engine
 from drivers import idle_cycle_engine
 from drivers import mystery_band_engine
 from graphics.text_render import (
@@ -185,11 +188,23 @@ def _render_dj_mode(t):
     mystery_live = state.mystery_active and not state.mystery_resolved
     mystery_reveal = state.mystery_active and state.mystery_resolved
 
+    # Story song (drivers/oz_story.py): the top panels act out the song
+    # instead of showing title/artist.
+    story_pos = oz_story.position(t)
+
     # Panels 1+2 are driven as one logical 64x16 surface, two 8px lines tall,
     # so artist and title each get the full double-panel width instead of
     # being crammed into 32px -- except during the periodic branding
     # takeover below, which uses the combined surface as a single line.
-    if mystery_live:
+    if story_pos is not None and oz_story.fullscreen(story_pos):
+        # The tornado finale takes all six panels: one 64x48 picture sliced
+        # onto the three rows (the lower panels draw nothing of their own).
+        full = oz_scene.render_full(story_pos, t)
+        for k, pid in enumerate((1, 3, 5)):
+            matrix_surface.blit(full, (0, PANELS[pid][1]), (0, k * 16, 64, 16))
+    elif story_pos is not None:
+        matrix_surface.blit(oz_scene.render(story_pos, t), TOP_COMBINED[:2])
+    elif mystery_live:
         _render_mystery_top(t)
     elif mystery_reveal:
         tx, ty, tw, th = TOP_COMBINED
@@ -381,6 +396,17 @@ def _render_idle_cycle_panel(pid, rect, t):
     just draws whatever the current phase says). Beta-Fix Feature Set
     items 1 (fill wasted idle space) and 4 (leaderboard)."""
     phase = state.idle_cycle_phase
+    story_pos = oz_story.position()
+    if story_pos is not None:
+        if oz_story.fullscreen(story_pos):
+            return   # the six-panel tornado was already drawn by the top-panel branch
+        # Story song: the lower panels stay dark (the top line is the feature) apart
+        # from the odd short vignette, drawn once per row across its two panels.
+        if pid in (4, 6):
+            v = oz_scene.render_lower(story_pos, time.time())
+            if v is not None and v[1] == (0 if pid == 4 else 1):
+                matrix_surface.blit(v[0], (0, PANELS[pid][1]))
+        return
 
     # Technical Dreams demo across panels 3-6: a "play it now" run takes
     # over any idle phase; a theme turn only plays in the dancing phase.
@@ -693,7 +719,7 @@ def _draw_countdown_bar(rect):
     """30s question-timeout bar (drivers/live_round_engine.py) -- same
     outline+fill pixel math as _draw_volume_overlay's bar, just thinner and
     without a numeric label (it lives in the freed-up strip under the
-    question text, only 2px tall)."""
+    question text, one pixel row)."""
     x0, y0, w, h = rect
     remaining = max(0.0, state.round_deadline_at - time.time())
     frac = min(1.0, remaining / config.QUESTION_TIMEOUT_SECONDS) if config.QUESTION_TIMEOUT_SECONDS > 0 else 0.0
@@ -748,7 +774,7 @@ def _draw_selected_panel(rect, key, text, scroll=True):
                  align=_answer_text_align(text))
 
 
-def _draw_winning_flash(rect, key, text, t, scroll=True):
+def _draw_winning_flash(rect, key, text, t, scroll=True, invert=True):
     """The graded-correct panel: brightly flashing red, pulsing at the
     same cadence as trigger_big_win()'s DMX pulse so the light and the
     panel read as one effect. Since the matrix can't show green, the win
@@ -759,7 +785,7 @@ def _draw_winning_flash(rect, key, text, t, scroll=True):
     saw = 1.0 - cycle_phase
     intensity = 0.35 + saw * 0.65
     color = tuple(int(c * intensity) for c in RED_FULL)
-    draw_marquee(matrix_surface, key, text, rect, color=color, invert=True, scroll=scroll,
+    draw_marquee(matrix_surface, key, text, rect, color=color, invert=invert, scroll=scroll,
                  align=_answer_text_align(text))
 
 
@@ -841,6 +867,9 @@ def _render_quiz_stats_or_return(t, elapsed, celebration_hold):
     # the auto-advance check entirely so grading it always falls straight
     # through to the "back to DJ mode" cleanup below, even if this track
     # happens to have real pre-fetched trivia questions sitting queued.
+    if (state.factoid_category != "price_game" and state.quiz_players and has_next_queued_question()
+            and net_health_engine.holding()):
+        return  # phones can't reach the game right now: the next question waits (answer stays up)
     if state.factoid_category != "price_game" and advance_to_next_queued_question():
         state.set_message("NEXT QUESTION", 1.0)
         print("[QUIZ] Auto-advancing to next pre-fetched question for this track -- staying in GAME_MODE.")
@@ -886,7 +915,7 @@ def _render_solo_win_panel():
     actually chosen; generalized from a panel-button-correct-only trigger
     to every correct grade or timeout, right or wrong, 2026-09-18). Puts
     the correct answer's own text front and center on panels 1+2 instead of
-    repeating the question (or, for a timeout, "TIMES UP!"). Panels 3-6:
+    repeating the question (or, for a timeout, "Time's up!"). Panels 3-6:
     the correct answer's own square stays in place showing its answer text
     (2026-09-18 redesign -- drivers/wled_engine.py::update()'s matching
     condition runs that same panel's marquee segment as a chase in its own
@@ -943,13 +972,13 @@ def _render_quiz_mode(t):
     show_correction = locked and is_true_false and correct == 1 and state.factoid_correction
     # The correction-length hold below is only right when the correction text
     # is actually what's on screen: a SOLO wrong pick. Multiplayer shows the
-    # "CORRECT: names / NOBODY GOT IT" line and a solo correct pick shows the
+    # "Correct: names / Nobody got it" line and a solo correct pick shows the
     # answer panel -- neither shows the correction, but they used to hold for
     # its full scroll length anyway (median ~26s, up to ~36s on real
     # True/False questions), 2026-09-30 fix.
     correction_on_screen = show_correction and not state.quiz_players and sel != correct
     if state.round_timed_out:
-        # 30s question timeout (drivers/live_round_engine.py): "TIMES UP!"
+        # 30s question timeout (drivers/live_round_engine.py): "Time's up!"
         # then correct-answer-only reveal, distinct (longer) hold than the
         # normal win/loss celebration.
         celebration_hold = config.TIMESUP_HOLD_SECONDS
@@ -1007,12 +1036,12 @@ def _render_quiz_mode(t):
             # joystick, or a timeout that happened to land on the right
             # pick) or ended via TIMEOUT at all, right or wrong (2026-09-18,
             # generalized from a panel-button-correct-only flag): skip the
-            # normal "TIMES UP!" + question / correction-text top display
+            # normal "Time's up!" + question / correction-text top display
             # below entirely and go straight to the same clear-the-lower-
             # panels, chase-the-top-strip reveal the Mystery Band identify
             # question's own win already uses -- puts the correct answer's
             # own text front and center instead of a timeout leaving the
-            # room to read "TIMES UP!" with no answer up top, or a
+            # room to read "Time's up!" with no answer up top, or a
             # wordy correction explanation crowding out a plain win.
             # Multiplayer keeps its own "CORRECT: <names>"/timeout display
             # instead (excluded here via `not state.quiz_players`).
@@ -1040,62 +1069,61 @@ def _render_quiz_mode(t):
     # normal single-player question/correction display the rest of the
     # time, and whenever nobody's signed up.
     if locked and state.round_timed_out:
-        # 30s timeout: "TIMES UP!" takes priority over the normal
+        # 30s timeout: "Time's up!" takes priority over the normal
         # correction/correct-names display, then falls through to the
         # existing hold-and-advance flow via celebration_hold above.
-        draw_marquee(matrix_surface, "quiz_timesup", "TIMES UP!", (tx, ty, tw, LINE_H), align="center")
+        draw_marquee(matrix_surface, "quiz_timesup", "Time's up!", (tx, ty, tw, LINE_H), align="center")
         q_line1, _ = wrap_two_lines(state.factoid_question, tw)
         draw_marquee(matrix_surface, "quiz_timesup_q", q_line1, (tx, ty + LINE_H, tw, LINE_H))
     elif locked and state.quiz_players:
+        # Sentence case, centred both ways in the top strip (2026-10-19): one
+        # line when it fits, else "Correct:" over the initials.
         correct_names = [r["initials"] for r in state.quiz_last_round_results if r["correct"]]
-        line = ("CORRECT: " + ", ".join(correct_names)) if correct_names else "NOBODY GOT IT THIS ROUND"
-        draw_marquee(matrix_surface, "quiz_correct_names", line, (tx, ty, tw, LINE_H))
+        line = ("Correct: " + ", ".join(correct_names)) if correct_names else "No winners"
+        if text_width(line) <= tw:
+            draw_marquee(matrix_surface, "quiz_correct_names", line, TOP_COMBINED, align="center")
+        else:
+            draw_marquee(matrix_surface, "quiz_correct_label", "Correct:", (tx, ty, tw, LINE_H), align="center")
+            draw_marquee(matrix_surface, "quiz_correct_names", ", ".join(correct_names),
+                         (tx, ty + LINE_H, tw, LINE_H), align="center")
     elif show_correction:
         line1, line2 = wrap_two_lines(f"FALSE -- {state.factoid_correction}", tw)
         draw_marquee(matrix_surface, "quiz_correction1", line1, (tx, ty, tw, LINE_H))
         draw_marquee(matrix_surface, "quiz_correction2", line2, (tx, ty + LINE_H, tw, LINE_H))
     elif not locked:
         # Question still live: two slightly-shortened text rows (7px each,
-        # matching GLYPH_HEIGHT so no legibility is lost) free up a 2px
-        # strip at the bottom of the top banner for the 30s countdown bar.
+        # matching GLYPH_HEIGHT so no legibility is lost), a blank pixel row,
+        # then the 30s countdown bar as a single pixel row along the bottom
+        # of the top banner (2026-10-19: was 2px, no gap).
         row_h = LINE_H - 1
         line1, line2 = _quiz_banner_lines(tw)
         no_scroll = _is_price_question()
         draw_marquee(matrix_surface, "quiz_q1", line1, (tx, ty, tw, row_h), scroll=not no_scroll)
         draw_marquee(matrix_surface, "quiz_q2", line2, (tx, ty + row_h, tw, row_h), scroll=not no_scroll)
-        _draw_countdown_bar((tx, ty + row_h * 2, tw, th - row_h * 2))
+        _draw_countdown_bar((tx, ty + th - 1, tw, 1))
     else:
         line1, line2 = _quiz_banner_lines(tw)
         no_scroll = _is_price_question()
         draw_marquee(matrix_surface, "quiz_q1", line1, (tx, ty, tw, LINE_H), scroll=not no_scroll)
         draw_marquee(matrix_surface, "quiz_q2", line2, (tx, ty + LINE_H, tw, LINE_H), scroll=not no_scroll)
 
-    if locked and state.round_timed_out:
-        # Distractors dropped -- only the correct answer is revealed.
+    if locked and (state.round_timed_out or state.quiz_players):
+        # Distractors dropped -- only the correct answer is revealed. Phone
+        # players too (2026-10-19): the top strip names who got it, and this
+        # panel is the one drivers/wled_engine.py lights in its button colour.
         reveal_choices = _price_fit_choices(choices)
         for i, pid in enumerate((3, 4, 5, 6)):
             rect = PANELS[pid]
             key = f"quiz_choice_{i}"
             if i == correct and i < len(choices):
-                draw_marquee(matrix_surface, key, reveal_choices[i], rect, color=RED_DIM, invert=True,
+                # Multiplayer shows the answer as normal text (inverted lights
+                # the whole panel and drains the battery); solo keeps the block.
+                multi = bool(state.quiz_players)
+                draw_marquee(matrix_surface, key, reveal_choices[i], rect,
+                            color=RED_FULL if multi else RED_DIM, invert=not multi,
                             scroll=not _is_price_question(), align=_answer_text_align(reveal_choices[i]))
             else:
                 draw_marquee(matrix_surface, key, "", rect)
-    elif locked and state.quiz_players and state.round_winner_initials:
-        # Per-round winner display (2026-08-12 redesign): panel 3 is a
-        # "Wins:" label; the winning initials are distributed round-robin
-        # across the other 3 panels (4, 5, 6) instead of repeating the
-        # exact same text on all 4 -- each panel's own draw_marquee call
-        # already auto-scrolls on its own if its assigned names don't fit,
-        # satisfying "scroll if overflow" for free.
-        draw_marquee(matrix_surface, "quiz_wins_label", "Wins:", PANELS[3], align="center")
-        distribute_pids = (4, 5, 6)
-        groups = {pid: [] for pid in distribute_pids}
-        for i, initials in enumerate(state.round_winner_initials):
-            groups[distribute_pids[i % len(distribute_pids)]].append(initials)
-        for pid in distribute_pids:
-            text = ",".join(groups[pid]) if groups[pid] else "--"
-            draw_marquee(matrix_surface, f"quiz_wins_{pid}", text, PANELS[pid], align="center")
     else:
         # Compressed per-option cascade (2026-09-18) -- same presentation
         # style the Mystery Band teaser already uses (_render_mystery_panels
@@ -1198,7 +1226,9 @@ def _draw_answer_choice_panels(choices, correct, sel, locked, t):
             # same as the live/ungraded look, rather than a dim "reveal"
             # that implied something about them specifically.
             if i == correct:
-                _draw_winning_flash(rect, key, text, t, scroll=scroll)
+                # Normal (lit text, not a lit box): an inverted block lights
+                # most of the panel and drains the battery (2026-10-20).
+                _draw_winning_flash(rect, key, text, t, scroll=scroll, invert=False)
             else:
                 draw_marquee(matrix_surface, key, text, rect, scroll=scroll, align=_answer_text_align(text))
             continue
@@ -1408,6 +1438,7 @@ def trigger_board_wipe(hold_seconds):
     fresh = (state.board_wipe_fresh or state.show_spin_active
              or not state.now_playing_path or state.show_phase != "live")
     state.board_wipe_fresh = False
+    state.show_first_song_pending_at = 0.0  # the first song's wipe is here: stop holding black
     _board_wipe_snapshots = {} if fresh else {
         pid: matrix_surface.subsurface(rect).copy() for pid, rect in PANELS.items()}
     _board_wipe_started_at = time.time()
@@ -1569,6 +1600,25 @@ def _wheel_geometry():
     return _wheel_surface, _wheel_quadrant_pixels
 
 
+def _wheel_hand_pixels(angle, p, cx, cy, rx, ry):
+    """Pixels of the pointer (two spokes thick) plus two dotted "ghost" hands
+    trailing it -- spread wide while the wheel is fast, closing up as it
+    slows (2026-10-27: more visible movement)."""
+    pts = set()
+    gap = 3.0 + 10.0 * (1.0 - p) ** 2
+    spokes = [(0.0, 1.0, 1), (1.5, 1.0, 1), (gap, 0.9, 2), (2 * gap, 0.75, 3)]
+    for back, reach, every in spokes:
+        rad = math.radians(angle - back)
+        tx, ty = cx + rx * reach * math.sin(rad), cy - ry * reach * math.cos(rad)
+        n = int(max(abs(tx - cx), abs(ty - cy))) + 1
+        for k in range(2 if every > 1 else 0, n + 1, every):
+            f = k / n
+            x, y = int(round(cx + (tx - cx) * f)), int(round(cy + (ty - cy) * f))
+            if 0 <= x < _WHEEL_W and 0 <= y < _WHEEL_H:
+                pts.add((x, y))
+    return pts
+
+
 def _draw_intro_wheel(elapsed):
     """The "spin the wheel" picker on panels 3-6: an outline circle around
     all four, a cross dividing it into the four decade squares, a sweeping
@@ -1592,27 +1642,27 @@ def _draw_intro_wheel(elapsed):
     pygame.draw.line(surf, divider, (0, _WHEEL_H // 2 - 1), (_WHEEL_W - 1, _WHEEL_H // 2 - 1))
     pygame.draw.ellipse(surf, RED_FULL, (0, 0, _WHEEL_W, _WHEEL_H), 1)
 
-    # decade labels, one per square
-    for i, decade in enumerate(config.SHOW_INTRO_WHEEL_DECADES):
+    # decade labels, one per square (the four slide to reach a 50s / 2000s+ target)
+    for i, decade in enumerate(intro_wheel.wheel_decades()):
         panel = 3 + i
         ox, oy = _WHEEL_QUADRANT_ORIGIN[panel]
         label = decade[2:4] + "s"   # "1960s" -> "60s"
         on_lit_square = lit and panel == hot_panel
         if landed and panel != hot_panel:
             color = RED_OFF
-        elif on_lit_square and landed:
-            color = BLACK
         elif on_lit_square:
-            color = RED_FULL
+            color = BLACK   # the panels are 1-bit: red on the lit square would vanish
         else:
             color = RED_DIM
         draw_bitmap_text(surf, label, ox + (PANEL_W - text_width(label)) // 2,
                          oy + (PANEL_H - GLYPH_HEIGHT) // 2, color=color)
 
     if not landed:
-        rad = math.radians(angle)
-        tip = (cx + rx * math.sin(rad), cy - ry * math.cos(rad))
-        pygame.draw.line(surf, RED_FULL, (cx, cy), tip)
+        # Inverted, so the hand cuts dark through the lit square and shows
+        # lit over the dark ones (1-bit panels: a red hand on red is invisible).
+        p = max(0.0, min(1.0, elapsed / max(0.1, state.show_wheel_spin_seconds)))
+        for x, y in _wheel_hand_pixels(angle, p, cx, cy, rx, ry):
+            surf.set_at((x, y), BLACK if surf.get_at((x, y))[0] > 0 else RED_FULL)
         pygame.draw.circle(surf, RED_FULL, (int(round(cx)), int(round(cy))), 1)
 
     matrix_surface.blit(surf, (0, PANELS[3][1]), (0, 0, _WHEEL_W, PANEL_H))
@@ -1722,6 +1772,36 @@ def _draw_cpu_temp_overlay():
     draw_marquee(matrix_surface, "cpu_temp_overlay", text, PANELS[5], align="center", scroll=False)
 
 
+# Warning triangle with "!" (9x8), for the network-trouble sign.
+_NET_WARNING_BITMAP = (
+    "....#....",
+    "...#.#...",
+    "...#.#...",
+    "..#.#.#..",
+    "..#.#.#..",
+    ".#.....#.",
+    ".#..#..#.",
+    "#########",
+)
+
+
+def _draw_net_warning(t):
+    """Phones can't reach the game reliably (drivers/net_health_engine.py):
+    a blinking warning sign in panel 2's top-right corner, on top of
+    everything, for as long as the trouble lasts. 1-bit panels, so it's a
+    shape, not a colour."""
+    if (t % 1.0) >= 0.6:
+        return
+    px, py, pw, _ph = PANELS[2]
+    w, h = len(_NET_WARNING_BITMAP[0]), len(_NET_WARNING_BITMAP)
+    x0, y0 = px + pw - w - 1, py
+    matrix_surface.fill(BLACK, (x0 - 1, y0, w + 2, h + 1))
+    for row, line in enumerate(_NET_WARNING_BITMAP):
+        for col, ch in enumerate(line):
+            if ch == "#":
+                matrix_surface.set_at((x0 + col, y0 + row), RED_FULL)
+
+
 def _draw_medley_banner(t, row_panel=3):
     """"MEDLEY TIME!" across one row (panels 3+4 by default; 5+6 while the
     medley game uses the middle row) for as long as a Dance Medley runs:
@@ -1778,8 +1858,8 @@ def _medley_panel_choice(t, panel_id, label, picked, flash):
 
 
 def _draw_medley_game(t):
-    """Dance Medley game on the LEDs: panels 1+2 "THIS IS <ARTIST>?", panels
-    3/4 TRUE / FALSE (green / red arcade buttons), the banner moves to panels
+    """Dance Medley game on the LEDs: panels 1+2 "This is <Artist>?", panels
+    3/4 True / False (green / red arcade buttons), the banner moves to panels
     5+6. For a few seconds after each hook, the previous statement's answer."""
     from drivers import medley_game
     now = time.time()
@@ -1791,31 +1871,31 @@ def _draw_medley_game(t):
         return False
     matrix_surface.fill(BLACK, TOP_COMBINED)
     if showing_reveal:
-        draw_marquee(matrix_surface, "medley_rv1", "THAT WAS", (tx, ty, tw, LINE_H), align="center", scroll=False)
-        draw_marquee(matrix_surface, "medley_rv2", rv["real"].upper(), (tx, ty + LINE_H, tw, LINE_H), align="center")
-        _medley_panel_choice(t, 3, "TRUE", rv["panel"] is True, flash=rv["was_true"])
-        _medley_panel_choice(t, 4, "FALSE", rv["panel"] is False, flash=not rv["was_true"])
+        draw_marquee(matrix_surface, "medley_rv1", "That was", (tx, ty, tw, LINE_H), align="center", scroll=False)
+        draw_marquee(matrix_surface, "medley_rv2", rv["real"], (tx, ty + LINE_H, tw, LINE_H), align="center")
+        _medley_panel_choice(t, 3, "True", rv["panel"] is True, flash=rv["was_true"])
+        _medley_panel_choice(t, 4, "False", rv["panel"] is False, flash=not rv["was_true"])
     else:
-        draw_marquee(matrix_surface, "medley_q1", "THIS IS", (tx, ty, tw, LINE_H), align="center", scroll=False)
-        draw_marquee(matrix_surface, "medley_q2", q["shown"].upper() + "?", (tx, ty + LINE_H, tw, LINE_H), align="center")
-        if now < q["opens"]:   # listen window: no TRUE / FALSE yet
+        draw_marquee(matrix_surface, "medley_q1", "This is", (tx, ty, tw, LINE_H), align="center", scroll=False)
+        draw_marquee(matrix_surface, "medley_q2", q["shown"] + "?", (tx, ty + LINE_H, tw, LINE_H), align="center")
+        if now < q["opens"]:   # listen window: no True / False yet
             matrix_surface.fill(BLACK, PANELS[3])
             matrix_surface.fill(BLACK, PANELS[4])
         else:
-            _medley_panel_choice(t, 3, "TRUE", q["panel"] is True, flash=False)
-            _medley_panel_choice(t, 4, "FALSE", q["panel"] is False, flash=False)
+            _medley_panel_choice(t, 3, "True", q["panel"] is True, flash=False)
+            _medley_panel_choice(t, 4, "False", q["panel"] is False, flash=False)
     _draw_medley_banner(t, row_panel=5)
     return True
 
 
 def _draw_medley_results(t):
-    """End of a medley with the game on: "N TOTAL SONGS" + "WINNER <initials>"
+    """End of a medley with the game on: "N total songs" + "Winner <initials>"
     on panels 1+2, the medley leaderboard (top 4) on panels 3-6."""
     tx, ty, tw, th = TOP_COMBINED
     matrix_surface.fill(BLACK, TOP_COMBINED)
     rows = state.medley_results[:4]
-    draw_marquee(matrix_surface, "medley_res1", f"{state.medley_songs_total} TOTAL SONGS", (tx, ty, tw, LINE_H), align="center", scroll=False)
-    draw_marquee(matrix_surface, "medley_res2", f"WINNER {rows[0]['initials']}" if rows else "MEDLEY SCORES",
+    draw_marquee(matrix_surface, "medley_res1", f"{state.medley_songs_total} total songs", (tx, ty, tw, LINE_H), align="center", scroll=False)
+    draw_marquee(matrix_surface, "medley_res2", f"Winner {rows[0]['initials']}" if rows else "Medley scores",
                  (tx, ty + LINE_H, tw, LINE_H), align="center", scroll=False)
     for k, pid in enumerate((3, 4, 5, 6)):
         x0, y0, w, h = PANELS[pid]
@@ -2012,13 +2092,15 @@ def update_matrix_canvas():
         _draw_hook_words(time.time())
     # After the medley overlays so a hook change's reveal covers them too.
     _apply_board_reveal(time.time())
-    if state.blackout_active:
-        matrix_surface.fill(BLACK)  # admin blackout (drivers/blackout_engine.py)
+    if state.lights_out:
+        matrix_surface.fill(BLACK)  # admin blackout / after-show dark bed (drivers/blackout_engine.py)
         return
     if state.trivia_confirm_active:
         _draw_trivia_confirm()
     if state.cpu_temp_overlay_active:
         _draw_cpu_temp_overlay()
+    if net_health_engine.show_on_panels():
+        _draw_net_warning(time.time())
 
 
 def _render_matrix_canvas_content():
@@ -2031,6 +2113,13 @@ def _render_matrix_canvas_content():
         # falls straight through to the normal dispatch below, unchanged.
         _render_show_phase(t)
         return
+
+    if state.show_first_song_pending_at:
+        # Show just went live but the first song's transition hasn't fired:
+        # hold BLACK so the previous song's board can't flash up (2026-10-26).
+        if t - state.show_first_song_pending_at < config.SHOW_FIRST_SONG_BLACK_MAX_SECONDS:
+            return
+        state.show_first_song_pending_at = 0.0  # safety: never stuck dark
 
     if state.show_spin_active:
         _render_spin(t)   # mid-show wheel spin (blank while the song fades out)

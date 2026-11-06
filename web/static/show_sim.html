@@ -293,9 +293,9 @@ function startIntro() {
   S.phase = 'intro'; S.t0 = now(); S.introMovedOn = false;
   S.introNode = playBuf(SIM.intro_file, { loop: true, loopStart: SIM.loop_in, loopEnd: SIM.loop_out });
   if (S.introNode) {
-    const g = S.introNode.g.gain, t = S.t0;
-    g.setValueAtTime(1, t + SIM.loop_in);
-    g.linearRampToValueAtTime(SIM.duck, t + SIM.loop_in + SIM.duck_ramp);
+    const g = S.introNode.g.gain, t = S.t0 + SIM.loop_in + T('duck_delay', 0);
+    g.setValueAtTime(1, t);
+    g.linearRampToValueAtTime(SIM.duck, t + SIM.duck_ramp);
   }
   updateNow();
 }
@@ -350,11 +350,11 @@ function startSpin(i, how) {
 }
 function startWheel(i) {
   const it = PLAN[i];
-  const node = playBuf(SIM.wheel_file);
-  const spin = Math.max(SIM.wheel_min_spin, node ? node.dur : 0);
-  const panel = 3 + CAT.wheel_decades.indexOf(it.decade);
+  const node = playBuf(SIM.wheel_file, { loop: true });   // loops, like the show machine
+  const spin = Math.max(SIM.wheel_min_spin, node ? node.dur : 0) + (SIM.wheel_extra || 0);
+  const panel = 3 + wheelWindow(it.decade).indexOf(it.decade);
   const start = { 4: 0, 6: 90, 5: 180, 3: 270 }[panel];
-  S.wheel = { node, started: now(), spin, panel, decade: it.decade, land: start + 45 + (Math.random() * 50 - 25), landed: false };
+  S.wheel = { node, started: now(), spin, panel, decade: it.decade, window: wheelWindow(it.decade), land: start + 45 + (Math.random() * 50 - 25), landed: false };
   if (S.introNode && !S.introMovedOn) moveOnFromIntro(false);
   S.phase = 'wheel'; S.wipeAt = 0;
   updateNow();
@@ -497,6 +497,8 @@ function grade(pick, timeout) {
   let hold = q.teaser ? T('reveal_blink', 3) : T('scorecard_hold', 5);
   if (!right && q.correction) hold = Math.max(hold, 2 + (textW(q.correction) + 64) / T('scroll_speed', 30));
   Object.assign(z, { answered: true, pick: timeout ? -1 : pick, right, timeout, answeredAt: now(), hold });
+  // ding for right, buzzer for wrong; a timeout stays silent like the real show
+  if (!timeout) playBuf(right ? T('right_file', 'dingSingle.wav') : T('wrong_file', 'buzzer.wav'));
   renderQuizCard();
 }
 function nextQuestion() {
@@ -648,6 +650,14 @@ function drawIntro(el) {
   else if (el < SIM.line2_out_at) introText(l2, sOut((el - (SIM.line2_out_at - slide)) / slide));
 }
 // the decade wheel on panels 3-6 (graphics/matrix_canvas.py::_draw_intro_wheel)
+// The four decades shown: the default four, slid to reach an older/newer target
+// (drivers/intro_wheel.py::wheel_decades).
+function wheelWindow(target) {
+  const all = CAT.wheel_decades || [], def = CAT.wheel_window || ['1960s', '1970s', '1980s', '1990s'];
+  if (!all.includes(target) || def.includes(target)) return def;
+  const i = all.indexOf(target);
+  return target < def[0] ? all.slice(i, i + 4) : all.slice(Math.max(0, i - 3), i + 1);
+}
 let _quad = null;
 function wheelGeom() {
   if (_quad) return _quad;
@@ -666,7 +676,7 @@ function wheelState(t) {
   const angle = e * (SIM.wheel_turns * 360 + w.land);
   const landed = p >= 1, since = Math.max(0, el - w.spin);
   const lit = landed ? Math.floor(since / (SIM.wheel_blink / 2)) % 2 === 0 : true;
-  return { angle, hot: panelAt(angle), landed, lit };
+  return { angle, hot: panelAt(angle), landed, lit, p };
 }
 function drawWheel(t) {
   introText('spin the wheel');
@@ -676,17 +686,28 @@ function drawWheel(t) {
   for (let y = 0; y < 32; y++) dividerOn ? px(31, y + oy) : clr(31, y + oy);
   for (let x = 0; x < 64; x++) dividerOn ? px(x, 15 + oy) : clr(x, 15 + oy);
   for (const [x, y] of q.ring) px(x, y + oy);
-  CAT.wheel_decades.forEach((d, k) => {
+  S.wheel.window.forEach((d, k) => {
     const panel = 3 + k, [ox, oy2] = { 3: [0, 0], 4: [32, 0], 5: [0, 16], 6: [32, 16] }[panel];
     const label = d.slice(2, 4) + 's', onLit = st.lit && panel === st.hot;
     const x = ox + Math.floor((32 - textW(label)) / 2), y = oy + oy2 + 4;
     if (st.landed && panel !== st.hot) return;               // the others go dark
-    if (onLit && st.landed) text(label, x, y, null, true);   // black on the lit square
+    if (onLit) text(label, x, y, null, true);                // black on the lit square
     else if (!onLit) text(label, x, y);                      // (lit-on-lit is invisible on the real panel)
   });
   if (!st.landed) {
-    const r = st.angle * Math.PI / 180;
-    for (let k = 0; k <= 40; k++) { const f = k / 40; px(Math.round(31.5 + 31.5 * Math.sin(r) * f), Math.round(15.5 - 15.5 * Math.cos(r) * f) + oy); }
+    // the hand (2 spokes) + two dotted ghost hands, drawn inverted so it shows on
+    // the lit square too (matrix_canvas.py::_wheel_hand_pixels)
+    const gap = 3 + 10 * (1 - st.p) ** 2, pts = new Set();
+    for (const [back, reach, every] of [[0, 1, 1], [1.5, 1, 1], [gap, 0.9, 2], [2 * gap, 0.75, 3]]) {
+      const r = (st.angle - back) * Math.PI / 180;
+      const tx = 31.5 + 31.5 * reach * Math.sin(r), ty = 15.5 - 15.5 * reach * Math.cos(r);
+      const n = Math.floor(Math.max(Math.abs(tx - 31.5), Math.abs(ty - 15.5))) + 1;
+      for (let k = every > 1 ? 2 : 0; k <= n; k += every) {
+        const f = k / n, x = Math.round(31.5 + (tx - 31.5) * f), y = Math.round(15.5 + (ty - 15.5) * f);
+        if (x >= 0 && x < 64 && y >= 0 && y < 32) pts.add(y * 64 + x);
+      }
+    }
+    for (const v of pts) { const x = v % 64, y = Math.floor(v / 64) + oy; M[y * W + x] ? clr(x, y) : px(x, y); }
   }
 }
 function drawSong(t) {

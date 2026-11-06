@@ -7,9 +7,10 @@ import numpy as np
 HERE = os.path.dirname(os.path.abspath(__file__))
 MUSIC = r"C:\Users\miste\OneDrive\Desktop\Orchestrator\audio\music"
 CACHE = os.path.join(HERE, "hookcache"); os.makedirs(CACHE, exist_ok=True)
-OUT = os.path.join(HERE, "hook_batch_results.json")
+SPEC_MOD = os.environ.get("HOOK_SPECS", "hook_specs1")  # e.g. HOOK_SPECS=hook_specs2
+OUT = os.path.join(HERE, f"hook_batch_results_{SPEC_MOD}.json")
 sys.path.insert(0, HERE)
-from hook_specs import SPECS
+SPECS = __import__(SPEC_MOD).SPECS
 
 SR = 44100
 _model = None; _whisper = None
@@ -215,5 +216,5 @@ if __name__ == "__main__":
         except Exception as e:
             print(f"{name}: FAILED {e!r}", flush=True)
             results[name] = {"error": repr(e)}
-        json.dump(results, open(OUT, "w"), indent=1)
+        json.dump(results, open(OUT, "w"), indent=1, default=lambda o: o.item() if hasattr(o, "item") else str(o))
     print("done", flush=True)

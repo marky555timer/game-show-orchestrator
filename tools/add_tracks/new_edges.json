@@ -1,0 +1,5102 @@
+{
+ "001 - abba - dancing queen.mp3": {
+  "len": 232.23,
+  "start": 1.04,
+  "end": 228.12,
+  "body_db": -15.7,
+  "gap": 0.12,
+  "gap_at": 227.7,
+  "head_db": -16.7,
+  "tail_db": [
+   -34.0,
+   -36.0,
+   -42.0,
+   -47.0,
+   -58.0,
+   -58.0
+  ]
+ },
+ "002 - abba - take a chance on me.mp3": {
+  "len": 244.51,
+  "start": 0.22,
+  "end": 240.46,
+  "body_db": -16.8,
+  "gap": 0.52,
+  "gap_at": 239.9,
+  "head_db": -22.1,
+  "tail_db": [
+   -36.0,
+   -46.0,
+   -52.0,
+   -62.0,
+   -65.0,
+   -59.0
+  ]
+ },
+ "003 - abba - waterloo.mp3": {
+  "len": 163.0,
+  "start": 0.2,
+  "end": 160.52,
+  "body_db": -14.3,
+  "gap": 0.08,
+  "gap_at": 160.2,
+  "head_db": -10.1,
+  "tail_db": [
+   -30.0,
+   -36.0,
+   -37.0,
+   -42.0,
+   -49.0,
+   -59.0
+  ]
+ },
+ "004 - ac dc - highway to hell.mp3": {
+  "len": 207.93,
+  "start": 0.2,
+  "end": 207.9,
+  "body_db": -12.4,
+  "gap": 0.16,
+  "gap_at": 1.9,
+  "head_db": -20.0,
+  "tail_db": [
+   -18.0,
+   -19.0,
+   -24.0,
+   -24.0,
+   -38.0,
+   -56.0
+  ]
+ },
+ "005 - aerosmith - crazy.mp3": {
+  "len": 316.89,
+  "start": 0.12,
+  "end": 315.08,
+  "body_db": -10.1,
+  "gap": 0.48,
+  "gap_at": 314.6,
+  "head_db": -22.0,
+  "tail_db": [
+   -42.0,
+   -50.0,
+   -51.0,
+   -52.0,
+   -55.0,
+   -59.0
+  ]
+ },
+ "006 - aerosmith - cryin.mp3": {
+  "len": 309.81,
+  "start": 0.24,
+  "end": 306.62,
+  "body_db": -10.3,
+  "gap": 0.52,
+  "gap_at": 306.1,
+  "head_db": -9.5,
+  "tail_db": [
+   -34.0,
+   -33.0,
+   -40.0,
+   -44.0,
+   -53.0,
+   -58.0
+  ]
+ },
+ "007 - aerosmith - dream on.mp3": {
+  "len": 266.4,
+  "start": 0.22,
+  "end": 263.52,
+  "body_db": -11.5,
+  "gap": 0.34,
+  "gap_at": 263.2,
+  "head_db": -22.0,
+  "tail_db": [
+   -23.0,
+   -29.0,
+   -32.0,
+   -37.0,
+   -45.0,
+   -59.0
+  ]
+ },
+ "008 - aerosmith - dude looks like a lady.mp3": {
+  "len": 262.22,
+  "start": 0.2,
+  "end": 257.8,
+  "body_db": -10.3,
+  "gap": 0.7,
+  "gap_at": 257.1,
+  "head_db": -25.4,
+  "tail_db": [
+   -32.0,
+   -35.0,
+   -40.0,
+   -46.0,
+   -62.0,
+   -60.0
+  ]
+ },
+ "009 - aerosmith - i don t want to miss a thing.mp3": {
+  "len": 298.87,
+  "start": 0.38,
+  "end": 293.88,
+  "body_db": -9.7,
+  "gap": 0.5,
+  "gap_at": 293.4,
+  "head_db": -22.3,
+  "tail_db": [
+   -40.0,
+   -45.0,
+   -47.0,
+   -50.0,
+   -53.0,
+   -60.0
+  ]
+ },
+ "010 - aerosmith - livin on the edge.mp3": {
+  "len": 367.1,
+  "start": 0.02,
+  "end": 366.48,
+  "body_db": -10.5,
+  "gap": 1.18,
+  "gap_at": 365.3,
+  "head_db": -6.1,
+  "tail_db": [
+   -37.0,
+   -44.0,
+   -47.0,
+   -52.0,
+   -56.0,
+   -60.0
+  ]
+ },
+ "011 - aerosmith - love in an elevator.mp3": {
+  "len": 322.35,
+  "start": 0.2,
+  "end": 320.74,
+  "body_db": -11.1,
+  "gap": 0.02,
+  "gap_at": 320.6,
+  "head_db": -9.4,
+  "tail_db": [
+   -15.0,
+   -13.0,
+   -13.0,
+   -15.0,
+   -15.0,
+   -57.0
+  ]
+ },
+ "012 - air supply - making love out of nothing at all.mp3": {
+  "len": 343.38,
+  "start": 0.88,
+  "end": 340.46,
+  "body_db": -15.9,
+  "gap": 0.16,
+  "gap_at": 340.2,
+  "head_db": -24.9,
+  "tail_db": [
+   -20.0,
+   -25.0,
+   -33.0,
+   -36.0,
+   -48.0,
+   -60.0
+  ]
+ },
+ "013 - alice cooper - school s out.mp3": {
+  "len": 210.42,
+  "start": 0.86,
+  "end": 208.0,
+  "body_db": -14.7,
+  "gap": 0.02,
+  "gap_at": 207.9,
+  "head_db": -21.8,
+  "tail_db": [
+   -17.0,
+   -17.0,
+   -22.0,
+   -15.0,
+   -18.0,
+   -59.0
+  ]
+ },
+ "014 - allman brothers band - ramblin man.mp3": {
+  "len": 297.9,
+  "start": 0.76,
+  "end": 294.32,
+  "body_db": -16.9,
+  "gap": 0.02,
+  "gap_at": 294.3,
+  "head_db": -15.8,
+  "tail_db": [
+   -33.0,
+   -38.0,
+   -38.0,
+   -41.0,
+   -43.0,
+   -60.0
+  ]
+ },
+ "015 - bachman turner overdrive - takin care of business.mp3": {
+  "len": 292.81,
+  "start": 0.6,
+  "end": 290.88,
+  "body_db": -12.3,
+  "gap": 0.44,
+  "gap_at": 290.4,
+  "head_db": -15.4,
+  "tail_db": [
+   -32.0,
+   -33.0,
+   -40.0,
+   -46.0,
+   -53.0,
+   -59.0
+  ]
+ },
+ "016 - bachman turner overdrive - you ain t seen nothin yet.mp3": {
+  "len": 219.25,
+  "start": 0.44,
+  "end": 213.46,
+  "body_db": -15.7,
+  "gap": 0.1,
+  "gap_at": 213.3,
+  "head_db": -12.6,
+  "tail_db": [
+   -30.0,
+   -36.0,
+   -42.0,
+   -42.0,
+   -53.0,
+   -59.0
+  ]
+ },
+ "017 - backstreet boys - as long as you love me.mp3": {
+  "len": 212.93,
+  "start": 0.24,
+  "end": 210.04,
+  "body_db": -8.3,
+  "gap": 0.54,
+  "gap_at": 209.5,
+  "head_db": -19.8,
+  "tail_db": [
+   -11.0,
+   -12.0,
+   -22.0,
+   -32.0,
+   -44.0,
+   -60.0
+  ]
+ },
+ "018 - backstreet boys - everybody backstreet s back.mp3": {
+  "len": 284.84,
+  "start": 0.38,
+  "end": 284.82,
+  "body_db": -8.4,
+  "gap": 0.0,
+  "gap_at": 0.4,
+  "head_db": -4.3,
+  "tail_db": [
+   -16.0,
+   -12.0,
+   -9.0,
+   -19.0,
+   -16.0,
+   -21.0
+  ]
+ },
+ "019 - backstreet boys - larger than life.mp3": {
+  "len": 232.86,
+  "start": 0.48,
+  "end": 230.6,
+  "body_db": -9.1,
+  "gap": 0.36,
+  "gap_at": 0.7,
+  "head_db": -30.2,
+  "tail_db": [
+   -17.0,
+   -19.0,
+   -26.0,
+   -32.0,
+   -43.0,
+   -59.0
+  ]
+ },
+ "020 - bad company - can t get enough.mp3": {
+  "len": 256.31,
+  "start": 0.02,
+  "end": 252.92,
+  "body_db": -16.2,
+  "gap": 0.1,
+  "gap_at": 0.5,
+  "head_db": -39.9,
+  "tail_db": [
+   -19.0,
+   -20.0,
+   -33.0,
+   -43.0,
+   -40.0,
+   -60.0
+  ]
+ },
+ "021 - barenaked ladies - one week.mp3": {
+  "len": 169.04,
+  "start": 0.84,
+  "end": 169.02,
+  "body_db": -11.3,
+  "gap": 0.12,
+  "gap_at": 0.9,
+  "head_db": -14.7,
+  "tail_db": [
+   -15.0,
+   -21.0,
+   -23.0,
+   -25.0,
+   -33.0,
+   -41.0
+  ]
+ },
+ "022 - barry white - can t get enough of your love babe.mp3": {
+  "len": 235.39,
+  "start": 0.66,
+  "end": 229.96,
+  "body_db": -14.7,
+  "gap": 0.5,
+  "gap_at": 229.4,
+  "head_db": -27.1,
+  "tail_db": [
+   -51.0,
+   -57.0,
+   -59.0,
+   -63.0,
+   -66.0,
+   -57.0
+  ]
+ },
+ "023 - beach boys - barbara ann.mp3": {
+  "len": 132.64,
+  "start": 0.34,
+  "end": 129.56,
+  "body_db": -9.5,
+  "gap": 0.2,
+  "gap_at": 129.3,
+  "head_db": -14.8,
+  "tail_db": [
+   -20.0,
+   -24.0,
+   -30.0,
+   -30.0,
+   -40.0,
+   -60.0
+  ]
+ },
+ "024 - beach boys - california girls.mp3": {
+  "len": 165.73,
+  "start": 0.38,
+  "end": 162.28,
+  "body_db": -10.5,
+  "gap": 0.08,
+  "gap_at": 162.0,
+  "head_db": -22.0,
+  "tail_db": [
+   -22.0,
+   -22.0,
+   -25.0,
+   -29.0,
+   -37.0,
+   -60.0
+  ]
+ },
+ "025 - beach boys - fun fun fun.mp3": {
+  "len": 191.0,
+  "start": 0.22,
+  "end": 189.24,
+  "body_db": -10.3,
+  "gap": 0.28,
+  "gap_at": 188.9,
+  "head_db": -24.1,
+  "tail_db": [
+   -29.0,
+   -33.0,
+   -42.0,
+   -46.0,
+   -49.0,
+   -58.0
+  ]
+ },
+ "026 - beach boys - good vibrations.mp3": {
+  "len": 217.6,
+  "start": 0.58,
+  "end": 215.02,
+  "body_db": -9.8,
+  "gap": 0.14,
+  "gap_at": 214.9,
+  "head_db": -11.2,
+  "tail_db": [
+   -12.0,
+   -9.0,
+   -10.0,
+   -11.0,
+   -28.0,
+   -58.0
+  ]
+ },
+ "027 - beach boys - i get around.mp3": {
+  "len": 130.59,
+  "start": 0.4,
+  "end": 127.14,
+  "body_db": -12.5,
+  "gap": 0.24,
+  "gap_at": 126.8,
+  "head_db": -14.5,
+  "tail_db": [
+   -29.0,
+   -32.0,
+   -38.0,
+   -44.0,
+   -51.0,
+   -59.0
+  ]
+ },
+ "028 - beach boys - surfin usa.mp3": {
+  "len": 148.03,
+  "start": 0.4,
+  "end": 145.32,
+  "body_db": -10.7,
+  "gap": 0.32,
+  "gap_at": 145.0,
+  "head_db": -12.7,
+  "tail_db": [
+   -23.0,
+   -17.0,
+   -20.0,
+   -28.0,
+   -46.0,
+   -58.0
+  ]
+ },
+ "029 - beastie boys - fight for your right.mp3": {
+  "len": 209.42,
+  "start": 0.02,
+  "end": 204.68,
+  "body_db": -16.3,
+  "gap": 0.06,
+  "gap_at": 204.2,
+  "head_db": -22.1,
+  "tail_db": [
+   -35.0,
+   -37.0,
+   -40.0,
+   -47.0,
+   -52.0,
+   -60.0
+  ]
+ },
+ "030 - beatles - a hard day s night.mp3": {
+  "len": 153.47,
+  "start": 0.5,
+  "end": 151.0,
+  "body_db": -12.1,
+  "gap": 0.06,
+  "gap_at": 150.9,
+  "head_db": -11.2,
+  "tail_db": [
+   -20.0,
+   -22.0,
+   -32.0,
+   -38.0,
+   -47.0,
+   -59.0
+  ]
+ },
+ "031 - beatles - all you need is love.mp3": {
+  "len": 227.53,
+  "start": 0.38,
+  "end": 223.96,
+  "body_db": -11.1,
+  "gap": 1.04,
+  "gap_at": 222.9,
+  "head_db": -20.7,
+  "tail_db": [
+   -51.0,
+   -51.0,
+   -53.0,
+   -54.0,
+   -59.0,
+   -60.0
+  ]
+ },
+ "032 - beatles - can t buy me love.mp3": {
+  "len": 131.6,
+  "start": 0.52,
+  "end": 129.84,
+  "body_db": -11.8,
+  "gap": 0.1,
+  "gap_at": 129.7,
+  "head_db": -10.0,
+  "tail_db": [
+   -14.0,
+   -15.0,
+   -13.0,
+   -19.0,
+   -28.0,
+   -60.0
+  ]
+ },
+ "033 - beatles - come together.mp3": {
+  "len": 258.53,
+  "start": 0.44,
+  "end": 255.66,
+  "body_db": -9.4,
+  "gap": 0.26,
+  "gap_at": 255.4,
+  "head_db": -12.3,
+  "tail_db": [
+   -28.0,
+   -40.0,
+   -37.0,
+   -43.0,
+   -50.0,
+   -60.0
+  ]
+ },
+ "034 - beatles - get back.mp3": {
+  "len": 192.1,
+  "start": 0.56,
+  "end": 189.5,
+  "body_db": -11.4,
+  "gap": 0.44,
+  "gap_at": 189.0,
+  "head_db": -17.3,
+  "tail_db": [
+   -27.0,
+   -31.0,
+   -44.0,
+   -42.0,
+   -47.0,
+   -59.0
+  ]
+ },
+ "035 - beatles - hello goodbye.mp3": {
+  "len": 207.18,
+  "start": 0.42,
+  "end": 204.1,
+  "body_db": -12.3,
+  "gap": 0.3,
+  "gap_at": 203.8,
+  "head_db": -11.3,
+  "tail_db": [
+   -27.0,
+   -31.0,
+   -38.0,
+   -46.0,
+   -48.0,
+   -59.0
+  ]
+ },
+ "036 - beatles - help.mp3": {
+  "len": 138.87,
+  "start": 0.1,
+  "end": 135.98,
+  "body_db": -11.9,
+  "gap": 0.0,
+  "gap_at": 0.1,
+  "head_db": -10.4,
+  "tail_db": [
+   -11.0,
+   -11.0,
+   -13.0,
+   -14.0,
+   -23.0,
+   -58.0
+  ]
+ },
+ "037 - beatles - here comes the sun.mp3": {
+  "len": 185.56,
+  "start": 0.32,
+  "end": 183.82,
+  "body_db": -16.8,
+  "gap": 0.06,
+  "gap_at": 183.6,
+  "head_db": -37.5,
+  "tail_db": [
+   -23.0,
+   -22.0,
+   -20.0,
+   -31.0,
+   -40.0,
+   -59.0
+  ]
+ },
+ "038 - beatles - i want to hold your hand.mp3": {
+  "len": 145.01,
+  "start": 0.08,
+  "end": 143.42,
+  "body_db": -11.3,
+  "gap": 0.04,
+  "gap_at": 143.4,
+  "head_db": -14.4,
+  "tail_db": [
+   -13.0,
+   -14.0,
+   -18.0,
+   -20.0,
+   -28.0,
+   -60.0
+  ]
+ },
+ "039 - beatles - love me do.mp3": {
+  "len": 140.77,
+  "start": 1.0,
+  "end": 139.04,
+  "body_db": -12.8,
+  "gap": 0.16,
+  "gap_at": 138.8,
+  "head_db": -11.0,
+  "tail_db": [
+   -22.0,
+   -19.0,
+   -28.0,
+   -28.0,
+   -41.0,
+   -58.0
+  ]
+ },
+ "040 - beatles - ob la di ob la da.mp3": {
+  "len": 188.89,
+  "start": 0.08,
+  "end": 188.56,
+  "body_db": -16.0,
+  "gap": 0.76,
+  "gap_at": 187.3,
+  "head_db": -17.9,
+  "tail_db": [
+   -17.0,
+   -29.0,
+   -36.0,
+   -53.0,
+   -64.0,
+   -59.0
+  ]
+ },
+ "041 - beatles - penny lane.mp3": {
+  "len": 179.96,
+  "start": 0.08,
+  "end": 177.8,
+  "body_db": -10.0,
+  "gap": 0.06,
+  "gap_at": 177.7,
+  "head_db": -9.6,
+  "tail_db": [
+   -15.0,
+   -11.0,
+   -13.0,
+   -12.0,
+   -18.0,
+   -59.0
+  ]
+ },
+ "042 - beatles - she loves you.mp3": {
+  "len": 141.22,
+  "start": 0.5,
+  "end": 138.92,
+  "body_db": -12.0,
+  "gap": 0.08,
+  "gap_at": 138.8,
+  "head_db": -10.3,
+  "tail_db": [
+   -13.0,
+   -16.0,
+   -13.0,
+   -16.0,
+   -23.0,
+   -59.0
+  ]
+ },
+ "043 - beatles - ticket to ride.mp3": {
+  "len": 190.56,
+  "start": 0.52,
+  "end": 187.68,
+  "body_db": -12.2,
+  "gap": 0.18,
+  "gap_at": 187.4,
+  "head_db": -17.9,
+  "tail_db": [
+   -30.0,
+   -35.0,
+   -43.0,
+   -45.0,
+   -50.0,
+   -60.0
+  ]
+ },
+ "044 - beatles - twist and shout.mp3": {
+  "len": 185.43,
+  "start": 0.0,
+  "end": 185.24,
+  "body_db": -13.8,
+  "gap": 0.0,
+  "gap_at": 0.0,
+  "head_db": -9.0,
+  "tail_db": [
+   -16.0,
+   -16.0,
+   -16.0,
+   -16.0,
+   -25.0,
+   -59.0
+  ]
+ },
+ "045 - beatles - yellow submarine.mp3": {
+  "len": 158.41,
+  "start": 0.48,
+  "end": 156.28,
+  "body_db": -11.7,
+  "gap": 0.12,
+  "gap_at": 156.0,
+  "head_db": -16.0,
+  "tail_db": [
+   -30.0,
+   -31.0,
+   -39.0,
+   -43.0,
+   -58.0,
+   -60.0
+  ]
+ },
+ "046 - beatles - yesterday.mp3": {
+  "len": 125.44,
+  "start": 0.52,
+  "end": 122.94,
+  "body_db": -14.9,
+  "gap": 0.0,
+  "gap_at": 0.5,
+  "head_db": -19.9,
+  "tail_db": [
+   -21.0,
+   -20.0,
+   -23.0,
+   -28.0,
+   -32.0,
+   -59.0
+  ]
+ },
+ "047 - bee gees - how deep is your love.mp3": {
+  "len": 244.95,
+  "start": 0.12,
+  "end": 240.26,
+  "body_db": -17.6,
+  "gap": 0.04,
+  "gap_at": 240.2,
+  "head_db": -13.8,
+  "tail_db": [
+   -32.0,
+   -34.0,
+   -45.0,
+   -42.0,
+   -53.0,
+   -60.0
+  ]
+ },
+ "048 - bee gees - jive talkin.mp3": {
+  "len": 223.69,
+  "start": 0.14,
+  "end": 219.7,
+  "body_db": -16.8,
+  "gap": 0.12,
+  "gap_at": 218.9,
+  "head_db": -30.9,
+  "tail_db": [
+   -30.0,
+   -34.0,
+   -46.0,
+   -46.0,
+   -52.0,
+   -60.0
+  ]
+ },
+ "049 - bee gees - more than a woman.mp3": {
+  "len": 197.41,
+  "start": 0.12,
+  "end": 192.82,
+  "body_db": -17.7,
+  "gap": 0.06,
+  "gap_at": 192.7,
+  "head_db": -15.5,
+  "tail_db": [
+   -37.0,
+   -31.0,
+   -38.0,
+   -46.0,
+   -56.0,
+   -59.0
+  ]
+ },
+ "050 - bee gees - stayin alive.mp3": {
+  "len": 285.26,
+  "start": 0.14,
+  "end": 280.52,
+  "body_db": -19.0,
+  "gap": 0.38,
+  "gap_at": 280.1,
+  "head_db": -15.2,
+  "tail_db": [
+   -35.0,
+   -37.0,
+   -41.0,
+   -51.0,
+   -59.0,
+   -59.0
+  ]
+ },
+ "051 - blondie - heart of glass.mp3": {
+  "len": 205.98,
+  "start": 0.66,
+  "end": 201.78,
+  "body_db": -15.8,
+  "gap": 0.14,
+  "gap_at": 201.6,
+  "head_db": -27.5,
+  "tail_db": [
+   -32.0,
+   -34.0,
+   -35.0,
+   -42.0,
+   -48.0,
+   -59.0
+  ]
+ },
+ "052 - bon jovi - wanted dead or alive.mp3": {
+  "len": 310.49,
+  "start": 2.1,
+  "end": 306.18,
+  "body_db": -16.9,
+  "gap": 0.06,
+  "gap_at": 2.1,
+  "head_db": -55.9,
+  "tail_db": [
+   -33.0,
+   -39.0,
+   -42.0,
+   -46.0,
+   -53.0,
+   -59.0
+  ]
+ },
+ "053 - boston - more than a feeling.mp3": {
+  "len": 285.28,
+  "start": 3.98,
+  "end": 282.8,
+  "body_db": -12.8,
+  "gap": 0.5,
+  "gap_at": 281.9,
+  "head_db": -52.9,
+  "tail_db": [
+   -43.0,
+   -45.0,
+   -50.0,
+   -54.0,
+   -59.0,
+   -59.0
+  ]
+ },
+ "054 - brooks dunn - boot scootin boogie.mp3": {
+  "len": 197.69,
+  "start": 0.6,
+  "end": 196.78,
+  "body_db": -11.9,
+  "gap": 0.06,
+  "gap_at": 196.7,
+  "head_db": -12.2,
+  "tail_db": [
+   -24.0,
+   -28.0,
+   -30.0,
+   -35.0,
+   -44.0,
+   -59.0
+  ]
+ },
+ "055 - bruce springsteen - born in the u s a.mp3": {
+  "len": 281.16,
+  "start": 0.2,
+  "end": 275.92,
+  "body_db": -13.2,
+  "gap": 0.16,
+  "gap_at": 275.7,
+  "head_db": -27.1,
+  "tail_db": [
+   -37.0,
+   -44.0,
+   -48.0,
+   -52.0,
+   -56.0,
+   -59.0
+  ]
+ },
+ "056 - bruce springsteen - born to run.mp3": {
+  "len": 270.5,
+  "start": 0.2,
+  "end": 268.04,
+  "body_db": -12.3,
+  "gap": 0.12,
+  "gap_at": 267.9,
+  "head_db": -12.2,
+  "tail_db": [
+   -17.0,
+   -22.0,
+   -26.0,
+   -34.0,
+   -48.0,
+   -59.0
+  ]
+ },
+ "057 - bryan adams - everything i do i do it for you.mp3": {
+  "len": 393.8,
+  "start": 0.5,
+  "end": 391.04,
+  "body_db": -13.7,
+  "gap": 0.88,
+  "gap_at": 390.1,
+  "head_db": -20.5,
+  "tail_db": [
+   -50.0,
+   -50.0,
+   -53.0,
+   -57.0,
+   -61.0,
+   -58.0
+  ]
+ },
+ "058 - bryan adams - heaven.mp3": {
+  "len": 243.83,
+  "start": 0.6,
+  "end": 242.74,
+  "body_db": -11.4,
+  "gap": 1.54,
+  "gap_at": 241.2,
+  "head_db": -13.6,
+  "tail_db": [
+   -49.0,
+   -48.0,
+   -46.0,
+   -57.0,
+   -60.0,
+   -60.0
+  ]
+ },
+ "059 - bryan adams - run to you.mp3": {
+  "len": 233.69,
+  "start": 0.5,
+  "end": 232.64,
+  "body_db": -11.3,
+  "gap": 0.9,
+  "gap_at": 230.9,
+  "head_db": -20.1,
+  "tail_db": [
+   -47.0,
+   -50.0,
+   -56.0,
+   -53.0,
+   -62.0,
+   -57.0
+  ]
+ },
+ "060 - buster poindexter - hot hot hot.mp3": {
+  "len": 247.48,
+  "start": 0.02,
+  "end": 247.14,
+  "body_db": -11.2,
+  "gap": 0.24,
+  "gap_at": 246.3,
+  "head_db": -15.7,
+  "tail_db": [
+   -34.0,
+   -36.0,
+   -43.0,
+   -49.0,
+   -53.0,
+   -58.0
+  ]
+ },
+ "061 - cameo - word up.mp3": {
+  "len": 259.11,
+  "start": 0.14,
+  "end": 255.68,
+  "body_db": -11.6,
+  "gap": 0.42,
+  "gap_at": 254.9,
+  "head_db": -9.3,
+  "tail_db": [
+   -48.0,
+   -44.0,
+   -59.0,
+   -53.0,
+   -65.0,
+   -59.0
+  ]
+ },
+ "062 - carl douglas - kung fu fighting.mp3": {
+  "len": 193.12,
+  "start": 0.18,
+  "end": 191.62,
+  "body_db": -12.0,
+  "gap": 0.52,
+  "gap_at": 191.1,
+  "head_db": -16.1,
+  "tail_db": [
+   -35.0,
+   -34.0,
+   -39.0,
+   -47.0,
+   -56.0,
+   -55.0
+  ]
+ },
+ "063 - cars - just what i needed.mp3": {
+  "len": 226.53,
+  "start": 0.18,
+  "end": 222.38,
+  "body_db": -16.2,
+  "gap": 0.0,
+  "gap_at": 0.2,
+  "head_db": -28.3,
+  "tail_db": [
+   -19.0,
+   -25.0,
+   -30.0,
+   -37.0,
+   -45.0,
+   -59.0
+  ]
+ },
+ "064 - cars - my best friend s girl.mp3": {
+  "len": 224.71,
+  "start": 0.08,
+  "end": 219.2,
+  "body_db": -16.6,
+  "gap": 0.1,
+  "gap_at": 218.9,
+  "head_db": -20.6,
+  "tail_db": [
+   -37.0,
+   -32.0,
+   -44.0,
+   -46.0,
+   -53.0,
+   -56.0
+  ]
+ },
+ "065 - champs - tequila.mp3": {
+  "len": 129.52,
+  "start": 0.02,
+  "end": 129.5,
+  "body_db": -11.1,
+  "gap": 0.24,
+  "gap_at": 129.2,
+  "head_db": -12.4,
+  "tail_db": [
+   -20.0,
+   -27.0,
+   -16.0,
+   -12.0,
+   -31.0,
+   -18.0
+  ]
+ },
+ "066 - charlie daniels - devil went down to georgia.mp3": {
+  "len": 216.66,
+  "start": 0.26,
+  "end": 213.46,
+  "body_db": -11.9,
+  "gap": 0.14,
+  "gap_at": 213.3,
+  "head_db": -9.9,
+  "tail_db": [
+   -23.0,
+   -14.0,
+   -11.0,
+   -21.0,
+   -37.0,
+   -60.0
+  ]
+ },
+ "067 - cheap trick - i want you to want me.mp3": {
+  "len": 219.92,
+  "start": 1.12,
+  "end": 217.02,
+  "body_db": -15.8,
+  "gap": 0.04,
+  "gap_at": 217.0,
+  "head_db": -31.4,
+  "tail_db": [
+   -22.0,
+   -25.0,
+   -29.0,
+   -35.0,
+   -45.0,
+   -60.0
+  ]
+ },
+ "068 - cher - believe.mp3": {
+  "len": 242.1,
+  "start": 0.36,
+  "end": 237.74,
+  "body_db": -8.7,
+  "gap": 1.32,
+  "gap_at": 236.4,
+  "head_db": -25.9,
+  "tail_db": [
+   -41.0,
+   -49.0,
+   -52.0,
+   -53.0,
+   -65.0,
+   -59.0
+  ]
+ },
+ "069 - chicago - 25 or 6 to 4.mp3": {
+  "len": 261.77,
+  "start": 0.18,
+  "end": 256.86,
+  "body_db": -18.6,
+  "gap": 0.82,
+  "gap_at": 255.7,
+  "head_db": -15.9,
+  "tail_db": [
+   -37.0,
+   -44.0,
+   -59.0,
+   -59.0,
+   -65.0,
+   -59.0
+  ]
+ },
+ "070 - cream - sunshine of your love.mp3": {
+  "len": 253.23,
+  "start": 0.68,
+  "end": 249.28,
+  "body_db": -15.8,
+  "gap": 0.1,
+  "gap_at": 249.2,
+  "head_db": -20.4,
+  "tail_db": [
+   -20.0,
+   -22.0,
+   -26.0,
+   -32.0,
+   -43.0,
+   -59.0
+  ]
+ },
+ "071 - creedence clearwater revival - down on the corner.mp3": {
+  "len": 166.82,
+  "start": 0.52,
+  "end": 161.58,
+  "body_db": -18.0,
+  "gap": 0.4,
+  "gap_at": 0.7,
+  "head_db": -43.3,
+  "tail_db": [
+   -28.0,
+   -33.0,
+   -51.0,
+   -55.0,
+   -53.0,
+   -58.0
+  ]
+ },
+ "072 - creedence clearwater revival - fortunate son.mp3": {
+  "len": 142.32,
+  "start": 0.56,
+  "end": 135.98,
+  "body_db": -17.7,
+  "gap": 0.08,
+  "gap_at": 135.6,
+  "head_db": -27.3,
+  "tail_db": [
+   -28.0,
+   -30.0,
+   -38.0,
+   -44.0,
+   -61.0,
+   -60.0
+  ]
+ },
+ "073 - creedence clearwater revival - proud mary.mp3": {
+  "len": 191.03,
+  "start": 0.5,
+  "end": 185.64,
+  "body_db": -16.0,
+  "gap": 0.14,
+  "gap_at": 185.4,
+  "head_db": -15.9,
+  "tail_db": [
+   -34.0,
+   -33.0,
+   -37.0,
+   -44.0,
+   -42.0,
+   -60.0
+  ]
+ },
+ "074 - creedence clearwater revival - up around the bend.mp3": {
+  "len": 164.65,
+  "start": 0.64,
+  "end": 160.32,
+  "body_db": -17.4,
+  "gap": 3.1,
+  "gap_at": 156.8,
+  "head_db": -23.0,
+  "tail_db": [
+   -47.0,
+   -57.0,
+   -62.0,
+   -65.0,
+   -66.0,
+   -59.0
+  ]
+ },
+ "075 - deep purple - smoke on the water.mp3": {
+  "len": 390.74,
+  "start": 0.2,
+  "end": 385.56,
+  "body_db": -16.7,
+  "gap": 0.02,
+  "gap_at": 385.5,
+  "head_db": -19.4,
+  "tail_db": [
+   -27.0,
+   -31.0,
+   -36.0,
+   -40.0,
+   -46.0,
+   -59.0
+  ]
+ },
+ "076 - def leppard - hysteria.mp3": {
+  "len": 356.7,
+  "start": 0.26,
+  "end": 354.14,
+  "body_db": -16.1,
+  "gap": 0.4,
+  "gap_at": 353.7,
+  "head_db": -13.3,
+  "tail_db": [
+   -43.0,
+   -50.0,
+   -53.0,
+   -58.0,
+   -60.0,
+   -59.0
+  ]
+ },
+ "077 - def leppard - photograph.mp3": {
+  "len": 247.98,
+  "start": 0.14,
+  "end": 247.92,
+  "body_db": -14.8,
+  "gap": 0.02,
+  "gap_at": 247.6,
+  "head_db": -31.0,
+  "tail_db": [
+   -40.0,
+   -43.0,
+   -45.0,
+   -46.0,
+   -54.0,
+   -58.0
+  ]
+ },
+ "078 - def leppard - pour some sugar on me.mp3": {
+  "len": 292.62,
+  "start": 0.24,
+  "end": 291.68,
+  "body_db": -11.4,
+  "gap": 0.82,
+  "gap_at": 290.5,
+  "head_db": -27.8,
+  "tail_db": [
+   -31.0,
+   -16.0,
+   -14.0,
+   -44.0,
+   -61.0,
+   -59.0
+  ]
+ },
+ "079 - def leppard - rock of ages.mp3": {
+  "len": 247.9,
+  "start": 0.22,
+  "end": 246.54,
+  "body_db": -15.6,
+  "gap": 0.14,
+  "gap_at": 246.2,
+  "head_db": -30.1,
+  "tail_db": [
+   -35.0,
+   -49.0,
+   -50.0,
+   -48.0,
+   -52.0,
+   -59.0
+  ]
+ },
+ "080 - diana ross lionel richie - endless love.mp3": {
+  "len": 265.67,
+  "start": 0.4,
+  "end": 263.12,
+  "body_db": -12.8,
+  "gap": 0.08,
+  "gap_at": 263.0,
+  "head_db": -22.7,
+  "tail_db": [
+   -28.0,
+   -29.0,
+   -32.0,
+   -39.0,
+   -50.0,
+   -60.0
+  ]
+ },
+ "081 - dolly parton - jolene.mp3": {
+  "len": 223.61,
+  "start": 0.96,
+  "end": 219.38,
+  "body_db": -17.0,
+  "gap": 0.38,
+  "gap_at": 219.0,
+  "head_db": -21.3,
+  "tail_db": [
+   -43.0,
+   -45.0,
+   -52.0,
+   -55.0,
+   -57.0,
+   -57.0
+  ]
+ },
+ "082 - dolly parton kenny rogers - islands in the stream.mp3": {
+  "len": 252.19,
+  "start": 0.38,
+  "end": 247.24,
+  "body_db": -16.9,
+  "gap": 0.16,
+  "gap_at": 246.0,
+  "head_db": -13.0,
+  "tail_db": [
+   -30.0,
+   -41.0,
+   -43.0,
+   -53.0,
+   -57.0,
+   -59.0
+  ]
+ },
+ "083 - don henley - all she wants to do is dance.mp3": {
+  "len": 270.45,
+  "start": 0.8,
+  "end": 267.24,
+  "body_db": -14.0,
+  "gap": 0.04,
+  "gap_at": 266.8,
+  "head_db": -15.2,
+  "tail_db": [
+   -30.0,
+   -34.0,
+   -38.0,
+   -44.0,
+   -50.0,
+   -60.0
+  ]
+ },
+ "084 - doobie brothers - listen to the music.mp3": {
+  "len": 208.67,
+  "start": 0.82,
+  "end": 204.86,
+  "body_db": -15.3,
+  "gap": 0.08,
+  "gap_at": 204.7,
+  "head_db": -29.3,
+  "tail_db": [
+   -37.0,
+   -37.0,
+   -40.0,
+   -44.0,
+   -50.0,
+   -59.0
+  ]
+ },
+ "085 - doobie brothers - long train runnin.mp3": {
+  "len": 207.86,
+  "start": 0.74,
+  "end": 205.8,
+  "body_db": -19.4,
+  "gap": 0.08,
+  "gap_at": 205.6,
+  "head_db": -23.2,
+  "tail_db": [
+   -31.0,
+   -35.0,
+   -38.0,
+   -47.0,
+   -50.0,
+   -58.0
+  ]
+ },
+ "086 - doors - break on through to the other side.mp3": {
+  "len": 147.3,
+  "start": 0.24,
+  "end": 145.26,
+  "body_db": -20.3,
+  "gap": 0.02,
+  "gap_at": 145.2,
+  "head_db": -33.0,
+  "tail_db": [
+   -24.0,
+   -20.0,
+   -25.0,
+   -20.0,
+   -42.0,
+   -60.0
+  ]
+ },
+ "087 - doors - hello i love you.mp3": {
+  "len": 136.54,
+  "start": 0.4,
+  "end": 132.9,
+  "body_db": -12.7,
+  "gap": 0.38,
+  "gap_at": 132.5,
+  "head_db": -14.9,
+  "tail_db": [
+   -37.0,
+   -36.0,
+   -42.0,
+   -46.0,
+   -56.0,
+   -59.0
+  ]
+ },
+ "088 - doors - light my fire.mp3": {
+  "len": 426.76,
+  "start": 0.22,
+  "end": 424.66,
+  "body_db": -20.2,
+  "gap": 0.0,
+  "gap_at": 0.2,
+  "head_db": -17.3,
+  "tail_db": [
+   -21.0,
+   -21.0,
+   -22.0,
+   -32.0,
+   -43.0,
+   -59.0
+  ]
+ },
+ "089 - doors - people are strange.mp3": {
+  "len": 131.08,
+  "start": 0.2,
+  "end": 128.42,
+  "body_db": -21.1,
+  "gap": 0.04,
+  "gap_at": 0.2,
+  "head_db": -31.1,
+  "tail_db": [
+   -43.0,
+   -25.0,
+   -26.0,
+   -35.0,
+   -46.0,
+   -60.0
+  ]
+ },
+ "090 - doors - roadhouse blues.mp3": {
+  "len": 244.95,
+  "start": 0.24,
+  "end": 241.88,
+  "body_db": -19.1,
+  "gap": 0.0,
+  "gap_at": 0.2,
+  "head_db": -26.8,
+  "tail_db": [
+   -45.0,
+   -23.0,
+   -28.0,
+   -36.0,
+   -41.0,
+   -60.0
+  ]
+ },
+ "091 - duran duran - rio.mp3": {
+  "len": 285.18,
+  "start": 0.4,
+  "end": 282.76,
+  "body_db": -12.4,
+  "gap": 0.02,
+  "gap_at": 282.7,
+  "head_db": -8.3,
+  "tail_db": [
+   -29.0,
+   -31.0,
+   -34.0,
+   -38.0,
+   -45.0,
+   -60.0
+  ]
+ },
+ "092 - eagles - desperado.mp3": {
+  "len": 213.16,
+  "start": 0.18,
+  "end": 211.42,
+  "body_db": -12.2,
+  "gap": 0.16,
+  "gap_at": 211.2,
+  "head_db": -26.4,
+  "tail_db": [
+   -29.0,
+   -25.0,
+   -32.0,
+   -38.0,
+   -40.0,
+   -60.0
+  ]
+ },
+ "093 - eagles - heartache tonight.mp3": {
+  "len": 266.32,
+  "start": 0.58,
+  "end": 263.44,
+  "body_db": -9.9,
+  "gap": 0.28,
+  "gap_at": 263.1,
+  "head_db": -8.6,
+  "tail_db": [
+   -30.0,
+   -28.0,
+   -18.0,
+   -42.0,
+   -37.0,
+   -60.0
+  ]
+ },
+ "094 - eagles - hotel california.mp3": {
+  "len": 390.09,
+  "start": 0.84,
+  "end": 388.54,
+  "body_db": -11.6,
+  "gap": 0.36,
+  "gap_at": 208.3,
+  "head_db": -15.8,
+  "tail_db": [
+   -35.0,
+   -40.0,
+   -45.0,
+   -44.0,
+   -48.0,
+   -60.0
+  ]
+ },
+ "095 - eagles - life in the fast lane.mp3": {
+  "len": 285.81,
+  "start": 0.58,
+  "end": 283.84,
+  "body_db": -11.0,
+  "gap": 0.22,
+  "gap_at": 283.3,
+  "head_db": -4.8,
+  "tail_db": [
+   -27.0,
+   -32.0,
+   -37.0,
+   -43.0,
+   -48.0,
+   -53.0
+  ]
+ },
+ "096 - eagles - lyin eyes.mp3": {
+  "len": 380.87,
+  "start": 0.16,
+  "end": 378.96,
+  "body_db": -11.2,
+  "gap": 0.2,
+  "gap_at": 378.7,
+  "head_db": -9.0,
+  "tail_db": [
+   -19.0,
+   -27.0,
+   -28.0,
+   -39.0,
+   -52.0,
+   -60.0
+  ]
+ },
+ "097 - eagles - peaceful easy feeling.mp3": {
+  "len": 256.16,
+  "start": 0.16,
+  "end": 254.24,
+  "body_db": -12.1,
+  "gap": 0.14,
+  "gap_at": 254.1,
+  "head_db": -12.7,
+  "tail_db": [
+   -11.0,
+   -24.0,
+   -29.0,
+   -39.0,
+   -45.0,
+   -60.0
+  ]
+ },
+ "098 - eagles - take it to the limit.mp3": {
+  "len": 287.43,
+  "start": 0.14,
+  "end": 285.04,
+  "body_db": -12.2,
+  "gap": 0.22,
+  "gap_at": 284.0,
+  "head_db": -9.0,
+  "tail_db": [
+   -39.0,
+   -38.0,
+   -44.0,
+   -46.0,
+   -59.0,
+   -59.0
+  ]
+ },
+ "099 - earth wind fire - shining star.mp3": {
+  "len": 171.0,
+  "start": 0.14,
+  "end": 170.58,
+  "body_db": -9.8,
+  "gap": 0.0,
+  "gap_at": 0.1,
+  "head_db": -15.7,
+  "tail_db": [
+   -14.0,
+   -11.0,
+   -15.0,
+   -38.0,
+   -27.0,
+   -59.0
+  ]
+ },
+ "100 - edwin starr - war.mp3": {
+  "len": 205.01,
+  "start": 0.6,
+  "end": 201.12,
+  "body_db": -15.1,
+  "gap": 0.18,
+  "gap_at": 200.9,
+  "head_db": -24.5,
+  "tail_db": [
+   -28.0,
+   -46.0,
+   -55.0,
+   -47.0,
+   -49.0,
+   -59.0
+  ]
+ },
+ "101 - eiffel 65 - blue da ba dee.mp3": {
+  "len": 210.23,
+  "start": 0.36,
+  "end": 208.62,
+  "body_db": -9.5,
+  "gap": 0.18,
+  "gap_at": 208.4,
+  "head_db": -30.1,
+  "tail_db": [
+   -23.0,
+   -22.0,
+   -32.0,
+   -28.0,
+   -46.0,
+   -59.0
+  ]
+ },
+ "102 - electric light orchestra - mr blue sky.mp3": {
+  "len": 305.76,
+  "start": 0.84,
+  "end": 304.14,
+  "body_db": -13.3,
+  "gap": 0.06,
+  "gap_at": 5.6,
+  "head_db": -44.0,
+  "tail_db": [
+   -16.0,
+   -29.0,
+   -26.0,
+   -28.0,
+   -45.0,
+   -58.0
+  ]
+ },
+ "103 - elton john - crocodile rock.mp3": {
+  "len": 235.05,
+  "start": 0.68,
+  "end": 234.66,
+  "body_db": -20.0,
+  "gap": 0.0,
+  "gap_at": 0.7,
+  "head_db": -31.5,
+  "tail_db": [
+   -52.0,
+   -53.0,
+   -56.0,
+   -57.0,
+   -57.0,
+   -60.0
+  ]
+ },
+ "104 - elton john - goodbye yellow brick road.mp3": {
+  "len": 194.85,
+  "start": 0.02,
+  "end": 194.22,
+  "body_db": -22.1,
+  "gap": 0.0,
+  "gap_at": 0.0,
+  "head_db": -54.3,
+  "tail_db": [
+   -36.0,
+   -40.0,
+   -40.0,
+   -49.0,
+   -54.0,
+   -59.0
+  ]
+ },
+ "105 - elton john - i m still standing.mp3": {
+  "len": 184.11,
+  "start": 0.24,
+  "end": 179.66,
+  "body_db": -11.5,
+  "gap": 0.26,
+  "gap_at": 179.4,
+  "head_db": -9.8,
+  "tail_db": [
+   -21.0,
+   -25.0,
+   -30.0,
+   -34.0,
+   -45.0,
+   -59.0
+  ]
+ },
+ "106 - elton john - rocket man i think it s going to be a long long time.mp3": {
+  "len": 281.99,
+  "start": 0.66,
+  "end": 280.78,
+  "body_db": -22.1,
+  "gap": 0.0,
+  "gap_at": 0.7,
+  "head_db": -34.0,
+  "tail_db": [
+   -53.0,
+   -53.0,
+   -54.0,
+   -55.0,
+   -56.0,
+   -59.0
+  ]
+ },
+ "107 - elton john - saturday night s alright for fighting.mp3": {
+  "len": 294.27,
+  "start": 0.52,
+  "end": 291.64,
+  "body_db": -18.0,
+  "gap": 0.0,
+  "gap_at": 0.5,
+  "head_db": -14.0,
+  "tail_db": [
+   -42.0,
+   -49.0,
+   -53.0,
+   -56.0,
+   -57.0,
+   -60.0
+  ]
+ },
+ "108 - elton john - tiny dancer.mp3": {
+  "len": 377.7,
+  "start": 0.58,
+  "end": 373.72,
+  "body_db": -12.6,
+  "gap": 0.1,
+  "gap_at": 373.6,
+  "head_db": -29.9,
+  "tail_db": [
+   -18.0,
+   -18.0,
+   -27.0,
+   -32.0,
+   -45.0,
+   -58.0
+  ]
+ },
+ "109 - elton john - your song.mp3": {
+  "len": 240.95,
+  "start": 0.66,
+  "end": 239.6,
+  "body_db": -21.7,
+  "gap": 0.0,
+  "gap_at": 0.7,
+  "head_db": -41.7,
+  "tail_db": [
+   -35.0,
+   -41.0,
+   -48.0,
+   -50.0,
+   -54.0,
+   -59.0
+  ]
+ },
+ "110 - elvin bishop - fooled around and fell in love.mp3": {
+  "len": 276.01,
+  "start": 0.44,
+  "end": 272.98,
+  "body_db": -12.4,
+  "gap": 0.24,
+  "gap_at": 272.7,
+  "head_db": -8.5,
+  "tail_db": [
+   -39.0,
+   -42.0,
+   -52.0,
+   -52.0,
+   -56.0,
+   -59.0
+  ]
+ },
+ "111 - elvis presley - all shook up.mp3": {
+  "len": 118.39,
+  "start": 0.36,
+  "end": 116.2,
+  "body_db": -10.7,
+  "gap": 0.06,
+  "gap_at": 116.1,
+  "head_db": -20.8,
+  "tail_db": [
+   -13.0,
+   -16.0,
+   -10.0,
+   -10.0,
+   -12.0,
+   -60.0
+  ]
+ },
+ "112 - elvis presley - burning love.mp3": {
+  "len": 171.98,
+  "start": 1.02,
+  "end": 168.98,
+  "body_db": -10.9,
+  "gap": 0.1,
+  "gap_at": 168.6,
+  "head_db": -24.4,
+  "tail_db": [
+   -23.0,
+   -34.0,
+   -34.0,
+   -34.0,
+   -43.0,
+   -58.0
+  ]
+ },
+ "113 - elvis presley - can t help falling in love.mp3": {
+  "len": 181.32,
+  "start": 0.4,
+  "end": 178.84,
+  "body_db": -11.4,
+  "gap": 0.02,
+  "gap_at": 178.8,
+  "head_db": -18.9,
+  "tail_db": [
+   -18.0,
+   -20.0,
+   -22.0,
+   -31.0,
+   -40.0,
+   -60.0
+  ]
+ },
+ "114 - elvis presley - don t be cruel.mp3": {
+  "len": 122.98,
+  "start": 0.36,
+  "end": 120.92,
+  "body_db": -10.2,
+  "gap": 0.04,
+  "gap_at": 120.9,
+  "head_db": -9.0,
+  "tail_db": [
+   -12.0,
+   -19.0,
+   -20.0,
+   -12.0,
+   -19.0,
+   -60.0
+  ]
+ },
+ "115 - elvis presley - heartbreak hotel.mp3": {
+  "len": 129.79,
+  "start": 0.38,
+  "end": 127.62,
+  "body_db": -11.6,
+  "gap": 0.02,
+  "gap_at": 127.6,
+  "head_db": -13.4,
+  "tail_db": [
+   -15.0,
+   -24.0,
+   -10.0,
+   -22.0,
+   -34.0,
+   -57.0
+  ]
+ },
+ "116 - elvis presley - return to sender.mp3": {
+  "len": 129.31,
+  "start": 0.42,
+  "end": 126.52,
+  "body_db": -14.1,
+  "gap": 0.02,
+  "gap_at": 126.2,
+  "head_db": -18.1,
+  "tail_db": [
+   -20.0,
+   -30.0,
+   -33.0,
+   -38.0,
+   -42.0,
+   -59.0
+  ]
+ },
+ "117 - eric clapton - lay down sally.mp3": {
+  "len": 235.39,
+  "start": 0.28,
+  "end": 229.38,
+  "body_db": -20.0,
+  "gap": 0.58,
+  "gap_at": 228.1,
+  "head_db": -33.4,
+  "tail_db": [
+   -41.0,
+   -54.0,
+   -58.0,
+   -61.0,
+   -67.0,
+   -59.0
+  ]
+ },
+ "118 - eric clapton - layla.mp3": {
+  "len": 277.42,
+  "start": 0.16,
+  "end": 274.92,
+  "body_db": -11.9,
+  "gap": 0.12,
+  "gap_at": 274.8,
+  "head_db": -19.7,
+  "tail_db": [
+   -20.0,
+   -25.0,
+   -32.0,
+   -38.0,
+   -45.0,
+   -59.0
+  ]
+ },
+ "119 - eric clapton - wonderful tonight.mp3": {
+  "len": 225.36,
+  "start": 0.32,
+  "end": 220.48,
+  "body_db": -22.3,
+  "gap": 0.14,
+  "gap_at": 218.6,
+  "head_db": -18.1,
+  "tail_db": [
+   -45.0,
+   -52.0,
+   -55.0,
+   -60.0,
+   -57.0,
+   -60.0
+  ]
+ },
+ "120 - escape club - wild wild west.mp3": {
+  "len": 240.25,
+  "start": 0.34,
+  "end": 239.08,
+  "body_db": -14.7,
+  "gap": 0.0,
+  "gap_at": 0.3,
+  "head_db": -20.6,
+  "tail_db": [
+   -22.0,
+   -14.0,
+   -27.0,
+   -28.0,
+   -42.0,
+   -59.0
+  ]
+ },
+ "121 - extreme - more than words.mp3": {
+  "len": 334.0,
+  "start": 0.38,
+  "end": 334.0,
+  "body_db": -17.8,
+  "gap": 0.12,
+  "gap_at": 315.8,
+  "head_db": -21.9,
+  "tail_db": [
+   -24.0,
+   -27.0,
+   -33.0,
+   -36.0,
+   -41.0,
+   -40.0
+  ]
+ },
+ "122 - fleetwood mac - don t stop.mp3": {
+  "len": 194.06,
+  "start": 0.12,
+  "end": 192.02,
+  "body_db": -17.4,
+  "gap": 3.68,
+  "gap_at": 188.3,
+  "head_db": -24.7,
+  "tail_db": [
+   -47.0,
+   -59.0,
+   -76.0,
+   -91.0,
+   -180.0,
+   -53.0
+  ]
+ },
+ "123 - fleetwood mac - go your own way.mp3": {
+  "len": 220.63,
+  "start": 0.02,
+  "end": 218.46,
+  "body_db": -16.8,
+  "gap": 3.44,
+  "gap_at": 215.0,
+  "head_db": -29.7,
+  "tail_db": [
+   -43.0,
+   -60.0,
+   -74.0,
+   -89.0,
+   -105.0,
+   -59.0
+  ]
+ },
+ "124 - fleetwood mac - landslide.mp3": {
+  "len": 197.88,
+  "start": 0.26,
+  "end": 195.1,
+  "body_db": -15.1,
+  "gap": 0.04,
+  "gap_at": 195.0,
+  "head_db": -21.5,
+  "tail_db": [
+   -21.0,
+   -19.0,
+   -28.0,
+   -39.0,
+   -49.0,
+   -60.0
+  ]
+ },
+ "125 - fleetwood mac - little lies.mp3": {
+  "len": 220.08,
+  "start": 0.1,
+  "end": 214.84,
+  "body_db": -17.7,
+  "gap": 0.4,
+  "gap_at": 214.4,
+  "head_db": -28.2,
+  "tail_db": [
+   -43.0,
+   -47.0,
+   -50.0,
+   -53.0,
+   -60.0,
+   -59.0
+  ]
+ },
+ "126 - fleetwood mac - rhiannon.mp3": {
+  "len": 253.65,
+  "start": 0.02,
+  "end": 247.52,
+  "body_db": -16.1,
+  "gap": 0.22,
+  "gap_at": 247.3,
+  "head_db": -25.3,
+  "tail_db": [
+   -43.0,
+   -52.0,
+   -56.0,
+   -50.0,
+   -61.0,
+   -59.0
+  ]
+ },
+ "127 - foreigner - cold as ice.mp3": {
+  "len": 202.14,
+  "start": 0.56,
+  "end": 197.34,
+  "body_db": -11.9,
+  "gap": 0.48,
+  "gap_at": 196.8,
+  "head_db": -19.5,
+  "tail_db": [
+   -41.0,
+   -47.0,
+   -52.0,
+   -57.0,
+   -58.0,
+   -59.0
+  ]
+ },
+ "128 - foreigner - hot blooded.mp3": {
+  "len": 415.9,
+  "start": 1.5,
+  "end": 414.58,
+  "body_db": -10.8,
+  "gap": 0.08,
+  "gap_at": 414.5,
+  "head_db": -47.1,
+  "tail_db": [
+   -22.0,
+   -25.0,
+   -29.0,
+   -34.0,
+   -39.0,
+   -59.0
+  ]
+ },
+ "129 - foreigner - juke box hero.mp3": {
+  "len": 260.73,
+  "start": 0.7,
+  "end": 259.18,
+  "body_db": -11.3,
+  "gap": 0.1,
+  "gap_at": 259.1,
+  "head_db": -11.1,
+  "tail_db": [
+   -12.0,
+   -11.0,
+   -10.0,
+   -14.0,
+   -18.0,
+   -59.0
+  ]
+ },
+ "130 - foreigner - urgent.mp3": {
+  "len": 269.79,
+  "start": 0.62,
+  "end": 267.84,
+  "body_db": -11.5,
+  "gap": 0.56,
+  "gap_at": 267.3,
+  "head_db": -25.2,
+  "tail_db": [
+   -41.0,
+   -50.0,
+   -61.0,
+   -62.0,
+   -61.0,
+   -59.0
+  ]
+ },
+ "131 - foreigner - waiting for a girl like you.mp3": {
+  "len": 289.15,
+  "start": 1.54,
+  "end": 286.78,
+  "body_db": -13.5,
+  "gap": 0.5,
+  "gap_at": 286.3,
+  "head_db": -49.4,
+  "tail_db": [
+   -43.0,
+   -49.0,
+   -46.0,
+   -52.0,
+   -57.0,
+   -60.0
+  ]
+ },
+ "132 - four tops - reach out i ll be there.mp3": {
+  "len": 180.32,
+  "start": 0.16,
+  "end": 177.44,
+  "body_db": -14.6,
+  "gap": 0.0,
+  "gap_at": 0.2,
+  "head_db": -17.0,
+  "tail_db": [
+   -26.0,
+   -27.0,
+   -41.0,
+   -43.0,
+   -53.0,
+   -59.0
+  ]
+ },
+ "133 - frankie valli and the four seasons - big girls don t cry.mp3": {
+  "len": 146.36,
+  "start": 0.42,
+  "end": 142.82,
+  "body_db": -19.1,
+  "gap": 0.24,
+  "gap_at": 142.5,
+  "head_db": -19.0,
+  "tail_db": [
+   -26.0,
+   -32.0,
+   -34.0,
+   -47.0,
+   -65.0,
+   -59.0
+  ]
+ },
+ "134 - frankie valli and the four seasons - sherry.mp3": {
+  "len": 153.13,
+  "start": 0.14,
+  "end": 149.72,
+  "body_db": -14.8,
+  "gap": 0.42,
+  "gap_at": 149.3,
+  "head_db": -23.4,
+  "tail_db": [
+   -32.0,
+   -35.0,
+   -34.0,
+   -43.0,
+   -49.0,
+   -59.0
+  ]
+ },
+ "135 - gap band - early in the morning.mp3": {
+  "len": 237.11,
+  "start": 0.14,
+  "end": 235.24,
+  "body_db": -13.9,
+  "gap": 0.02,
+  "gap_at": 235.0,
+  "head_db": -23.3,
+  "tail_db": [
+   -40.0,
+   -44.0,
+   -42.0,
+   -41.0,
+   -50.0,
+   -59.0
+  ]
+ },
+ "136 - garth brooks - friends in low places.mp3": {
+  "len": 258.8,
+  "start": 0.64,
+  "end": 256.4,
+  "body_db": -13.1,
+  "gap": 0.22,
+  "gap_at": 256.1,
+  "head_db": -31.5,
+  "tail_db": [
+   -33.0,
+   -37.0,
+   -34.0,
+   -44.0,
+   -53.0,
+   -59.0
+  ]
+ },
+ "137 - george clinton - atomic dog.mp3": {
+  "len": 285.62,
+  "start": 0.44,
+  "end": 282.34,
+  "body_db": -11.1,
+  "gap": 0.54,
+  "gap_at": 281.8,
+  "head_db": -7.6,
+  "tail_db": [
+   -41.0,
+   -51.0,
+   -52.0,
+   -58.0,
+   -59.0,
+   -58.0
+  ]
+ },
+ "138 - george thorogood the destroyers - bad to the bone.mp3": {
+  "len": 296.41,
+  "start": 0.44,
+  "end": 294.06,
+  "body_db": -11.8,
+  "gap": 2.04,
+  "gap_at": 3.8,
+  "head_db": -12.5,
+  "tail_db": [
+   -15.0,
+   -15.0,
+   -18.0,
+   -19.0,
+   -20.0,
+   -58.0
+  ]
+ },
+ "139 - grand funk railroad - we re an american band.mp3": {
+  "len": 208.25,
+  "start": 0.36,
+  "end": 204.1,
+  "body_db": -14.4,
+  "gap": 0.0,
+  "gap_at": 0.4,
+  "head_db": -10.5,
+  "tail_db": [
+   -25.0,
+   -22.0,
+   -16.0,
+   -22.0,
+   -17.0,
+   -59.0
+  ]
+ },
+ "140 - guess who - american woman.mp3": {
+  "len": 308.06,
+  "start": 0.62,
+  "end": 306.14,
+  "body_db": -13.5,
+  "gap": 0.12,
+  "gap_at": 305.9,
+  "head_db": -18.4,
+  "tail_db": [
+   -24.0,
+   -30.0,
+   -32.0,
+   -40.0,
+   -45.0,
+   -55.0
+  ]
+ },
+ "141 - hall oates - rich girl.mp3": {
+  "len": 142.94,
+  "start": 0.88,
+  "end": 140.84,
+  "body_db": -13.9,
+  "gap": 0.08,
+  "gap_at": 140.7,
+  "head_db": -23.4,
+  "tail_db": [
+   -15.0,
+   -30.0,
+   -29.0,
+   -39.0,
+   -52.0,
+   -58.0
+  ]
+ },
+ "142 - hall oates - sara smile.mp3": {
+  "len": 192.05,
+  "start": 0.8,
+  "end": 187.92,
+  "body_db": -17.6,
+  "gap": 0.24,
+  "gap_at": 187.5,
+  "head_db": -15.8,
+  "tail_db": [
+   -50.0,
+   -49.0,
+   -52.0,
+   -58.0,
+   -58.0,
+   -60.0
+  ]
+ },
+ "143 - hall oates - you make my dreams.mp3": {
+  "len": 186.12,
+  "start": 0.02,
+  "end": 183.5,
+  "body_db": -15.0,
+  "gap": 0.7,
+  "gap_at": 182.1,
+  "head_db": -23.6,
+  "tail_db": [
+   -29.0,
+   -72.0,
+   -56.0,
+   -63.0,
+   -68.0,
+   -60.0
+  ]
+ },
+ "144 - heart - alone.mp3": {
+  "len": 220.5,
+  "start": 0.24,
+  "end": 216.6,
+  "body_db": -11.5,
+  "gap": 0.16,
+  "gap_at": 216.4,
+  "head_db": -20.4,
+  "tail_db": [
+   -25.0,
+   -25.0,
+   -24.0,
+   -23.0,
+   -39.0,
+   -60.0
+  ]
+ },
+ "145 - hollies - long cool woman in a black dress.mp3": {
+  "len": 200.36,
+  "start": 0.78,
+  "end": 196.3,
+  "body_db": -15.7,
+  "gap": 0.38,
+  "gap_at": 195.9,
+  "head_db": -28.0,
+  "tail_db": [
+   -29.0,
+   -32.0,
+   -29.0,
+   -45.0,
+   -52.0,
+   -59.0
+  ]
+ },
+ "146 - hootie the blowfish - hold my hand.mp3": {
+  "len": 255.76,
+  "start": 0.68,
+  "end": 253.18,
+  "body_db": -10.9,
+  "gap": 0.2,
+  "gap_at": 253.0,
+  "head_db": -17.8,
+  "tail_db": [
+   -20.0,
+   -22.0,
+   -29.0,
+   -37.0,
+   -46.0,
+   -60.0
+  ]
+ },
+ "147 - hootie the blowfish - only wanna be with you.mp3": {
+  "len": 226.82,
+  "start": 0.52,
+  "end": 225.34,
+  "body_db": -10.9,
+  "gap": 0.12,
+  "gap_at": 225.2,
+  "head_db": -16.7,
+  "tail_db": [
+   -15.0,
+   -19.0,
+   -25.0,
+   -31.0,
+   -41.0,
+   -59.0
+  ]
+ },
+ "148 - hues corporation - rock the boat.mp3": {
+  "len": 188.08,
+  "start": 0.64,
+  "end": 186.32,
+  "body_db": -14.8,
+  "gap": 0.22,
+  "gap_at": 186.1,
+  "head_db": -9.6,
+  "tail_db": [
+   -33.0,
+   -34.0,
+   -33.0,
+   -41.0,
+   -50.0,
+   -59.0
+  ]
+ },
+ "149 - ini kamoze - here comes the hotstepper.mp3": {
+  "len": 251.53,
+  "start": 0.3,
+  "end": 248.0,
+  "body_db": -9.9,
+  "gap": 0.3,
+  "gap_at": 247.7,
+  "head_db": -24.7,
+  "tail_db": [
+   -18.0,
+   -23.0,
+   -27.0,
+   -33.0,
+   -42.0,
+   -60.0
+  ]
+ },
+ "150 - inxs - devil inside.mp3": {
+  "len": 315.61,
+  "start": 0.22,
+  "end": 309.32,
+  "body_db": -17.6,
+  "gap": 0.14,
+  "gap_at": 309.1,
+  "head_db": -17.5,
+  "tail_db": [
+   -37.0,
+   -34.0,
+   -43.0,
+   -46.0,
+   -53.0,
+   -59.0
+  ]
+ },
+ "151 - inxs - need you tonight.mp3": {
+  "len": 190.22,
+  "start": 0.78,
+  "end": 187.64,
+  "body_db": -14.3,
+  "gap": 0.66,
+  "gap_at": 149.8,
+  "head_db": -12.2,
+  "tail_db": [
+   -29.0,
+   -22.0,
+   -67.0,
+   -71.0,
+   -58.0,
+   -58.0
+  ]
+ },
+ "152 - jackson 5 - love you save.mp3": {
+  "len": 185.1,
+  "start": 0.14,
+  "end": 181.18,
+  "body_db": -9.2,
+  "gap": 0.48,
+  "gap_at": 180.7,
+  "head_db": -9.0,
+  "tail_db": [
+   -21.0,
+   -37.0,
+   -36.0,
+   -42.0,
+   -54.0,
+   -58.0
+  ]
+ },
+ "153 - james gang - walk away.mp3": {
+  "len": 213.39,
+  "start": 0.42,
+  "end": 210.7,
+  "body_db": -10.9,
+  "gap": 0.12,
+  "gap_at": 210.5,
+  "head_db": -17.7,
+  "tail_db": [
+   -26.0,
+   -31.0,
+   -36.0,
+   -42.0,
+   -47.0,
+   -59.0
+  ]
+ },
+ "154 - jimmy buffett - cheeseburger in paradise.mp3": {
+  "len": 171.96,
+  "start": 0.38,
+  "end": 167.96,
+  "body_db": -18.7,
+  "gap": 0.58,
+  "gap_at": 167.3,
+  "head_db": -14.5,
+  "tail_db": [
+   -40.0,
+   -36.0,
+   -60.0,
+   -66.0,
+   -74.0,
+   -60.0
+  ]
+ },
+ "155 - jimmy buffett - margaritaville.mp3": {
+  "len": 251.98,
+  "start": 0.26,
+  "end": 248.24,
+  "body_db": -19.5,
+  "gap": 0.02,
+  "gap_at": 248.2,
+  "head_db": -15.2,
+  "tail_db": [
+   -23.0,
+   -24.0,
+   -30.0,
+   -38.0,
+   -49.0,
+   -60.0
+  ]
+ },
+ "156 - johnny cash - folsom prison blues.mp3": {
+  "len": 162.53,
+  "start": 0.88,
+  "end": 162.52,
+  "body_db": -16.5,
+  "gap": 0.0,
+  "gap_at": 0.9,
+  "head_db": -23.5,
+  "tail_db": [
+   -20.0,
+   -23.0,
+   -21.0,
+   -21.0,
+   -22.0,
+   -29.0
+  ]
+ },
+ "157 - journey - faithfully.mp3": {
+  "len": 266.81,
+  "start": 0.26,
+  "end": 264.16,
+  "body_db": -11.6,
+  "gap": 0.4,
+  "gap_at": 263.7,
+  "head_db": -24.9,
+  "tail_db": [
+   -14.0,
+   -19.0,
+   -23.0,
+   -35.0,
+   -50.0,
+   -59.0
+  ]
+ },
+ "158 - kansas - carry on wayward son.mp3": {
+  "len": 323.74,
+  "start": 1.14,
+  "end": 321.52,
+  "body_db": -18.0,
+  "gap": 0.14,
+  "gap_at": 9.2,
+  "head_db": -21.6,
+  "tail_db": [
+   -29.0,
+   -33.0,
+   -36.0,
+   -37.0,
+   -47.0,
+   -59.0
+  ]
+ },
+ "159 - kansas - dust in the wind.mp3": {
+  "len": 206.21,
+  "start": 0.7,
+  "end": 203.62,
+  "body_db": -21.2,
+  "gap": 0.26,
+  "gap_at": 203.3,
+  "head_db": -24.2,
+  "tail_db": [
+   -47.0,
+   -54.0,
+   -51.0,
+   -55.0,
+   -59.0,
+   -60.0
+  ]
+ },
+ "160 - kc the sunshine band - boogie shoes.mp3": {
+  "len": 132.55,
+  "start": 0.22,
+  "end": 129.5,
+  "body_db": -17.4,
+  "gap": 0.02,
+  "gap_at": 129.5,
+  "head_db": -26.1,
+  "tail_db": [
+   -19.0,
+   -27.0,
+   -33.0,
+   -33.0,
+   -23.0,
+   -59.0
+  ]
+ },
+ "161 - kenny loggins - danger zone.mp3": {
+  "len": 215.22,
+  "start": 1.06,
+  "end": 209.62,
+  "body_db": -12.2,
+  "gap": 0.04,
+  "gap_at": 209.6,
+  "head_db": -15.6,
+  "tail_db": [
+   -22.0,
+   -24.0,
+   -31.0,
+   -33.0,
+   -44.0,
+   -58.0
+  ]
+ },
+ "162 - kiss - beth.mp3": {
+  "len": 168.15,
+  "start": 0.44,
+  "end": 164.36,
+  "body_db": -16.4,
+  "gap": 0.0,
+  "gap_at": 0.4,
+  "head_db": -19.9,
+  "tail_db": [
+   -26.0,
+   -29.0,
+   -27.0,
+   -28.0,
+   -44.0,
+   -58.0
+  ]
+ },
+ "163 - kiss - detroit rock city.mp3": {
+  "len": 219.06,
+  "start": 0.4,
+  "end": 215.6,
+  "body_db": -12.1,
+  "gap": 0.12,
+  "gap_at": 215.5,
+  "head_db": -16.9,
+  "tail_db": [
+   -13.0,
+   -14.0,
+   -15.0,
+   -21.0,
+   -41.0,
+   -59.0
+  ]
+ },
+ "164 - kiss - i was made for lovin you.mp3": {
+  "len": 271.12,
+  "start": 0.68,
+  "end": 267.62,
+  "body_db": -15.3,
+  "gap": 0.4,
+  "gap_at": 266.7,
+  "head_db": -13.2,
+  "tail_db": [
+   -47.0,
+   -50.0,
+   -56.0,
+   -58.0,
+   -54.0,
+   -58.0
+  ]
+ },
+ "165 - kiss - rock and roll all nite.mp3": {
+  "len": 245.89,
+  "start": 2.38,
+  "end": 239.42,
+  "body_db": -10.9,
+  "gap": 0.42,
+  "gap_at": 239.0,
+  "head_db": -48.9,
+  "tail_db": [
+   -25.0,
+   -27.0,
+   -35.0,
+   -43.0,
+   -52.0,
+   -60.0
+  ]
+ },
+ "166 - kool the gang - celebration.mp3": {
+  "len": 298.11,
+  "start": 0.5,
+  "end": 297.26,
+  "body_db": -10.3,
+  "gap": 0.4,
+  "gap_at": 296.8,
+  "head_db": -11.0,
+  "tail_db": [
+   -25.0,
+   -27.0,
+   -33.0,
+   -42.0,
+   -47.0,
+   -60.0
+  ]
+ },
+ "167 - kool the gang - ladies night.mp3": {
+  "len": 210.6,
+  "start": 0.46,
+  "end": 206.88,
+  "body_db": -11.4,
+  "gap": 0.5,
+  "gap_at": 206.4,
+  "head_db": -10.6,
+  "tail_db": [
+   -48.0,
+   -48.0,
+   -48.0,
+   -55.0,
+   -52.0,
+   -59.0
+  ]
+ },
+ "168 - labelle - lady marmalade.mp3": {
+  "len": 198.5,
+  "start": 0.12,
+  "end": 197.86,
+  "body_db": -10.1,
+  "gap": 0.44,
+  "gap_at": 197.4,
+  "head_db": -7.5,
+  "tail_db": [
+   -25.0,
+   -28.0,
+   -35.0,
+   -41.0,
+   -51.0,
+   -59.0
+  ]
+ },
+ "169 - led zeppelin - black dog.mp3": {
+  "len": 295.08,
+  "start": 0.74,
+  "end": 291.94,
+  "body_db": -14.5,
+  "gap": 0.28,
+  "gap_at": 291.6,
+  "head_db": -38.3,
+  "tail_db": [
+   -28.0,
+   -32.0,
+   -34.0,
+   -41.0,
+   -57.0,
+   -59.0
+  ]
+ },
+ "170 - led zeppelin - immigrant song.mp3": {
+  "len": 143.28,
+  "start": 0.62,
+  "end": 143.18,
+  "body_db": -14.3,
+  "gap": 0.06,
+  "gap_at": 143.1,
+  "head_db": -8.9,
+  "tail_db": [
+   -16.0,
+   -15.0,
+   -15.0,
+   -38.0,
+   -47.0,
+   -60.0
+  ]
+ },
+ "171 - led zeppelin - rock and roll.mp3": {
+  "len": 220.5,
+  "start": 0.74,
+  "end": 219.56,
+  "body_db": -14.4,
+  "gap": 0.08,
+  "gap_at": 219.5,
+  "head_db": -14.4,
+  "tail_db": [
+   -17.0,
+   -20.0,
+   -23.0,
+   -25.0,
+   -30.0,
+   -60.0
+  ]
+ },
+ "172 - lesley gore - it s my party.mp3": {
+  "len": 137.85,
+  "start": 0.72,
+  "end": 132.44,
+  "body_db": -17.4,
+  "gap": 0.12,
+  "gap_at": 132.3,
+  "head_db": -19.2,
+  "tail_db": [
+   -21.0,
+   -28.0,
+   -35.0,
+   -36.0,
+   -54.0,
+   -59.0
+  ]
+ },
+ "173 - lipps inc - funkytown.mp3": {
+  "len": 245.26,
+  "start": 0.02,
+  "end": 243.18,
+  "body_db": -13.8,
+  "gap": 0.42,
+  "gap_at": 242.7,
+  "head_db": -12.1,
+  "tail_db": [
+   -37.0,
+   -38.0,
+   -48.0,
+   -52.0,
+   -64.0,
+   -59.0
+  ]
+ },
+ "174 - lynyrd skynyrd - gimme three steps.mp3": {
+  "len": 267.15,
+  "start": 0.24,
+  "end": 265.76,
+  "body_db": -9.9,
+  "gap": 0.18,
+  "gap_at": 265.1,
+  "head_db": -13.5,
+  "tail_db": [
+   -33.0,
+   -33.0,
+   -43.0,
+   -38.0,
+   -50.0,
+   -59.0
+  ]
+ },
+ "175 - lynyrd skynyrd - sweet home alabama.mp3": {
+  "len": 284.11,
+  "start": 0.44,
+  "end": 281.4,
+  "body_db": -16.2,
+  "gap": 0.08,
+  "gap_at": 2.9,
+  "head_db": -36.4,
+  "tail_db": [
+   -39.0,
+   -39.0,
+   -53.0,
+   -45.0,
+   -50.0,
+   -60.0
+  ]
+ },
+ "176 - madonna - express yourself.mp3": {
+  "len": 244.22,
+  "start": 0.34,
+  "end": 240.48,
+  "body_db": -13.4,
+  "gap": 0.08,
+  "gap_at": 0.5,
+  "head_db": -22.9,
+  "tail_db": [
+   -12.0,
+   -18.0,
+   -19.0,
+   -20.0,
+   -35.0,
+   -59.0
+  ]
+ },
+ "177 - madonna - holiday.mp3": {
+  "len": 245.81,
+  "start": 0.34,
+  "end": 241.3,
+  "body_db": -12.9,
+  "gap": 0.44,
+  "gap_at": 240.8,
+  "head_db": -25.6,
+  "tail_db": [
+   -52.0,
+   -37.0,
+   -54.0,
+   -55.0,
+   -57.0,
+   -59.0
+  ]
+ },
+ "178 - madonna - material girl.mp3": {
+  "len": 233.48,
+  "start": 0.62,
+  "end": 230.1,
+  "body_db": -14.2,
+  "gap": 0.02,
+  "gap_at": 230.0,
+  "head_db": -12.1,
+  "tail_db": [
+   -16.0,
+   -19.0,
+   -22.0,
+   -20.0,
+   -40.0,
+   -60.0
+  ]
+ },
+ "179 - madonna - vogue.mp3": {
+  "len": 318.96,
+  "start": 0.18,
+  "end": 315.46,
+  "body_db": -12.5,
+  "gap": 0.4,
+  "gap_at": 1.8,
+  "head_db": -23.7,
+  "tail_db": [
+   -17.0,
+   -18.0,
+   -19.0,
+   -26.0,
+   -36.0,
+   -59.0
+  ]
+ },
+ "180 - mary wells - my guy.mp3": {
+  "len": 173.12,
+  "start": 0.12,
+  "end": 169.36,
+  "body_db": -14.0,
+  "gap": 0.08,
+  "gap_at": 169.0,
+  "head_db": -18.9,
+  "tail_db": [
+   -35.0,
+   -34.0,
+   -37.0,
+   -42.0,
+   -47.0,
+   -57.0
+  ]
+ },
+ "181 - metallica - enter sandman.mp3": {
+  "len": 331.6,
+  "start": 0.24,
+  "end": 328.38,
+  "body_db": -13.8,
+  "gap": 0.08,
+  "gap_at": 328.3,
+  "head_db": -30.8,
+  "tail_db": [
+   -43.0,
+   -45.0,
+   -45.0,
+   -45.0,
+   -57.0,
+   -59.0
+  ]
+ },
+ "182 - michael jackson - bad.mp3": {
+  "len": 247.69,
+  "start": 0.4,
+  "end": 246.1,
+  "body_db": -10.3,
+  "gap": 0.02,
+  "gap_at": 246.1,
+  "head_db": -12.3,
+  "tail_db": [
+   -15.0,
+   -13.0,
+   -13.0,
+   -12.0,
+   -30.0,
+   -58.0
+  ]
+ },
+ "183 - michael jackson - smooth criminal.mp3": {
+  "len": 257.41,
+  "start": 0.52,
+  "end": 255.52,
+  "body_db": -9.4,
+  "gap": 0.68,
+  "gap_at": 254.8,
+  "head_db": -22.4,
+  "tail_db": [
+   -41.0,
+   -42.0,
+   -48.0,
+   -47.0,
+   -54.0,
+   -60.0
+  ]
+ },
+ "184 - michael jackson - thriller.mp3": {
+  "len": 312.4,
+  "start": 0.2,
+  "end": 310.86,
+  "body_db": -10.2,
+  "gap": 0.06,
+  "gap_at": 310.8,
+  "head_db": -13.9,
+  "tail_db": [
+   -16.0,
+   -22.0,
+   -27.0,
+   -33.0,
+   -43.0,
+   -58.0
+  ]
+ },
+ "185 - michael jackson - wanna be startin somethin.mp3": {
+  "len": 257.41,
+  "start": 0.4,
+  "end": 255.36,
+  "body_db": -9.1,
+  "gap": 0.24,
+  "gap_at": 255.1,
+  "head_db": -3.3,
+  "tail_db": [
+   -34.0,
+   -39.0,
+   -46.0,
+   -55.0,
+   -47.0,
+   -59.0
+  ]
+ },
+ "186 - michael jackson - way you make me feel.mp3": {
+  "len": 297.9,
+  "start": 0.28,
+  "end": 295.38,
+  "body_db": -9.1,
+  "gap": 0.48,
+  "gap_at": 294.9,
+  "head_db": -14.7,
+  "tail_db": [
+   -45.0,
+   -48.0,
+   -51.0,
+   -52.0,
+   -54.0,
+   -57.0
+  ]
+ },
+ "187 - molly hatchet - flirtin with disaster.mp3": {
+  "len": 300.15,
+  "start": 0.46,
+  "end": 297.32,
+  "body_db": -13.6,
+  "gap": 0.14,
+  "gap_at": 297.2,
+  "head_db": -30.0,
+  "tail_db": [
+   -18.0,
+   -20.0,
+   -18.0,
+   -23.0,
+   -22.0,
+   -59.0
+  ]
+ },
+ "188 - monkees - daydream believer.mp3": {
+  "len": 180.06,
+  "start": 0.5,
+  "end": 173.18,
+  "body_db": -14.9,
+  "gap": 0.06,
+  "gap_at": 172.8,
+  "head_db": -18.9,
+  "tail_db": [
+   -34.0,
+   -38.0,
+   -45.0,
+   -48.0,
+   -53.0,
+   -59.0
+  ]
+ },
+ "189 - monkees - last train to clarksville.mp3": {
+  "len": 167.55,
+  "start": 0.22,
+  "end": 162.92,
+  "body_db": -13.0,
+  "gap": 0.02,
+  "gap_at": 162.9,
+  "head_db": -15.5,
+  "tail_db": [
+   -23.0,
+   -26.0,
+   -33.0,
+   -39.0,
+   -42.0,
+   -60.0
+  ]
+ },
+ "190 - motley crue - dr feelgood.mp3": {
+  "len": 292.44,
+  "start": 0.02,
+  "end": 289.38,
+  "body_db": -14.6,
+  "gap": 0.6,
+  "gap_at": 288.2,
+  "head_db": -19.1,
+  "tail_db": [
+   -48.0,
+   -51.0,
+   -54.0,
+   -60.0,
+   -62.0,
+   -59.0
+  ]
+ },
+ "191 - motley crue - home sweet home.mp3": {
+  "len": 237.19,
+  "start": 0.62,
+  "end": 232.02,
+  "body_db": -17.7,
+  "gap": 0.0,
+  "gap_at": 0.6,
+  "head_db": -25.1,
+  "tail_db": [
+   -38.0,
+   -41.0,
+   -42.0,
+   -48.0,
+   -49.0,
+   -60.0
+  ]
+ },
+ "192 - motley crue - kickstart my heart.mp3": {
+  "len": 284.66,
+  "start": 0.12,
+  "end": 280.88,
+  "body_db": -14.1,
+  "gap": 0.04,
+  "gap_at": 280.8,
+  "head_db": -20.2,
+  "tail_db": [
+   -15.0,
+   -17.0,
+   -17.0,
+   -17.0,
+   -18.0,
+   -59.0
+  ]
+ },
+ "193 - new radicals - you get what you give.mp3": {
+  "len": 301.98,
+  "start": 0.22,
+  "end": 296.18,
+  "body_db": -10.3,
+  "gap": 0.7,
+  "gap_at": 295.5,
+  "head_db": -29.2,
+  "tail_db": [
+   -34.0,
+   -42.0,
+   -46.0,
+   -49.0,
+   -53.0,
+   -59.0
+  ]
+ },
+ "194 - norman greenbaum - spirit in the sky.mp3": {
+  "len": 242.49,
+  "start": 0.72,
+  "end": 239.6,
+  "body_db": -15.0,
+  "gap": 0.16,
+  "gap_at": 239.3,
+  "head_db": -25.2,
+  "tail_db": [
+   -30.0,
+   -35.0,
+   -42.0,
+   -47.0,
+   -49.0,
+   -60.0
+  ]
+ },
+ "195 - o jays - i love music.mp3": {
+  "len": 413.1,
+  "start": 0.26,
+  "end": 410.8,
+  "body_db": -13.1,
+  "gap": 0.22,
+  "gap_at": 410.5,
+  "head_db": -18.6,
+  "tail_db": [
+   -34.0,
+   -35.0,
+   -38.0,
+   -49.0,
+   -45.0,
+   -59.0
+  ]
+ },
+ "196 - ohio players - fire.mp3": {
+  "len": 210.63,
+  "start": 0.04,
+  "end": 210.42,
+  "body_db": -12.7,
+  "gap": 0.6,
+  "gap_at": 208.7,
+  "head_db": -55.0,
+  "tail_db": [
+   -54.0,
+   -52.0,
+   -52.0,
+   -56.0,
+   -59.0,
+   -59.0
+  ]
+ },
+ "197 - ozzy osbourne - mama i m coming home.mp3": {
+  "len": 252.24,
+  "start": 0.12,
+  "end": 251.04,
+  "body_db": -13.1,
+  "gap": 0.42,
+  "gap_at": 250.6,
+  "head_db": -22.8,
+  "tail_db": [
+   -32.0,
+   -35.0,
+   -43.0,
+   -48.0,
+   -53.0,
+   -60.0
+  ]
+ },
+ "198 - pat benatar - hit me with your best shot.mp3": {
+  "len": 174.37,
+  "start": 0.24,
+  "end": 169.5,
+  "body_db": -14.8,
+  "gap": 0.08,
+  "gap_at": 169.4,
+  "head_db": -8.9,
+  "tail_db": [
+   -24.0,
+   -19.0,
+   -22.0,
+   -24.0,
+   -36.0,
+   -60.0
+  ]
+ },
+ "199 - pat benatar - love is a battlefield.mp3": {
+  "len": 326.4,
+  "start": 1.2,
+  "end": 318.38,
+  "body_db": -12.7,
+  "gap": 0.3,
+  "gap_at": 318.1,
+  "head_db": -17.5,
+  "tail_db": [
+   -36.0,
+   -39.0,
+   -40.0,
+   -48.0,
+   -53.0,
+   -60.0
+  ]
+ },
+ "200 - peaches herb - reunited.mp3": {
+  "len": 344.11,
+  "start": 0.26,
+  "end": 339.7,
+  "body_db": -16.4,
+  "gap": 0.32,
+  "gap_at": 339.3,
+  "head_db": -19.8,
+  "tail_db": [
+   -30.0,
+   -32.0,
+   -39.0,
+   -40.0,
+   -57.0,
+   -57.0
+  ]
+ },
+ "201 - peter frampton - show me the way.mp3": {
+  "len": 216.5,
+  "start": 0.74,
+  "end": 216.18,
+  "body_db": -14.0,
+  "gap": 3.68,
+  "gap_at": 212.4,
+  "head_db": -14.8,
+  "tail_db": [
+   -46.0,
+   -54.0,
+   -67.0,
+   -95.0,
+   -82.0,
+   -54.0
+  ]
+ },
+ "202 - pink floyd - another brick in the wall pt 2.mp3": {
+  "len": 241.24,
+  "start": 0.02,
+  "end": 241.2,
+  "body_db": -13.7,
+  "gap": 0.32,
+  "gap_at": 240.0,
+  "head_db": -8.8,
+  "tail_db": [
+   -38.0,
+   -61.0,
+   -58.0,
+   -38.0,
+   -61.0,
+   -56.0
+  ]
+ },
+ "203 - pink floyd - money.mp3": {
+  "len": 389.54,
+  "start": 0.02,
+  "end": 389.52,
+  "body_db": -14.3,
+  "gap": 0.12,
+  "gap_at": 8.6,
+  "head_db": -29.6,
+  "tail_db": [
+   -34.0,
+   -31.0,
+   -33.0,
+   -33.0,
+   -34.0,
+   -40.0
+  ]
+ },
+ "204 - pointer sisters - jump for my love.mp3": {
+  "len": 237.4,
+  "start": 0.06,
+  "end": 237.0,
+  "body_db": -10.1,
+  "gap": 0.16,
+  "gap_at": 236.5,
+  "head_db": -9.6,
+  "tail_db": [
+   -26.0,
+   -30.0,
+   -36.0,
+   -38.0,
+   -57.0,
+   -60.0
+  ]
+ },
+ "205 - police - every breath you take.mp3": {
+  "len": 252.89,
+  "start": 0.42,
+  "end": 247.94,
+  "body_db": -19.1,
+  "gap": 0.2,
+  "gap_at": 247.5,
+  "head_db": -16.0,
+  "tail_db": [
+   -49.0,
+   -48.0,
+   -46.0,
+   -51.0,
+   -56.0,
+   -58.0
+  ]
+ },
+ "206 - police - roxanne.mp3": {
+  "len": 192.16,
+  "start": 0.56,
+  "end": 185.78,
+  "body_db": -18.6,
+  "gap": 0.38,
+  "gap_at": 184.9,
+  "head_db": -25.2,
+  "tail_db": [
+   -44.0,
+   -43.0,
+   -46.0,
+   -58.0,
+   -63.0,
+   -58.0
+  ]
+ },
+ "207 - prince - 1999.mp3": {
+  "len": 217.52,
+  "start": 0.32,
+  "end": 215.66,
+  "body_db": -12.3,
+  "gap": 0.1,
+  "gap_at": 214.7,
+  "head_db": -11.1,
+  "tail_db": [
+   -46.0,
+   -43.0,
+   -48.0,
+   -52.0,
+   -54.0,
+   -59.0
+  ]
+ },
+ "208 - prince - kiss.mp3": {
+  "len": 226.38,
+  "start": 0.32,
+  "end": 224.46,
+  "body_db": -14.3,
+  "gap": 0.34,
+  "gap_at": 70.6,
+  "head_db": -16.4,
+  "tail_db": [
+   -30.0,
+   -33.0,
+   -41.0,
+   -42.0,
+   -70.0,
+   -59.0
+  ]
+ },
+ "209 - prince - let s go crazy.mp3": {
+  "len": 280.48,
+  "start": 0.32,
+  "end": 278.72,
+  "body_db": -12.6,
+  "gap": 0.32,
+  "gap_at": 21.4,
+  "head_db": -27.7,
+  "tail_db": [
+   -10.0,
+   -11.0,
+   -14.0,
+   -21.0,
+   -45.0,
+   -60.0
+  ]
+ },
+ "210 - prince - little red corvette.mp3": {
+  "len": 296.18,
+  "start": 0.32,
+  "end": 294.64,
+  "body_db": -13.9,
+  "gap": 0.32,
+  "gap_at": 294.3,
+  "head_db": -18.9,
+  "tail_db": [
+   -45.0,
+   -48.0,
+   -51.0,
+   -55.0,
+   -57.0,
+   -59.0
+  ]
+ },
+ "211 - queen - don t stop me now.mp3": {
+  "len": 210.94,
+  "start": 0.28,
+  "end": 207.62,
+  "body_db": -14.6,
+  "gap": 0.38,
+  "gap_at": 206.4,
+  "head_db": -23.5,
+  "tail_db": [
+   -33.0,
+   -38.0,
+   -45.0,
+   -47.0,
+   -64.0,
+   -58.0
+  ]
+ },
+ "212 - queen - fat bottomed girls.mp3": {
+  "len": 256.5,
+  "start": 0.22,
+  "end": 254.64,
+  "body_db": -14.6,
+  "gap": 0.16,
+  "gap_at": 90.5,
+  "head_db": -18.2,
+  "tail_db": [
+   -19.0,
+   -14.0,
+   -20.0,
+   -11.0,
+   -19.0,
+   -60.0
+  ]
+ },
+ "213 - queen - killer queen.mp3": {
+  "len": 181.03,
+  "start": 0.24,
+  "end": 178.52,
+  "body_db": -13.3,
+  "gap": 0.46,
+  "gap_at": 1.8,
+  "head_db": -24.5,
+  "tail_db": [
+   -24.0,
+   -25.0,
+   -31.0,
+   -34.0,
+   -50.0,
+   -57.0
+  ]
+ },
+ "214 - queen - somebody to love.mp3": {
+  "len": 296.91,
+  "start": 0.26,
+  "end": 294.58,
+  "body_db": -14.7,
+  "gap": 0.64,
+  "gap_at": 0.4,
+  "head_db": -56.3,
+  "tail_db": [
+   -42.0,
+   -42.0,
+   -50.0,
+   -46.0,
+   -54.0,
+   -58.0
+  ]
+ },
+ "215 - queen - we are the champions.mp3": {
+  "len": 181.66,
+  "start": 0.54,
+  "end": 178.86,
+  "body_db": -12.6,
+  "gap": 0.08,
+  "gap_at": 0.8,
+  "head_db": -35.1,
+  "tail_db": [
+   -16.0,
+   -16.0,
+   -20.0,
+   -28.0,
+   -41.0,
+   -60.0
+  ]
+ },
+ "216 - queen - we will rock you.mp3": {
+  "len": 122.15,
+  "start": 0.26,
+  "end": 121.08,
+  "body_db": -11.6,
+  "gap": 0.02,
+  "gap_at": 9.3,
+  "head_db": -13.4,
+  "tail_db": [
+   -12.0,
+   -12.0,
+   -22.0,
+   -11.0,
+   -10.0,
+   -57.0
+  ]
+ },
+ "217 - ratt - round and round.mp3": {
+  "len": 266.53,
+  "start": 0.64,
+  "end": 262.98,
+  "body_db": -14.2,
+  "gap": 0.42,
+  "gap_at": 262.5,
+  "head_db": -12.2,
+  "tail_db": [
+   -29.0,
+   -34.0,
+   -39.0,
+   -49.0,
+   -59.0,
+   -59.0
+  ]
+ },
+ "218 - reo speedwagon - take it on the run.mp3": {
+  "len": 241.97,
+  "start": 0.36,
+  "end": 238.74,
+  "body_db": -17.1,
+  "gap": 0.0,
+  "gap_at": 0.4,
+  "head_db": -24.4,
+  "tail_db": [
+   -27.0,
+   -35.0,
+   -33.0,
+   -38.0,
+   -46.0,
+   -60.0
+  ]
+ },
+ "219 - righteous brothers - you ve lost that lovin feelin.mp3": {
+  "len": 229.07,
+  "start": 0.86,
+  "end": 223.48,
+  "body_db": -17.6,
+  "gap": 0.26,
+  "gap_at": 223.0,
+  "head_db": -22.0,
+  "tail_db": [
+   -37.0,
+   -44.0,
+   -50.0,
+   -55.0,
+   -58.0,
+   -59.0
+  ]
+ },
+ "220 - robert palmer - addicted to love.mp3": {
+  "len": 265.33,
+  "start": 0.64,
+  "end": 264.16,
+  "body_db": -16.1,
+  "gap": 0.94,
+  "gap_at": 263.2,
+  "head_db": -17.1,
+  "tail_db": [
+   -52.0,
+   -51.0,
+   -57.0,
+   -66.0,
+   -62.0,
+   -58.0
+  ]
+ },
+ "221 - rod stewart - da ya think i m sexy.mp3": {
+  "len": 326.53,
+  "start": 0.66,
+  "end": 323.56,
+  "body_db": -16.7,
+  "gap": 0.14,
+  "gap_at": 323.1,
+  "head_db": -14.4,
+  "tail_db": [
+   -28.0,
+   -31.0,
+   -36.0,
+   -41.0,
+   -44.0,
+   -59.0
+  ]
+ },
+ "222 - rod stewart - maggie may.mp3": {
+  "len": 299.81,
+  "start": 1.2,
+  "end": 296.14,
+  "body_db": -16.6,
+  "gap": 0.4,
+  "gap_at": 295.4,
+  "head_db": -25.4,
+  "tail_db": [
+   -46.0,
+   -49.0,
+   -47.0,
+   -54.0,
+   -62.0,
+   -59.0
+  ]
+ },
+ "223 - rolling stones - beast of burden.mp3": {
+  "len": 265.12,
+  "start": 0.42,
+  "end": 263.78,
+  "body_db": -15.3,
+  "gap": 0.26,
+  "gap_at": 263.2,
+  "head_db": -25.5,
+  "tail_db": [
+   -40.0,
+   -47.0,
+   -44.0,
+   -49.0,
+   -59.0,
+   -59.0
+  ]
+ },
+ "224 - rolling stones - brown sugar.mp3": {
+  "len": 229.8,
+  "start": 0.84,
+  "end": 228.6,
+  "body_db": -10.6,
+  "gap": 0.24,
+  "gap_at": 228.3,
+  "head_db": -18.0,
+  "tail_db": [
+   -9.0,
+   -22.0,
+   -31.0,
+   -32.0,
+   -52.0,
+   -60.0
+  ]
+ },
+ "225 - rolling stones - honky tonk women.mp3": {
+  "len": 181.37,
+  "start": 0.06,
+  "end": 178.32,
+  "body_db": -11.5,
+  "gap": 0.08,
+  "gap_at": 178.2,
+  "head_db": -22.5,
+  "tail_db": [
+   -16.0,
+   -15.0,
+   -18.0,
+   -21.0,
+   -34.0,
+   -59.0
+  ]
+ },
+ "226 - rolling stones - jumpin jack flash.mp3": {
+  "len": 299.68,
+  "start": 0.02,
+  "end": 299.66,
+  "body_db": -12.2,
+  "gap": 0.0,
+  "gap_at": 0.0,
+  "head_db": -18.2,
+  "tail_db": [
+   -23.0,
+   -19.0,
+   -18.0,
+   -20.0,
+   -20.0,
+   -24.0
+  ]
+ },
+ "227 - rolling stones - miss you.mp3": {
+  "len": 288.55,
+  "start": 0.54,
+  "end": 288.24,
+  "body_db": -14.5,
+  "gap": 0.46,
+  "gap_at": 287.7,
+  "head_db": -23.7,
+  "tail_db": [
+   -52.0,
+   -50.0,
+   -57.0,
+   -59.0,
+   -58.0,
+   -59.0
+  ]
+ },
+ "228 - rolling stones - paint it black.mp3": {
+  "len": 242.1,
+  "start": 0.02,
+  "end": 242.1,
+  "body_db": -13.0,
+  "gap": 0.0,
+  "gap_at": 0.0,
+  "head_db": -26.5,
+  "tail_db": [
+   -25.0,
+   -28.0,
+   -28.0,
+   -27.0,
+   -27.0,
+   -57.0
+  ]
+ },
+ "229 - rolling stones - start me up.mp3": {
+  "len": 213.45,
+  "start": 0.72,
+  "end": 210.66,
+  "body_db": -12.9,
+  "gap": 0.38,
+  "gap_at": 209.7,
+  "head_db": -13.9,
+  "tail_db": [
+   -29.0,
+   -34.0,
+   -32.0,
+   -41.0,
+   -51.0,
+   -60.0
+  ]
+ },
+ "230 - rolling stones - you can t always get what you want.mp3": {
+  "len": 264.39,
+  "start": 0.02,
+  "end": 264.24,
+  "body_db": -14.2,
+  "gap": 0.06,
+  "gap_at": 264.2,
+  "head_db": -16.6,
+  "tail_db": [
+   -21.0,
+   -24.0,
+   -30.0,
+   -35.0,
+   -44.0,
+   -60.0
+  ]
+ },
+ "231 - rush - tom sawyer.mp3": {
+  "len": 303.67,
+  "start": 0.62,
+  "end": 296.54,
+  "body_db": -16.8,
+  "gap": 0.1,
+  "gap_at": 296.4,
+  "head_db": -49.5,
+  "tail_db": [
+   -37.0,
+   -40.0,
+   -43.0,
+   -51.0,
+   -56.0,
+   -60.0
+  ]
+ },
+ "232 - santana - black magic woman.mp3": {
+  "len": 198.92,
+  "start": 0.66,
+  "end": 194.72,
+  "body_db": -16.0,
+  "gap": 0.02,
+  "gap_at": 194.7,
+  "head_db": -23.9,
+  "tail_db": [
+   -29.0,
+   -35.0,
+   -38.0,
+   -47.0,
+   -52.0,
+   -59.0
+  ]
+ },
+ "233 - santana - oye como va.mp3": {
+  "len": 257.25,
+  "start": 0.78,
+  "end": 255.68,
+  "body_db": -15.1,
+  "gap": 0.02,
+  "gap_at": 255.6,
+  "head_db": -10.9,
+  "tail_db": [
+   -12.0,
+   -17.0,
+   -15.0,
+   -38.0,
+   -40.0,
+   -60.0
+  ]
+ },
+ "234 - savage garden - i knew i loved you.mp3": {
+  "len": 250.7,
+  "start": 0.28,
+  "end": 248.78,
+  "body_db": -12.2,
+  "gap": 1.34,
+  "gap_at": 247.4,
+  "head_db": -18.4,
+  "tail_db": [
+   -40.0,
+   -43.0,
+   -49.0,
+   -60.0,
+   -60.0,
+   -58.0
+  ]
+ },
+ "235 - semisonic - closing time.mp3": {
+  "len": 275.59,
+  "start": 0.24,
+  "end": 271.8,
+  "body_db": -9.3,
+  "gap": 1.12,
+  "gap_at": 270.7,
+  "head_db": -17.7,
+  "tail_db": [
+   -26.0,
+   -29.0,
+   -36.0,
+   -46.0,
+   -57.0,
+   -60.0
+  ]
+ },
+ "236 - shania twain - man i feel like a woman.mp3": {
+  "len": 234.53,
+  "start": 1.06,
+  "end": 234.0,
+  "body_db": -13.2,
+  "gap": 0.3,
+  "gap_at": 172.8,
+  "head_db": -15.8,
+  "tail_db": [
+   -19.0,
+   -23.0,
+   -22.0,
+   -13.0,
+   -15.0,
+   -59.0
+  ]
+ },
+ "237 - shania twain - that don t impress me much.mp3": {
+  "len": 238.73,
+  "start": 0.02,
+  "end": 238.72,
+  "body_db": -9.4,
+  "gap": 0.34,
+  "gap_at": 238.3,
+  "head_db": -9.6,
+  "tail_db": [
+   -38.0,
+   -39.0,
+   -41.0,
+   -52.0,
+   -47.0,
+   -58.0
+  ]
+ },
+ "238 - shania twain - you re still the one.mp3": {
+  "len": 212.61,
+  "start": 1.1,
+  "end": 212.6,
+  "body_db": -11.3,
+  "gap": 0.02,
+  "gap_at": 4.7,
+  "head_db": -13.4,
+  "tail_db": [
+   -13.0,
+   -22.0,
+   -16.0,
+   -21.0,
+   -45.0,
+   -60.0
+  ]
+ },
+ "239 - simon garfunkel - mrs robinson.mp3": {
+  "len": 232.12,
+  "start": 1.04,
+  "end": 228.64,
+  "body_db": -19.6,
+  "gap": 0.0,
+  "gap_at": 1.0,
+  "head_db": -21.3,
+  "tail_db": [
+   -34.0,
+   -43.0,
+   -47.0,
+   -45.0,
+   -49.0,
+   -60.0
+  ]
+ },
+ "240 - sly the family stone - dance to the music.mp3": {
+  "len": 176.35,
+  "start": 0.06,
+  "end": 174.64,
+  "body_db": -14.1,
+  "gap": 0.4,
+  "gap_at": 174.0,
+  "head_db": -14.1,
+  "tail_db": [
+   -29.0,
+   -30.0,
+   -34.0,
+   -47.0,
+   -56.0,
+   -59.0
+  ]
+ },
+ "241 - smash mouth - walkin on the sun.mp3": {
+  "len": 207.33,
+  "start": 0.3,
+  "end": 204.4,
+  "body_db": -8.9,
+  "gap": 0.24,
+  "gap_at": 204.1,
+  "head_db": -20.0,
+  "tail_db": [
+   -21.0,
+   -27.0,
+   -33.0,
+   -42.0,
+   -45.0,
+   -59.0
+  ]
+ },
+ "242 - snap - power.mp3": {
+  "len": 220.76,
+  "start": 0.8,
+  "end": 218.22,
+  "body_db": -11.4,
+  "gap": 0.12,
+  "gap_at": 218.1,
+  "head_db": -24.0,
+  "tail_db": [
+   -18.0,
+   -16.0,
+   -17.0,
+   -18.0,
+   -33.0,
+   -59.0
+  ]
+ },
+ "243 - spinners - rubberband man.mp3": {
+  "len": 213.21,
+  "start": 0.76,
+  "end": 213.1,
+  "body_db": -15.0,
+  "gap": 0.28,
+  "gap_at": 212.8,
+  "head_db": -14.0,
+  "tail_db": [
+   -21.0,
+   -20.0,
+   -18.0,
+   -30.0,
+   -56.0,
+   -58.0
+  ]
+ },
+ "244 - steely dan - peg.mp3": {
+  "len": 236.96,
+  "start": 0.48,
+  "end": 232.4,
+  "body_db": -15.6,
+  "gap": 0.48,
+  "gap_at": 231.6,
+  "head_db": -18.6,
+  "tail_db": [
+   -41.0,
+   -48.0,
+   -52.0,
+   -53.0,
+   -63.0,
+   -57.0
+  ]
+ },
+ "245 - steve miller band - fly like an eagle.mp3": {
+  "len": 182.44,
+  "start": 1.74,
+  "end": 180.58,
+  "body_db": -13.2,
+  "gap": 0.06,
+  "gap_at": 180.5,
+  "head_db": -46.5,
+  "tail_db": [
+   -30.0,
+   -29.0,
+   -35.0,
+   -39.0,
+   -44.0,
+   -60.0
+  ]
+ },
+ "246 - steve miller band - rock n me.mp3": {
+  "len": 189.7,
+  "start": 0.7,
+  "end": 185.22,
+  "body_db": -13.6,
+  "gap": 0.24,
+  "gap_at": 185.0,
+  "head_db": -10.1,
+  "tail_db": [
+   -33.0,
+   -36.0,
+   -38.0,
+   -48.0,
+   -55.0,
+   -59.0
+  ]
+ },
+ "247 - steve miller band - the joker.mp3": {
+  "len": 269.64,
+  "start": 0.04,
+  "end": 265.0,
+  "body_db": -12.9,
+  "gap": 0.1,
+  "gap_at": 264.9,
+  "head_db": -14.0,
+  "tail_db": [
+   -28.0,
+   -29.0,
+   -50.0,
+   -42.0,
+   -48.0,
+   -60.0
+  ]
+ },
+ "248 - stevie wonder - for once in my life.mp3": {
+  "len": 170.03,
+  "start": 0.44,
+  "end": 167.22,
+  "body_db": -11.3,
+  "gap": 0.16,
+  "gap_at": 167.0,
+  "head_db": -27.2,
+  "tail_db": [
+   -18.0,
+   -26.0,
+   -27.0,
+   -34.0,
+   -45.0,
+   -58.0
+  ]
+ },
+ "249 - stevie wonder - higher ground.mp3": {
+  "len": 191.58,
+  "start": 0.32,
+  "end": 189.48,
+  "body_db": -13.1,
+  "gap": 0.42,
+  "gap_at": 189.0,
+  "head_db": -20.3,
+  "tail_db": [
+   -35.0,
+   -40.0,
+   -45.0,
+   -51.0,
+   -58.0,
+   -59.0
+  ]
+ },
+ "250 - stevie wonder - i wish.mp3": {
+  "len": 249.68,
+  "start": 0.3,
+  "end": 248.54,
+  "body_db": -13.7,
+  "gap": 0.04,
+  "gap_at": 248.4,
+  "head_db": -21.7,
+  "tail_db": [
+   -19.0,
+   -16.0,
+   -25.0,
+   -30.0,
+   -39.0,
+   -58.0
+  ]
+ },
+ "251 - stevie wonder - signed sealed delivered i m yours.mp3": {
+  "len": 159.58,
+  "start": 0.3,
+  "end": 157.14,
+  "body_db": -9.1,
+  "gap": 0.28,
+  "gap_at": 156.8,
+  "head_db": -24.8,
+  "tail_db": [
+   -19.0,
+   -21.0,
+   -23.0,
+   -30.0,
+   -42.0,
+   -59.0
+  ]
+ },
+ "252 - stevie wonder - sir duke.mp3": {
+  "len": 233.56,
+  "start": 0.26,
+  "end": 232.4,
+  "body_db": -12.3,
+  "gap": 0.02,
+  "gap_at": 232.4,
+  "head_db": -11.1,
+  "tail_db": [
+   -20.0,
+   -22.0,
+   -16.0,
+   -18.0,
+   -18.0,
+   -58.0
+  ]
+ },
+ "253 - styx - mr roboto.mp3": {
+  "len": 330.84,
+  "start": 0.84,
+  "end": 326.62,
+  "body_db": -11.7,
+  "gap": 0.2,
+  "gap_at": 326.4,
+  "head_db": -51.4,
+  "tail_db": [
+   -30.0,
+   -30.0,
+   -36.0,
+   -31.0,
+   -33.0,
+   -60.0
+  ]
+ },
+ "254 - styx - renegade.mp3": {
+  "len": 257.2,
+  "start": 1.0,
+  "end": 249.9,
+  "body_db": -16.5,
+  "gap": 0.58,
+  "gap_at": 20.6,
+  "head_db": -33.2,
+  "tail_db": [
+   -36.0,
+   -44.0,
+   -47.0,
+   -55.0,
+   -60.0,
+   -58.0
+  ]
+ },
+ "255 - styx - too much time on my hands.mp3": {
+  "len": 273.14,
+  "start": 0.22,
+  "end": 270.22,
+  "body_db": -12.6,
+  "gap": 0.08,
+  "gap_at": 7.8,
+  "head_db": -35.1,
+  "tail_db": [
+   -31.0,
+   -31.0,
+   -30.0,
+   -31.0,
+   -31.0,
+   -59.0
+  ]
+ },
+ "256 - sugar ray - every morning.mp3": {
+  "len": 229.36,
+  "start": 0.22,
+  "end": 219.24,
+  "body_db": -8.5,
+  "gap": 1.34,
+  "gap_at": 217.9,
+  "head_db": -5.6,
+  "tail_db": [
+   -41.0,
+   -47.0,
+   -47.0,
+   -59.0,
+   -62.0,
+   -59.0
+  ]
+ },
+ "257 - sugarloaf - green eyed lady.mp3": {
+  "len": 220.87,
+  "start": 0.64,
+  "end": 217.64,
+  "body_db": -15.3,
+  "gap": 0.18,
+  "gap_at": 217.4,
+  "head_db": -17.4,
+  "tail_db": [
+   -24.0,
+   -26.0,
+   -38.0,
+   -45.0,
+   -56.0,
+   -55.0
+  ]
+ },
+ "258 - supremes - come see about me.mp3": {
+  "len": 166.41,
+  "start": 0.22,
+  "end": 163.08,
+  "body_db": -11.7,
+  "gap": 0.06,
+  "gap_at": 163.0,
+  "head_db": -28.1,
+  "tail_db": [
+   -28.0,
+   -20.0,
+   -24.0,
+   -31.0,
+   -39.0,
+   -60.0
+  ]
+ },
+ "259 - supremes - stop in the name of love.mp3": {
+  "len": 173.17,
+  "start": 0.2,
+  "end": 170.64,
+  "body_db": -14.0,
+  "gap": 0.02,
+  "gap_at": 170.5,
+  "head_db": -21.8,
+  "tail_db": [
+   -17.0,
+   -23.0,
+   -35.0,
+   -40.0,
+   -47.0,
+   -60.0
+  ]
+ },
+ "260 - tag team - whoomp there it is.mp3": {
+  "len": 215.61,
+  "start": 0.02,
+  "end": 214.86,
+  "body_db": -9.8,
+  "gap": 0.14,
+  "gap_at": 213.7,
+  "head_db": -15.7,
+  "tail_db": [
+   -17.0,
+   -19.0,
+   -33.0,
+   -32.0,
+   -36.0,
+   -58.0
+  ]
+ },
+ "261 - ted nugent - cat scratch fever.mp3": {
+  "len": 222.38,
+  "start": 0.7,
+  "end": 218.0,
+  "body_db": -17.2,
+  "gap": 0.04,
+  "gap_at": 217.9,
+  "head_db": -19.4,
+  "tail_db": [
+   -23.0,
+   -21.0,
+   -20.0,
+   -24.0,
+   -25.0,
+   -60.0
+  ]
+ },
+ "262 - temptations - just my imagination.mp3": {
+  "len": 228.34,
+  "start": 0.78,
+  "end": 225.82,
+  "body_db": -16.3,
+  "gap": 0.34,
+  "gap_at": 225.5,
+  "head_db": -31.4,
+  "tail_db": [
+   -33.0,
+   -38.0,
+   -42.0,
+   -44.0,
+   -50.0,
+   -58.0
+  ]
+ },
+ "263 - thin lizzy - boys are back in town.mp3": {
+  "len": 266.47,
+  "start": 1.06,
+  "end": 262.82,
+  "body_db": -11.0,
+  "gap": 0.24,
+  "gap_at": 262.6,
+  "head_db": -10.4,
+  "tail_db": [
+   -25.0,
+   -20.0,
+   -26.0,
+   -34.0,
+   -46.0,
+   -59.0
+  ]
+ },
+ "264 - third eye blind - semi charmed life.mp3": {
+  "len": 268.7,
+  "start": 0.64,
+  "end": 266.56,
+  "body_db": -11.9,
+  "gap": 0.1,
+  "gap_at": 266.4,
+  "head_db": -7.5,
+  "tail_db": [
+   -14.0,
+   -15.0,
+   -13.0,
+   -17.0,
+   -33.0,
+   -58.0
+  ]
+ },
+ "265 - three dog night - joy to the world.mp3": {
+  "len": 212.14,
+  "start": 0.02,
+  "end": 212.04,
+  "body_db": -10.7,
+  "gap": 0.04,
+  "gap_at": 212.0,
+  "head_db": -15.7,
+  "tail_db": [
+   -26.0,
+   -30.0,
+   -32.0,
+   -35.0,
+   -41.0,
+   -59.0
+  ]
+ },
+ "266 - toby keith - should ve been a cowboy.mp3": {
+  "len": 210.02,
+  "start": 0.26,
+  "end": 206.48,
+  "body_db": -14.7,
+  "gap": 0.38,
+  "gap_at": 206.1,
+  "head_db": -15.9,
+  "tail_db": [
+   -48.0,
+   -50.0,
+   -54.0,
+   -55.0,
+   -62.0,
+   -57.0
+  ]
+ },
+ "267 - tom petty - free fallin.mp3": {
+  "len": 256.81,
+  "start": 1.08,
+  "end": 252.18,
+  "body_db": -17.1,
+  "gap": 0.66,
+  "gap_at": 251.5,
+  "head_db": -28.6,
+  "tail_db": [
+   -43.0,
+   -49.0,
+   -52.0,
+   -59.0,
+   -63.0,
+   -60.0
+  ]
+ },
+ "268 - tom petty the heartbreakers - don t do me like that.mp3": {
+  "len": 165.67,
+  "start": 1.42,
+  "end": 161.44,
+  "body_db": -16.8,
+  "gap": 0.38,
+  "gap_at": 161.0,
+  "head_db": -11.0,
+  "tail_db": [
+   -36.0,
+   -45.0,
+   -44.0,
+   -51.0,
+   -58.0,
+   -59.0
+  ]
+ },
+ "269 - tom petty the heartbreakers - refugee.mp3": {
+  "len": 202.81,
+  "start": 1.4,
+  "end": 201.34,
+  "body_db": -16.5,
+  "gap": 0.24,
+  "gap_at": 201.1,
+  "head_db": -13.4,
+  "tail_db": [
+   -28.0,
+   -32.0,
+   -36.0,
+   -38.0,
+   -47.0,
+   -59.0
+  ]
+ },
+ "270 - tone loc - wild thing.mp3": {
+  "len": 262.5,
+  "start": 0.02,
+  "end": 262.5,
+  "body_db": -11.7,
+  "gap": 0.0,
+  "gap_at": 0.0,
+  "head_db": -21.1,
+  "tail_db": [
+   -22.0,
+   -18.0,
+   -32.0,
+   -9.0,
+   -24.0,
+   -14.0
+  ]
+ },
+ "271 - u2 - i still haven t found what i m looking for.mp3": {
+  "len": 279.54,
+  "start": 1.26,
+  "end": 276.18,
+  "body_db": -10.5,
+  "gap": 0.56,
+  "gap_at": 275.0,
+  "head_db": -51.4,
+  "tail_db": [
+   -39.0,
+   -39.0,
+   -44.0,
+   -57.0,
+   -57.0,
+   -58.0
+  ]
+ },
+ "272 - van halen - dance the night away.mp3": {
+  "len": 185.87,
+  "start": 0.16,
+  "end": 181.34,
+  "body_db": -11.2,
+  "gap": 0.76,
+  "gap_at": 180.6,
+  "head_db": -18.9,
+  "tail_db": [
+   -40.0,
+   -36.0,
+   -46.0,
+   -51.0,
+   -58.0,
+   -60.0
+  ]
+ },
+ "273 - van halen - jump.mp3": {
+  "len": 241.63,
+  "start": 0.2,
+  "end": 237.84,
+  "body_db": -11.6,
+  "gap": 0.36,
+  "gap_at": 237.2,
+  "head_db": -24.2,
+  "tail_db": [
+   -35.0,
+   -46.0,
+   -41.0,
+   -49.0,
+   -52.0,
+   -60.0
+  ]
+ },
+ "274 - van halen - panama.mp3": {
+  "len": 212.73,
+  "start": 0.12,
+  "end": 209.58,
+  "body_db": -18.5,
+  "gap": 0.04,
+  "gap_at": 209.5,
+  "head_db": -16.5,
+  "tail_db": [
+   -24.0,
+   -18.0,
+   -21.0,
+   -23.0,
+   -21.0,
+   -59.0
+  ]
+ },
+ "275 - van halen - runnin with the devil.mp3": {
+  "len": 205.36,
+  "start": 0.0,
+  "end": 201.88,
+  "body_db": -12.9,
+  "gap": 0.14,
+  "gap_at": 0.5,
+  "head_db": -16.7,
+  "tail_db": [
+   -16.0,
+   -16.0,
+   -15.0,
+   -18.0,
+   -23.0,
+   -58.0
+  ]
+ },
+ "276 - van halen - why can t this be love.mp3": {
+  "len": 227.67,
+  "start": 0.38,
+  "end": 223.28,
+  "body_db": -10.9,
+  "gap": 0.92,
+  "gap_at": 222.3,
+  "head_db": -40.9,
+  "tail_db": [
+   -34.0,
+   -39.0,
+   -49.0,
+   -52.0,
+   -54.0,
+   -59.0
+  ]
+ },
+ "277 - various artists - macarena.mp3": {
+  "len": 303.91,
+  "start": 0.02,
+  "end": 302.48,
+  "body_db": -11.1,
+  "gap": 0.08,
+  "gap_at": 302.4,
+  "head_db": -16.3,
+  "tail_db": [
+   -35.0,
+   -13.0,
+   -15.0,
+   -15.0,
+   -19.0,
+   -60.0
+  ]
+ },
+ "278 - various artists - pump up the volume.mp3": {
+  "len": 242.02,
+  "start": 0.02,
+  "end": 242.02,
+  "body_db": -16.2,
+  "gap": 0.04,
+  "gap_at": 0.1,
+  "head_db": -23.4,
+  "tail_db": [
+   -23.0,
+   -31.0,
+   -40.0,
+   -38.0,
+   -43.0,
+   -45.0
+  ]
+ },
+ "279 - various artists - return of the mack.mp3": {
+  "len": 210.96,
+  "start": 0.02,
+  "end": 209.06,
+  "body_db": -10.3,
+  "gap": 0.56,
+  "gap_at": 208.5,
+  "head_db": -5.2,
+  "tail_db": [
+   -24.0,
+   -30.0,
+   -45.0,
+   -42.0,
+   -54.0,
+   -56.0
+  ]
+ },
+ "280 - various artists - soul man.mp3": {
+  "len": 177.95,
+  "start": 0.22,
+  "end": 174.42,
+  "body_db": -17.0,
+  "gap": 0.16,
+  "gap_at": 174.2,
+  "head_db": -17.2,
+  "tail_db": [
+   -20.0,
+   -21.0,
+   -19.0,
+   -23.0,
+   -21.0,
+   -59.0
+  ]
+ },
+ "281 - various artists - you dropped a bomb on me.mp3": {
+  "len": 246.83,
+  "start": 0.26,
+  "end": 241.84,
+  "body_db": -16.2,
+  "gap": 0.14,
+  "gap_at": 241.1,
+  "head_db": -13.8,
+  "tail_db": [
+   -37.0,
+   -46.0,
+   -46.0,
+   -56.0,
+   -47.0,
+   -57.0
+  ]
+ },
+ "282 - vertical horizon - everything you want.mp3": {
+  "len": 257.1,
+  "start": 0.34,
+  "end": 254.24,
+  "body_db": -9.6,
+  "gap": 0.66,
+  "gap_at": 253.6,
+  "head_db": -21.5,
+  "tail_db": [
+   -32.0,
+   -41.0,
+   -49.0,
+   -55.0,
+   -52.0,
+   -60.0
+  ]
+ },
+ "283 - war - cisco kid.mp3": {
+  "len": 268.38,
+  "start": 0.3,
+  "end": 264.76,
+  "body_db": -14.2,
+  "gap": 0.64,
+  "gap_at": 264.1,
+  "head_db": -11.5,
+  "tail_db": [
+   -39.0,
+   -47.0,
+   -59.0,
+   -60.0,
+   -70.0,
+   -60.0
+  ]
+ },
+ "284 - war - why can t we be friends.mp3": {
+  "len": 228.21,
+  "start": 0.3,
+  "end": 223.84,
+  "body_db": -15.9,
+  "gap": 0.28,
+  "gap_at": 223.5,
+  "head_db": -27.7,
+  "tail_db": [
+   -32.0,
+   -41.0,
+   -44.0,
+   -53.0,
+   -66.0,
+   -59.0
+  ]
+ },
+ "285 - wet willie - keep on smilin.mp3": {
+  "len": 237.64,
+  "start": 0.4,
+  "end": 234.28,
+  "body_db": -14.1,
+  "gap": 0.46,
+  "gap_at": 233.2,
+  "head_db": -10.5,
+  "tail_db": [
+   -28.0,
+   -37.0,
+   -49.0,
+   -54.0,
+   -60.0,
+   -59.0
+  ]
+ },
+ "286 - whitesnake - here i go again.mp3": {
+  "len": 275.28,
+  "start": 0.24,
+  "end": 272.54,
+  "body_db": -16.8,
+  "gap": 0.44,
+  "gap_at": 272.0,
+  "head_db": -25.2,
+  "tail_db": [
+   -32.0,
+   -33.0,
+   -46.0,
+   -44.0,
+   -52.0,
+   -60.0
+  ]
+ },
+ "287 - whitesnake - is this love.mp3": {
+  "len": 285.23,
+  "start": 1.26,
+  "end": 280.08,
+  "body_db": -15.9,
+  "gap": 0.52,
+  "gap_at": 279.5,
+  "head_db": -52.9,
+  "tail_db": [
+   -43.0,
+   -43.0,
+   -52.0,
+   -46.0,
+   -60.0,
+   -57.0
+  ]
+ },
+ "288 - who - baba o riley.mp3": {
+  "len": 309.39,
+  "start": 0.26,
+  "end": 306.92,
+  "body_db": -10.7,
+  "gap": 0.28,
+  "gap_at": 306.6,
+  "head_db": -22.9,
+  "tail_db": [
+   -15.0,
+   -14.0,
+   -12.0,
+   -11.0,
+   -40.0,
+   -58.0
+  ]
+ },
+ "289 - who - my generation.mp3": {
+  "len": 199.6,
+  "start": 1.06,
+  "end": 198.46,
+  "body_db": -10.5,
+  "gap": 0.12,
+  "gap_at": 198.3,
+  "head_db": -9.5,
+  "tail_db": [
+   -13.0,
+   -16.0,
+   -17.0,
+   -19.0,
+   -29.0,
+   -59.0
+  ]
+ },
+ "290 - who - pinball wizard.mp3": {
+  "len": 182.67,
+  "start": 0.3,
+  "end": 179.52,
+  "body_db": -13.4,
+  "gap": 0.1,
+  "gap_at": 179.4,
+  "head_db": -21.7,
+  "tail_db": [
+   -28.0,
+   -30.0,
+   -33.0,
+   -42.0,
+   -51.0,
+   -60.0
+  ]
+ },
+ "291 - who - squeeze box.mp3": {
+  "len": 163.66,
+  "start": 0.38,
+  "end": 160.58,
+  "body_db": -10.7,
+  "gap": 0.22,
+  "gap_at": 160.3,
+  "head_db": -12.6,
+  "tail_db": [
+   -15.0,
+   -12.0,
+   -18.0,
+   -26.0,
+   -32.0,
+   -60.0
+  ]
+ },
+ "292 - who - who are you.mp3": {
+  "len": 377.86,
+  "start": 0.18,
+  "end": 375.08,
+  "body_db": -11.2,
+  "gap": 0.22,
+  "gap_at": 374.8,
+  "head_db": -8.5,
+  "tail_db": [
+   -26.0,
+   -28.0,
+   -34.0,
+   -40.0,
+   -53.0,
+   -60.0
+  ]
+ },
+ "293 - willie nelson - on the road again.mp3": {
+  "len": 151.88,
+  "start": 0.8,
+  "end": 150.54,
+  "body_db": -12.8,
+  "gap": 0.12,
+  "gap_at": 150.4,
+  "head_db": -48.8,
+  "tail_db": [
+   -23.0,
+   -22.0,
+   -28.0,
+   -37.0,
+   -45.0,
+   -60.0
+  ]
+ },
+ "294 - wilson pickett - land of 1000 dances.mp3": {
+  "len": 145.92,
+  "start": 0.32,
+  "end": 142.56,
+  "body_db": -14.0,
+  "gap": 0.28,
+  "gap_at": 142.3,
+  "head_db": -20.2,
+  "tail_db": [
+   -17.0,
+   -19.0,
+   -22.0,
+   -31.0,
+   -40.0,
+   -60.0
+  ]
+ },
+ "295 - wilson pickett - mustang sally.mp3": {
+  "len": 185.63,
+  "start": 0.22,
+  "end": 183.42,
+  "body_db": -13.5,
+  "gap": 0.36,
+  "gap_at": 183.0,
+  "head_db": -14.5,
+  "tail_db": [
+   -21.0,
+   -22.0,
+   -35.0,
+   -40.0,
+   -49.0,
+   -60.0
+  ]
+ },
+ "296 - zz top - gimme all your lovin.mp3": {
+  "len": 238.99,
+  "start": 0.14,
+  "end": 237.78,
+  "body_db": -12.3,
+  "gap": 0.3,
+  "gap_at": 237.4,
+  "head_db": -9.9,
+  "tail_db": [
+   -26.0,
+   -28.0,
+   -28.0,
+   -31.0,
+   -39.0,
+   -56.0
+  ]
+ },
+ "297 - zz top - la grange.mp3": {
+  "len": 232.31,
+  "start": 0.26,
+  "end": 229.24,
+  "body_db": -16.8,
+  "gap": 0.34,
+  "gap_at": 228.1,
+  "head_db": -23.0,
+  "tail_db": [
+   -52.0,
+   -54.0,
+   -49.0,
+   -58.0,
+   -63.0,
+   -60.0
+  ]
+ },
+ "298 - zz top - legs.mp3": {
+  "len": 271.83,
+  "start": 0.18,
+  "end": 269.82,
+  "body_db": -16.3,
+  "gap": 0.4,
+  "gap_at": 269.4,
+  "head_db": -23.4,
+  "tail_db": [
+   -33.0,
+   -40.0,
+   -44.0,
+   -50.0,
+   -58.0,
+   -58.0
+  ]
+ },
+ "299 - zz top - sharp dressed man.mp3": {
+  "len": 254.64,
+  "start": 0.06,
+  "end": 251.52,
+  "body_db": -12.5,
+  "gap": 0.46,
+  "gap_at": 251.0,
+  "head_db": -6.2,
+  "tail_db": [
+   -39.0,
+   -45.0,
+   -48.0,
+   -53.0,
+   -60.0,
+   -57.0
+  ]
+ },
+ "300 - zz top - tush.mp3": {
+  "len": 135.84,
+  "start": 0.16,
+  "end": 133.86,
+  "body_db": -16.1,
+  "gap": 0.0,
+  "gap_at": 0.2,
+  "head_db": -19.4,
+  "tail_db": [
+   -18.0,
+   -21.0,
+   -23.0,
+   -31.0,
+   -44.0,
+   -60.0
+  ]
+ }
+}

@@ -585,7 +585,7 @@ def trigger_track_move(direction):
     off). Since 2026-10-07 the remote's two checkboxes are independent:
     ANNOUNCEMENTS = the spoken VO, SFX = the sweeper. Both on -> sweeper +
     VO; VO only -> the VO with no whoosh; SFX only -> sweeper over the
-    crossfade; neither -> plain crossfade. update() re-checks state.sfx_enabled
+    crossfade; neither -> plain crossfade. update() re-checks state.sweepers_enabled
     when the move actually fires."""
     announced = state.auto_announce_enabled
     _begin_move(direction, announced=announced, sweeper_only=not announced)
@@ -640,7 +640,7 @@ def update(now):
         if _pending.get("dovetail"):
             fade_duration = config.SHOW_SONG_DOVETAIL_FADE_SECONDS
             dj_engine.crossfade_decks(outgoing_name, incoming_name, fade_duration)
-        elif _pending.get("sweeper_only") and not state.sfx_enabled:
+        elif _pending.get("sweeper_only") and not state.sweepers_enabled:
             dj_engine.crossfade_decks(outgoing_name, incoming_name, CROSSFADE_SECONDS)
         elif _pending.get("sweeper_only"):
             # Trivia Night show flow's first-song handoff (2026-08-14):
@@ -668,9 +668,9 @@ def update(now):
             # decoded every sweeper/announcement file at import time -- so this
             # never blocks, unlike before (2026-08-07 fix, see module docstring).
             sweeper_path, announcement_path = _pick_sweeper(), _pick_announcement()
-            if not state.sfx_enabled:
-                sweeper_path = None  # SFX checkbox off: the VO without the whoosh
-            if announcement_path and (sweeper_path or not state.sfx_enabled):
+            if not state.sweepers_enabled:
+                sweeper_path = None  # SWEEPERS checkbox off: the VO without the whoosh
+            if announcement_path and (sweeper_path or not state.sweepers_enabled):
                 sweeper_sound = _load_cached(sweeper_path) if sweeper_path else None
                 announcement_sound = _load_cached(announcement_path)
                 dj_engine.play_sweeper_and_announcement(

@@ -58,7 +58,7 @@ import serial
 import serial.tools.list_ports
 
 import config
-from drivers import color_utils, live_round_engine, serial_ports, transition_shapes
+from drivers import color_utils, live_round_engine, oz_story, serial_ports, transition_shapes
 from state import state
 
 _DDP_FLAGS_VERSION1_PUSH = 0x41
@@ -772,11 +772,37 @@ def _intro_ramp(el):
     return max(0.0, 1.0 - (el - c.SHOW_INTRO_FADE_OUT_AT_SECONDS) / c.SHOW_INTRO_FADE_OUT_SECONDS)
 
 
-def _intro_twinkle(now, level):
+def _build_intro_name_bulbs():
+    """Bulbs framing "Trivia"/"cade" (panels 3 + 4) as ONE outline
+    (2026-10-28): both panels' loops minus the two inner side runs at the
+    seam between them (panel 3's right edge, panel 4's left edge), picked
+    off config.MARQUEE_LAYOUT's photo coordinates."""
+    xs = {}
+    for name in ("panel3", "panel4"):
+        i = config.MARQUEE_SEGMENTS[name]["start"]
+        for x0, y0, x1, y1, n in config.MARQUEE_LAYOUT[name]:
+            for k in range(n):
+                f = k / (n - 1) if n > 1 else 0.0
+                xs[i] = x0 + (x1 - x0) * f
+                i += 1
+    p3 = [x for i, x in xs.items() if i in _segment_range("panel3")]
+    p4 = [x for i, x in xs.items() if i in _segment_range("panel4")]
+    seam = (max(p3) + min(p4)) / 2.0
+    gap = (min(p4) - max(p3)) / 2.0
+    return [i for i, x in sorted(xs.items()) if abs(x - seam) > gap + 15]
+
+
+def _segment_range(name):
+    seg = config.MARQUEE_SEGMENTS[name]
+    return range(seg["start"], seg["start"] + seg["count"])
+
+
+def _intro_twinkle(now, level, pixels=None):
     """The "Twinkle Base" look in white at config.SHOW_INTRO_TWINKLE_SPEED:
     a dim wash with occasional brighter sparkles, re-rolled at that fraction
     of the normal rate, all scaled by `level` (0..1) every frame so the
-    brightness ramp is smooth between rolls."""
+    brightness ramp is smooth between rolls. `pixels` limits it to those
+    bulbs (the rest go dark)."""
     global _intro_twinkle_next
     if now >= _intro_twinkle_next:
         _intro_twinkle_next = max(_intro_twinkle_next + _DANCE_FRAME_S / config.SHOW_INTRO_TWINKLE_SPEED,
@@ -784,7 +810,9 @@ def _intro_twinkle(now, level):
         density = 0.08
         for i in range(config.MARQUEE_TOTAL_LEDS):
             _intro_twinkle_levels[i] = random.uniform(0.6, 1.0) if random.random() < density else 0.25
-    for i in range(config.MARQUEE_TOTAL_LEDS):
+    if pixels is not None:
+        fill(0, 0, 0)
+    for i in (range(config.MARQUEE_TOTAL_LEDS) if pixels is None else pixels):
         v = 255 * _intro_twinkle_levels[i] * level
         set_pixel(i, v, v, v)
 
@@ -792,7 +820,8 @@ def _intro_twinkle(now, level):
 def _apply_intro(now):
     """Show open (2026-10-14, timings in config.SHOW_INTRO_*): white movie
     chase on every segment while the top strip's words play, lights out as
-    "Let's Play" cuts in at 9s, white twinkle ramping up 10-14s and fading out
+    "Let's Play" cuts in at 9s, white twinkle (one outline around panels 3 + 4
+    only, 2026-10-28) ramping up 10-14s and fading out
     from 15s, dark while the host talks, then the wheel spin when the show
     moves on (_apply_wheel)."""
     c = config
@@ -805,11 +834,15 @@ def _apply_intro(now):
     elif el < c.SHOW_INTRO_FADE_OUT_AT_SECONDS + c.SHOW_INTRO_FADE_OUT_SECONDS:
         level = _intro_ramp(el)
         if level > 0.0:
-            _intro_twinkle(now, level)
+            # only around "Trivia" / "cade" (panels 3 + 4), one outline
+            _intro_twinkle(now, level, _INTRO_NAME_BULBS)
         else:
             fill(0, 0, 0)
     else:
         fill(0, 0, 0)
+
+
+_INTRO_NAME_BULBS = _build_intro_name_bulbs()
 
 
 def _apply_wheel(now):
@@ -1064,6 +1097,70 @@ _dance_last = None
 _dance_dt = 0.0
 _dance_bri = 1.0
 _twinkle_next = 0.0
+
+
+_story_seg_of = None     # bulb index -> segment name
+_story_gap = None        # bulb indices along the inner edges between a lit pair (kept dark)
+_story_centers = {}      # row -> (cx, cy) of the pair
+
+
+def _story_prepare():
+    """Static maps for the story accents: which segment each bulb is in, the
+    bulbs on the facing inner edges of each side-by-side pair of panels (left
+    pair member's right side, right member's left side) so a lit pair reads
+    as one long box, and each pair's centre."""
+    global _story_seg_of, _story_gap
+    _story_seg_of = [""] * config.MARQUEE_TOTAL_LEDS
+    for name, seg in config.MARQUEE_SEGMENTS.items():
+        for i in range(seg["start"], seg["start"] + seg["count"]):
+            if i < len(_story_seg_of):
+                _story_seg_of[i] = name
+    _story_gap = set()
+    for row, (lname, rname) in oz_story.ROW_SEGMENTS.items():
+        idx = {}
+        for n in (lname, rname):
+            s = config.MARQUEE_SEGMENTS[n]
+            idx[n] = list(range(s["start"], s["start"] + s["count"]))
+        lx = [_bulb_xy[i][0] for i in idx[lname]]
+        rx = [_bulb_xy[i][0] for i in idx[rname]]
+        lw, rw = max(lx) - min(lx), max(rx) - min(rx)
+        _story_gap.update(i for i in idx[lname] if _bulb_xy[i][0] >= max(lx) - 0.06 * lw)
+        _story_gap.update(i for i in idx[rname] if _bulb_xy[i][0] <= min(rx) + 0.06 * rw)
+        both = idx[lname] + idx[rname]
+        _story_centers[row] = (sum(_bulb_xy[i][0] for i in both) / len(both),
+                               sum(_bulb_xy[i][1] for i in both) / len(both))
+
+
+def _apply_story(now, pos):
+    """Story song (drivers/oz_story.py). Mostly DARK -- the red panel
+    animation is the show, and a lit frame around every panel just reads as
+    scoreboards. Lit only for the big moments (oz_story.full_marquee: every
+    bulb coloured from its measured board position) and as an accent circling
+    the pair of lower panels while a vignette plays, with the bulbs between
+    the two panels switched off so the pair looks like one long box."""
+    if _story_seg_of is None:
+        _story_prepare()
+    bri = max(0.0, min(1.0, state.marquee_brightness / 100.0))
+    if oz_story.full_marquee(pos):
+        for i in range(config.MARQUEE_TOTAL_LEDS):
+            x, y = _bulb_xy[i]
+            r, g, b = oz_story.marquee_color(x, y, pos, now)
+            set_pixel(i, r * bri, g * bri, b * bri)
+        return
+    fill(0, 0, 0)
+    acc = oz_story.lower_accent(pos)
+    if acc is None:
+        return
+    row, strength, kind = acc
+    cx, cy = _story_centers[row]
+    for name in oz_story.ROW_SEGMENTS[row]:
+        seg = config.MARQUEE_SEGMENTS[name]
+        for i in range(seg["start"], seg["start"] + seg["count"]):
+            if i in _story_gap:
+                continue
+            x, y = _bulb_xy[i]
+            r, g, b = oz_story.accent_color(kind, strength, math.atan2(y - cy, x - cx), now)
+            set_pixel(i, r * bri, g * bri, b * bri)
 
 
 def _apply_dj_dance(now):
@@ -1682,8 +1779,12 @@ def update(now):
                 else:
                     set_segment(name, 0, 0, 0)
         elif state.mode == state.MODE_DJ and not state.price_game_active:
-            _apply_dj_dance(now)
-            if state.blank_lower_marquees:
+            story_pos = oz_story.position()
+            if story_pos is not None:
+                _apply_story(now, story_pos)
+            else:
+                _apply_dj_dance(now)
+            if state.blank_lower_marquees and story_pos is None:
                 _blackout_lower_panels()
         elif live_round_engine.is_round_active():
             # Ordinary Game Mode question, still live/unlocked -- same
@@ -1707,8 +1808,8 @@ def update(now):
             _apply_game_chase(now)
     if config.MARQUEE_TRANSITION_ENABLED and time.time() >= state.marquee_locate_until:
         _apply_transition(time.time())
-    if state.blackout_active:
-        fill(0, 0, 0)  # admin blackout (drivers/blackout_engine.py)
+    if state.lights_out:
+        fill(0, 0, 0)  # admin blackout / after-show dark bed (drivers/blackout_engine.py)
     render()
 
 

@@ -33,8 +33,10 @@ from drivers import wled_engine
 from drivers import simon_hardware
 from drivers import recovery_button
 from drivers import shutdown_button
+from drivers import blackout_button
 from drivers import accent_engine
 from drivers import blackout_engine
+from drivers import clock_guard
 from drivers import relay_engine
 from drivers.factoid_engine import save_track_cache
 from graphics.matrix_canvas import update_matrix_canvas, render_led_grid
@@ -44,6 +46,9 @@ from inputs import joypad_manual
 from web import remote_server
 from web import qr_popup
 from drivers import tunnel_engine
+from drivers import net_health_engine
+from drivers import strobe_engine
+from drivers import green_light_engine
 from drivers import web_sync
 from drivers import status_display_engine
 
@@ -64,17 +69,28 @@ def _handle_sigterm(signum, frame):
 
 def main():
     signal.signal(signal.SIGTERM, _handle_sigterm)
+    import config as _cfg
+    print(f"[VERSION] Triviacade {_cfg.APP_VERSION}", flush=True)
     clock = pygame.time.Clock()
     running = True
     qr_popup.init()
     secondary_canvas.init()
     joypad_manual.write_manual()
     tunnel_engine.start()
+    net_health_engine.start()
+    strobe_engine.start()
+    green_light_engine.start()
+    try:
+        from drivers.music_metadata_engine import music_metadata_engine
+        music_metadata_engine.stamp_date_added()
+    except Exception as e:
+        print(f"[MUSIC METADATA] date_added stamp failed: {e}")
     web_sync.start()
     status_display_engine.start()
     simon_hardware.init()
     recovery_button.init()
     shutdown_button.init()
+    blackout_button.init()
     accent_engine.init()
     relay_engine.init()
 
@@ -151,6 +167,10 @@ def main():
         _stage_t0 = time.perf_counter()
         clock.tick(40)
         _stage_t1 = time.perf_counter()
+        try:
+            clock_guard.update()  # NTP step after boot -> shift show timers (2026-10-26)
+        except Exception as e:
+            print(f"[CLOCK] Guard failed: {e}")
 
         # 1-5. Per-frame input/game-logic/render work, wrapped in a
         # catch-all (2026-09-20, added after an uncaught IndexError deep in
@@ -174,7 +194,8 @@ def main():
 
             # 2. Render the full 176-channel DMX frame (DJ uplighting themes,
             # game-mode chase, Fixture 1 win/loss/reset)
-            shutdown_button.poll(time.time())  # GPIO26 hold -> blackout + Pi poweroff
+            shutdown_button.poll(time.time())  # kill switch hold -> blackout + Pi poweroff
+            blackout_button.poll()  # blackout button press -> toggle
             blackout_engine.update(time.time())  # freezes the show clock while blacked out
             lighting_engine.update(time.time())
             _stage_t5 = time.perf_counter()
@@ -239,6 +260,7 @@ def main():
     simon_hardware.cleanup()
     recovery_button.cleanup()
     shutdown_button.cleanup()
+    blackout_button.cleanup()
     accent_engine.cleanup()
     relay_engine.cleanup()
     sfx_engine.cleanup()

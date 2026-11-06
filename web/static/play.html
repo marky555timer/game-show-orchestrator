@@ -346,7 +346,7 @@ button { cursor: pointer; font-family: var(--body); }
     <p>Scan to invite others -- same page, same game.</p>
   </section>
 
-  <label class="listen-row" for="listen-toggle">
+  <label class="listen-row hidden" id="listen-row" for="listen-toggle">
     <input type="checkbox" id="listen-toggle">
     <span>&#128266; Listen to the show</span>
   </label>
@@ -365,18 +365,20 @@ let playerId = localStorage.getItem('player_id');
 let myAvatarColor = localStorage.getItem('avatar_color') || AVATAR_COLORS[0];
 let selectedAvatarColor = myAvatarColor;
 let lastRoundId = null;
-let mySelection = -1;
-let lastChoices = [];
-let lastCorrectIndex = -1;
-let lastLocked = false;
 let lastRosterKey = '';
 
+// Gives up after 6 s: a stalled tunnel request must not hold up the polling
+// or an answer's retries (they try again instead).
 async function api(path, opts) {
+  const ctl = window.AbortController ? new AbortController() : null;
+  const timer = ctl && setTimeout(() => ctl.abort(), 6000);
   try {
-    const res = await fetch(path, opts);
+    const res = await fetch(path, Object.assign({}, opts, ctl ? {signal: ctl.signal} : {}));
     return await res.json();
   } catch (e) {
     return null;
+  } finally {
+    clearTimeout(timer);
   }
 }
 
@@ -419,6 +421,7 @@ async function join() {
   localStorage.setItem('player_id', playerId);
   localStorage.setItem('avatar_color', myAvatarColor);
   showPlayView(d.initials, 0);
+  poll();
 }
 
 async function renamePrompt() {
@@ -439,40 +442,87 @@ function showPlayView(initials, score) {
   document.getElementById('my-avatar').style.setProperty('--avatar-color', avatarColorVar(myAvatarColor));
 }
 
-async function selectChoice(index) {
-  const d = await api('/api/player/select', {
+// ---------------------------------------------------------------- snappy answers
+// (2026-10-18) Taps count the instant they happen: the phone highlights and
+// locks on its own and sends in the background (retrying through hiccups).
+// It keeps its clock in step with the Pi's (server_time on every poll), runs
+// the countdown itself and shows right/wrong the moment it reaches zero,
+// using the answer the question arrived with. The Pi is still the judge:
+// once it has graded, its answer, score and bonus replace the phone's guess.
+let _clockOffset = 0;          // Pi clock minus this phone's clock (seconds)
+let _clockSamples = [];        // [{rtt, off}] -- the quickest poll gives the best offset
+let _lastRtt = null;           // ms, reported with the next poll (connection health)
+let _polling = false;
+let _pollTimer = null;
+let lastD = null;              // the last /api/player/question reply
+let myPick = {round: null, index: -1, locked: false, touched: false, confirmed: false,
+              first: false, rejected: ''};
+
+function serverNow() { return Date.now() / 1000 + _clockOffset; }
+function noteClock(serverTime, rttMs) {
+  if (!serverTime) return;
+  _clockSamples.push({rtt: rttMs, off: serverTime - (Date.now() - rttMs / 2) / 1000});
+  if (_clockSamples.length > 12) _clockSamples.shift();
+  _clockOffset = _clockSamples.reduce((a, b) => (b.rtt < a.rtt ? b : a)).off;
+}
+
+function selectChoice(index) {
+  if (myPick.locked || questionRevealed(lastD)) return;
+  myPick.index = index;
+  myPick.touched = true;
+  renderQuestion(lastD);
+  api('/api/player/select', {   // so the panels can flip to the choices; lock carries the pick too
     method: 'POST', headers: {'Content-Type': 'application/json'},
     body: JSON.stringify({player_id: playerId, index}),
   });
-  if (d && d.ok) {
-    mySelection = index;
-    renderChoices(lastChoices, lastCorrectIndex, lastLocked);
-    document.getElementById('lock-btn').classList.remove('hidden');
-  }
 }
 
-async function lockAnswer() {
+function lockAnswer() {
+  if (myPick.locked || myPick.index < 0 || questionRevealed(lastD)) return;
+  myPick.locked = true;
+  myPick.touched = true;
+  renderQuestion(lastD);
+  sendLock(myPick.round, myPick.index, 0);
+  schedulePoll(500);
+}
+
+async function sendLock(round, index, tries) {
   const d = await api('/api/player/lock', {
     method: 'POST', headers: {'Content-Type': 'application/json'},
-    body: JSON.stringify({player_id: playerId}),
+    body: JSON.stringify({player_id: playerId, index, round_id: round}),
   });
+  if (myPick.round !== round) return;            // the game has moved on
   if (d && d.ok) {
-    document.getElementById('lock-btn').classList.add('hidden');
-    document.getElementById('locked-status').classList.remove('hidden');
-    document.querySelectorAll('.choice').forEach(b => b.disabled = true);
+    myPick.confirmed = true;
+    myPick.first = !!d.first;
+  } else if (d) {
+    myPick.rejected = d.reason || 'refused';     // e.g. arrived after time ran out
+  } else if (tries < 12 && !(lastD && lastD.locked_globally)) {
+    setTimeout(() => sendLock(round, index, tries + 1), 700);   // no answer: try again
+    return;
   }
+  renderQuestion(lastD);
 }
 
-function renderChoices(choices, correctIndex, locked) {
-  lastChoices = choices;
+function questionRevealed(d) {
+  if (!d || !d.active) return false;
+  return d.locked_globally || (d.deadline_at > 0 && serverNow() >= d.deadline_at);
+}
+
+let _choicesKey = '';
+function renderChoices(choices, correctIndex, revealed, frozen) {
+  const key = JSON.stringify([choices, myPick.index, correctIndex, revealed, frozen]);
+  if (key === _choicesKey) return;
+  _choicesKey = key;
   const box = document.getElementById('choices');
   box.innerHTML = '';
   choices.forEach((text, i) => {
     const b = document.createElement('button');
     let cls = 'choice';
-    if (i === mySelection) cls += ' selected';
-    if (locked && i === correctIndex) cls += ' correct';
+    if (i === myPick.index) cls += ' selected';
+    if (revealed && i === correctIndex) cls += ' correct';
     b.className = cls;
+    b.disabled = frozen;
     b.innerHTML = `<span class="k">${"ABCD"[i]}.</span> ${text}`;
     b.onclick = () => selectChoice(i);
     box.appendChild(b);
@@ -570,46 +620,72 @@ function renderRoundRoster(roster) {
 }
 
 let _medleyQid = null;
-let _medleyOpenTimer = null;
-async function medleyAnswer(value) {
-  document.getElementById('medley-true').disabled = true;
-  document.getElementById('medley-false').disabled = true;
-  await api('/api/player/medley-answer', {method: 'POST', headers: {'Content-Type': 'application/json'},
-    body: JSON.stringify({player_id: playerId, qid: _medleyQid, answer: value})});
-  poll();
+let medleyPick = {qid: null, value: null, first: false};
+let _medleyLocal = null;       // the statement we last saw, kept for the phone's own reveal
+function medleyAnswer(value) {
+  const m = lastD && lastD.medley;
+  if (!m || !m.active || medleyPick.qid === m.qid || serverNow() < m.opens_at) return;
+  medleyPick = {qid: m.qid, value, first: false};
+  renderMedley(m);
+  sendMedley(m.qid, value, 0);
+}
+async function sendMedley(qid, value, tries) {
+  const d = await api('/api/player/medley-answer', {method: 'POST', headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({player_id: playerId, qid, answer: value})});
+  if (medleyPick.qid !== qid) return;
+  if (d && d.ok) medleyPick.first = !!d.first;
+  else if (!d && tries < 12) { setTimeout(() => sendMedley(qid, value, tries + 1), 700); return; }
+  if (lastD && lastD.medley) renderMedley(lastD.medley);
+}
+
+function medleyRevealText(r) {
+  let t = r.was_true ? ('Yes — it was ' + r.real + '!') : ('Nope — not ' + r.shown + '. It was ' + r.real + '.');
+  if (r.correct === true) t += r.first ? '  +2 points — fastest finger!' : '  +1 point!';
+  else if (r.correct === false) t += '  (no point)';
+  return t;
 }
 
 function renderMedley(m) {
   const live = document.getElementById('medley-live');
   const rv = document.getElementById('medley-reveal');
   const res = document.getElementById('medley-results');
-  if (m.reveal) {
-    const r = m.reveal;
-    let t = r.was_true ? ('Yes — it was ' + r.real + '!') : ('Nope — not ' + r.shown + '. It was ' + r.real + '.');
-    if (r.correct === true) t += '  +1 point!';
-    else if (r.correct === false) t += '  (no point)';
-    rv.textContent = t;
-    rv.classList.toggle('wrong', r.correct === false);
+  const now = serverNow();
+  if (m.active && (!_medleyLocal || _medleyLocal.qid !== m.qid)) {
+    _medleyLocal = {qid: m.qid, shown: m.artist, real: m.real, was_true: m.is_true,
+                    deadline_at: m.deadline_at, until: m.deadline_at + (m.reveal_seconds || 4)};
+  } else if (m.active) {
+    _medleyLocal.deadline_at = m.deadline_at;   // the Pi may move it (pause, vocal drop)
+    _medleyLocal.until = m.deadline_at + (m.reveal_seconds || 4);
+  }
+  // The phone's own reveal the moment the hook ends, until the Pi's arrives.
+  let reveal = m.reveal;
+  const L = _medleyLocal;
+  const localEnded = !!L && now >= L.deadline_at && now < L.until && (!reveal || reveal.qid !== L.qid);
+  if (localEnded) {
+    const mine = medleyPick.qid === L.qid ? medleyPick.value : null;
+    reveal = {shown: L.shown, real: L.real, was_true: L.was_true, you: mine,
+              correct: mine === null ? null : mine === L.was_true, first: mine === L.was_true && medleyPick.first};
+  }
+  if (reveal) {
+    rv.textContent = medleyRevealText(reveal);
+    rv.classList.toggle('wrong', reveal.correct === false);
     rv.classList.remove('hidden');
   } else {
     rv.classList.add('hidden');
   }
-  if (m.active) {
+  if (m.active && now < m.deadline_at) {
     _medleyQid = m.qid;
     live.classList.remove('hidden');
     document.getElementById('medley-artist').textContent = m.artist + '?';
-    const pct = Math.max(0, Math.min(100, (m.remaining_seconds / m.total_seconds) * 100));
+    const pct = Math.max(0, Math.min(100, ((m.deadline_at - now) / m.total_seconds) * 100));
     document.getElementById('medley-timer').style.width = pct + '%';
-    const answered = (m.answered === true || m.answered === false);
-    const listening = !answered && m.opens_in > 0;
+    const mine = medleyPick.qid === m.qid ? medleyPick.value : m.answered;
+    const answered = (mine === true || mine === false);
+    const listening = !answered && now < m.opens_at;
     const t = document.getElementById('medley-true'), f = document.getElementById('medley-false');
     t.disabled = answered || listening; f.disabled = answered || listening;
-    t.classList.toggle('selected', m.answered === true);
-    f.classList.toggle('selected', m.answered === false);
-    if (listening) {  // unlock right on time instead of on the next 1.2 s poll
-      clearTimeout(_medleyOpenTimer);
-      _medleyOpenTimer = setTimeout(poll, Math.ceil(m.opens_in * 1000) + 50);
-    }
+    t.classList.toggle('selected', mine === true);
+    f.classList.toggle('selected', mine === false);
     document.getElementById('medley-answered').textContent = answered ? 'Locked in! Answer at the next song.'
       : listening ? 'Listen…' : 'One tap — first right answer gets a bonus point!';
   } else {
@@ -625,13 +701,36 @@ function renderMedley(m) {
   } else {
     res.classList.add('hidden');
   }
-  document.getElementById('medley-points').textContent = 'Medley points: ' + (m.points || 0);
+  // Points the Pi hasn't counted yet (its reveal still on the way).
+  const pending = localEnded && reveal.correct ? (reveal.first ? 2 : 1) : 0;
+  document.getElementById('medley-points').textContent = 'Medley points: ' + ((m.points || 0) + pending);
+  if (lastD) document.getElementById('my-score').textContent = (lastD.score || 0) + pending;
+}
+
+function schedulePoll(ms) {
+  clearTimeout(_pollTimer);
+  _pollTimer = setTimeout(poll, ms);
 }
 
 async function poll() {
   if (!playerId) return;
-  const d = await api('/api/player/question?player_id=' + encodeURIComponent(playerId));
+  if (_polling) return;          // a slow network must not pile requests up
+  _polling = true;
+  const t0 = performance.now();
+  let d = null;
+  try {
+    d = await api('/api/player/question?player_id=' + encodeURIComponent(playerId) +
+                  (_lastRtt !== null ? '&rtt=' + Math.round(_lastRtt) : ''));
+  } finally {
+    _polling = false;
+  }
+  const rtt = performance.now() - t0;
+  // Every 1.2 s; quicker while this phone is locked in and waiting on the reveal.
+  const waitingOnReveal = myPick.locked && lastD && lastD.active && !lastD.locked_globally;
+  schedulePoll(Math.max(200, (waitingOnReveal ? 500 : 1200) - rtt));
   if (!d) return;
+  _lastRtt = rtt;
+  noteClock(d.server_time, rtt);
   if (!d.ok) {
     // Server restarted or otherwise forgot us -- fall back to sign-up.
     localStorage.removeItem('player_id');
@@ -641,11 +740,11 @@ async function poll() {
     document.getElementById('signup-section').classList.remove('hidden');
     return;
   }
+  lastD = d;
 
   document.getElementById('my-score').textContent = d.score;
-  lastCorrectIndex = d.correct_index;
-  lastLocked = d.locked_globally;
   updateMediaSession(d.now_playing_title, d.now_playing_artist);
+  setListenAllowed(!!d.listen_enabled);
   if (d.avatar_color && d.avatar_color !== myAvatarColor) {
     myAvatarColor = d.avatar_color;
     localStorage.setItem('avatar_color', myAvatarColor);
@@ -670,13 +769,6 @@ async function poll() {
     winAvatarWrap.classList.add('hidden');
   }
 
-  const bonusBox = document.getElementById('bonus-message');
-  if (d.bonus_message) {
-    bonusBox.textContent = d.bonus_message;
-    bonusBox.classList.remove('hidden');
-  } else {
-    bonusBox.classList.add('hidden');
-  }
   const goalBox = document.getElementById('goal-message');
   if (d.win_message && d.win_score) {
     goalBox.textContent = `Goal: ${d.win_score} pts to win`;
@@ -687,25 +779,45 @@ async function poll() {
 
   if (d.round_id !== lastRoundId) {
     lastRoundId = d.round_id;
-    mySelection = d.selected_index;
-    document.getElementById('lock-btn').classList.add('hidden');
-    document.getElementById('locked-status').classList.add('hidden');
+    myPick = {round: d.round_id, index: d.selected_index, locked: d.locked, touched: false,
+              confirmed: d.locked, first: !!d.my_first, rejected: ''};
+    _choicesKey = '';
+  } else {
+    // What the Pi has on record, unless this phone has acted since.
+    if (d.locked) {
+      myPick.confirmed = true;
+      if (!myPick.touched) { myPick.locked = true; myPick.index = d.selected_index; }
+    } else if (!myPick.touched) {
+      myPick.index = d.selected_index;
+    }
+    if (d.my_first) myPick.first = true;
   }
+  render();
+}
 
+// Everything on screen comes from lastD plus what this phone did itself;
+// called by every poll and 5x a second so the countdown and the reveal
+// land on time between polls.
+function render() {
+  const d = lastD;
+  if (!d || !playerId) return;
   const waiting = document.getElementById('waiting-block');
   const qBlock = document.getElementById('question-block');
   const intermissionBlock = document.getElementById('intermission-block');
   const myAvatar = document.getElementById('my-avatar');
+  const bonusBox = document.getElementById('bonus-message');
 
   // Dance Medley game ("This is <artist>" true/false): takes over the whole
   // view while a statement, its reveal, or the results are up.
   const medleyBlock = document.getElementById('medley-block');
   const m = d.medley;
-  if (m && m.enabled !== false && (m.active || m.reveal || m.results)) {
+  const medleyLocalReveal = _medleyLocal && serverNow() < _medleyLocal.until;
+  if (m && m.enabled !== false && (m.active || m.reveal || m.results || medleyLocalReveal)) {
     medleyBlock.classList.remove('hidden');
     waiting.classList.add('hidden');
     qBlock.classList.add('hidden');
     intermissionBlock.classList.add('hidden');
+    bonusBox.classList.add('hidden');
     renderMedley(m);
     return;
   }
@@ -715,6 +827,7 @@ async function poll() {
     waiting.classList.add('hidden');
     qBlock.classList.add('hidden');
     intermissionBlock.classList.remove('hidden');
+    bonusBox.classList.add('hidden');
     setAvatarPose(myAvatar, 'idle');
     const remaining = Math.max(0, Math.round(d.intermission_remaining_seconds || 0));
     const mm = Math.floor(remaining / 60);
@@ -727,6 +840,8 @@ async function poll() {
   if (!d.active || d.win_message) {
     waiting.classList.remove('hidden');
     qBlock.classList.add('hidden');
+    if (d.bonus_message) { bonusBox.textContent = d.bonus_message; bonusBox.classList.remove('hidden'); }
+    else bonusBox.classList.add('hidden');
     document.getElementById('waiting-title').textContent =
       (d.mode === 'DJ') ? 'Waiting for the next song…' : 'Waiting for the next question…';
     renderLeaderboard(d.leaderboard, d.win_score);
@@ -741,37 +856,61 @@ async function poll() {
   }
   waiting.classList.add('hidden');
   qBlock.classList.remove('hidden');
+  renderQuestion(d);
+}
+
+function renderQuestion(d) {
+  if (!d || !d.active) return;
   document.getElementById('question-text').textContent = d.question;
-  renderChoices(d.choices, d.correct_index, d.locked_globally);
-  renderRoundRoster(d.round_roster);
+  const graded = !!d.locked_globally;               // the Pi has graded: its word is final
+  const revealed = questionRevealed(d);
+  const correctIdx = graded ? d.correct_index : d.answer_index;
+  const correction = graded ? d.correction : d.reveal_text;
+  // Did this phone's answer count?
+  const lateLock = myPick.locked && (!!myPick.rejected || (graded && !d.locked));
+  const answered = myPick.locked && !lateLock;
+  const right = answered && myPick.index === correctIdx;
+  const frozen = myPick.locked || revealed;
+  renderChoices(d.choices, correctIdx, revealed, frozen);
+  // Own card: this phone's result and points right away; the others follow
+  // when the Pi has graded.
+  const pendingPts = (revealed && !graded && right) ? ((d.bonus_round && myPick.first) ? 2 : 1) : 0;
+  renderRoundRoster(revealed && !graded ? (d.round_roster || []).map((p) => p.player_id !== playerId ? p
+    : Object.assign({}, p, {status: answered ? (right ? 'correct' : 'incorrect') : 'no_answer', score: p.score + pendingPts}))
+    : d.round_roster);
 
   const msgBox = document.getElementById('correct-message');
-  if (d.locked_globally) {
-    const gotItRight = mySelection === d.correct_index;
-    let msg = gotItRight ? 'Correct!' : 'Not quite.';
-    if (d.correction) {
-      msg = gotItRight ? `That's right! ${d.correction}` : `Actually, ${d.correction}`;
+  const myAvatar = document.getElementById('my-avatar');
+  if (revealed) {
+    let msg;
+    if (lateLock) msg = "Too late — that answer didn't reach the game in time.";
+    else if (!answered) msg = "Time's up!";
+    else msg = right ? 'Correct!' : 'Not quite.';
+    if (correction) {
+      msg = right ? `That's right! ${correction}` : `${msg} ${answered ? 'Actually, ' : ''}${correction}`;
     }
     msgBox.textContent = msg;
-    msgBox.classList.toggle('wrong', !gotItRight);
+    msgBox.classList.toggle('wrong', !right);
     msgBox.classList.remove('hidden');
-    setAvatarPose(myAvatar, gotItRight ? 'excited' : 'disappointed');
+    setAvatarPose(myAvatar, right ? 'excited' : (answered ? 'disappointed' : 'idle'));
   } else {
     msgBox.classList.add('hidden');
     setAvatarPose(myAvatar, 'idle');
   }
 
-  const total = d.timeout_seconds || 30;
-  const pct = Math.max(0, Math.min(100, (d.remaining_seconds / total) * 100));
-  document.getElementById('timer-fill').style.width = pct + '%';
+  // Bonus + score: the Pi's once graded, this phone's own until then.
+  const bonusBox = document.getElementById('bonus-message');
+  const myBonus = graded ? !!d.bonus_message : (revealed && right && d.bonus_round && myPick.first);
+  if (myBonus) { bonusBox.textContent = d.bonus_message || 'FIRST ONE RIGHT! BONUS POINT!'; bonusBox.classList.remove('hidden'); }
+  else bonusBox.classList.add('hidden');
+  document.getElementById('my-score').textContent = (d.score || 0) + pendingPts;
 
-  if (d.locked || d.locked_globally) {
-    document.querySelectorAll('.choice').forEach(b => b.disabled = true);
-    document.getElementById('lock-btn').classList.add('hidden');
-    if (d.locked) document.getElementById('locked-status').classList.remove('hidden');
-  } else if (d.selected_index >= 0) {
-    document.getElementById('lock-btn').classList.remove('hidden');
-  }
+  const total = d.timeout_seconds || 30;
+  const remaining = revealed ? 0 : Math.max(0, d.deadline_at - serverNow());
+  document.getElementById('timer-fill').style.width = Math.max(0, Math.min(100, (remaining / total) * 100)) + '%';
+
+  document.getElementById('lock-btn').classList.toggle('hidden', frozen || myPick.index < 0);
+  document.getElementById('locked-status').classList.toggle('hidden', !myPick.locked || revealed);
 }
 
 // Lock-screen / CarPlay "Now Playing" title (2026-08-19). NOT the same
@@ -807,6 +946,18 @@ function updateMediaSession(title, artist) {
 // to start -- unchecking fully drops the <audio> src (not just pause) so
 // the phone stops pulling the MP3 stream instead of buffering it unheard.
 const listenAudio = document.getElementById('listen-audio');
+// Hidden unless the running show turns it on in the Show Designer (2026-10-18):
+// each listening phone streams ~58 MB an hour through the tunnel.
+function setListenAllowed(on) {
+  document.getElementById('listen-row').classList.toggle('hidden', !on);
+  const box = document.getElementById('listen-toggle');
+  if (!on && box.checked) {
+    box.checked = false;
+    listenAudio.pause();
+    listenAudio.removeAttribute('src');
+    listenAudio.load();
+  }
+}
 document.getElementById('listen-toggle').addEventListener('change', (e) => {
   if (e.target.checked) {
     listenAudio.src = '/api/audio/stream?t=' + Date.now();
@@ -835,9 +986,19 @@ async function init() {
       playerId = null;
     }
   }
-  setInterval(poll, 1200);
   poll();
+  setInterval(render, 200);   // countdown + on-time reveal between polls
 }
+// A page going to the background (screen locked) says so, so a quiet phone
+// isn't mistaken for network trouble; coming back polls straight away.
+document.addEventListener('visibilitychange', () => {
+  if (!playerId) return;
+  if (document.visibilityState === 'hidden') {
+    if (navigator.sendBeacon) navigator.sendBeacon('/api/player/away?player_id=' + encodeURIComponent(playerId));
+  } else {
+    poll();
+  }
+});
 init();
 
 // LED-dot wordmark (2026-10-10): the same amber -> pink -> cyan dot display

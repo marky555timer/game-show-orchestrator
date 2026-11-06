@@ -9,6 +9,8 @@ from state import state
 from drivers import simon_hardware
 from drivers import midi_driver
 from drivers import relay_engine
+from drivers import honk_engine
+from drivers import strobe_engine
 from drivers import sfx_engine
 from audio.audio_engine import (
     simon_sounds, simon_intro_sound, play_processed_sound, raw_buzzer, pick_random_applause,
@@ -350,6 +352,8 @@ def press(pad, hold=False):
             # DJ deck back up right now instead of waiting.
             play_processed_sound(pick_random_applause(), volume=config.SIMON_SOUND_VOLUME)
             _restore_music()
+            honk_engine.simon_lost()   # duck-call SUPER BLAST
+            strobe_engine.flash(config.STROBE_SIMON_LOST_SECONDS, "(lost Simon)")
         return
 
     if hold:
@@ -631,6 +635,26 @@ def _poll_yellow_hold(buttons, now):
     _yellow_was_down = down
 
 
+_shutdown_combo_since = 0.0
+
+
+def _poll_shutdown_combo(buttons):
+    """Global (every mode and phase): green + blue held together for
+    SHUTDOWN_PANEL_COMBO_HOLD_SECONDS -> blackout + Pi poweroff. Monotonic
+    clock, same as the GPIO26 kill switch it backs up."""
+    global _shutdown_combo_since
+    if not all(buttons.get(c) for c in config.SHUTDOWN_PANEL_COMBO_COLORS):
+        _shutdown_combo_since = 0.0
+        return
+    mono = time.monotonic()
+    if not _shutdown_combo_since:
+        _shutdown_combo_since = mono
+    elif mono - _shutdown_combo_since >= config.SHUTDOWN_PANEL_COMBO_HOLD_SECONDS:
+        _shutdown_combo_since = mono + 3600  # latch; cleared on release
+        from drivers import shutdown_button
+        shutdown_button.request("PANEL BUTTONS (GREEN+BLUE HOLD)")
+
+
 def poll_hardware(now):
     """Per-frame poll, called unconditionally from inputs/gamepad.py::
     process_events() regardless of mode -- the physical arcade buttons work
@@ -652,6 +676,7 @@ def poll_hardware(now):
     buttons = simon_hardware.read_buttons()
     if not buttons:
         return
+    _poll_shutdown_combo(buttons)
     _poll_yellow_hold(buttons, now)
     pressed_colors = [c for c, is_down in buttons.items() if is_down and not _prev_hw_buttons.get(c)]
     released_colors = [c for c, is_down in buttons.items() if not is_down and _prev_hw_buttons.get(c)]
@@ -721,9 +746,10 @@ def poll_hardware(now):
         return
 
     if state.show_background:
-        # After the show, background music: someone wants to play -- encore.
+        # After the show: lights are out and the mellow music plays; any
+        # Simon button wakes the panel setup page to pick the next show.
         from drivers import show_engine
-        show_engine.start_encore()
+        show_engine.back_to_menu()
         return
 
     # Lazy import: importing drivers at this module's top level risks the

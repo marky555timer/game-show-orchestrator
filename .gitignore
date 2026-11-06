@@ -37,3 +37,12 @@ cue_previews/
 web_previews/
 web_auth.json
 admin_sessions.json
+
+# Generated analysis caches (300+ MB of .npy) and scratch logs from tools/add_tracks
+tools/add_tracks/hookcache/
+tools/add_tracks/*_out.txt
+tools/add_tracks/*_out2.txt
+tools/add_tracks/*.log
+tools/add_tracks/*.corrupt.json
+# OCR cache -- contained fragments of an API key screenshot
+ai_cleanup_cache.json

@@ -1,0 +1,2693 @@
+{
+ "ABBA - Dancing Queen.mp3": {
+  "key": "abba - dancing queen",
+  "decade": "1970s",
+  "genre": "Dance/Electronic",
+  "energy_rank": 5,
+  "slow_dance": false,
+  "never_charted": false,
+  "energy": "fast"
+ },
+ "ABBA - Take a Chance on Me.mp3": {
+  "key": "abba - take a chance on me",
+  "decade": "1970s",
+  "genre": "Adult Top 40",
+  "energy_rank": 4,
+  "slow_dance": false,
+  "never_charted": false,
+  "energy": "fast"
+ },
+ "ABBA - Waterloo.mp3": {
+  "key": "abba - waterloo",
+  "decade": "1970s",
+  "genre": "Adult Top 40",
+  "energy_rank": 4,
+  "slow_dance": false,
+  "never_charted": false,
+  "energy": "fast"
+ },
+ "ACDC - Highway to Hell.mp3": {
+  "key": "ac/dc - highway to hell",
+  "decade": "1970s",
+  "genre": "Rock",
+  "energy_rank": 5,
+  "slow_dance": false,
+  "never_charted": false,
+  "energy": "fast"
+ },
+ "Aerosmith - Crazy.mp3": {
+  "key": "aerosmith - crazy",
+  "decade": "1990s",
+  "genre": "Rock",
+  "energy_rank": 2,
+  "slow_dance": false,
+  "never_charted": false,
+  "energy": "slow"
+ },
+ "Aerosmith - Cryin'.mp3": {
+  "key": "aerosmith - cryin'",
+  "decade": "1990s",
+  "genre": "Rock",
+  "energy_rank": 3,
+  "slow_dance": false,
+  "never_charted": false,
+  "energy": "slow"
+ },
+ "Aerosmith - Dream On.mp3": {
+  "key": "aerosmith - dream on",
+  "decade": "1970s",
+  "genre": "Rock",
+  "energy_rank": 2,
+  "slow_dance": false,
+  "never_charted": false,
+  "energy": "dark"
+ },
+ "Aerosmith - Dude (Looks Like a Lady).mp3": {
+  "key": "aerosmith - dude (looks like a lady)",
+  "decade": "1980s",
+  "genre": "Rock",
+  "energy_rank": 5,
+  "slow_dance": false,
+  "never_charted": false,
+  "energy": "fast"
+ },
+ "Aerosmith - I Don't Want to Miss a Thing.mp3": {
+  "key": "aerosmith - i don't want to miss a thing",
+  "decade": "1990s",
+  "genre": "Rock",
+  "energy_rank": 2,
+  "slow_dance": true,
+  "never_charted": false,
+  "energy": "slow"
+ },
+ "Aerosmith - Livin' on the Edge.mp3": {
+  "key": "aerosmith - livin' on the edge",
+  "decade": "1990s",
+  "genre": "Rock",
+  "energy_rank": 3,
+  "slow_dance": false,
+  "never_charted": false,
+  "energy": "dark"
+ },
+ "Aerosmith - Love in an Elevator.mp3": {
+  "key": "aerosmith - love in an elevator",
+  "decade": "1980s",
+  "genre": "Rock",
+  "energy_rank": 5,
+  "slow_dance": false,
+  "never_charted": false,
+  "energy": "fast"
+ },
+ "Air Supply - Making Love Out of Nothing at All.mp3": {
+  "key": "air supply - making love out of nothing at all",
+  "decade": "1980s",
+  "genre": "Adult Top 40",
+  "energy_rank": 2,
+  "slow_dance": true,
+  "never_charted": false,
+  "energy": "slow"
+ },
+ "Alice Cooper - School's Out.mp3": {
+  "key": "alice cooper - school's out",
+  "decade": "1970s",
+  "genre": "Rock",
+  "energy_rank": 5,
+  "slow_dance": false,
+  "never_charted": false,
+  "energy": "fast"
+ },
+ "The Allman Brothers Band - Ramblin' Man.mp3": {
+  "key": "the allman brothers band - ramblin' man",
+  "decade": "1970s",
+  "genre": "Rock",
+  "energy_rank": 4,
+  "slow_dance": false,
+  "never_charted": false,
+  "energy": "fast"
+ },
+ "Bachman-Turner Overdrive - Takin' Care of Business.mp3": {
+  "key": "bachman-turner overdrive - takin' care of business",
+  "decade": "1970s",
+  "genre": "Rock",
+  "energy_rank": 4,
+  "slow_dance": false,
+  "never_charted": false,
+  "energy": "fast"
+ },
+ "Bachman-Turner Overdrive - You Ain't Seen Nothing Yet.mp3": {
+  "key": "bachman-turner overdrive - you ain't seen nothing yet",
+  "decade": "1970s",
+  "genre": "Rock",
+  "energy_rank": 4,
+  "slow_dance": false,
+  "never_charted": false,
+  "energy": "fast"
+ },
+ "Backstreet Boys - As Long as You Love Me.mp3": {
+  "key": "backstreet boys - as long as you love me",
+  "decade": "1990s",
+  "genre": "Adult Top 40",
+  "energy_rank": 3,
+  "slow_dance": false,
+  "never_charted": false,
+  "energy": "slow"
+ },
+ "Backstreet Boys - Everybody (Backstreet's Back).mp3": {
+  "key": "backstreet boys - everybody (backstreet's back)",
+  "decade": "1990s",
+  "genre": "Adult Top 40",
+  "energy_rank": 5,
+  "slow_dance": false,
+  "never_charted": false,
+  "energy": "fast"
+ },
+ "Backstreet Boys - Larger than Life.mp3": {
+  "key": "backstreet boys - larger than life",
+  "decade": "1990s",
+  "genre": "Adult Top 40",
+  "energy_rank": 5,
+  "slow_dance": false,
+  "never_charted": false,
+  "energy": "fast"
+ },
+ "Bad Company - Can't Get Enough.mp3": {
+  "key": "bad company - can't get enough",
+  "decade": "1970s",
+  "genre": "Rock",
+  "energy_rank": 4,
+  "slow_dance": false,
+  "never_charted": false,
+  "energy": "fast"
+ },
+ "Barenaked Ladies - One Week.mp3": {
+  "key": "barenaked ladies - one week",
+  "decade": "1990s",
+  "genre": "Adult Top 40",
+  "energy_rank": 4,
+  "slow_dance": false,
+  "never_charted": false,
+  "energy": "fast"
+ },
+ "Barry White - Can't Get Enough of Your Love, Babe.mp3": {
+  "key": "barry white - can't get enough of your love, babe",
+  "decade": "1970s",
+  "genre": "R&B/Soul",
+  "energy_rank": 3,
+  "slow_dance": false,
+  "never_charted": false,
+  "energy": "slow"
+ },
+ "The Beach Boys - Barbara Ann.mp3": {
+  "key": "the beach boys - barbara ann",
+  "decade": "1960s",
+  "genre": "Oldies/Classic",
+  "energy_rank": 4,
+  "slow_dance": false,
+  "never_charted": false,
+  "energy": "fast"
+ },
+ "The Beach Boys - California Girls.mp3": {
+  "key": "the beach boys - california girls",
+  "decade": "1960s",
+  "genre": "Oldies/Classic",
+  "energy_rank": 4,
+  "slow_dance": false,
+  "never_charted": false,
+  "energy": "fast"
+ },
+ "The Beach Boys - Fun, Fun, Fun.mp3": {
+  "key": "the beach boys - fun, fun, fun",
+  "decade": "1960s",
+  "genre": "Oldies/Classic",
+  "energy_rank": 4,
+  "slow_dance": false,
+  "never_charted": false,
+  "energy": "fast"
+ },
+ "The Beach Boys - Good Vibrations.mp3": {
+  "key": "the beach boys - good vibrations",
+  "decade": "1960s",
+  "genre": "Oldies/Classic",
+  "energy_rank": 4,
+  "slow_dance": false,
+  "never_charted": false,
+  "energy": "fast"
+ },
+ "The Beach Boys - I Get Around.mp3": {
+  "key": "the beach boys - i get around",
+  "decade": "1960s",
+  "genre": "Oldies/Classic",
+  "energy_rank": 4,
+  "slow_dance": false,
+  "never_charted": false,
+  "energy": "fast"
+ },
+ "The Beach Boys - Surfin' U.S.A..mp3": {
+  "key": "the beach boys - surfin' u.s.a.",
+  "decade": "1960s",
+  "genre": "Oldies/Classic",
+  "energy_rank": 5,
+  "slow_dance": false,
+  "never_charted": false,
+  "energy": "fast"
+ },
+ "Beastie Boys - (You Gotta) Fight for Your Right (To Party!).mp3": {
+  "key": "beastie boys - (you gotta) fight for your right (to party!)",
+  "decade": "1980s",
+  "genre": "Hip-Hop/Rap",
+  "energy_rank": 5,
+  "slow_dance": false,
+  "never_charted": false,
+  "energy": "fast"
+ },
+ "The Beatles - A Hard Day's Night.mp3": {
+  "key": "the beatles - a hard day's night",
+  "decade": "1960s",
+  "genre": "Oldies/Classic",
+  "energy_rank": 4,
+  "slow_dance": false,
+  "never_charted": false,
+  "energy": "fast"
+ },
+ "The Beatles - All You Need Is Love.mp3": {
+  "key": "the beatles - all you need is love",
+  "decade": "1960s",
+  "genre": "Oldies/Classic",
+  "energy_rank": 3,
+  "slow_dance": false,
+  "never_charted": false,
+  "energy": "slow"
+ },
+ "The Beatles - Can't Buy Me Love.mp3": {
+  "key": "the beatles - can't buy me love",
+  "decade": "1960s",
+  "genre": "Oldies/Classic",
+  "energy_rank": 4,
+  "slow_dance": false,
+  "never_charted": false,
+  "energy": "fast"
+ },
+ "The Beatles - Come Together.mp3": {
+  "key": "the beatles - come together",
+  "decade": "1960s",
+  "genre": "Rock",
+  "energy_rank": 3,
+  "slow_dance": false,
+  "never_charted": false,
+  "energy": "dark"
+ },
+ "The Beatles - Get Back.mp3": {
+  "key": "the beatles - get back",
+  "decade": "1960s",
+  "genre": "Rock",
+  "energy_rank": 4,
+  "slow_dance": false,
+  "never_charted": false,
+  "energy": "fast"
+ },
+ "The Beatles - Hello, Goodbye.mp3": {
+  "key": "the beatles - hello, goodbye",
+  "decade": "1960s",
+  "genre": "Oldies/Classic",
+  "energy_rank": 4,
+  "slow_dance": false,
+  "never_charted": false,
+  "energy": "fast"
+ },
+ "The Beatles - Help!.mp3": {
+  "key": "the beatles - help!",
+  "decade": "1960s",
+  "genre": "Oldies/Classic",
+  "energy_rank": 4,
+  "slow_dance": false,
+  "never_charted": false,
+  "energy": "fast"
+ },
+ "The Beatles - Here Comes the Sun.mp3": {
+  "key": "the beatles - here comes the sun",
+  "decade": "1960s",
+  "genre": "Oldies/Classic",
+  "energy_rank": 3,
+  "slow_dance": false,
+  "never_charted": true,
+  "energy": "slow"
+ },
+ "The Beatles - I Want to Hold Your Hand.mp3": {
+  "key": "the beatles - i want to hold your hand",
+  "decade": "1960s",
+  "genre": "Oldies/Classic",
+  "energy_rank": 4,
+  "slow_dance": false,
+  "never_charted": false,
+  "energy": "fast"
+ },
+ "The Beatles - Love Me Do.mp3": {
+  "key": "the beatles - love me do",
+  "decade": "1960s",
+  "genre": "Oldies/Classic",
+  "energy_rank": 3,
+  "slow_dance": false,
+  "never_charted": false,
+  "energy": "fast"
+ },
+ "The Beatles - Ob-La-Di, Ob-La-Da.mp3": {
+  "key": "the beatles - ob-la-di, ob-la-da",
+  "decade": "1960s",
+  "genre": "Oldies/Classic",
+  "energy_rank": 4,
+  "slow_dance": false,
+  "never_charted": false,
+  "energy": "fast"
+ },
+ "The Beatles - Penny Lane.mp3": {
+  "key": "the beatles - penny lane",
+  "decade": "1960s",
+  "genre": "Oldies/Classic",
+  "energy_rank": 3,
+  "slow_dance": false,
+  "never_charted": false,
+  "energy": "fast"
+ },
+ "The Beatles - She Loves You.mp3": {
+  "key": "the beatles - she loves you",
+  "decade": "1960s",
+  "genre": "Oldies/Classic",
+  "energy_rank": 4,
+  "slow_dance": false,
+  "never_charted": false,
+  "energy": "fast"
+ },
+ "The Beatles - Ticket to Ride.mp3": {
+  "key": "the beatles - ticket to ride",
+  "decade": "1960s",
+  "genre": "Oldies/Classic",
+  "energy_rank": 3,
+  "slow_dance": false,
+  "never_charted": false,
+  "energy": "fast"
+ },
+ "The Beatles - Twist and Shout.mp3": {
+  "key": "the beatles - twist and shout",
+  "decade": "1960s",
+  "genre": "Oldies/Classic",
+  "energy_rank": 5,
+  "slow_dance": false,
+  "never_charted": false,
+  "energy": "fast"
+ },
+ "The Beatles - Yellow Submarine.mp3": {
+  "key": "the beatles - yellow submarine",
+  "decade": "1960s",
+  "genre": "Oldies/Classic",
+  "energy_rank": 3,
+  "slow_dance": false,
+  "never_charted": false,
+  "energy": "fast"
+ },
+ "The Beatles - Yesterday.mp3": {
+  "key": "the beatles - yesterday",
+  "decade": "1960s",
+  "genre": "Oldies/Classic",
+  "energy_rank": 1,
+  "slow_dance": false,
+  "never_charted": false,
+  "energy": "slow"
+ },
+ "Bee Gees - How Deep Is Your Love.mp3": {
+  "key": "bee gees - how deep is your love",
+  "decade": "1970s",
+  "genre": "Adult Top 40",
+  "energy_rank": 2,
+  "slow_dance": true,
+  "never_charted": false,
+  "energy": "slow"
+ },
+ "Bee Gees - Jive Talkin'.mp3": {
+  "key": "bee gees - jive talkin'",
+  "decade": "1970s",
+  "genre": "Dance/Electronic",
+  "energy_rank": 4,
+  "slow_dance": false,
+  "never_charted": false,
+  "energy": "fast"
+ },
+ "Bee Gees - More Than a Woman.mp3": {
+  "key": "bee gees - more than a woman",
+  "decade": "1970s",
+  "genre": "Dance/Electronic",
+  "energy_rank": 3,
+  "slow_dance": false,
+  "never_charted": false,
+  "energy": "slow"
+ },
+ "Bee Gees - Stayin' Alive.mp3": {
+  "key": "bee gees - stayin' alive",
+  "decade": "1970s",
+  "genre": "Dance/Electronic",
+  "energy_rank": 5,
+  "slow_dance": false,
+  "never_charted": false,
+  "energy": "fast"
+ },
+ "Blondie - Heart of Glass.mp3": {
+  "key": "blondie - heart of glass",
+  "decade": "1970s",
+  "genre": "Dance/Electronic",
+  "energy_rank": 4,
+  "slow_dance": false,
+  "never_charted": false,
+  "energy": "fast"
+ },
+ "Bon Jovi - Wanted Dead or Alive.mp3": {
+  "key": "bon jovi - wanted dead or alive",
+  "decade": "1980s",
+  "genre": "Rock",
+  "energy_rank": 3,
+  "slow_dance": false,
+  "never_charted": false,
+  "energy": "dark"
+ },
+ "Boston - More Than a Feeling.mp3": {
+  "key": "boston - more than a feeling",
+  "decade": "1970s",
+  "genre": "Rock",
+  "energy_rank": 4,
+  "slow_dance": false,
+  "never_charted": false,
+  "energy": "fast"
+ },
+ "Brooks & Dunn - Boot Scootin' Boogie.mp3": {
+  "key": "brooks & dunn - boot scootin' boogie",
+  "decade": "1990s",
+  "genre": "Country",
+  "energy_rank": 5,
+  "slow_dance": false,
+  "never_charted": false,
+  "energy": "fast"
+ },
+ "Bruce Springsteen - Born in the U.S.A..mp3": {
+  "key": "bruce springsteen - born in the u.s.a.",
+  "decade": "1980s",
+  "genre": "Rock",
+  "energy_rank": 5,
+  "slow_dance": false,
+  "never_charted": false,
+  "energy": "fast"
+ },
+ "Bruce Springsteen - Born to Run.mp3": {
+  "key": "bruce springsteen - born to run",
+  "decade": "1970s",
+  "genre": "Rock",
+  "energy_rank": 4,
+  "slow_dance": false,
+  "never_charted": false,
+  "energy": "fast"
+ },
+ "Bryan Adams - (Everything I Do) I Do It for You.mp3": {
+  "key": "bryan adams - (everything i do) i do it for you",
+  "decade": "1990s",
+  "genre": "Adult Top 40",
+  "energy_rank": 2,
+  "slow_dance": true,
+  "never_charted": false,
+  "energy": "slow"
+ },
+ "Bryan Adams - Heaven.mp3": {
+  "key": "bryan adams - heaven",
+  "decade": "1980s",
+  "genre": "Adult Top 40",
+  "energy_rank": 2,
+  "slow_dance": true,
+  "never_charted": false,
+  "energy": "slow"
+ },
+ "Bryan Adams - Run to You.mp3": {
+  "key": "bryan adams - run to you",
+  "decade": "1980s",
+  "genre": "Rock",
+  "energy_rank": 4,
+  "slow_dance": false,
+  "never_charted": false,
+  "energy": "fast"
+ },
+ "Buster Poindexter - Hot Hot Hot.mp3": {
+  "key": "buster poindexter - hot hot hot",
+  "decade": "1980s",
+  "genre": "Dance/Electronic",
+  "energy_rank": 5,
+  "slow_dance": false,
+  "never_charted": false,
+  "energy": "fast"
+ },
+ "Cameo - Word Up!.mp3": {
+  "key": "cameo - word up!",
+  "decade": "1980s",
+  "genre": "R&B/Soul",
+  "energy_rank": 5,
+  "slow_dance": false,
+  "never_charted": false,
+  "energy": "fast"
+ },
+ "Carl Douglas - Kung Fu Fighting.mp3": {
+  "key": "carl douglas - kung fu fighting",
+  "decade": "1970s",
+  "genre": "Dance/Electronic",
+  "energy_rank": 4,
+  "slow_dance": false,
+  "never_charted": false,
+  "energy": "fast"
+ },
+ "The Cars - Just What I Needed.mp3": {
+  "key": "the cars - just what i needed",
+  "decade": "1970s",
+  "genre": "Rock",
+  "energy_rank": 4,
+  "slow_dance": false,
+  "never_charted": false,
+  "energy": "fast"
+ },
+ "The Cars - My Best Friend's Girl.mp3": {
+  "key": "the cars - my best friend's girl",
+  "decade": "1970s",
+  "genre": "Rock",
+  "energy_rank": 4,
+  "slow_dance": false,
+  "never_charted": false,
+  "energy": "fast"
+ },
+ "The Champs - Tequila.mp3": {
+  "key": "the champs - tequila",
+  "decade": "1950s",
+  "genre": "Oldies/Classic",
+  "energy_rank": 5,
+  "slow_dance": false,
+  "never_charted": false,
+  "energy": "fast"
+ },
+ "The Charlie Daniels Band - The Devil Went Down to Georgia.mp3": {
+  "key": "the charlie daniels band - the devil went down to georgia",
+  "decade": "1970s",
+  "genre": "Country",
+  "energy_rank": 5,
+  "slow_dance": false,
+  "never_charted": false,
+  "energy": "fast"
+ },
+ "Cheap Trick - I Want You to Want Me.mp3": {
+  "key": "cheap trick - i want you to want me",
+  "decade": "1970s",
+  "genre": "Rock",
+  "energy_rank": 4,
+  "slow_dance": false,
+  "never_charted": false,
+  "energy": "fast"
+ },
+ "Cher - Believe.mp3": {
+  "key": "cher - believe",
+  "decade": "1990s",
+  "genre": "Dance/Electronic",
+  "energy_rank": 5,
+  "slow_dance": false,
+  "never_charted": false,
+  "energy": "fast"
+ },
+ "Chicago - 25 or 6 to 4.mp3": {
+  "key": "chicago - 25 or 6 to 4",
+  "decade": "1970s",
+  "genre": "Rock",
+  "energy_rank": 4,
+  "slow_dance": false,
+  "never_charted": false,
+  "energy": "fast"
+ },
+ "Cream - Sunshine of Your Love.mp3": {
+  "key": "cream - sunshine of your love",
+  "decade": "1960s",
+  "genre": "Rock",
+  "energy_rank": 3,
+  "slow_dance": false,
+  "never_charted": false,
+  "energy": "dark"
+ },
+ "Creedence Clearwater Revival - Down on the Corner.mp3": {
+  "key": "creedence clearwater revival - down on the corner",
+  "decade": "1960s",
+  "genre": "Rock",
+  "energy_rank": 4,
+  "slow_dance": false,
+  "never_charted": false,
+  "energy": "fast"
+ },
+ "Creedence Clearwater Revival - Fortunate Son.mp3": {
+  "key": "creedence clearwater revival - fortunate son",
+  "decade": "1960s",
+  "genre": "Rock",
+  "energy_rank": 5,
+  "slow_dance": false,
+  "never_charted": false,
+  "energy": "fast"
+ },
+ "Creedence Clearwater Revival - Proud Mary.mp3": {
+  "key": "creedence clearwater revival - proud mary",
+  "decade": "1960s",
+  "genre": "Rock",
+  "energy_rank": 4,
+  "slow_dance": false,
+  "never_charted": false,
+  "energy": "fast"
+ },
+ "Creedence Clearwater Revival - Up Around the Bend.mp3": {
+  "key": "creedence clearwater revival - up around the bend",
+  "decade": "1970s",
+  "genre": "Rock",
+  "energy_rank": 4,
+  "slow_dance": false,
+  "never_charted": false,
+  "energy": "fast"
+ },
+ "Deep Purple - Smoke on the Water.mp3": {
+  "key": "deep purple - smoke on the water",
+  "decade": "1970s",
+  "genre": "Rock",
+  "energy_rank": 4,
+  "slow_dance": false,
+  "never_charted": false,
+  "energy": "dark"
+ },
+ "Def Leppard - Hysteria.mp3": {
+  "key": "def leppard - hysteria",
+  "decade": "1980s",
+  "genre": "Rock",
+  "energy_rank": 3,
+  "slow_dance": false,
+  "never_charted": false,
+  "energy": "slow"
+ },
+ "Def Leppard - Photograph.mp3": {
+  "key": "def leppard - photograph",
+  "decade": "1980s",
+  "genre": "Rock",
+  "energy_rank": 4,
+  "slow_dance": false,
+  "never_charted": false,
+  "energy": "fast"
+ },
+ "Def Leppard - Pour Some Sugar on Me.mp3": {
+  "key": "def leppard - pour some sugar on me",
+  "decade": "1980s",
+  "genre": "Rock",
+  "energy_rank": 5,
+  "slow_dance": false,
+  "never_charted": false,
+  "energy": "fast"
+ },
+ "Def Leppard - Rock of Ages.mp3": {
+  "key": "def leppard - rock of ages",
+  "decade": "1980s",
+  "genre": "Rock",
+  "energy_rank": 5,
+  "slow_dance": false,
+  "never_charted": false,
+  "energy": "fast"
+ },
+ "Diana Ross & Lionel Richie - Endless Love.mp3": {
+  "key": "diana ross & lionel richie - endless love",
+  "decade": "1980s",
+  "genre": "R&B/Soul",
+  "energy_rank": 1,
+  "slow_dance": true,
+  "never_charted": false,
+  "energy": "slow"
+ },
+ "Dolly Parton - Jolene.mp3": {
+  "key": "dolly parton - jolene",
+  "decade": "1970s",
+  "genre": "Country",
+  "energy_rank": 3,
+  "slow_dance": false,
+  "never_charted": false,
+  "energy": "dark"
+ },
+ "Kenny Rogers & Dolly Parton - Islands in the Stream.mp3": {
+  "key": "kenny rogers & dolly parton - islands in the stream",
+  "decade": "1980s",
+  "genre": "Country",
+  "energy_rank": 3,
+  "slow_dance": false,
+  "never_charted": false,
+  "energy": "slow"
+ },
+ "Don Henley - All She Wants to Do Is Dance.mp3": {
+  "key": "don henley - all she wants to do is dance",
+  "decade": "1980s",
+  "genre": "Rock",
+  "energy_rank": 4,
+  "slow_dance": false,
+  "never_charted": false,
+  "energy": "fast"
+ },
+ "The Doobie Brothers - Listen to the Music.mp3": {
+  "key": "the doobie brothers - listen to the music",
+  "decade": "1970s",
+  "genre": "Rock",
+  "energy_rank": 4,
+  "slow_dance": false,
+  "never_charted": false,
+  "energy": "fast"
+ },
+ "The Doobie Brothers - Long Train Runnin'.mp3": {
+  "key": "the doobie brothers - long train runnin'",
+  "decade": "1970s",
+  "genre": "Rock",
+  "energy_rank": 4,
+  "slow_dance": false,
+  "never_charted": false,
+  "energy": "fast"
+ },
+ "The Doors - Break On Through (To the Other Side).mp3": {
+  "key": "the doors - break on through (to the other side)",
+  "decade": "1960s",
+  "genre": "Rock",
+  "energy_rank": 4,
+  "slow_dance": false,
+  "never_charted": true,
+  "energy": "dark"
+ },
+ "The Doors - Hello, I Love You.mp3": {
+  "key": "the doors - hello, i love you",
+  "decade": "1960s",
+  "genre": "Rock",
+  "energy_rank": 4,
+  "slow_dance": false,
+  "never_charted": false,
+  "energy": "fast"
+ },
+ "The Doors - Light My Fire.mp3": {
+  "key": "the doors - light my fire",
+  "decade": "1960s",
+  "genre": "Rock",
+  "energy_rank": 3,
+  "slow_dance": false,
+  "never_charted": false,
+  "energy": "dark"
+ },
+ "The Doors - People Are Strange.mp3": {
+  "key": "the doors - people are strange",
+  "decade": "1960s",
+  "genre": "Rock",
+  "energy_rank": 3,
+  "slow_dance": false,
+  "never_charted": false,
+  "energy": "dark"
+ },
+ "The Doors - Roadhouse Blues.mp3": {
+  "key": "the doors - roadhouse blues",
+  "decade": "1970s",
+  "genre": "Rock",
+  "energy_rank": 4,
+  "slow_dance": false,
+  "never_charted": true,
+  "energy": "dark"
+ },
+ "Duran Duran - Rio.mp3": {
+  "key": "duran duran - rio",
+  "decade": "1980s",
+  "genre": "Adult Top 40",
+  "energy_rank": 4,
+  "slow_dance": false,
+  "never_charted": false,
+  "energy": "fast"
+ },
+ "Eagles - Desperado.mp3": {
+  "key": "eagles - desperado",
+  "decade": "1970s",
+  "genre": "Rock",
+  "energy_rank": 1,
+  "slow_dance": false,
+  "never_charted": true,
+  "energy": "slow"
+ },
+ "Eagles - Heartache Tonight.mp3": {
+  "key": "eagles - heartache tonight",
+  "decade": "1970s",
+  "genre": "Rock",
+  "energy_rank": 4,
+  "slow_dance": false,
+  "never_charted": false,
+  "energy": "fast"
+ },
+ "Eagles - Hotel California.mp3": {
+  "key": "eagles - hotel california",
+  "decade": "1970s",
+  "genre": "Rock",
+  "energy_rank": 3,
+  "slow_dance": false,
+  "never_charted": false,
+  "energy": "dark"
+ },
+ "Eagles - Life in the Fast Lane.mp3": {
+  "key": "eagles - life in the fast lane",
+  "decade": "1970s",
+  "genre": "Rock",
+  "energy_rank": 4,
+  "slow_dance": false,
+  "never_charted": false,
+  "energy": "fast"
+ },
+ "Eagles - Lyin' Eyes.mp3": {
+  "key": "eagles - lyin' eyes",
+  "decade": "1970s",
+  "genre": "Rock",
+  "energy_rank": 2,
+  "slow_dance": false,
+  "never_charted": false,
+  "energy": "slow"
+ },
+ "Eagles - Peaceful Easy Feeling.mp3": {
+  "key": "eagles - peaceful easy feeling",
+  "decade": "1970s",
+  "genre": "Rock",
+  "energy_rank": 2,
+  "slow_dance": false,
+  "never_charted": false,
+  "energy": "slow"
+ },
+ "Eagles - Take It to the Limit.mp3": {
+  "key": "eagles - take it to the limit",
+  "decade": "1970s",
+  "genre": "Rock",
+  "energy_rank": 2,
+  "slow_dance": true,
+  "never_charted": false,
+  "energy": "slow"
+ },
+ "Earth, Wind & Fire - Shining Star.mp3": {
+  "key": "earth, wind & fire - shining star",
+  "decade": "1970s",
+  "genre": "R&B/Soul",
+  "energy_rank": 4,
+  "slow_dance": false,
+  "never_charted": false,
+  "energy": "fast"
+ },
+ "Edwin Starr - War.mp3": {
+  "key": "edwin starr - war",
+  "decade": "1970s",
+  "genre": "R&B/Soul",
+  "energy_rank": 4,
+  "slow_dance": false,
+  "never_charted": false,
+  "energy": "dark"
+ },
+ "Eiffel 65 - Blue (Da Ba Dee).mp3": {
+  "key": "eiffel 65 - blue (da ba dee)",
+  "decade": "1990s",
+  "genre": "Dance/Electronic",
+  "energy_rank": 5,
+  "slow_dance": false,
+  "never_charted": false,
+  "energy": "fast"
+ },
+ "Electric Light Orchestra - Mr. Blue Sky.mp3": {
+  "key": "electric light orchestra - mr. blue sky",
+  "decade": "1970s",
+  "genre": "Rock",
+  "energy_rank": 4,
+  "slow_dance": false,
+  "never_charted": false,
+  "energy": "fast"
+ },
+ "Elton John - Crocodile Rock.mp3": {
+  "key": "elton john - crocodile rock",
+  "decade": "1970s",
+  "genre": "Adult Top 40",
+  "energy_rank": 5,
+  "slow_dance": false,
+  "never_charted": false,
+  "energy": "fast"
+ },
+ "Elton John - Goodbye Yellow Brick Road.mp3": {
+  "key": "elton john - goodbye yellow brick road",
+  "decade": "1970s",
+  "genre": "Adult Top 40",
+  "energy_rank": 2,
+  "slow_dance": false,
+  "never_charted": false,
+  "energy": "slow"
+ },
+ "Elton John - I'm Still Standing.mp3": {
+  "key": "elton john - i'm still standing",
+  "decade": "1980s",
+  "genre": "Adult Top 40",
+  "energy_rank": 5,
+  "slow_dance": false,
+  "never_charted": false,
+  "energy": "fast"
+ },
+ "Elton John - Rocket Man (I Think It's Going to Be a Long, Long Time).mp3": {
+  "key": "elton john - rocket man (i think it's going to be a long, long time)",
+  "decade": "1970s",
+  "genre": "Adult Top 40",
+  "energy_rank": 2,
+  "slow_dance": false,
+  "never_charted": false,
+  "energy": "slow"
+ },
+ "Elton John - Saturday Night's Alright for Fighting.mp3": {
+  "key": "elton john - saturday night's alright for fighting",
+  "decade": "1970s",
+  "genre": "Rock",
+  "energy_rank": 5,
+  "slow_dance": false,
+  "never_charted": false,
+  "energy": "fast"
+ },
+ "Elton John - Tiny Dancer.mp3": {
+  "key": "elton john - tiny dancer",
+  "decade": "1970s",
+  "genre": "Adult Top 40",
+  "energy_rank": 2,
+  "slow_dance": false,
+  "never_charted": false,
+  "energy": "slow"
+ },
+ "Elton John - Your Song.mp3": {
+  "key": "elton john - your song",
+  "decade": "1970s",
+  "genre": "Adult Top 40",
+  "energy_rank": 1,
+  "slow_dance": true,
+  "never_charted": false,
+  "energy": "slow"
+ },
+ "Elvin Bishop - Fooled Around and Fell in Love.mp3": {
+  "key": "elvin bishop - fooled around and fell in love",
+  "decade": "1970s",
+  "genre": "Rock",
+  "energy_rank": 2,
+  "slow_dance": true,
+  "never_charted": false,
+  "energy": "slow"
+ },
+ "Elvis Presley - All Shook Up.mp3": {
+  "key": "elvis presley - all shook up",
+  "decade": "1950s",
+  "genre": "Oldies/Classic",
+  "energy_rank": 4,
+  "slow_dance": false,
+  "never_charted": false,
+  "energy": "fast"
+ },
+ "Elvis Presley - Burning Love.mp3": {
+  "key": "elvis presley - burning love",
+  "decade": "1970s",
+  "genre": "Oldies/Classic",
+  "energy_rank": 5,
+  "slow_dance": false,
+  "never_charted": false,
+  "energy": "fast"
+ },
+ "Elvis Presley - Can't Help Falling in Love.mp3": {
+  "key": "elvis presley - can't help falling in love",
+  "decade": "1960s",
+  "genre": "Oldies/Classic",
+  "energy_rank": 1,
+  "slow_dance": true,
+  "never_charted": false,
+  "energy": "slow"
+ },
+ "Elvis Presley - Don't Be Cruel.mp3": {
+  "key": "elvis presley - don't be cruel",
+  "decade": "1950s",
+  "genre": "Oldies/Classic",
+  "energy_rank": 4,
+  "slow_dance": false,
+  "never_charted": false,
+  "energy": "fast"
+ },
+ "Elvis Presley - Heartbreak Hotel.mp3": {
+  "key": "elvis presley - heartbreak hotel",
+  "decade": "1950s",
+  "genre": "Oldies/Classic",
+  "energy_rank": 3,
+  "slow_dance": false,
+  "never_charted": false,
+  "energy": "dark"
+ },
+ "Elvis Presley - Return to Sender.mp3": {
+  "key": "elvis presley - return to sender",
+  "decade": "1960s",
+  "genre": "Oldies/Classic",
+  "energy_rank": 4,
+  "slow_dance": false,
+  "never_charted": false,
+  "energy": "fast"
+ },
+ "Eric Clapton - Lay Down Sally.mp3": {
+  "key": "eric clapton - lay down sally",
+  "decade": "1970s",
+  "genre": "Rock",
+  "energy_rank": 3,
+  "slow_dance": false,
+  "never_charted": false,
+  "energy": "fast"
+ },
+ "Derek and the Dominos - Layla.mp3": {
+  "key": "derek and the dominos - layla",
+  "decade": "1970s",
+  "genre": "Rock",
+  "energy_rank": 4,
+  "slow_dance": false,
+  "never_charted": false,
+  "energy": "dark"
+ },
+ "Eric Clapton - Wonderful Tonight.mp3": {
+  "key": "eric clapton - wonderful tonight",
+  "decade": "1970s",
+  "genre": "Rock",
+  "energy_rank": 1,
+  "slow_dance": true,
+  "never_charted": false,
+  "energy": "slow"
+ },
+ "The Escape Club - Wild, Wild West.mp3": {
+  "key": "the escape club - wild, wild west",
+  "decade": "1980s",
+  "genre": "Adult Top 40",
+  "energy_rank": 4,
+  "slow_dance": false,
+  "never_charted": false,
+  "energy": "fast"
+ },
+ "Extreme - More Than Words.mp3": {
+  "key": "extreme - more than words",
+  "decade": "1990s",
+  "genre": "Rock",
+  "energy_rank": 1,
+  "slow_dance": true,
+  "never_charted": false,
+  "energy": "slow"
+ },
+ "Fleetwood Mac - Don't Stop.mp3": {
+  "key": "fleetwood mac - don't stop",
+  "decade": "1970s",
+  "genre": "Rock",
+  "energy_rank": 4,
+  "slow_dance": false,
+  "never_charted": false,
+  "energy": "fast"
+ },
+ "Fleetwood Mac - Go Your Own Way.mp3": {
+  "key": "fleetwood mac - go your own way",
+  "decade": "1970s",
+  "genre": "Rock",
+  "energy_rank": 4,
+  "slow_dance": false,
+  "never_charted": false,
+  "energy": "fast"
+ },
+ "Fleetwood Mac - Landslide.mp3": {
+  "key": "fleetwood mac - landslide",
+  "decade": "1970s",
+  "genre": "Rock",
+  "energy_rank": 1,
+  "slow_dance": false,
+  "never_charted": true,
+  "energy": "slow"
+ },
+ "Fleetwood Mac - Little Lies.mp3": {
+  "key": "fleetwood mac - little lies",
+  "decade": "1980s",
+  "genre": "Adult Top 40",
+  "energy_rank": 3,
+  "slow_dance": false,
+  "never_charted": false,
+  "energy": "fast"
+ },
+ "Fleetwood Mac - Rhiannon.mp3": {
+  "key": "fleetwood mac - rhiannon",
+  "decade": "1970s",
+  "genre": "Rock",
+  "energy_rank": 3,
+  "slow_dance": false,
+  "never_charted": false,
+  "energy": "dark"
+ },
+ "Foreigner - Cold as Ice.mp3": {
+  "key": "foreigner - cold as ice",
+  "decade": "1970s",
+  "genre": "Rock",
+  "energy_rank": 4,
+  "slow_dance": false,
+  "never_charted": false,
+  "energy": "dark"
+ },
+ "Foreigner - Hot Blooded.mp3": {
+  "key": "foreigner - hot blooded",
+  "decade": "1970s",
+  "genre": "Rock",
+  "energy_rank": 5,
+  "slow_dance": false,
+  "never_charted": false,
+  "energy": "fast"
+ },
+ "Foreigner - Juke Box Hero.mp3": {
+  "key": "foreigner - juke box hero",
+  "decade": "1980s",
+  "genre": "Rock",
+  "energy_rank": 4,
+  "slow_dance": false,
+  "never_charted": false,
+  "energy": "dark"
+ },
+ "Foreigner - Urgent.mp3": {
+  "key": "foreigner - urgent",
+  "decade": "1980s",
+  "genre": "Rock",
+  "energy_rank": 4,
+  "slow_dance": false,
+  "never_charted": false,
+  "energy": "fast"
+ },
+ "Foreigner - Waiting for a Girl Like You.mp3": {
+  "key": "foreigner - waiting for a girl like you",
+  "decade": "1980s",
+  "genre": "Rock",
+  "energy_rank": 2,
+  "slow_dance": true,
+  "never_charted": false,
+  "energy": "slow"
+ },
+ "Four Tops - Reach Out I'll Be There.mp3": {
+  "key": "four tops - reach out i'll be there",
+  "decade": "1960s",
+  "genre": "R&B/Soul",
+  "energy_rank": 4,
+  "slow_dance": false,
+  "never_charted": false,
+  "energy": "fast"
+ },
+ "The Four Seasons - Big Girls Don't Cry.mp3": {
+  "key": "the four seasons - big girls don't cry",
+  "decade": "1960s",
+  "genre": "Oldies/Classic",
+  "energy_rank": 3,
+  "slow_dance": false,
+  "never_charted": false,
+  "energy": "fast"
+ },
+ "The Four Seasons - Sherry.mp3": {
+  "key": "the four seasons - sherry",
+  "decade": "1960s",
+  "genre": "Oldies/Classic",
+  "energy_rank": 4,
+  "slow_dance": false,
+  "never_charted": false,
+  "energy": "fast"
+ },
+ "The Gap Band - Early in the Morning.mp3": {
+  "key": "the gap band - early in the morning",
+  "decade": "1980s",
+  "genre": "R&B/Soul",
+  "energy_rank": 4,
+  "slow_dance": false,
+  "never_charted": false,
+  "energy": "fast"
+ },
+ "Garth Brooks - Friends in Low Places.mp3": {
+  "key": "garth brooks - friends in low places",
+  "decade": "1990s",
+  "genre": "Country",
+  "energy_rank": 4,
+  "slow_dance": false,
+  "never_charted": false,
+  "energy": "fast"
+ },
+ "George Clinton - Atomic Dog.mp3": {
+  "key": "george clinton - atomic dog",
+  "decade": "1980s",
+  "genre": "R&B/Soul",
+  "energy_rank": 4,
+  "slow_dance": false,
+  "never_charted": false,
+  "energy": "fast"
+ },
+ "George Thorogood & The Destroyers - Bad to the Bone.mp3": {
+  "key": "george thorogood & the destroyers - bad to the bone",
+  "decade": "1980s",
+  "genre": "Rock",
+  "energy_rank": 3,
+  "slow_dance": false,
+  "never_charted": false,
+  "energy": "dark"
+ },
+ "Grand Funk Railroad - We're an American Band.mp3": {
+  "key": "grand funk railroad - we're an american band",
+  "decade": "1970s",
+  "genre": "Rock",
+  "energy_rank": 5,
+  "slow_dance": false,
+  "never_charted": false,
+  "energy": "fast"
+ },
+ "The Guess Who - American Woman.mp3": {
+  "key": "the guess who - american woman",
+  "decade": "1970s",
+  "genre": "Rock",
+  "energy_rank": 4,
+  "slow_dance": false,
+  "never_charted": false,
+  "energy": "dark"
+ },
+ "Daryl Hall & John Oates - Rich Girl.mp3": {
+  "key": "daryl hall & john oates - rich girl",
+  "decade": "1970s",
+  "genre": "Adult Top 40",
+  "energy_rank": 3,
+  "slow_dance": false,
+  "never_charted": false,
+  "energy": "fast"
+ },
+ "Daryl Hall & John Oates - Sara Smile.mp3": {
+  "key": "daryl hall & john oates - sara smile",
+  "decade": "1970s",
+  "genre": "R&B/Soul",
+  "energy_rank": 2,
+  "slow_dance": true,
+  "never_charted": false,
+  "energy": "slow"
+ },
+ "Daryl Hall & John Oates - You Make My Dreams.mp3": {
+  "key": "daryl hall & john oates - you make my dreams",
+  "decade": "1980s",
+  "genre": "Adult Top 40",
+  "energy_rank": 5,
+  "slow_dance": false,
+  "never_charted": false,
+  "energy": "fast"
+ },
+ "Heart - Alone.mp3": {
+  "key": "heart - alone",
+  "decade": "1980s",
+  "genre": "Rock",
+  "energy_rank": 2,
+  "slow_dance": false,
+  "never_charted": false,
+  "energy": "slow"
+ },
+ "The Hollies - Long Cool Woman in a Black Dress.mp3": {
+  "key": "the hollies - long cool woman in a black dress",
+  "decade": "1970s",
+  "genre": "Rock",
+  "energy_rank": 4,
+  "slow_dance": false,
+  "never_charted": false,
+  "energy": "fast"
+ },
+ "Hootie & the Blowfish - Hold My Hand.mp3": {
+  "key": "hootie & the blowfish - hold my hand",
+  "decade": "1990s",
+  "genre": "Rock",
+  "energy_rank": 3,
+  "slow_dance": false,
+  "never_charted": false,
+  "energy": "fast"
+ },
+ "Hootie & the Blowfish - Only Wanna Be with You.mp3": {
+  "key": "hootie & the blowfish - only wanna be with you",
+  "decade": "1990s",
+  "genre": "Rock",
+  "energy_rank": 4,
+  "slow_dance": false,
+  "never_charted": false,
+  "energy": "fast"
+ },
+ "The Hues Corporation - Rock the Boat.mp3": {
+  "key": "the hues corporation - rock the boat",
+  "decade": "1970s",
+  "genre": "Dance/Electronic",
+  "energy_rank": 3,
+  "slow_dance": false,
+  "never_charted": false,
+  "energy": "fast"
+ },
+ "Ini Kamoze - Here Comes the Hotstepper.mp3": {
+  "key": "ini kamoze - here comes the hotstepper",
+  "decade": "1990s",
+  "genre": "Hip-Hop/Rap",
+  "energy_rank": 4,
+  "slow_dance": false,
+  "never_charted": false,
+  "energy": "fast"
+ },
+ "INXS - Devil Inside.mp3": {
+  "key": "inxs - devil inside",
+  "decade": "1980s",
+  "genre": "Rock",
+  "energy_rank": 4,
+  "slow_dance": false,
+  "never_charted": false,
+  "energy": "dark"
+ },
+ "INXS - Need You Tonight.mp3": {
+  "key": "inxs - need you tonight",
+  "decade": "1980s",
+  "genre": "Rock",
+  "energy_rank": 4,
+  "slow_dance": false,
+  "never_charted": false,
+  "energy": "dark"
+ },
+ "The Jackson 5 - The Love You Save.mp3": {
+  "key": "the jackson 5 - the love you save",
+  "decade": "1970s",
+  "genre": "R&B/Soul",
+  "energy_rank": 5,
+  "slow_dance": false,
+  "never_charted": false,
+  "energy": "fast"
+ },
+ "James Gang - Walk Away.mp3": {
+  "key": "james gang - walk away",
+  "decade": "1970s",
+  "genre": "Rock",
+  "energy_rank": 4,
+  "slow_dance": false,
+  "never_charted": false,
+  "energy": "fast"
+ },
+ "Jimmy Buffett - Cheeseburger in Paradise.mp3": {
+  "key": "jimmy buffett - cheeseburger in paradise",
+  "decade": "1970s",
+  "genre": "Country",
+  "energy_rank": 3,
+  "slow_dance": false,
+  "never_charted": false,
+  "energy": "fast"
+ },
+ "Jimmy Buffett - Margaritaville.mp3": {
+  "key": "jimmy buffett - margaritaville",
+  "decade": "1970s",
+  "genre": "Country",
+  "energy_rank": 2,
+  "slow_dance": false,
+  "never_charted": false,
+  "energy": "slow"
+ },
+ "Johnny Cash - Folsom Prison Blues.mp3": {
+  "key": "johnny cash - folsom prison blues",
+  "decade": "1950s",
+  "genre": "Country",
+  "energy_rank": 3,
+  "slow_dance": false,
+  "never_charted": false,
+  "energy": "dark"
+ },
+ "Journey - Faithfully.mp3": {
+  "key": "journey - faithfully",
+  "decade": "1980s",
+  "genre": "Rock",
+  "energy_rank": 2,
+  "slow_dance": true,
+  "never_charted": false,
+  "energy": "slow"
+ },
+ "Kansas - Carry On Wayward Son.mp3": {
+  "key": "kansas - carry on wayward son",
+  "decade": "1970s",
+  "genre": "Rock",
+  "energy_rank": 4,
+  "slow_dance": false,
+  "never_charted": false,
+  "energy": "dark"
+ },
+ "Kansas - Dust in the Wind.mp3": {
+  "key": "kansas - dust in the wind",
+  "decade": "1970s",
+  "genre": "Rock",
+  "energy_rank": 1,
+  "slow_dance": false,
+  "never_charted": false,
+  "energy": "slow"
+ },
+ "KC & The Sunshine Band - Boogie Shoes.mp3": {
+  "key": "kc & the sunshine band - boogie shoes",
+  "decade": "1970s",
+  "genre": "Dance/Electronic",
+  "energy_rank": 5,
+  "slow_dance": false,
+  "never_charted": false,
+  "energy": "fast"
+ },
+ "Kenny Loggins - Danger Zone.mp3": {
+  "key": "kenny loggins - danger zone",
+  "decade": "1980s",
+  "genre": "Rock",
+  "energy_rank": 5,
+  "slow_dance": false,
+  "never_charted": false,
+  "energy": "fast"
+ },
+ "Kiss - Beth.mp3": {
+  "key": "kiss - beth",
+  "decade": "1970s",
+  "genre": "Rock",
+  "energy_rank": 1,
+  "slow_dance": false,
+  "never_charted": false,
+  "energy": "slow"
+ },
+ "Kiss - Detroit Rock City.mp3": {
+  "key": "kiss - detroit rock city",
+  "decade": "1970s",
+  "genre": "Rock",
+  "energy_rank": 5,
+  "slow_dance": false,
+  "never_charted": false,
+  "energy": "fast"
+ },
+ "Kiss - I Was Made for Lovin' You.mp3": {
+  "key": "kiss - i was made for lovin' you",
+  "decade": "1970s",
+  "genre": "Dance/Electronic",
+  "energy_rank": 5,
+  "slow_dance": false,
+  "never_charted": false,
+  "energy": "fast"
+ },
+ "Kiss - Rock and Roll All Nite.mp3": {
+  "key": "kiss - rock and roll all nite",
+  "decade": "1970s",
+  "genre": "Rock",
+  "energy_rank": 5,
+  "slow_dance": false,
+  "never_charted": false,
+  "energy": "fast"
+ },
+ "Kool & The Gang - Celebration.mp3": {
+  "key": "kool & the gang - celebration",
+  "decade": "1980s",
+  "genre": "Dance/Electronic",
+  "energy_rank": 5,
+  "slow_dance": false,
+  "never_charted": false,
+  "energy": "fast"
+ },
+ "Kool & The Gang - Ladies' Night.mp3": {
+  "key": "kool & the gang - ladies' night",
+  "decade": "1970s",
+  "genre": "Dance/Electronic",
+  "energy_rank": 4,
+  "slow_dance": false,
+  "never_charted": false,
+  "energy": "fast"
+ },
+ "Labelle - Lady Marmalade.mp3": {
+  "key": "labelle - lady marmalade",
+  "decade": "1970s",
+  "genre": "R&B/Soul",
+  "energy_rank": 4,
+  "slow_dance": false,
+  "never_charted": false,
+  "energy": "fast"
+ },
+ "Led Zeppelin - Black Dog.mp3": {
+  "key": "led zeppelin - black dog",
+  "decade": "1970s",
+  "genre": "Rock",
+  "energy_rank": 4,
+  "slow_dance": false,
+  "never_charted": false,
+  "energy": "dark"
+ },
+ "Led Zeppelin - Immigrant Song.mp3": {
+  "key": "led zeppelin - immigrant song",
+  "decade": "1970s",
+  "genre": "Rock",
+  "energy_rank": 5,
+  "slow_dance": false,
+  "never_charted": false,
+  "energy": "dark"
+ },
+ "Led Zeppelin - Rock and Roll.mp3": {
+  "key": "led zeppelin - rock and roll",
+  "decade": "1970s",
+  "genre": "Rock",
+  "energy_rank": 5,
+  "slow_dance": false,
+  "never_charted": false,
+  "energy": "fast"
+ },
+ "Lesley Gore - It's My Party.mp3": {
+  "key": "lesley gore - it's my party",
+  "decade": "1960s",
+  "genre": "Oldies/Classic",
+  "energy_rank": 3,
+  "slow_dance": false,
+  "never_charted": false,
+  "energy": "fast"
+ },
+ "Lipps Inc. - Funkytown.mp3": {
+  "key": "lipps inc. - funkytown",
+  "decade": "1980s",
+  "genre": "Dance/Electronic",
+  "energy_rank": 5,
+  "slow_dance": false,
+  "never_charted": false,
+  "energy": "fast"
+ },
+ "Lynyrd Skynyrd - Gimme Three Steps.mp3": {
+  "key": "lynyrd skynyrd - gimme three steps",
+  "decade": "1970s",
+  "genre": "Rock",
+  "energy_rank": 4,
+  "slow_dance": false,
+  "never_charted": false,
+  "energy": "fast"
+ },
+ "Lynyrd Skynyrd - Sweet Home Alabama.mp3": {
+  "key": "lynyrd skynyrd - sweet home alabama",
+  "decade": "1970s",
+  "genre": "Rock",
+  "energy_rank": 5,
+  "slow_dance": false,
+  "never_charted": false,
+  "energy": "fast"
+ },
+ "Madonna - Express Yourself.mp3": {
+  "key": "madonna - express yourself",
+  "decade": "1980s",
+  "genre": "Dance/Electronic",
+  "energy_rank": 5,
+  "slow_dance": false,
+  "never_charted": false,
+  "energy": "fast"
+ },
+ "Madonna - Holiday.mp3": {
+  "key": "madonna - holiday",
+  "decade": "1980s",
+  "genre": "Dance/Electronic",
+  "energy_rank": 5,
+  "slow_dance": false,
+  "never_charted": false,
+  "energy": "fast"
+ },
+ "Madonna - Material Girl.mp3": {
+  "key": "madonna - material girl",
+  "decade": "1980s",
+  "genre": "Adult Top 40",
+  "energy_rank": 4,
+  "slow_dance": false,
+  "never_charted": false,
+  "energy": "fast"
+ },
+ "Madonna - Vogue.mp3": {
+  "key": "madonna - vogue",
+  "decade": "1990s",
+  "genre": "Dance/Electronic",
+  "energy_rank": 5,
+  "slow_dance": false,
+  "never_charted": false,
+  "energy": "fast"
+ },
+ "Mary Wells - My Guy.mp3": {
+  "key": "mary wells - my guy",
+  "decade": "1960s",
+  "genre": "R&B/Soul",
+  "energy_rank": 3,
+  "slow_dance": false,
+  "never_charted": false,
+  "energy": "fast"
+ },
+ "Metallica - Enter Sandman.mp3": {
+  "key": "metallica - enter sandman",
+  "decade": "1990s",
+  "genre": "Rock",
+  "energy_rank": 4,
+  "slow_dance": false,
+  "never_charted": false,
+  "energy": "dark"
+ },
+ "Michael Jackson - Bad.mp3": {
+  "key": "michael jackson - bad",
+  "decade": "1980s",
+  "genre": "Adult Top 40",
+  "energy_rank": 5,
+  "slow_dance": false,
+  "never_charted": false,
+  "energy": "fast"
+ },
+ "Michael Jackson - Smooth Criminal.mp3": {
+  "key": "michael jackson - smooth criminal",
+  "decade": "1980s",
+  "genre": "Adult Top 40",
+  "energy_rank": 5,
+  "slow_dance": false,
+  "never_charted": false,
+  "energy": "dark"
+ },
+ "Michael Jackson - Thriller.mp3": {
+  "key": "michael jackson - thriller",
+  "decade": "1980s",
+  "genre": "Adult Top 40",
+  "energy_rank": 5,
+  "slow_dance": false,
+  "never_charted": false,
+  "energy": "dark"
+ },
+ "Michael Jackson - Wanna Be Startin' Somethin'.mp3": {
+  "key": "michael jackson - wanna be startin' somethin'",
+  "decade": "1980s",
+  "genre": "Adult Top 40",
+  "energy_rank": 5,
+  "slow_dance": false,
+  "never_charted": false,
+  "energy": "fast"
+ },
+ "Michael Jackson - The Way You Make Me Feel.mp3": {
+  "key": "michael jackson - the way you make me feel",
+  "decade": "1980s",
+  "genre": "Adult Top 40",
+  "energy_rank": 5,
+  "slow_dance": false,
+  "never_charted": false,
+  "energy": "fast"
+ },
+ "Molly Hatchet - Flirtin' with Disaster.mp3": {
+  "key": "molly hatchet - flirtin' with disaster",
+  "decade": "1970s",
+  "genre": "Rock",
+  "energy_rank": 4,
+  "slow_dance": false,
+  "never_charted": false,
+  "energy": "fast"
+ },
+ "The Monkees - Daydream Believer.mp3": {
+  "key": "the monkees - daydream believer",
+  "decade": "1960s",
+  "genre": "Oldies/Classic",
+  "energy_rank": 3,
+  "slow_dance": false,
+  "never_charted": false,
+  "energy": "fast"
+ },
+ "The Monkees - Last Train to Clarksville.mp3": {
+  "key": "the monkees - last train to clarksville",
+  "decade": "1960s",
+  "genre": "Oldies/Classic",
+  "energy_rank": 4,
+  "slow_dance": false,
+  "never_charted": false,
+  "energy": "fast"
+ },
+ "Mötley Crüe - Dr. Feelgood.mp3": {
+  "key": "mötley crüe - dr. feelgood",
+  "decade": "1980s",
+  "genre": "Rock",
+  "energy_rank": 4,
+  "slow_dance": false,
+  "never_charted": false,
+  "energy": "dark"
+ },
+ "Mötley Crüe - Home Sweet Home.mp3": {
+  "key": "mötley crüe - home sweet home",
+  "decade": "1980s",
+  "genre": "Rock",
+  "energy_rank": 2,
+  "slow_dance": false,
+  "never_charted": false,
+  "energy": "slow"
+ },
+ "Mötley Crüe - Kickstart My Heart.mp3": {
+  "key": "mötley crüe - kickstart my heart",
+  "decade": "1980s",
+  "genre": "Rock",
+  "energy_rank": 5,
+  "slow_dance": false,
+  "never_charted": false,
+  "energy": "fast"
+ },
+ "New Radicals - You Get What You Give.mp3": {
+  "key": "new radicals - you get what you give",
+  "decade": "1990s",
+  "genre": "Adult Top 40",
+  "energy_rank": 4,
+  "slow_dance": false,
+  "never_charted": false,
+  "energy": "fast"
+ },
+ "Norman Greenbaum - Spirit in the Sky.mp3": {
+  "key": "norman greenbaum - spirit in the sky",
+  "decade": "1960s",
+  "genre": "Rock",
+  "energy_rank": 4,
+  "slow_dance": false,
+  "never_charted": false,
+  "energy": "fast"
+ },
+ "The O'Jays - I Love Music.mp3": {
+  "key": "the o'jays - i love music",
+  "decade": "1970s",
+  "genre": "Dance/Electronic",
+  "energy_rank": 5,
+  "slow_dance": false,
+  "never_charted": false,
+  "energy": "fast"
+ },
+ "Ohio Players - Fire.mp3": {
+  "key": "ohio players - fire",
+  "decade": "1970s",
+  "genre": "R&B/Soul",
+  "energy_rank": 5,
+  "slow_dance": false,
+  "never_charted": false,
+  "energy": "fast"
+ },
+ "Ozzy Osbourne - Mama, I'm Coming Home.mp3": {
+  "key": "ozzy osbourne - mama, i'm coming home",
+  "decade": "1990s",
+  "genre": "Rock",
+  "energy_rank": 2,
+  "slow_dance": false,
+  "never_charted": false,
+  "energy": "slow"
+ },
+ "Pat Benatar - Hit Me with Your Best Shot.mp3": {
+  "key": "pat benatar - hit me with your best shot",
+  "decade": "1980s",
+  "genre": "Rock",
+  "energy_rank": 5,
+  "slow_dance": false,
+  "never_charted": false,
+  "energy": "fast"
+ },
+ "Pat Benatar - Love Is a Battlefield.mp3": {
+  "key": "pat benatar - love is a battlefield",
+  "decade": "1980s",
+  "genre": "Rock",
+  "energy_rank": 4,
+  "slow_dance": false,
+  "never_charted": false,
+  "energy": "dark"
+ },
+ "Peaches & Herb - Reunited.mp3": {
+  "key": "peaches & herb - reunited",
+  "decade": "1970s",
+  "genre": "R&B/Soul",
+  "energy_rank": 2,
+  "slow_dance": true,
+  "never_charted": false,
+  "energy": "slow"
+ },
+ "Peter Frampton - Show Me the Way.mp3": {
+  "key": "peter frampton - show me the way",
+  "decade": "1970s",
+  "genre": "Rock",
+  "energy_rank": 3,
+  "slow_dance": false,
+  "never_charted": false,
+  "energy": "fast"
+ },
+ "Pink Floyd - Another Brick in the Wall, Pt. 2.mp3": {
+  "key": "pink floyd - another brick in the wall, pt. 2",
+  "decade": "1970s",
+  "genre": "Rock",
+  "energy_rank": 4,
+  "slow_dance": false,
+  "never_charted": false,
+  "energy": "dark"
+ },
+ "Pink Floyd - Money.mp3": {
+  "key": "pink floyd - money",
+  "decade": "1970s",
+  "genre": "Rock",
+  "energy_rank": 3,
+  "slow_dance": false,
+  "never_charted": false,
+  "energy": "dark"
+ },
+ "The Pointer Sisters - Jump (For My Love).mp3": {
+  "key": "the pointer sisters - jump (for my love)",
+  "decade": "1980s",
+  "genre": "Dance/Electronic",
+  "energy_rank": 5,
+  "slow_dance": false,
+  "never_charted": false,
+  "energy": "fast"
+ },
+ "The Police - Every Breath You Take.mp3": {
+  "key": "the police - every breath you take",
+  "decade": "1980s",
+  "genre": "Adult Top 40",
+  "energy_rank": 2,
+  "slow_dance": false,
+  "never_charted": false,
+  "energy": "dark"
+ },
+ "The Police - Roxanne.mp3": {
+  "key": "the police - roxanne",
+  "decade": "1970s",
+  "genre": "Rock",
+  "energy_rank": 4,
+  "slow_dance": false,
+  "never_charted": false,
+  "energy": "dark"
+ },
+ "Prince - 1999.mp3": {
+  "key": "prince - 1999",
+  "decade": "1980s",
+  "genre": "Dance/Electronic",
+  "energy_rank": 5,
+  "slow_dance": false,
+  "never_charted": false,
+  "energy": "fast"
+ },
+ "Prince - Kiss.mp3": {
+  "key": "prince - kiss",
+  "decade": "1980s",
+  "genre": "R&B/Soul",
+  "energy_rank": 5,
+  "slow_dance": false,
+  "never_charted": false,
+  "energy": "fast"
+ },
+ "Prince - Let's Go Crazy.mp3": {
+  "key": "prince - let's go crazy",
+  "decade": "1980s",
+  "genre": "Rock",
+  "energy_rank": 5,
+  "slow_dance": false,
+  "never_charted": false,
+  "energy": "fast"
+ },
+ "Prince - Little Red Corvette.mp3": {
+  "key": "prince - little red corvette",
+  "decade": "1980s",
+  "genre": "Adult Top 40",
+  "energy_rank": 4,
+  "slow_dance": false,
+  "never_charted": false,
+  "energy": "fast"
+ },
+ "Queen - Don't Stop Me Now.mp3": {
+  "key": "queen - don't stop me now",
+  "decade": "1970s",
+  "genre": "Rock",
+  "energy_rank": 5,
+  "slow_dance": false,
+  "never_charted": false,
+  "energy": "fast"
+ },
+ "Queen - Fat Bottomed Girls.mp3": {
+  "key": "queen - fat bottomed girls",
+  "decade": "1970s",
+  "genre": "Rock",
+  "energy_rank": 4,
+  "slow_dance": false,
+  "never_charted": false,
+  "energy": "fast"
+ },
+ "Queen - Killer Queen.mp3": {
+  "key": "queen - killer queen",
+  "decade": "1970s",
+  "genre": "Rock",
+  "energy_rank": 3,
+  "slow_dance": false,
+  "never_charted": false,
+  "energy": "fast"
+ },
+ "Queen - Somebody to Love.mp3": {
+  "key": "queen - somebody to love",
+  "decade": "1970s",
+  "genre": "Rock",
+  "energy_rank": 3,
+  "slow_dance": false,
+  "never_charted": false,
+  "energy": "slow"
+ },
+ "Queen - We Are the Champions.mp3": {
+  "key": "queen - we are the champions",
+  "decade": "1970s",
+  "genre": "Rock",
+  "energy_rank": 3,
+  "slow_dance": false,
+  "never_charted": false,
+  "energy": "slow"
+ },
+ "Queen - We Will Rock You.mp3": {
+  "key": "queen - we will rock you",
+  "decade": "1970s",
+  "genre": "Rock",
+  "energy_rank": 5,
+  "slow_dance": false,
+  "never_charted": false,
+  "energy": "fast"
+ },
+ "Ratt - Round and Round.mp3": {
+  "key": "ratt - round and round",
+  "decade": "1980s",
+  "genre": "Rock",
+  "energy_rank": 4,
+  "slow_dance": false,
+  "never_charted": false,
+  "energy": "fast"
+ },
+ "REO Speedwagon - Take It on the Run.mp3": {
+  "key": "reo speedwagon - take it on the run",
+  "decade": "1980s",
+  "genre": "Rock",
+  "energy_rank": 3,
+  "slow_dance": false,
+  "never_charted": false,
+  "energy": "fast"
+ },
+ "The Righteous Brothers - You've Lost That Lovin' Feelin'.mp3": {
+  "key": "the righteous brothers - you've lost that lovin' feelin'",
+  "decade": "1960s",
+  "genre": "Oldies/Classic",
+  "energy_rank": 2,
+  "slow_dance": true,
+  "never_charted": false,
+  "energy": "slow"
+ },
+ "Robert Palmer - Addicted to Love.mp3": {
+  "key": "robert palmer - addicted to love",
+  "decade": "1980s",
+  "genre": "Rock",
+  "energy_rank": 4,
+  "slow_dance": false,
+  "never_charted": false,
+  "energy": "fast"
+ },
+ "Rod Stewart - Da Ya Think I'm Sexy.mp3": {
+  "key": "rod stewart - da ya think i'm sexy?",
+  "decade": "1970s",
+  "genre": "Dance/Electronic",
+  "energy_rank": 4,
+  "slow_dance": false,
+  "never_charted": false,
+  "energy": "fast"
+ },
+ "Rod Stewart - Maggie May.mp3": {
+  "key": "rod stewart - maggie may",
+  "decade": "1970s",
+  "genre": "Rock",
+  "energy_rank": 3,
+  "slow_dance": false,
+  "never_charted": false,
+  "energy": "fast"
+ },
+ "The Rolling Stones - Beast of Burden.mp3": {
+  "key": "the rolling stones - beast of burden",
+  "decade": "1970s",
+  "genre": "Rock",
+  "energy_rank": 3,
+  "slow_dance": false,
+  "never_charted": false,
+  "energy": "slow"
+ },
+ "The Rolling Stones - Brown Sugar.mp3": {
+  "key": "the rolling stones - brown sugar",
+  "decade": "1970s",
+  "genre": "Rock",
+  "energy_rank": 5,
+  "slow_dance": false,
+  "never_charted": false,
+  "energy": "fast"
+ },
+ "The Rolling Stones - Honky Tonk Women.mp3": {
+  "key": "the rolling stones - honky tonk women",
+  "decade": "1960s",
+  "genre": "Rock",
+  "energy_rank": 4,
+  "slow_dance": false,
+  "never_charted": false,
+  "energy": "fast"
+ },
+ "The Rolling Stones - Jumpin' Jack Flash.mp3": {
+  "key": "the rolling stones - jumpin' jack flash",
+  "decade": "1960s",
+  "genre": "Rock",
+  "energy_rank": 5,
+  "slow_dance": false,
+  "never_charted": false,
+  "energy": "fast"
+ },
+ "The Rolling Stones - Miss You.mp3": {
+  "key": "the rolling stones - miss you",
+  "decade": "1970s",
+  "genre": "Dance/Electronic",
+  "energy_rank": 4,
+  "slow_dance": false,
+  "never_charted": false,
+  "energy": "fast"
+ },
+ "The Rolling Stones - Paint It Black.mp3": {
+  "key": "the rolling stones - paint it black",
+  "decade": "1960s",
+  "genre": "Rock",
+  "energy_rank": 4,
+  "slow_dance": false,
+  "never_charted": false,
+  "energy": "dark"
+ },
+ "The Rolling Stones - Start Me Up.mp3": {
+  "key": "the rolling stones - start me up",
+  "decade": "1980s",
+  "genre": "Rock",
+  "energy_rank": 5,
+  "slow_dance": false,
+  "never_charted": false,
+  "energy": "fast"
+ },
+ "The Rolling Stones - You Can't Always Get What You Want.mp3": {
+  "key": "the rolling stones - you can't always get what you want",
+  "decade": "1960s",
+  "genre": "Rock",
+  "energy_rank": 3,
+  "slow_dance": false,
+  "never_charted": false,
+  "energy": "slow"
+ },
+ "Rush - Tom Sawyer.mp3": {
+  "key": "rush - tom sawyer",
+  "decade": "1980s",
+  "genre": "Rock",
+  "energy_rank": 4,
+  "slow_dance": false,
+  "never_charted": false,
+  "energy": "dark"
+ },
+ "Santana - Black Magic Woman.mp3": {
+  "key": "santana - black magic woman",
+  "decade": "1970s",
+  "genre": "Rock",
+  "energy_rank": 3,
+  "slow_dance": false,
+  "never_charted": false,
+  "energy": "dark"
+ },
+ "Santana - Oye Como Va.mp3": {
+  "key": "santana - oye como va",
+  "decade": "1970s",
+  "genre": "Rock",
+  "energy_rank": 4,
+  "slow_dance": false,
+  "never_charted": false,
+  "energy": "fast"
+ },
+ "Savage Garden - I Knew I Loved You.mp3": {
+  "key": "savage garden - i knew i loved you",
+  "decade": "1990s",
+  "genre": "Adult Top 40",
+  "energy_rank": 2,
+  "slow_dance": true,
+  "never_charted": false,
+  "energy": "slow"
+ },
+ "Semisonic - Closing Time.mp3": {
+  "key": "semisonic - closing time",
+  "decade": "1990s",
+  "genre": "Rock",
+  "energy_rank": 3,
+  "slow_dance": false,
+  "never_charted": false,
+  "energy": "fast"
+ },
+ "Shania Twain - Man! I Feel Like a Woman!.mp3": {
+  "key": "shania twain - man! i feel like a woman!",
+  "decade": "1990s",
+  "genre": "Country",
+  "energy_rank": 5,
+  "slow_dance": false,
+  "never_charted": false,
+  "energy": "fast"
+ },
+ "Shania Twain - That Don't Impress Me Much.mp3": {
+  "key": "shania twain - that don't impress me much",
+  "decade": "1990s",
+  "genre": "Country",
+  "energy_rank": 4,
+  "slow_dance": false,
+  "never_charted": false,
+  "energy": "fast"
+ },
+ "Shania Twain - You're Still the One.mp3": {
+  "key": "shania twain - you're still the one",
+  "decade": "1990s",
+  "genre": "Country",
+  "energy_rank": 2,
+  "slow_dance": true,
+  "never_charted": false,
+  "energy": "slow"
+ },
+ "Simon & Garfunkel - Mrs. Robinson.mp3": {
+  "key": "simon & garfunkel - mrs. robinson",
+  "decade": "1960s",
+  "genre": "Oldies/Classic",
+  "energy_rank": 3,
+  "slow_dance": false,
+  "never_charted": false,
+  "energy": "fast"
+ },
+ "Sly & The Family Stone - Dance to the Music.mp3": {
+  "key": "sly & the family stone - dance to the music",
+  "decade": "1960s",
+  "genre": "R&B/Soul",
+  "energy_rank": 5,
+  "slow_dance": false,
+  "never_charted": false,
+  "energy": "fast"
+ },
+ "Smash Mouth - Walkin' on the Sun.mp3": {
+  "key": "smash mouth - walkin' on the sun",
+  "decade": "1990s",
+  "genre": "Rock",
+  "energy_rank": 4,
+  "slow_dance": false,
+  "never_charted": false,
+  "energy": "fast"
+ },
+ "Snap! - The Power.mp3": {
+  "key": "snap! - the power",
+  "decade": "1990s",
+  "genre": "Dance/Electronic",
+  "energy_rank": 5,
+  "slow_dance": false,
+  "never_charted": false,
+  "energy": "fast"
+ },
+ "The Spinners - The Rubberband Man.mp3": {
+  "key": "the spinners - the rubberband man",
+  "decade": "1970s",
+  "genre": "R&B/Soul",
+  "energy_rank": 4,
+  "slow_dance": false,
+  "never_charted": false,
+  "energy": "fast"
+ },
+ "Steely Dan - Peg.mp3": {
+  "key": "steely dan - peg",
+  "decade": "1970s",
+  "genre": "Rock",
+  "energy_rank": 3,
+  "slow_dance": false,
+  "never_charted": false,
+  "energy": "fast"
+ },
+ "Steve Miller Band - Fly Like an Eagle.mp3": {
+  "key": "steve miller band - fly like an eagle",
+  "decade": "1970s",
+  "genre": "Rock",
+  "energy_rank": 3,
+  "slow_dance": false,
+  "never_charted": false,
+  "energy": "dark"
+ },
+ "Steve Miller Band - Rock'n Me.mp3": {
+  "key": "steve miller band - rock'n me",
+  "decade": "1970s",
+  "genre": "Rock",
+  "energy_rank": 4,
+  "slow_dance": false,
+  "never_charted": false,
+  "energy": "fast"
+ },
+ "Steve Miller Band - The Joker.mp3": {
+  "key": "steve miller band - the joker",
+  "decade": "1970s",
+  "genre": "Rock",
+  "energy_rank": 3,
+  "slow_dance": false,
+  "never_charted": false,
+  "energy": "slow"
+ },
+ "Stevie Wonder - For Once in My Life.mp3": {
+  "key": "stevie wonder - for once in my life",
+  "decade": "1960s",
+  "genre": "R&B/Soul",
+  "energy_rank": 4,
+  "slow_dance": false,
+  "never_charted": false,
+  "energy": "fast"
+ },
+ "Stevie Wonder - Higher Ground.mp3": {
+  "key": "stevie wonder - higher ground",
+  "decade": "1970s",
+  "genre": "R&B/Soul",
+  "energy_rank": 4,
+  "slow_dance": false,
+  "never_charted": false,
+  "energy": "dark"
+ },
+ "Stevie Wonder - I Wish.mp3": {
+  "key": "stevie wonder - i wish",
+  "decade": "1970s",
+  "genre": "R&B/Soul",
+  "energy_rank": 5,
+  "slow_dance": false,
+  "never_charted": false,
+  "energy": "fast"
+ },
+ "Stevie Wonder - Signed, Sealed, Delivered I'm Yours.mp3": {
+  "key": "stevie wonder - signed, sealed, delivered i'm yours",
+  "decade": "1970s",
+  "genre": "R&B/Soul",
+  "energy_rank": 5,
+  "slow_dance": false,
+  "never_charted": false,
+  "energy": "fast"
+ },
+ "Stevie Wonder - Sir Duke.mp3": {
+  "key": "stevie wonder - sir duke",
+  "decade": "1970s",
+  "genre": "R&B/Soul",
+  "energy_rank": 5,
+  "slow_dance": false,
+  "never_charted": false,
+  "energy": "fast"
+ },
+ "Styx - Mr. Roboto.mp3": {
+  "key": "styx - mr. roboto",
+  "decade": "1980s",
+  "genre": "Rock",
+  "energy_rank": 4,
+  "slow_dance": false,
+  "never_charted": false,
+  "energy": "dark"
+ },
+ "Styx - Renegade.mp3": {
+  "key": "styx - renegade",
+  "decade": "1970s",
+  "genre": "Rock",
+  "energy_rank": 4,
+  "slow_dance": false,
+  "never_charted": false,
+  "energy": "dark"
+ },
+ "Styx - Too Much Time on My Hands.mp3": {
+  "key": "styx - too much time on my hands",
+  "decade": "1980s",
+  "genre": "Rock",
+  "energy_rank": 4,
+  "slow_dance": false,
+  "never_charted": false,
+  "energy": "fast"
+ },
+ "Sugar Ray - Every Morning.mp3": {
+  "key": "sugar ray - every morning",
+  "decade": "1990s",
+  "genre": "Adult Top 40",
+  "energy_rank": 3,
+  "slow_dance": false,
+  "never_charted": false,
+  "energy": "fast"
+ },
+ "Sugarloaf - Green-Eyed Lady.mp3": {
+  "key": "sugarloaf - green-eyed lady",
+  "decade": "1970s",
+  "genre": "Rock",
+  "energy_rank": 3,
+  "slow_dance": false,
+  "never_charted": false,
+  "energy": "dark"
+ },
+ "The Supremes - Come See About Me.mp3": {
+  "key": "the supremes - come see about me",
+  "decade": "1960s",
+  "genre": "R&B/Soul",
+  "energy_rank": 4,
+  "slow_dance": false,
+  "never_charted": false,
+  "energy": "fast"
+ },
+ "The Supremes - Stop! In the Name of Love.mp3": {
+  "key": "the supremes - stop! in the name of love",
+  "decade": "1960s",
+  "genre": "R&B/Soul",
+  "energy_rank": 4,
+  "slow_dance": false,
+  "never_charted": false,
+  "energy": "fast"
+ },
+ "Tag Team - Whoomp! (There It Is).mp3": {
+  "key": "tag team - whoomp! (there it is)",
+  "decade": "1990s",
+  "genre": "Hip-Hop/Rap",
+  "energy_rank": 5,
+  "slow_dance": false,
+  "never_charted": false,
+  "energy": "fast"
+ },
+ "Ted Nugent - Cat Scratch Fever.mp3": {
+  "key": "ted nugent - cat scratch fever",
+  "decade": "1970s",
+  "genre": "Rock",
+  "energy_rank": 4,
+  "slow_dance": false,
+  "never_charted": false,
+  "energy": "fast"
+ },
+ "The Temptations - Just My Imagination (Running Away with Me).mp3": {
+  "key": "the temptations - just my imagination (running away with me)",
+  "decade": "1970s",
+  "genre": "R&B/Soul",
+  "energy_rank": 2,
+  "slow_dance": true,
+  "never_charted": false,
+  "energy": "slow"
+ },
+ "Thin Lizzy - The Boys Are Back in Town.mp3": {
+  "key": "thin lizzy - the boys are back in town",
+  "decade": "1970s",
+  "genre": "Rock",
+  "energy_rank": 4,
+  "slow_dance": false,
+  "never_charted": false,
+  "energy": "fast"
+ },
+ "Third Eye Blind - Semi-Charmed Life.mp3": {
+  "key": "third eye blind - semi-charmed life",
+  "decade": "1990s",
+  "genre": "Rock",
+  "energy_rank": 4,
+  "slow_dance": false,
+  "never_charted": false,
+  "energy": "fast"
+ },
+ "Three Dog Night - Joy to the World.mp3": {
+  "key": "three dog night - joy to the world",
+  "decade": "1970s",
+  "genre": "Rock",
+  "energy_rank": 4,
+  "slow_dance": false,
+  "never_charted": false,
+  "energy": "fast"
+ },
+ "Toby Keith - Should've Been a Cowboy.mp3": {
+  "key": "toby keith - should've been a cowboy",
+  "decade": "1990s",
+  "genre": "Country",
+  "energy_rank": 3,
+  "slow_dance": false,
+  "never_charted": false,
+  "energy": "fast"
+ },
+ "Tom Petty - Free Fallin'.mp3": {
+  "key": "tom petty - free fallin'",
+  "decade": "1980s",
+  "genre": "Rock",
+  "energy_rank": 3,
+  "slow_dance": false,
+  "never_charted": false,
+  "energy": "slow"
+ },
+ "Tom Petty and the Heartbreakers - Don't Do Me Like That.mp3": {
+  "key": "tom petty and the heartbreakers - don't do me like that",
+  "decade": "1970s",
+  "genre": "Rock",
+  "energy_rank": 4,
+  "slow_dance": false,
+  "never_charted": false,
+  "energy": "fast"
+ },
+ "Tom Petty and the Heartbreakers - Refugee.mp3": {
+  "key": "tom petty and the heartbreakers - refugee",
+  "decade": "1980s",
+  "genre": "Rock",
+  "energy_rank": 4,
+  "slow_dance": false,
+  "never_charted": false,
+  "energy": "dark"
+ },
+ "Tone Loc - Wild Thing.mp3": {
+  "key": "tone loc - wild thing",
+  "decade": "1980s",
+  "genre": "Hip-Hop/Rap",
+  "energy_rank": 4,
+  "slow_dance": false,
+  "never_charted": false,
+  "energy": "fast"
+ },
+ "U2 - I Still Haven't Found What I'm Looking For.mp3": {
+  "key": "u2 - i still haven't found what i'm looking for",
+  "decade": "1980s",
+  "genre": "Rock",
+  "energy_rank": 3,
+  "slow_dance": false,
+  "never_charted": false,
+  "energy": "slow"
+ },
+ "Van Halen - Dance the Night Away.mp3": {
+  "key": "van halen - dance the night away",
+  "decade": "1970s",
+  "genre": "Rock",
+  "energy_rank": 4,
+  "slow_dance": false,
+  "never_charted": false,
+  "energy": "fast"
+ },
+ "Van Halen - Jump.mp3": {
+  "key": "van halen - jump",
+  "decade": "1980s",
+  "genre": "Rock",
+  "energy_rank": 5,
+  "slow_dance": false,
+  "never_charted": false,
+  "energy": "fast"
+ },
+ "Van Halen - Panama.mp3": {
+  "key": "van halen - panama",
+  "decade": "1980s",
+  "genre": "Rock",
+  "energy_rank": 5,
+  "slow_dance": false,
+  "never_charted": false,
+  "energy": "fast"
+ },
+ "Van Halen - Runnin' with the Devil.mp3": {
+  "key": "van halen - runnin' with the devil",
+  "decade": "1970s",
+  "genre": "Rock",
+  "energy_rank": 4,
+  "slow_dance": false,
+  "never_charted": false,
+  "energy": "dark"
+ },
+ "Van Halen - Why Can't This Be Love.mp3": {
+  "key": "van halen - why can't this be love",
+  "decade": "1980s",
+  "genre": "Rock",
+  "energy_rank": 4,
+  "slow_dance": false,
+  "never_charted": false,
+  "energy": "fast"
+ },
+ "Los del Río - Macarena.mp3": {
+  "key": "los del río - macarena",
+  "decade": "1990s",
+  "genre": "Dance/Electronic",
+  "energy_rank": 5,
+  "slow_dance": false,
+  "never_charted": false,
+  "energy": "fast"
+ },
+ "MARRS - Pump Up the Volume.mp3": {
+  "key": "m|a|r|r|s - pump up the volume",
+  "decade": "1980s",
+  "genre": "Dance/Electronic",
+  "energy_rank": 5,
+  "slow_dance": false,
+  "never_charted": false,
+  "energy": "fast"
+ },
+ "Mark Morrison - Return of the Mack.mp3": {
+  "key": "mark morrison - return of the mack",
+  "decade": "1990s",
+  "genre": "R&B/Soul",
+  "energy_rank": 4,
+  "slow_dance": false,
+  "never_charted": false,
+  "energy": "fast"
+ },
+ "The Gap Band - You Dropped a Bomb on Me.mp3": {
+  "key": "the gap band - you dropped a bomb on me",
+  "decade": "1980s",
+  "genre": "R&B/Soul",
+  "energy_rank": 5,
+  "slow_dance": false,
+  "never_charted": false,
+  "energy": "fast"
+ },
+ "Vertical Horizon - Everything You Want.mp3": {
+  "key": "vertical horizon - everything you want",
+  "decade": "1990s",
+  "genre": "Rock",
+  "energy_rank": 3,
+  "slow_dance": false,
+  "never_charted": false,
+  "energy": "fast"
+ },
+ "War - The Cisco Kid.mp3": {
+  "key": "war - the cisco kid",
+  "decade": "1970s",
+  "genre": "R&B/Soul",
+  "energy_rank": 4,
+  "slow_dance": false,
+  "never_charted": false,
+  "energy": "fast"
+ },
+ "War - Why Can't We Be Friends.mp3": {
+  "key": "war - why can't we be friends?",
+  "decade": "1970s",
+  "genre": "R&B/Soul",
+  "energy_rank": 3,
+  "slow_dance": false,
+  "never_charted": false,
+  "energy": "fast"
+ },
+ "Wet Willie - Keep On Smilin'.mp3": {
+  "key": "wet willie - keep on smilin'",
+  "decade": "1970s",
+  "genre": "Rock",
+  "energy_rank": 3,
+  "slow_dance": false,
+  "never_charted": false,
+  "energy": "fast"
+ },
+ "Whitesnake - Here I Go Again.mp3": {
+  "key": "whitesnake - here i go again",
+  "decade": "1980s",
+  "genre": "Rock",
+  "energy_rank": 4,
+  "slow_dance": false,
+  "never_charted": false,
+  "energy": "fast"
+ },
+ "Whitesnake - Is This Love.mp3": {
+  "key": "whitesnake - is this love",
+  "decade": "1980s",
+  "genre": "Rock",
+  "energy_rank": 2,
+  "slow_dance": false,
+  "never_charted": false,
+  "energy": "slow"
+ },
+ "The Who - Baba O'Riley.mp3": {
+  "key": "the who - baba o'riley",
+  "decade": "1970s",
+  "genre": "Rock",
+  "energy_rank": 4,
+  "slow_dance": false,
+  "never_charted": true,
+  "energy": "fast"
+ },
+ "The Who - My Generation.mp3": {
+  "key": "the who - my generation",
+  "decade": "1960s",
+  "genre": "Rock",
+  "energy_rank": 4,
+  "slow_dance": false,
+  "never_charted": false,
+  "energy": "fast"
+ },
+ "The Who - Pinball Wizard.mp3": {
+  "key": "the who - pinball wizard",
+  "decade": "1960s",
+  "genre": "Rock",
+  "energy_rank": 4,
+  "slow_dance": false,
+  "never_charted": false,
+  "energy": "fast"
+ },
+ "The Who - Squeeze Box.mp3": {
+  "key": "the who - squeeze box",
+  "decade": "1970s",
+  "genre": "Rock",
+  "energy_rank": 4,
+  "slow_dance": false,
+  "never_charted": false,
+  "energy": "fast"
+ },
+ "The Who - Who Are You.mp3": {
+  "key": "the who - who are you",
+  "decade": "1970s",
+  "genre": "Rock",
+  "energy_rank": 4,
+  "slow_dance": false,
+  "never_charted": false,
+  "energy": "dark"
+ },
+ "Willie Nelson - On the Road Again.mp3": {
+  "key": "willie nelson - on the road again",
+  "decade": "1980s",
+  "genre": "Country",
+  "energy_rank": 4,
+  "slow_dance": false,
+  "never_charted": false,
+  "energy": "fast"
+ },
+ "Wilson Pickett - Land of 1000 Dances.mp3": {
+  "key": "wilson pickett - land of 1000 dances",
+  "decade": "1960s",
+  "genre": "R&B/Soul",
+  "energy_rank": 5,
+  "slow_dance": false,
+  "never_charted": false,
+  "energy": "fast"
+ },
+ "Wilson Pickett - Mustang Sally.mp3": {
+  "key": "wilson pickett - mustang sally",
+  "decade": "1960s",
+  "genre": "R&B/Soul",
+  "energy_rank": 4,
+  "slow_dance": false,
+  "never_charted": false,
+  "energy": "fast"
+ },
+ "ZZ Top - Gimme All Your Lovin'.mp3": {
+  "key": "zz top - gimme all your lovin'",
+  "decade": "1980s",
+  "genre": "Rock",
+  "energy_rank": 5,
+  "slow_dance": false,
+  "never_charted": false,
+  "energy": "fast"
+ },
+ "ZZ Top - La Grange.mp3": {
+  "key": "zz top - la grange",
+  "decade": "1970s",
+  "genre": "Rock",
+  "energy_rank": 4,
+  "slow_dance": false,
+  "never_charted": false,
+  "energy": "fast"
+ },
+ "ZZ Top - Legs.mp3": {
+  "key": "zz top - legs",
+  "decade": "1980s",
+  "genre": "Rock",
+  "energy_rank": 5,
+  "slow_dance": false,
+  "never_charted": false,
+  "energy": "fast"
+ },
+ "ZZ Top - Sharp Dressed Man.mp3": {
+  "key": "zz top - sharp dressed man",
+  "decade": "1980s",
+  "genre": "Rock",
+  "energy_rank": 5,
+  "slow_dance": false,
+  "never_charted": false,
+  "energy": "fast"
+ },
+ "ZZ Top - Tush.mp3": {
+  "key": "zz top - tush",
+  "decade": "1970s",
+  "genre": "Rock",
+  "energy_rank": 4,
+  "slow_dance": false,
+  "never_charted": false,
+  "energy": "fast"
+ }
+}

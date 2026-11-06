@@ -19,11 +19,32 @@ from state import state
 
 _PANEL_START_ANGLE = {4: 0.0, 6: 90.0, 5: 180.0, 3: 270.0}
 
+# Every decade the library knows, oldest first ("1950s" ... "2020s").
+ALL_DECADES = sorted(config.MUSIC_DECADES)
+
+
+def can_land(decade):
+    return decade in ALL_DECADES
+
+
+def wheel_decades(target=None):
+    """The four decades on the wheel (panels 3-6), oldest first. Normally
+    config.SHOW_INTRO_WHEEL_DECADES; a target outside them slides the window
+    so the target sits at its low end (older) or high end (newer)."""
+    default = list(config.SHOW_INTRO_WHEEL_DECADES)
+    target = state.show_wheel_target if target is None else target
+    if not can_land(target) or target in default:
+        return default
+    i = ALL_DECADES.index(target)
+    if target < default[0]:
+        return ALL_DECADES[i:i + 4]
+    return ALL_DECADES[max(0, i - 3):i + 1]
+
 
 def target_panel():
     """Panel number (3-6) of the decade the wheel will land on."""
     try:
-        return 3 + config.SHOW_INTRO_WHEEL_DECADES.index(state.show_wheel_target)
+        return 3 + wheel_decades().index(state.show_wheel_target)
     except ValueError:
         return 3
 

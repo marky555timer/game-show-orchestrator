@@ -36,7 +36,7 @@ import config
 from drivers.music_library import music_library, sanitize_track_key
 
 _HEADER = ["track_key", "explicit", "slow_dance", "never_charted",
-           "decade", "genre", "energy_rank", "tagged_at"]
+           "decade", "genre", "energy_rank", "tagged_at", "date_added"]
 
 # The 3 boolean content tags -- factored out so completeness checks and
 # CSV (de)serialization don't repeat this list three different ways.
@@ -82,6 +82,7 @@ class MusicMetadataEngine:
                         rank = (row.get("energy_rank") or "").strip()
                         entry["energy_rank"] = int(rank) if rank.isdigit() else None
                         entry["tagged_at"] = (row.get("tagged_at") or "").strip()
+                        entry["date_added"] = (row.get("date_added") or "").strip()
                         entries[key] = entry
         except Exception as e:
             print(f"[MUSIC METADATA] Failed to read cache, starting empty: {e}")
@@ -100,6 +101,7 @@ class MusicMetadataEngine:
                     row["genre"] = entry.get("genre") or ""
                     row["energy_rank"] = entry.get("energy_rank") or ""
                     row["tagged_at"] = entry.get("tagged_at") or ""
+                    row["date_added"] = entry.get("date_added") or ""
                     writer.writerow(row)
         except Exception as e:
             print(f"[MUSIC METADATA] Failed to save cache: {e}")
@@ -127,19 +129,49 @@ class MusicMetadataEngine:
         AI's other answers for that track. Stamps tagged_at the moment the
         entry becomes fully complete (not before), so tracks_needing_tagging()
         stays accurate -- a partially-backfilled entry (decade only, from
-        the cache pass) is still "needs tagging" until the rest lands."""
+        the cache pass) is still "needs tagging" until the rest lands.
+        A new row is stamped date_added (YYYY-MM-DD) unless one is passed."""
         if not track_key:
             return
         with self._lock:
             entry = dict(self._entries.get(track_key) or {
                 "explicit": None, "slow_dance": None, "never_charted": None,
                 "decade": "", "genre": "", "energy_rank": None, "tagged_at": "",
+                "date_added": "",
             })
             entry.update(fields)
+            if not entry.get("date_added"):
+                entry["date_added"] = time.strftime("%Y-%m-%d")
             if self.is_complete(entry) and not entry.get("tagged_at"):
                 entry["tagged_at"] = time.strftime("%Y-%m-%d %H:%M:%S")
             self._entries[track_key] = entry
         self._save_cache()
+
+    def stamp_date_added(self):
+        """Startup: any library track with no date_added yet gets its audio
+        file's modification date -- covers files dropped into the music
+        folder by hand (the Add Tracks pipeline stamps its own via save())."""
+        missing = []
+        for t in music_library.all_tracks():
+            key = sanitize_track_key(t["title"], t["artist"])
+            entry = self._entries.get(key)
+            if not entry or not entry.get("date_added"):
+                missing.append((key, t["path"]))
+        if not missing:
+            return 0
+        with self._lock:
+            for key, path in missing:
+                try:
+                    day = time.strftime("%Y-%m-%d", time.localtime(os.path.getmtime(path)))
+                except OSError:
+                    day = time.strftime("%Y-%m-%d")
+                entry = self._entries.setdefault(key, {
+                    "explicit": None, "slow_dance": None, "never_charted": None,
+                    "decade": "", "genre": "", "energy_rank": None, "tagged_at": "", "date_added": ""})
+                entry["date_added"] = day
+        self._save_cache()
+        print(f"[MUSIC METADATA] date_added stamped for {len(missing)} track(s) from file dates.")
+        return len(missing)
 
     def all_entries(self):
         with self._lock:

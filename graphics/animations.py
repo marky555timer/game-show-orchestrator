@@ -884,8 +884,13 @@ assert set(IDLE_THEMES) == set(IDLE_ANIMATION_THEMES), (
 
 IDLE_PANEL_IDS = (3, 4, 5, 6)
 
-# panel_id -> (animation function, phase seed). Re-dealt on every new track.
+# panel_id -> (animation function, phase seed). Re-dealt on every new track,
+# and again each time the idle cycle comes back to its animations.
 _panel_deal = {}
+# Animations already on screen during this song (reset by a full deal), so a
+# return to the animations deals ones not seen yet first (2026-10-27).
+_shown_this_track = set()
+_deal_seen = False   # has the current hand been on screen yet?
 
 
 def _current_theme_pool():
@@ -918,13 +923,48 @@ def deal_panel_animations():
     and also called directly the instant the operator changes the theme
     (web/remote_server.py::/api/idle/theme), so a theme switch is visible
     on the very next frame rather than waiting for the next song."""
+    global _deal_seen
     pool = _current_theme_pool()
     hand = random.sample(pool, min(len(IDLE_PANEL_IDS), len(pool)))
+    _shown_this_track.clear()
+    _set_hand(hand)
+    # Dealt while the animations are already up (song changed mid-turn): this
+    # hand is on screen now, so the next return deals a new one.
+    _deal_seen = state.idle_cycle_phase == "dancing"
+    if _deal_seen:
+        _shown_this_track.update(hand)
+
+
+def _set_hand(hand):
     _panel_deal.clear()
     for pid, fn in zip(IDLE_PANEL_IDS, hand):
         # Fresh phase seed as well, so an animation dealt to the same panel
         # twice in a row still starts from a different point in its cycle.
         _panel_deal[pid] = (fn, random.uniform(0.0, 10.0))
+
+
+def on_dancing_turn():
+    """drivers/idle_cycle_engine.py: the cycle is back on the animations.
+    The song's first turn shows the hand dealt at the track change; every
+    later turn deals a new hand from the theme pool -- animations not yet
+    shown this song first, topped up with already-seen ones (never the hand
+    just shown, when the pool is big enough to avoid it)."""
+    global _deal_seen
+    if _deal_seen:
+        pool = _current_theme_pool()
+        just_shown = {fn for fn, _ in _panel_deal.values()}
+        fresh = [fn for fn in pool if fn not in _shown_this_track]
+        seen = [fn for fn in pool if fn in _shown_this_track and fn not in just_shown]
+        repeat = [fn for fn in pool if fn in just_shown]
+        n = min(len(IDLE_PANEL_IDS), len(pool))
+        hand = random.sample(fresh, min(n, len(fresh)))
+        for group in (seen, repeat):
+            if len(hand) < n:
+                hand += random.sample(group, min(n - len(hand), len(group)))
+        random.shuffle(hand)
+        _set_hand(hand)
+    _deal_seen = True
+    _shown_this_track.update(fn for fn, _ in _panel_deal.values())
 
 
 # Deal an opening hand at import time so the very first rendered frame has

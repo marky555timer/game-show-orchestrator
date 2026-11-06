@@ -32,7 +32,7 @@ import threading
 import time
 
 import config
-from drivers import color_utils, serial_ports
+from drivers import color_utils, oz_story, serial_ports
 from state import state
 
 try:
@@ -139,6 +139,7 @@ def next_effect():
 
 
 _manual_override = None  # None (auto-sync) or "top"/"all" while a manual movie-chase test is forced
+_story_bolts = 0  # lightning strikes already flashed for the story song (drivers/oz_story.py)
 _blackout_sent = False  # admin blackout: board switched off (drivers/blackout_engine.py)
 _last_sent_look = None  # (fx, r, g, b, sx) tuple last actually sent, so sync_to_show_state() only sends on real change
 _pending_override = None  # (due_time, payload) preset color override waiting on its preset to load -- see _send_preset()
@@ -307,6 +308,10 @@ def _target_look():
         # solid look, rather than inventing a second white-trigger rule.
         return (config.ACCENT_FX_SOLID, 255, 255, 255, state.accent_speed,
                 None, None, None, 0, None)  # Solid, white
+    story_pos = oz_story.position()
+    if story_pos is not None:
+        fx, r, g, b, sx, r2, g2, b2 = oz_story.outline_look(story_pos)
+        return (fx, r, g, b, sx, r2, g2, b2, 0, None)
     if state.accent_preset_id in config.ACCENT_AUDIOREACTIVE_PRESETS:
         # A tuned sound-reactive preset beats the bare-GEQ checkbox below
         # (see config.ACCENT_AUDIOREACTIVE_PRESETS).
@@ -527,7 +532,7 @@ def sync_to_show_state():
     now = time.time()
     _note_track_change(now)
     global _blackout_sent
-    if state.blackout_active:
+    if state.lights_out:
         if not _blackout_sent and available():
             _send({"on": False, "tt": 0})
             _blackout_sent = True
@@ -537,6 +542,15 @@ def sync_to_show_state():
         _send({"on": True, "tt": 0})
         _last_sent_look = None  # full resend of the look + brightness
         _last_sent_bri = None
+    global _story_bolts
+    sp = oz_story.position(now)
+    if sp is None:
+        _story_bolts = 0
+    else:
+        n = oz_story.bolt_index(sp)
+        if n > _story_bolts and oz_story.lightning(sp) > 0.5:
+            flash(255, 255, 255, 0.12)   # lightning strike (drivers/oz_story.py)
+        _story_bolts = n
     if now < _flash_until:
         return
     if _manual_override is not None or not available():

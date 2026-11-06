@@ -3,7 +3,7 @@ The show-open music bed (2026-10-17, docs/panel_show_maker_design.md):
 
   introTheme.wav  plays from the top; from config.SHOW_INTRO_LOOP_IN_SECONDS it
                   loops (loop in -> loop out) ducked to SHOW_INTRO_DUCK_LEVEL
-                  under the host, until the show moves on. Moving on swells it
+                  (from SHOW_INTRO_DUCK_DELAY_SECONDS past loop-in) under the host, until the show moves on. Moving on swells it
                   back to full fast, then it fades out under what comes next.
   wheelTheme.wav  loops while a wheel spins, cut hard the moment it stops.
   decade stab     e.g. 80s-v1.wav / 80s-v2.wav ... in audio/gameMusic (root =
@@ -248,7 +248,8 @@ def update(now):
         # keep the loop slice queued so it repeats without a gap
         if _intro_ch.get_busy() and _intro_ch.get_queue() is None and _intro_stop_at == 0.0:
             _intro_ch.queue(_intro_loop)
-        if _intro_duck_armed and now - _intro_started_at >= config.SHOW_INTRO_LOOP_IN_SECONDS:
+        if _intro_duck_armed and now - _intro_started_at >= (config.SHOW_INTRO_LOOP_IN_SECONDS
+                                                              + config.SHOW_INTRO_DUCK_DELAY_SECONDS):
             _intro_duck_armed = False
             _ramp_to(config.SHOW_INTRO_DUCK_LEVEL, config.SHOW_INTRO_DUCK_RAMP_SECONDS, now)
         if _pending_fade[0] and now >= _pending_fade[0]:

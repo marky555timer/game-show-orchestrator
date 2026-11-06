@@ -16,6 +16,16 @@ export DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/1000/bus
 
 sleep 5
 cd /home/mark/game-show-orchestrator
+# Wait (max 45s) for NTP: the Pi has no RTC battery, so it boots with the
+# clock from its last shutdown and NTP steps it hours forward once WiFi is
+# up -- a step mid-song made Auto-DJ skip the track (2026-10-26). If the
+# network is down this gives up and starts anyway; drivers/clock_guard.py
+# absorbs a later step.
+for _i in $(seq 1 45); do
+    [ "$(timedatectl show -p NTPSynchronized --value 2>/dev/null)" = "yes" ] && break
+    sleep 1
+done
+echo "[START] $(date '+%F %T') clock synced=$(timedatectl show -p NTPSynchronized --value 2>/dev/null) after ${_i}s wait" >> /home/mark/game-show-orchestrator/startup.log
 # -u (unbuffered stdout/stderr): without it, output redirected to a file
 # (not a terminal) is fully block-buffered, so prints -- including the
 # "[BUTTON] Raw Button Pressed" diagnostic line -- can sit unflushed in

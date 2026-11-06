@@ -297,6 +297,8 @@ def _apply_active_question(data, source):
     from the background prefetch status preview (factoid_headline/full/
     status), which only peeks at the queue."""
     log_incoming_question(source, data)
+    if data.get("question"):
+        state.asked_question_texts.add(data["question"])
 
     # Era-trivia once-per-game scheduling: a fresh game boundary (see
     # state.game_active reset points in inputs/gamepad.py / matrix_canvas.py)
@@ -309,6 +311,7 @@ def _apply_active_question(data, source):
     state.autoadv_questions_asked += 1
     state.autoadv_need_leaderboard = True
     state.autoadv_leaderboard_reviewed = False
+    state.autoadv_track_key = state.factoid_track_key
     if data.get("category") == "era":
         state.era_question_used_this_game = True
 
@@ -378,7 +381,6 @@ def _apply_active_question(data, source):
     # question (2026-08-10 fix).
     state.round_timeout_seconds = timeout
     state.round_timed_out = False
-    state.round_winner_initials = []
 
     # Multiplayer QR quiz: a new question means a new round for every
     # signed-up player too -- clear last round's selection/lock (score is
@@ -387,6 +389,7 @@ def _apply_active_question(data, source):
     # render the new question instead.
     state.quiz_round_id += 1
     state.quiz_last_round_results = []
+    state.round_first_correct_pid = ""
     for player in state.quiz_players.values():
         player["selected_index"] = -1
         player["locked"] = False

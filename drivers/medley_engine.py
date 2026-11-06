@@ -34,6 +34,7 @@ import time
 import numpy as np
 
 import config
+from audio import mono_mode
 from state import state
 
 FS = 44100
@@ -869,7 +870,7 @@ def _maybe_sweeper(run):
     paths = _sweeper_paths()
     if paths and not run["sweeps"] % every:
         path = _deal_sweeper(paths)  # still styles the light transition when SFX is off
-    if path and state.sfx_enabled:
+    if path and state.sweepers_enabled:
         try:
             from drivers import deck_orchestrator
             snd = deck_orchestrator.dj_engine.load(path)
@@ -900,7 +901,7 @@ def _drop_sweeper():
     """The vocal-drop sweeper: from the medley sweepers (whatever the
     every-Nth setting), falling back to the regular sweepers folder."""
     paths = _sweeper_paths() or glob.glob(os.path.join(config.SWEEPERS_DIR, "*.wav"))
-    if not paths or not state.sfx_enabled:
+    if not paths or not state.sweepers_enabled:
         return
     try:
         from drivers import deck_orchestrator
@@ -938,7 +939,7 @@ def update(now):
             return
         with _lock:
             raw0 = run["chunks"].pop(f0)
-        snd0 = pygame.mixer.Sound(buffer=raw0)
+        snd0 = pygame.mixer.Sound(buffer=mono_mode.apply_raw(raw0))
         if run["from_deck"] is None:  # resuming after an edit: same deck, no crossfade
             dj.play_deck(_deck_name(run["deck"]), snd0, volume=1.0)
         else:
@@ -960,7 +961,7 @@ def update(now):
         with _lock:
             raw = run["chunks"].pop(k, None)
         if raw is not None and ch.get_queue() is None:
-            ch.queue(pygame.mixer.Sound(buffer=raw))
+            ch.queue(pygame.mixer.Sound(buffer=mono_mode.apply_raw(raw)))
             run["queued"] = k
             run["queue_len"] = len(raw) / 4 / FS
     # a chunk boundary passed: the queued sound became the current one
@@ -1046,7 +1047,7 @@ def _edit_play(run, scope):
         clip = np.vstack([c0, c1])
         if scope == "a_exit":
             clip = clip[max(0, len(c0) - lead_n):]
-    snd = pygame.mixer.Sound(buffer=to_int16(clip).tobytes())
+    snd = pygame.mixer.Sound(buffer=mono_mode.apply_raw(to_int16(clip).tobytes()))
     deck_orchestrator.dj_engine._channels[_deck_name(run["deck"])].stop()  # never play over a queued chunk
     deck_orchestrator.dj_engine.play_deck(_deck_name(run["deck"]), snd, volume=1.0)
     run["edit"]["playing"] = True

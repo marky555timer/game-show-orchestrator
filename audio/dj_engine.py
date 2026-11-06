@@ -175,10 +175,11 @@ def load_out_of_process(path, decode_process):
     Sound from the raw PCM it returns; transparently falls back to
     DJEngine.load(path) (in-process) if the worker is unavailable or fails,
     so a dead worker degrades playback loading instead of breaking it."""
+    from audio import mono_mode  # music only: sweepers/announcements load via DJEngine.load directly
     raw = decode_process.decode(path)
     if raw is None:
-        return DJEngine.load(path)
-    return pygame.mixer.Sound(buffer=raw)
+        return mono_mode.apply_sound(DJEngine.load(path))
+    return pygame.mixer.Sound(buffer=mono_mode.apply_raw(raw))
 
 
 class _VolumeRamp:

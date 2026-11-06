@@ -59,10 +59,17 @@ def preview_id(kind, name):
 
 
 # --------------------------------------------------------------- catalog
+# the preview's answer sounds: right = dingSingle.wav, wrong = buzzer.wav (the
+# real show rings the doorbell relay for a right answer -- no sound file)
+_DING_PATH = config.resource_path("audio", "sound_effects", "dingSingle.wav")
+_BUZZER_PATH = config.resource_path("audio", "sound_effects", "buzzer.wav")
+
+
 def _bed_files():
     """Show-bed sounds the preview player needs: name -> path."""
     out = {}
-    for path in (config.SHOW_INTRO_MUSIC_PATH, config.SHOW_WHEEL_THEME_PATH, config.SHOW_LETS_PLAY_STAB_PATH):
+    for path in (config.SHOW_INTRO_MUSIC_PATH, config.SHOW_WHEEL_THEME_PATH, config.SHOW_LETS_PLAY_STAB_PATH,
+                 _DING_PATH, _BUZZER_PATH):
         if os.path.isfile(path):
             out[os.path.basename(path)] = path
     roots = {_stab_root(d) for d in config.MUSIC_DECADES}
@@ -101,12 +108,14 @@ def catalog():
         spin = max(config.SHOW_WHEEL_MIN_SPIN_SECONDS, show_bed.wheel_theme_seconds())
     except Exception:
         spin = config.SHOW_WHEEL_MIN_SPIN_SECONDS
+    spin += config.SHOW_WHEEL_EXTRA_SECONDS
     bed = {name: preview_id("bed", name) for name in _bed_files()}
     return {
         "songs": songs,
         "spin_seconds": round(spin + stab, 1),
         "spin_fade_seconds": config.SHOW_SPIN_DECK_FADE_SECONDS,
-        "wheel_decades": config.SHOW_INTRO_WHEEL_DECADES,
+        "wheel_decades": sorted(config.MUSIC_DECADES),          # any decade can be landed on
+        "wheel_window": config.SHOW_INTRO_WHEEL_DECADES,       # the default four on the panels
         "bed": bed,
         "sim": {
             "intro_file": os.path.basename(config.SHOW_INTRO_MUSIC_PATH),
@@ -116,12 +125,14 @@ def catalog():
             "loop_out": config.SHOW_INTRO_LOOP_OUT_SECONDS,
             "duck": config.SHOW_INTRO_DUCK_LEVEL,
             "duck_ramp": config.SHOW_INTRO_DUCK_RAMP_SECONDS,
+            "duck_delay": config.SHOW_INTRO_DUCK_DELAY_SECONDS,
             "swell": config.SHOW_INTRO_SWELL_SECONDS,
             "release_fade": config.SHOW_INTRO_RELEASE_FADE_SECONDS,
             "hands_off_intro": config.SHOW_HANDS_OFF_INTRO_SECONDS,
             "stab_lead": config.SHOW_STAB_LEAD_SECONDS,
             "dovetail_fade": config.SHOW_SONG_DOVETAIL_FADE_SECONDS,
             "wheel_min_spin": config.SHOW_WHEEL_MIN_SPIN_SECONDS,
+            "wheel_extra": config.SHOW_WHEEL_EXTRA_SECONDS,
             "lets_play_at": config.SHOW_INTRO_LETS_PLAY_AT_SECONDS,
             "trivia_at": config.SHOW_INTRO_TRIVIA_AT_SECONDS,
             "cade_at": config.SHOW_INTRO_CADE_AT_SECONDS,
@@ -139,6 +150,8 @@ def catalog():
             "reveal_blink": config.MYSTERY_REVEAL_BLINK_SECONDS,
             "cascade_step": config.QUESTION_CASCADE_STEP_SECONDS,
             "scorecard_hold": config.GAME_SCORECARD_HOLD_SECONDS,
+            "right_file": os.path.basename(_DING_PATH),
+            "wrong_file": os.path.basename(_BUZZER_PATH),
             "scroll_speed": config.SCROLL_SPEED_PX_PER_SEC,
             "scroll_pause": config.SCROLL_PAUSE_SECONDS,
             "font": config.FONT_5X7,

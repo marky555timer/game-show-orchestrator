@@ -105,7 +105,11 @@ def _probe(device):
     try:
         link = serial.Serial(device, baudrate=config.USB_RELAY_SERIAL_BAUD,
                               timeout=1.0)
-        link.write(_frame(1, 0x00))
+        # Every channel OFF (2026-10-18): the board latches its last command,
+        # so a crash mid-honk (drivers/honk_engine.py, channel 4 = a blower
+        # motor) would otherwise leave it running across the restart.
+        for ch in range(1, config.USB_RELAY_CHANNEL_COUNT + 1):
+            link.write(_frame(ch, 0x00))
     except Exception as e:
         print(f"[RELAY] Could not open {device}: {e}")
         if link is not None:
@@ -181,6 +185,12 @@ def _send(channel, state):
         except Exception as e:
             print(f"[RELAY] Write failed on {_port}: {e}")
             _drop_link()
+
+
+def switch(channel, on):
+    """Plain on/off from any thread (drivers/honk_engine.py runs its pattern on
+    its own thread so a stalled main loop can't strand the motor on)."""
+    _send(channel, 0x01 if on else 0x00)
 
 
 def pulse(channel, duration=None):
@@ -263,12 +273,17 @@ def poll():
 
 
 def cleanup():
-    """Called from main.py's shutdown path -- stops the reconnect thread
-    and releases the port (mirrors accent_engine.cleanup()). Doesn't
-    explicitly force channels off first: a mid-pulse app exit is already a
-    rare 0.25s window, and the OS closing the serial handle doesn't change
-    the relay's last commanded state either way."""
+    """Called from main.py's shutdown path -- switches every channel off (the
+    board keeps its last command after the port closes, and channel 4 drives
+    a motor since 2026-10-18), stops the reconnect thread and releases the
+    port (mirrors accent_engine.cleanup())."""
     global _stop_requested
     _stop_requested = True
     with _lock:
+        if _link is not None:
+            for ch in range(1, config.USB_RELAY_CHANNEL_COUNT + 1):
+                try:
+                    _link.write(_frame(ch, 0x00))
+                except Exception:
+                    break
         _drop_link()

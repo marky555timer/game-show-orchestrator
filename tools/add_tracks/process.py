@@ -1,4 +1,4 @@
-"""process.py <src dir> <staging dir> -- trim dead air, level to TARGET LUFS, 44.1 kHz 256k MP3, write tags.
+"""process.py <src dir> <staging dir>  (ADD_TRACKS_SPECS=specs2 picks the batch's spec module; default specs1) -- trim dead air, level to TARGET LUFS, 44.1 kHz 256k MP3, write tags.
 Reads new_loud.json / new_edges.json beside this script; writes process_report.json."""
 import json
 import math
@@ -13,7 +13,8 @@ import numpy as np
 from mutagen.easyid3 import EasyID3
 from mutagen.id3 import ID3NoHeaderError
 
-from specs1 import SPECS
+import importlib
+SPECS = importlib.import_module(os.environ.get("ADD_TRACKS_SPECS", "specs1")).SPECS
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 FF = imageio_ffmpeg.get_ffmpeg_exe()

@@ -170,6 +170,41 @@ def _queue_serial(frame):
         _tx_cond.notify()
 
 
+def _log_failure_diagnostics(device):
+    """Best-effort snapshot for the once-per-boot serial write timeout
+    (2026-10-24): is it load, the port vanishing, or the board silent? Reads
+    only; never raises; the kernel log is fetched on a throwaway thread."""
+    try:
+        import os
+        import subprocess
+        now = time.monotonic()
+        try:
+            load = open("/proc/loadavg").read().split()[:3]
+        except OSError:
+            load = "?"
+        try:
+            temp = f"{int(open('/sys/class/thermal/thermal_zone0/temp').read()) / 1000:.1f}C"
+        except (OSError, ValueError):
+            temp = "?"
+        hb = "never" if _last_heartbeat_time == 0.0 else f"{now - _last_heartbeat_time:.1f}s ago"
+        ports = sorted(p for p in os.listdir("/dev") if p.startswith("ttyUSB")) if os.path.isdir("/dev") else []
+        print(f"[LED BRIDGE] DIAG write failure on {device}: load={load} "
+              f"since_connect={now - _connect_time:.0f}s heartbeat={hb} "
+              f"port_exists={os.path.exists(device)} ttyUSB={ports} "
+              f"cpu_temp={temp} threads={threading.active_count()} frames_sent={_frames_sent}", flush=True)
+
+        def _dmesg():
+            try:
+                time.sleep(1.0)  # let the close()-time USB errors land
+                out = subprocess.run(["dmesg", "-T"], capture_output=True, text=True, timeout=3).stdout
+                print("[LED BRIDGE] DIAG dmesg tail: " + " | ".join(out.strip().splitlines()[-4:]), flush=True)
+            except Exception:
+                pass
+        threading.Thread(target=_dmesg, daemon=True, name="led-diag").start()
+    except Exception:
+        pass
+
+
 def _handle_tx_error():
     """Main thread: the same close-and-fall-back-to-UDP handling the inline
     write used to do, for a failure the sender thread reported."""
@@ -181,6 +216,7 @@ def _handle_tx_error():
         if link is _serial_link and _serial_link is not None:
             print(f"[LED BRIDGE] Serial write failed ({e}); falling back to WiFi UDP.")
             device = _serial_link.port
+            _log_failure_diagnostics(device)
             try:
                 _serial_link.close()
             except Exception:

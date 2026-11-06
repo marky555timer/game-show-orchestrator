@@ -1910,5 +1910,3439 @@
    ]
   ],
   "note": "auto-timed 2026-10-13 (demucs + windowed whisper, onset-snapped)"
+ },
+ "ABBA - Dancing Queen.mp3": {
+  "panels": [
+   "YOU ARE|THE",
+   "DANCING",
+   "QUEEN",
+   "YOUNG &|SWEET"
+  ],
+  "times": [
+   [
+    85.69,
+    86.92,
+    87.79,
+    89.49
+   ],
+   [
+    157.4,
+    158.6,
+    159.54,
+    160.99
+   ]
+  ],
+  "note": "Add Tracks 2 auto-match (Demucs vocals + Whisper word timing, vocal-onset snapped); only confident occurrences kept, 2026-10-24."
+ },
+ "ABBA - Take a Chance on Me.mp3": {
+  "panels": [
+   "TAKE A",
+   "CHANCE",
+   "ON",
+   "ME"
+  ],
+  "times": [
+   [
+    7.08,
+    7.26,
+    7.72,
+    8.1
+   ],
+   [
+    42.04,
+    42.27,
+    42.62,
+    42.94
+   ],
+   [
+    90.48,
+    90.68,
+    91.2,
+    91.56
+   ],
+   [
+    109.81,
+    109.99,
+    110.47,
+    110.8
+   ],
+   [
+    125.51,
+    125.71,
+    126.08,
+    126.63
+   ],
+   [
+    173.6,
+    173.81,
+    174.17,
+    174.72
+   ]
+  ],
+  "note": "Add Tracks 2 auto-match (Demucs vocals + Whisper word timing, vocal-onset snapped); only confident occurrences kept, 2026-10-24."
+ },
+ "ABBA - Waterloo.mp3": {
+  "panels": [
+   "WATER",
+   "LOO",
+   "I WAS",
+   "DEFEATED"
+  ],
+  "times": [
+   [
+    29.86,
+    30.37,
+    31.25,
+    31.86
+   ]
+  ],
+  "note": "Add Tracks 2 auto-match (Demucs vocals + Whisper word timing, vocal-onset snapped); only confident occurrences kept, 2026-10-24."
+ },
+ "ACDC - Highway to Hell.mp3": {
+  "panels": [
+   "I'M ON|THE",
+   "HIGHWAY",
+   "TO",
+   "HELL"
+  ],
+  "times": [
+   [
+    52.44,
+    52.96,
+    54.02,
+    55.05
+   ],
+   [
+    114.52,
+    115.1,
+    116.19,
+    117.27
+   ],
+   [
+    147.52,
+    147.92,
+    148.97,
+    150.0
+   ],
+   [
+    151.79,
+    152.3,
+    153.09,
+    154.22
+   ],
+   [
+    155.77,
+    156.26,
+    157.27,
+    158.33
+   ]
+  ],
+  "note": "Add Tracks 2 auto-match (Demucs vocals + Whisper word timing, vocal-onset snapped); only confident occurrences kept, 2026-10-24."
+ },
+ "Aerosmith - Dude (Looks Like a Lady).mp3": {
+  "panels": [
+   "DUDE",
+   "LOOKS",
+   "LIKE A",
+   "LADY"
+  ],
+  "times": [
+   [
+    107.82,
+    108.33,
+    108.55,
+    108.8
+   ]
+  ],
+  "note": "Add Tracks 2 auto-match (Demucs vocals + Whisper word timing, vocal-onset snapped); only confident occurrences kept, 2026-10-24."
+ },
+ "Aerosmith - I Don't Want to Miss a Thing.mp3": {
+  "panels": [
+   "I DON'T|WANNA",
+   "CLOSE",
+   "MY",
+   "EYES"
+  ],
+  "times": [
+   [
+    135.83,
+    136.57,
+    137.12,
+    137.38
+   ]
+  ],
+  "note": "Add Tracks 2 auto-match (Demucs vocals + Whisper word timing, vocal-onset snapped); only confident occurrences kept, 2026-10-24."
+ },
+ "Bachman-Turner Overdrive - Takin' Care of Business.mp3": {
+  "panels": [
+   "TAKIN'",
+   "CARE",
+   "OF",
+   "BUSINESS"
+  ],
+  "times": [
+   [
+    281.61,
+    282.13,
+    282.63,
+    282.81
+   ]
+  ],
+  "note": "Add Tracks 2 auto-match (Demucs vocals + Whisper word timing, vocal-onset snapped); only confident occurrences kept, 2026-10-24."
+ },
+ "Bachman-Turner Overdrive - You Ain't Seen Nothing Yet.mp3": {
+  "panels": [
+   "YOU|AIN'T",
+   "SEEN",
+   "NOTHIN'",
+   "YET"
+  ],
+  "times": [
+   [
+    163.79,
+    164.36,
+    164.58,
+    164.79
+   ],
+   [
+    179.76,
+    180.38,
+    180.55,
+    180.73
+   ],
+   [
+    187.66,
+    188.18,
+    188.38,
+    188.54
+   ],
+   [
+    191.64,
+    192.07,
+    192.28,
+    192.44
+   ]
+  ],
+  "note": "Add Tracks 2 auto-match (Demucs vocals + Whisper word timing, vocal-onset snapped); only confident occurrences kept, 2026-10-24."
+ },
+ "Backstreet Boys - As Long as You Love Me.mp3": {
+  "panels": [
+   "AS LONG",
+   "AS YOU",
+   "LOVE",
+   "ME"
+  ],
+  "times": [
+   [
+    103.92,
+    105.3,
+    106.02,
+    106.21
+   ],
+   [
+    113.72,
+    115.07,
+    115.97,
+    116.14
+   ],
+   [
+    143.22,
+    144.73,
+    145.32,
+    145.65
+   ],
+   [
+    203.04,
+    204.55,
+    205.19,
+    205.54
+   ]
+  ],
+  "note": "Add Tracks 2 auto-match (Demucs vocals + Whisper word timing, vocal-onset snapped); only confident occurrences kept, 2026-10-24."
+ },
+ "Backstreet Boys - Everybody (Backstreet's Back).mp3": {
+  "panels": [
+   "EVERY|BODY",
+   "ROCK",
+   "YOUR",
+   "BODY"
+  ],
+  "times": [
+   [
+    122.15,
+    124.96,
+    125.39,
+    126.03
+   ]
+  ],
+  "note": "Add Tracks 2 auto-match (Demucs vocals + Whisper word timing, vocal-onset snapped); only confident occurrences kept, 2026-10-24."
+ },
+ "The Beach Boys - Fun, Fun, Fun.mp3": {
+  "panels": [
+   "SHE'LL|HAVE",
+   "FUN",
+   "FUN",
+   "FUN"
+  ],
+  "times": [
+   [
+    27.67,
+    28.38,
+    29.1,
+    29.46
+   ],
+   [
+    50.62,
+    51.68,
+    52.05,
+    52.81
+   ]
+  ],
+  "note": "Add Tracks 2 auto-match (Demucs vocals + Whisper word timing, vocal-onset snapped); only confident occurrences kept, 2026-10-24."
+ },
+ "Beastie Boys - (You Gotta) Fight for Your Right (To Party!).mp3": {
+  "panels": [
+   "FIGHT",
+   "FOR YOUR",
+   "RIGHT",
+   "TO|PARTY!"
+  ],
+  "times": [
+   [
+    151.27,
+    151.47,
+    153.08,
+    154.66
+   ],
+   [
+    162.05,
+    162.24,
+    163.86,
+    165.41
+   ]
+  ],
+  "note": "Add Tracks 2 auto-match (Demucs vocals + Whisper word timing, vocal-onset snapped); only confident occurrences kept, 2026-10-24."
+ },
+ "The Beatles - A Hard Day's Night.mp3": {
+  "panels": [
+   "IT'S BEEN",
+   "A HARD",
+   "DAY'S",
+   "NIGHT"
+  ],
+  "times": [
+   [
+    2.39,
+    3.06,
+    4.14,
+    4.72
+   ],
+   [
+    9.15,
+    9.83,
+    10.93,
+    11.53
+   ],
+   [
+    57.44,
+    58.08,
+    59.28,
+    59.93
+   ],
+   [
+    64.45,
+    64.98,
+    66.23,
+    66.86
+   ],
+   [
+    113.37,
+    114.06,
+    115.09,
+    115.71
+   ],
+   [
+    119.82,
+    120.5,
+    121.54,
+    122.33
+   ]
+  ],
+  "note": "Add Tracks 2 auto-match (Demucs vocals + Whisper word timing, vocal-onset snapped); only confident occurrences kept, 2026-10-24."
+ },
+ "The Beatles - All You Need Is Love.mp3": {
+  "panels": [
+   "ALL YOU",
+   "NEED",
+   "IS",
+   "LOVE"
+  ],
+  "times": [
+   [
+    61.77,
+    62.15,
+    62.73,
+    63.34
+   ],
+   [
+    66.46,
+    66.79,
+    67.44,
+    67.99
+   ],
+   [
+    71.13,
+    71.56,
+    72.11,
+    72.69
+   ],
+   [
+    96.09,
+    96.48,
+    97.06,
+    97.72
+   ],
+   [
+    105.3,
+    105.71,
+    106.28,
+    106.79
+   ],
+   [
+    130.01,
+    130.43,
+    130.98,
+    131.54
+   ]
+  ],
+  "note": "Add Tracks 2 auto-match (Demucs vocals + Whisper word timing, vocal-onset snapped); only confident occurrences kept, 2026-10-24."
+ },
+ "The Beatles - Can't Buy Me Love.mp3": {
+  "panels": [
+   "CAN'T",
+   "BUY",
+   "ME",
+   "LOVE"
+  ],
+  "times": [
+   [
+    0.13,
+    0.47,
+    0.71,
+    1.04
+   ],
+   [
+    5.56,
+    5.85,
+    6.08,
+    6.42
+   ],
+   [
+    68.09,
+    68.56,
+    68.72,
+    69.12
+   ]
+  ],
+  "note": "Add Tracks 2 auto-match (Demucs vocals + Whisper word timing, vocal-onset snapped); only confident occurrences kept, 2026-10-24."
+ },
+ "The Beatles - Come Together.mp3": {
+  "panels": [
+   "COME",
+   "TOGETHER",
+   "RIGHT|NOW",
+   "OVER|ME"
+  ],
+  "times": [
+   [
+    69.06,
+    69.41,
+    69.98,
+    74.78
+   ],
+   [
+    109.46,
+    109.82,
+    110.35,
+    115.25
+   ],
+   [
+    173.17,
+    173.67,
+    174.21,
+    178.99
+   ]
+  ],
+  "note": "Add Tracks 2 auto-match (Demucs vocals + Whisper word timing, vocal-onset snapped); only confident occurrences kept, 2026-10-24."
+ },
+ "The Beatles - Get Back.mp3": {
+  "panels": [
+   "GET",
+   "BACK",
+   "GET",
+   "BACK"
+  ],
+  "times": [
+   [
+    54.3,
+    54.51,
+    56.03,
+    56.26
+   ],
+   [
+    62.12,
+    62.37,
+    63.86,
+    64.1
+   ],
+   [
+    171.07,
+    171.22,
+    172.86,
+    173.06
+   ]
+  ],
+  "note": "Add Tracks 2 auto-match (Demucs vocals + Whisper word timing, vocal-onset snapped); only confident occurrences kept, 2026-10-24."
+ },
+ "The Beatles - Hello, Goodbye.mp3": {
+  "panels": [
+   "YOU SAY",
+   "GOODBYE",
+   "I SAY",
+   "HELLO"
+  ],
+  "times": [
+   [
+    25.84,
+    26.65,
+    27.53,
+    28.17
+   ],
+   [
+    101.24,
+    102.11,
+    103.06,
+    103.54
+   ],
+   [
+    108.61,
+    109.35,
+    110.24,
+    110.89
+   ],
+   [
+    129.9,
+    130.55,
+    131.51,
+    132.01
+   ],
+   [
+    138.35,
+    139.22,
+    140.16,
+    140.6
+   ],
+   [
+    145.63,
+    146.4,
+    147.38,
+    147.83
+   ],
+   [
+    152.8,
+    153.63,
+    154.4,
+    155.16
+   ]
+  ],
+  "note": "Add Tracks 2 auto-match (Demucs vocals + Whisper word timing, vocal-onset snapped); only confident occurrences kept, 2026-10-24."
+ },
+ "The Beatles - Help!.mp3": {
+  "panels": [
+   "HELP!",
+   "I NEED",
+   "SOMEBODY",
+   "HELP!"
+  ],
+  "times": [
+   [
+    0.08,
+    1.25,
+    1.65,
+    2.7
+   ]
+  ],
+  "note": "Add Tracks 2 auto-match (Demucs vocals + Whisper word timing, vocal-onset snapped); only confident occurrences kept, 2026-10-24."
+ },
+ "The Beatles - Here Comes the Sun.mp3": {
+  "panels": [
+   "HERE",
+   "COMES",
+   "THE",
+   "SUN"
+  ],
+  "times": [
+   [
+    42.87,
+    43.16,
+    43.37,
+    43.8
+   ],
+   [
+    147.11,
+    147.36,
+    147.53,
+    148.0
+   ]
+  ],
+  "note": "Add Tracks 2 auto-match (Demucs vocals + Whisper word timing, vocal-onset snapped); only confident occurrences kept, 2026-10-24."
+ },
+ "The Beatles - I Want to Hold Your Hand.mp3": {
+  "panels": [
+   "I WANNA",
+   "HOLD",
+   "YOUR",
+   "HAND"
+  ],
+  "times": [
+   [
+    18.23,
+    19.15,
+    19.82,
+    20.05
+   ],
+   [
+    25.54,
+    26.43,
+    27.06,
+    27.45
+   ],
+   [
+    81.98,
+    82.86,
+    83.51,
+    83.75
+   ],
+   [
+    124.57,
+    125.23,
+    125.91,
+    126.16
+   ]
+  ],
+  "note": "Add Tracks 2 auto-match (Demucs vocals + Whisper word timing, vocal-onset snapped); only confident occurrences kept, 2026-10-24."
+ },
+ "The Beatles - Love Me Do.mp3": {
+  "panels": [
+   "LOVE",
+   "LOVE",
+   "ME",
+   "DO"
+  ],
+  "times": [
+   [
+    13.13,
+    13.97,
+    14.37,
+    14.6
+   ],
+   [
+    34.42,
+    35.25,
+    35.66,
+    35.93
+   ],
+   [
+    68.85,
+    69.71,
+    70.12,
+    70.38
+   ],
+   [
+    109.47,
+    110.3,
+    110.73,
+    110.95
+   ]
+  ],
+  "note": "Add Tracks 2 auto-match (Demucs vocals + Whisper word timing, vocal-onset snapped); only confident occurrences kept, 2026-10-24."
+ },
+ "The Beatles - She Loves You.mp3": {
+  "panels": [
+   "SHE|LOVES",
+   "YOU",
+   "YEAH",
+   "YEAH"
+  ],
+  "times": [
+   [
+    101.9,
+    102.42,
+    103.41,
+    103.61
+   ],
+   [
+    104.93,
+    105.53,
+    106.01,
+    106.75
+   ]
+  ],
+  "note": "Add Tracks 2 auto-match (Demucs vocals + Whisper word timing, vocal-onset snapped); only confident occurrences kept, 2026-10-24."
+ },
+ "The Beatles - Ticket to Ride.mp3": {
+  "panels": [
+   "SHE'S GOT",
+   "A TICKET",
+   "TO",
+   "RIDE"
+  ],
+  "times": [
+   [
+    23.03,
+    24.01,
+    24.26,
+    24.49
+   ],
+   [
+    26.82,
+    27.81,
+    28.08,
+    28.28
+   ],
+   [
+    30.63,
+    31.6,
+    31.86,
+    32.08
+   ],
+   [
+    53.82,
+    54.8,
+    55.05,
+    55.26
+   ],
+   [
+    57.65,
+    58.61,
+    58.88,
+    59.09
+   ],
+   [
+    61.44,
+    62.31,
+    62.56,
+    62.76
+   ],
+   [
+    102.51,
+    103.51,
+    103.78,
+    103.99
+   ],
+   [
+    106.46,
+    107.45,
+    107.74,
+    107.94
+   ],
+   [
+    151.55,
+    152.51,
+    152.78,
+    152.99
+   ],
+   [
+    155.44,
+    156.42,
+    156.68,
+    156.89
+   ],
+   [
+    159.39,
+    160.37,
+    160.65,
+    160.89
+   ]
+  ],
+  "note": "Add Tracks 2 auto-match (Demucs vocals + Whisper word timing, vocal-onset snapped); only confident occurrences kept, 2026-10-24."
+ },
+ "The Beatles - Twist and Shout.mp3": {
+  "panels": [
+   "BABY",
+   "TWIST",
+   "AND",
+   "SHOUT"
+  ],
+  "times": [
+   [
+    10.04,
+    11.28,
+    11.72,
+    12.21
+   ]
+  ],
+  "note": "Add Tracks 2 auto-match (Demucs vocals + Whisper word timing, vocal-onset snapped); only confident occurrences kept, 2026-10-24."
+ },
+ "The Beatles - Yellow Submarine.mp3": {
+  "panels": [
+   "WE ALL",
+   "LIVE IN A",
+   "YELLOW",
+   "SUB|MARINE"
+  ],
+  "times": [
+   [
+    35.76,
+    36.97,
+    37.94,
+    38.54
+   ],
+   [
+    44.44,
+    45.56,
+    46.47,
+    47.19
+   ],
+   [
+    70.46,
+    71.65,
+    72.47,
+    72.99
+   ],
+   [
+    122.47,
+    123.71,
+    124.55,
+    125.14
+   ],
+   [
+    131.25,
+    132.29,
+    133.24,
+    133.87
+   ]
+  ],
+  "note": "Add Tracks 2 auto-match (Demucs vocals + Whisper word timing, vocal-onset snapped); only confident occurrences kept, 2026-10-24."
+ },
+ "The Beatles - Yesterday.mp3": {
+  "panels": [
+   "YESTER",
+   "DAY",
+   "ALL MY",
+   "TROUBLES"
+  ],
+  "times": [
+   [
+    5.05,
+    5.36,
+    8.14,
+    8.77
+   ]
+  ],
+  "note": "Add Tracks 2 auto-match (Demucs vocals + Whisper word timing, vocal-onset snapped); only confident occurrences kept, 2026-10-24."
+ },
+ "Bee Gees - More Than a Woman.mp3": {
+  "panels": [
+   "MORE",
+   "THAN A",
+   "WOMAN",
+   "TO ME"
+  ],
+  "times": [
+   [
+    126.86,
+    127.01,
+    128.08,
+    128.37
+   ]
+  ],
+  "note": "Add Tracks 2 auto-match (Demucs vocals + Whisper word timing, vocal-onset snapped); only confident occurrences kept, 2026-10-24."
+ },
+ "Bee Gees - Stayin' Alive.mp3": {
+  "panels": [
+   "STAYIN'",
+   "ALIVE",
+   "STAYIN'",
+   "ALIVE"
+  ],
+  "times": [
+   [
+    83.37,
+    83.93,
+    84.66,
+    85.1
+   ],
+   [
+    88.15,
+    88.57,
+    89.3,
+    89.91
+   ],
+   [
+    92.79,
+    93.21,
+    93.94,
+    94.52
+   ]
+  ],
+  "note": "Add Tracks 2 auto-match (Demucs vocals + Whisper word timing, vocal-onset snapped); only confident occurrences kept, 2026-10-24."
+ },
+ "Bon Jovi - Wanted Dead or Alive.mp3": {
+  "panels": [
+   "WANTED",
+   "DEAD",
+   "OR",
+   "ALIVE"
+  ],
+  "times": [
+   [
+    247.78,
+    249.96,
+    250.34,
+    250.74
+   ]
+  ],
+  "note": "Add Tracks 2 auto-match (Demucs vocals + Whisper word timing, vocal-onset snapped); only confident occurrences kept, 2026-10-24."
+ },
+ "Bruce Springsteen - Born in the U.S.A..mp3": {
+  "panels": [
+   "BORN",
+   "IN THE",
+   "U.S.",
+   "A."
+  ],
+  "times": [
+   [
+    33.21,
+    33.75,
+    34.71,
+    35.25
+   ],
+   [
+    37.19,
+    37.7,
+    38.77,
+    39.27
+   ],
+   [
+    41.28,
+    41.77,
+    42.78,
+    43.27
+   ],
+   [
+    45.06,
+    45.66,
+    46.47,
+    47.02
+   ],
+   [
+    159.18,
+    159.56,
+    160.47,
+    161.02
+   ],
+   [
+    163.19,
+    163.74,
+    164.75,
+    165.29
+   ],
+   [
+    167.26,
+    167.73,
+    168.76,
+    169.29
+   ],
+   [
+    175.14,
+    175.6,
+    176.61,
+    177.19
+   ],
+   [
+    179.02,
+    179.44,
+    180.51,
+    181.03
+   ]
+  ],
+  "note": "Add Tracks 2 auto-match (Demucs vocals + Whisper word timing, vocal-onset snapped); only confident occurrences kept, 2026-10-24."
+ },
+ "Bruce Springsteen - Born to Run.mp3": {
+  "panels": [
+   "BABY",
+   "WE WERE",
+   "BORN",
+   "TO RUN"
+  ],
+  "times": [
+   [
+    49.01,
+    49.43,
+    49.85,
+    50.64
+   ],
+   [
+    219.89,
+    220.29,
+    220.72,
+    221.55
+   ],
+   [
+    226.02,
+    226.4,
+    226.99,
+    227.79
+   ],
+   [
+    232.34,
+    232.82,
+    233.42,
+    234.18
+   ]
+  ],
+  "note": "Add Tracks 2 auto-match (Demucs vocals + Whisper word timing, vocal-onset snapped); only confident occurrences kept, 2026-10-24."
+ },
+ "Bryan Adams - Heaven.mp3": {
+  "panels": [
+   "BABY|YOU'RE",
+   "ALL THAT",
+   "I",
+   "WANT"
+  ],
+  "times": [
+   [
+    113.13,
+    113.74,
+    114.37,
+    114.8
+   ]
+  ],
+  "note": "Add Tracks 2 auto-match (Demucs vocals + Whisper word timing, vocal-onset snapped); only confident occurrences kept, 2026-10-24."
+ },
+ "Buster Poindexter - Hot Hot Hot.mp3": {
+  "panels": [
+   "FEELIN'",
+   "HOT",
+   "HOT",
+   "HOT"
+  ],
+  "times": [
+   [
+    34.87,
+    35.3,
+    35.64,
+    35.97
+   ],
+   [
+    42.43,
+    42.88,
+    43.22,
+    43.56
+   ],
+   [
+    72.48,
+    72.91,
+    73.27,
+    73.61
+   ],
+   [
+    87.38,
+    87.83,
+    88.16,
+    88.49
+   ]
+  ],
+  "note": "Add Tracks 2 auto-match (Demucs vocals + Whisper word timing, vocal-onset snapped); only confident occurrences kept, 2026-10-24."
+ },
+ "The Cars - My Best Friend's Girl.mp3": {
+  "panels": [
+   "SHE'S MY",
+   "BEST",
+   "FRIEND'S",
+   "GIRL"
+  ],
+  "times": [
+   [
+    50.27,
+    50.73,
+    51.44,
+    51.81
+   ],
+   [
+    54.49,
+    54.98,
+    55.46,
+    55.91
+   ],
+   [
+    101.57,
+    102.04,
+    102.53,
+    103.0
+   ],
+   [
+    105.49,
+    105.96,
+    106.45,
+    106.89
+   ],
+   [
+    171.91,
+    172.36,
+    172.84,
+    173.37
+   ],
+   [
+    175.64,
+    176.01,
+    176.72,
+    177.24
+   ]
+  ],
+  "note": "Add Tracks 2 auto-match (Demucs vocals + Whisper word timing, vocal-onset snapped); only confident occurrences kept, 2026-10-24."
+ },
+ "Cheap Trick - I Want You to Want Me.mp3": {
+  "panels": [
+   "I WANT",
+   "YOU",
+   "TO WANT",
+   "ME"
+  ],
+  "times": [
+   [
+    181.63,
+    182.47,
+    183.49,
+    184.66
+   ]
+  ],
+  "note": "Add Tracks 2 auto-match (Demucs vocals + Whisper word timing, vocal-onset snapped); only confident occurrences kept, 2026-10-24."
+ },
+ "Cher - Believe.mp3": {
+  "panels": [
+   "DO YOU",
+   "BELIEVE",
+   "IN LIFE",
+   "AFTER|LOVE"
+  ],
+  "times": [
+   [
+    58.52,
+    58.96,
+    59.77,
+    60.76
+   ],
+   [
+    72.95,
+    73.41,
+    74.13,
+    75.19
+   ],
+   [
+    116.27,
+    116.71,
+    117.43,
+    118.5
+   ],
+   [
+    130.67,
+    131.14,
+    131.86,
+    132.93
+   ],
+   [
+    202.84,
+    203.28,
+    204.07,
+    205.12
+   ],
+   [
+    217.28,
+    217.77,
+    218.52,
+    219.56
+   ]
+  ],
+  "note": "Add Tracks 2 auto-match (Demucs vocals + Whisper word timing, vocal-onset snapped); only confident occurrences kept, 2026-10-24."
+ },
+ "Creedence Clearwater Revival - Fortunate Son.mp3": {
+  "panels": [
+   "IT AIN'T",
+   "ME",
+   "IT AIN'T",
+   "ME"
+  ],
+  "times": [
+   [
+    33.26,
+    33.6,
+    34.97,
+    35.38
+   ],
+   [
+    40.48,
+    40.79,
+    42.32,
+    42.69
+   ],
+   [
+    62.17,
+    62.46,
+    63.87,
+    64.26
+   ],
+   [
+    69.32,
+    69.71,
+    71.09,
+    71.48
+   ],
+   [
+    105.66,
+    106.04,
+    107.47,
+    107.85
+   ]
+  ],
+  "note": "Add Tracks 2 auto-match (Demucs vocals + Whisper word timing, vocal-onset snapped); only confident occurrences kept, 2026-10-24."
+ },
+ "Creedence Clearwater Revival - Proud Mary.mp3": {
+  "panels": [
+   "ROLLIN'",
+   "ROLLIN'",
+   "ON THE",
+   "RIVER"
+  ],
+  "times": [
+   [
+    69.83,
+    70.88,
+    72.5,
+    72.96
+   ],
+   [
+    113.29,
+    114.34,
+    115.98,
+    116.38
+   ],
+   [
+    163.83,
+    165.0,
+    166.75,
+    166.99
+   ]
+  ],
+  "note": "Add Tracks 2 auto-match (Demucs vocals + Whisper word timing, vocal-onset snapped); only confident occurrences kept, 2026-10-24."
+ },
+ "Dolly Parton - Jolene.mp3": {
+  "panels": [
+   "JOLENE",
+   "JOLENE",
+   "JOLENE",
+   "JOLENE"
+  ],
+  "times": [
+   [
+    21.34,
+    23.72,
+    24.9,
+    25.81
+   ],
+   [
+    150.4,
+    152.75,
+    153.92,
+    154.89
+   ],
+   [
+    164.34,
+    166.82,
+    167.97,
+    168.89
+   ]
+  ],
+  "note": "Add Tracks 2 auto-match (Demucs vocals + Whisper word timing, vocal-onset snapped); only confident occurrences kept, 2026-10-24."
+ },
+ "Kenny Rogers & Dolly Parton - Islands in the Stream.mp3": {
+  "panels": [
+   "ISLANDS",
+   "IN THE",
+   "STREAM",
+   "THAT IS|WHAT WE ARE"
+  ],
+  "times": [
+   [
+    65.1,
+    65.72,
+    66.33,
+    67.46
+   ],
+   [
+    216.29,
+    216.5,
+    217.01,
+    218.19
+   ]
+  ],
+  "note": "Add Tracks 2 auto-match (Demucs vocals + Whisper word timing, vocal-onset snapped); only confident occurrences kept, 2026-10-24."
+ },
+ "The Doors - Break On Through (To the Other Side).mp3": {
+  "panels": [
+   "BREAK|ON",
+   "THROUGH",
+   "TO THE|OTHER",
+   "SIDE"
+  ],
+  "times": [
+   [
+    18.13,
+    18.51,
+    18.97,
+    19.83
+   ]
+  ],
+  "note": "Add Tracks 2 auto-match (Demucs vocals + Whisper word timing, vocal-onset snapped); only confident occurrences kept, 2026-10-24."
+ },
+ "The Doors - Hello, I Love You.mp3": {
+  "panels": [
+   "HELLO",
+   "I LOVE|YOU",
+   "WON'T YOU|TELL",
+   "ME YOUR|NAME"
+  ],
+  "times": [
+   [
+    9.5,
+    10.45,
+    11.22,
+    11.73
+   ],
+   [
+    17.83,
+    18.84,
+    19.64,
+    19.88
+   ],
+   [
+    42.42,
+    43.19,
+    43.96,
+    44.47
+   ],
+   [
+    50.58,
+    51.3,
+    52.09,
+    52.58
+   ]
+  ],
+  "note": "Add Tracks 2 auto-match (Demucs vocals + Whisper word timing, vocal-onset snapped); only confident occurrences kept, 2026-10-24."
+ },
+ "The Doors - Light My Fire.mp3": {
+  "panels": [
+   "COME ON",
+   "BABY",
+   "LIGHT|MY",
+   "FIRE"
+  ],
+  "times": [
+   [
+    25.01,
+    25.5,
+    26.02,
+    26.66
+   ],
+   [
+    28.76,
+    29.51,
+    29.75,
+    30.5
+   ],
+   [
+    53.46,
+    53.95,
+    54.46,
+    54.89
+   ],
+   [
+    57.24,
+    57.8,
+    58.22,
+    58.75
+   ],
+   [
+    358.56,
+    359.08,
+    359.53,
+    360.07
+   ],
+   [
+    362.41,
+    363.16,
+    363.42,
+    364.15
+   ],
+   [
+    391.03,
+    391.58,
+    391.9,
+    392.46
+   ]
+  ],
+  "note": "Add Tracks 2 auto-match (Demucs vocals + Whisper word timing, vocal-onset snapped); only confident occurrences kept, 2026-10-24."
+ },
+ "Eagles - Heartache Tonight.mp3": {
+  "panels": [
+   "GONNA BE",
+   "A HEART",
+   "ACHE",
+   "TONIGHT"
+  ],
+  "times": [
+   [
+    45.51,
+    46.23,
+    47.13,
+    47.67
+   ],
+   [
+    54.23,
+    54.77,
+    55.54,
+    56.19
+   ],
+   [
+    100.83,
+    101.36,
+    102.24,
+    102.75
+   ],
+   [
+    109.3,
+    110.06,
+    110.76,
+    111.27
+   ],
+   [
+    117.77,
+    118.5,
+    119.39,
+    119.9
+   ],
+   [
+    126.56,
+    127.19,
+    127.85,
+    128.32
+   ],
+   [
+    194.08,
+    194.92,
+    195.7,
+    196.18
+   ]
+  ],
+  "note": "Add Tracks 2 auto-match (Demucs vocals + Whisper word timing, vocal-onset snapped); only confident occurrences kept, 2026-10-24."
+ },
+ "Eagles - Hotel California.mp3": {
+  "panels": [
+   "WELCOME",
+   "TO THE|HOTEL",
+   "CALI",
+   "FORNIA"
+  ],
+  "times": [
+   [
+    180.81,
+    182.5,
+    183.84,
+    184.41
+   ]
+  ],
+  "note": "Add Tracks 2 auto-match (Demucs vocals + Whisper word timing, vocal-onset snapped); only confident occurrences kept, 2026-10-24."
+ },
+ "Eagles - Life in the Fast Lane.mp3": {
+  "panels": [
+   "LIFE",
+   "IN THE",
+   "FAST",
+   "LANE"
+  ],
+  "times": [
+   [
+    62.1,
+    62.39,
+    62.79,
+    63.22
+   ],
+   [
+    66.47,
+    66.8,
+    67.28,
+    67.58
+   ],
+   [
+    114.51,
+    114.81,
+    115.2,
+    115.64
+   ],
+   [
+    118.88,
+    119.18,
+    119.56,
+    119.97
+   ],
+   [
+    123.27,
+    123.57,
+    123.96,
+    124.38
+   ],
+   [
+    201.46,
+    201.79,
+    202.15,
+    202.6
+   ],
+   [
+    205.85,
+    206.11,
+    206.5,
+    206.93
+   ],
+   [
+    210.19,
+    210.44,
+    210.82,
+    211.24
+   ],
+   [
+    214.45,
+    214.74,
+    215.13,
+    215.52
+   ],
+   [
+    219.89,
+    220.24,
+    220.6,
+    221.04
+   ],
+   [
+    228.7,
+    228.93,
+    229.35,
+    229.76
+   ]
+  ],
+  "note": "Add Tracks 2 auto-match (Demucs vocals + Whisper word timing, vocal-onset snapped); only confident occurrences kept, 2026-10-24."
+ },
+ "Eagles - Take It to the Limit.mp3": {
+  "panels": [
+   "TAKE IT",
+   "TO THE",
+   "LIMIT",
+   "ONE MORE|TIME"
+  ],
+  "times": [
+   [
+    87.85,
+    89.29,
+    89.77,
+    90.15
+   ],
+   [
+    178.26,
+    179.7,
+    180.21,
+    180.58
+   ],
+   [
+    193.74,
+    195.06,
+    195.67,
+    196.1
+   ]
+  ],
+  "note": "Add Tracks 2 auto-match (Demucs vocals + Whisper word timing, vocal-onset snapped); only confident occurrences kept, 2026-10-24."
+ },
+ "Edwin Starr - War.mp3": {
+  "panels": [
+   "WHAT IS|IT",
+   "GOOD|FOR",
+   "ABSO|LUTELY",
+   "NOTHIN'"
+  ],
+  "times": [
+   [
+    24.88,
+    25.99,
+    27.51,
+    28.1
+   ],
+   [
+    60.46,
+    61.55,
+    62.94,
+    63.72
+   ],
+   [
+    95.84,
+    96.95,
+    98.35,
+    99.11
+   ],
+   [
+    104.59,
+    105.68,
+    107.08,
+    107.83
+   ],
+   [
+    148.84,
+    149.91,
+    151.34,
+    152.08
+   ]
+  ],
+  "note": "Add Tracks 2 auto-match (Demucs vocals + Whisper word timing, vocal-onset snapped); only confident occurrences kept, 2026-10-24."
+ },
+ "Electric Light Orchestra - Mr. Blue Sky.mp3": {
+  "panels": [
+   "MISTER",
+   "BLUE",
+   "SKY",
+   "PLEASE|TELL US"
+  ],
+  "times": [
+   [
+    63.22,
+    63.78,
+    64.15,
+    64.58
+   ],
+   [
+    176.77,
+    177.36,
+    177.54,
+    178.13
+   ]
+  ],
+  "note": "Add Tracks 2 auto-match (Demucs vocals + Whisper word timing, vocal-onset snapped); only confident occurrences kept, 2026-10-24."
+ },
+ "Elton John - I'm Still Standing.mp3": {
+  "panels": [
+   "DON'T YOU|KNOW",
+   "I'M",
+   "STILL",
+   "STANDING"
+  ],
+  "times": [
+   [
+    37.63,
+    38.29,
+    38.99,
+    39.51
+   ]
+  ],
+  "note": "Add Tracks 2 auto-match (Demucs vocals + Whisper word timing, vocal-onset snapped); only confident occurrences kept, 2026-10-24."
+ },
+ "Elton John - Rocket Man (I Think It's Going to Be a Long, Long Time).mp3": {
+  "panels": [
+   "ROCKET",
+   "MAN",
+   "BURNIN'|OUT HIS",
+   "FUSE"
+  ],
+  "times": [
+   [
+    101.42,
+    102.1,
+    102.6,
+    104.35
+   ]
+  ],
+  "note": "Add Tracks 2 auto-match (Demucs vocals + Whisper word timing, vocal-onset snapped); only confident occurrences kept, 2026-10-24."
+ },
+ "Elton John - Saturday Night's Alright for Fighting.mp3": {
+  "panels": [
+   "SATUR|DAY",
+   "NIGHT'S",
+   "ALRIGHT",
+   "FOR|FIGHTING"
+  ],
+  "times": [
+   [
+    173.88,
+    174.69,
+    175.08,
+    175.48
+   ]
+  ],
+  "note": "Add Tracks 2 auto-match (Demucs vocals + Whisper word timing, vocal-onset snapped); only confident occurrences kept, 2026-10-24."
+ },
+ "Elvis Presley - All Shook Up.mp3": {
+  "panels": [
+   "I'M",
+   "ALL",
+   "SHOOK",
+   "UP"
+  ],
+  "times": [
+   [
+    17.98,
+    18.16,
+    18.57,
+    18.81
+   ],
+   [
+    37.4,
+    37.58,
+    37.99,
+    38.22
+   ],
+   [
+    69.54,
+    69.7,
+    70.12,
+    70.34
+   ],
+   [
+    101.35,
+    101.51,
+    101.81,
+    102.15
+   ],
+   [
+    114.12,
+    114.28,
+    114.68,
+    114.89
+   ]
+  ],
+  "note": "Add Tracks 2 auto-match (Demucs vocals + Whisper word timing, vocal-onset snapped); only confident occurrences kept, 2026-10-24."
+ },
+ "Fleetwood Mac - Go Your Own Way.mp3": {
+  "panels": [
+   "YOU CAN",
+   "GO YOUR",
+   "OWN",
+   "WAY"
+  ],
+  "times": [
+   [
+    32.97,
+    33.4,
+    34.32,
+    34.89
+   ],
+   [
+    47.04,
+    47.5,
+    48.39,
+    48.83
+   ],
+   [
+    50.64,
+    51.05,
+    51.91,
+    52.36
+   ],
+   [
+    82.41,
+    82.86,
+    83.73,
+    84.21
+   ],
+   [
+    96.61,
+    97.06,
+    97.93,
+    98.43
+   ],
+   [
+    131.97,
+    132.39,
+    133.29,
+    133.84
+   ],
+   [
+    146.17,
+    146.6,
+    147.47,
+    148.04
+   ]
+  ],
+  "note": "Add Tracks 2 auto-match (Demucs vocals + Whisper word timing, vocal-onset snapped); only confident occurrences kept, 2026-10-24."
+ },
+ "Fleetwood Mac - Little Lies.mp3": {
+  "panels": [
+   "TELL ME",
+   "LIES",
+   "TELL ME",
+   "SWEET|LITTLE LIES"
+  ],
+  "times": [
+   [
+    46.21,
+    47.08,
+    47.9,
+    48.45
+   ],
+   [
+    61.47,
+    62.39,
+    63.25,
+    63.76
+   ],
+   [
+    115.7,
+    116.63,
+    117.31,
+    117.9
+   ],
+   [
+    184.97,
+    185.99,
+    186.48,
+    187.02
+   ],
+   [
+    200.13,
+    201.12,
+    201.82,
+    202.36
+   ]
+  ],
+  "note": "Add Tracks 2 auto-match (Demucs vocals + Whisper word timing, vocal-onset snapped); only confident occurrences kept, 2026-10-24."
+ },
+ "The Four Seasons - Big Girls Don't Cry.mp3": {
+  "panels": [
+   "BIG",
+   "GIRLS",
+   "DON'T",
+   "CRY"
+  ],
+  "times": [
+   [
+    2.48,
+    2.83,
+    4.32,
+    5.47
+   ],
+   [
+    124.01,
+    124.47,
+    125.9,
+    126.83
+   ],
+   [
+    127.78,
+    128.13,
+    129.63,
+    130.68
+   ],
+   [
+    131.45,
+    131.79,
+    133.28,
+    134.37
+   ],
+   [
+    134.99,
+    135.2,
+    136.67,
+    137.88
+   ]
+  ],
+  "note": "Add Tracks 2 auto-match (Demucs vocals + Whisper word timing, vocal-onset snapped); only confident occurrences kept, 2026-10-24."
+ },
+ "The Four Seasons - Sherry.mp3": {
+  "panels": [
+   "SHERRY",
+   "SHERRY",
+   "BA",
+   "BY"
+  ],
+  "times": [
+   [
+    118.89,
+    120.78,
+    121.92,
+    122.12
+   ]
+  ],
+  "note": "Add Tracks 2 auto-match (Demucs vocals + Whisper word timing, vocal-onset snapped); only confident occurrences kept, 2026-10-24."
+ },
+ "Garth Brooks - Friends in Low Places.mp3": {
+  "panels": [
+   "I'VE GOT",
+   "FRIENDS",
+   "IN LOW",
+   "PLACES"
+  ],
+  "times": [
+   [
+    46.0,
+    46.54,
+    47.33,
+    48.05
+   ],
+   [
+    170.49,
+    171.0,
+    171.67,
+    172.67
+   ],
+   [
+    205.43,
+    206.01,
+    206.82,
+    207.64
+   ]
+  ],
+  "note": "Add Tracks 2 auto-match (Demucs vocals + Whisper word timing, vocal-onset snapped); only confident occurrences kept, 2026-10-24."
+ },
+ "Grand Funk Railroad - We're an American Band.mp3": {
+  "panels": [
+   "WE'RE",
+   "AN",
+   "AMERICAN",
+   "BAND"
+  ],
+  "times": [
+   [
+    138.43,
+    138.91,
+    139.14,
+    139.57
+   ],
+   [
+    161.07,
+    161.51,
+    161.67,
+    162.06
+   ],
+   [
+    183.33,
+    183.85,
+    184.0,
+    184.63
+   ],
+   [
+    186.95,
+    187.38,
+    187.61,
+    188.02
+   ],
+   [
+    194.36,
+    194.86,
+    195.06,
+    195.52
+   ]
+  ],
+  "note": "Add Tracks 2 auto-match (Demucs vocals + Whisper word timing, vocal-onset snapped); only confident occurrences kept, 2026-10-24."
+ },
+ "The Guess Who - American Woman.mp3": {
+  "panels": [
+   "AMERICAN",
+   "WOMAN",
+   "STAY|AWAY",
+   "FROM|ME"
+  ],
+  "times": [
+   [
+    96.46,
+    96.95,
+    98.88,
+    99.48
+   ]
+  ],
+  "note": "Add Tracks 2 auto-match (Demucs vocals + Whisper word timing, vocal-onset snapped); only confident occurrences kept, 2026-10-24."
+ },
+ "Daryl Hall & John Oates - You Make My Dreams.mp3": {
+  "panels": [
+   "YOU MAKE",
+   "MY",
+   "DREAMS",
+   "COME|TRUE"
+  ],
+  "times": [
+   [
+    36.66,
+    38.18,
+    38.91,
+    39.5
+   ],
+   [
+    48.13,
+    49.71,
+    50.42,
+    50.9
+   ],
+   [
+    82.67,
+    84.22,
+    84.95,
+    85.52
+   ]
+  ],
+  "note": "Add Tracks 2 auto-match (Demucs vocals + Whisper word timing, vocal-onset snapped); only confident occurrences kept, 2026-10-24."
+ },
+ "The Hues Corporation - Rock the Boat.mp3": {
+  "panels": [
+   "ROCK",
+   "THE BOAT",
+   "DON'T|ROCK",
+   "THE BOAT"
+  ],
+  "times": [
+   [
+    22.75,
+    23.14,
+    23.77,
+    24.19
+   ],
+   [
+    78.58,
+    78.97,
+    79.4,
+    79.98
+   ]
+  ],
+  "note": "Add Tracks 2 auto-match (Demucs vocals + Whisper word timing, vocal-onset snapped); only confident occurrences kept, 2026-10-24."
+ },
+ "Jimmy Buffett - Cheeseburger in Paradise.mp3": {
+  "panels": [
+   "CHEESE",
+   "BURGER",
+   "IN",
+   "PARADISE"
+  ],
+  "times": [
+   [
+    45.28,
+    45.99,
+    46.42,
+    46.9
+   ],
+   [
+    79.86,
+    80.58,
+    80.87,
+    81.25
+   ],
+   [
+    89.61,
+    90.3,
+    90.74,
+    91.18
+   ],
+   [
+    120.08,
+    120.66,
+    121.13,
+    121.61
+   ]
+  ],
+  "note": "Add Tracks 2 auto-match (Demucs vocals + Whisper word timing, vocal-onset snapped); only confident occurrences kept, 2026-10-24."
+ },
+ "Jimmy Buffett - Margaritaville.mp3": {
+  "panels": [
+   "WASTIN'",
+   "AWAY",
+   "AGAIN IN",
+   "MARGARITA|VILLE"
+  ],
+  "times": [
+   [
+    41.6,
+    41.9,
+    43.08,
+    44.08
+   ],
+   [
+    195.73,
+    196.17,
+    196.97,
+    197.64
+   ]
+  ],
+  "note": "Add Tracks 2 auto-match (Demucs vocals + Whisper word timing, vocal-onset snapped); only confident occurrences kept, 2026-10-24."
+ },
+ "Kansas - Carry On Wayward Son.mp3": {
+  "panels": [
+   "CARRY|ON",
+   "MY",
+   "WAYWARD",
+   "SON"
+  ],
+  "times": [
+   [
+    0.17,
+    1.15,
+    1.44,
+    2.08
+   ]
+  ],
+  "note": "Add Tracks 2 auto-match (Demucs vocals + Whisper word timing, vocal-onset snapped); only confident occurrences kept, 2026-10-24."
+ },
+ "Kansas - Dust in the Wind.mp3": {
+  "panels": [
+   "ALL WE|ARE",
+   "IS",
+   "DUST IN|THE",
+   "WIND"
+  ],
+  "times": [
+   [
+    77.08,
+    77.7,
+    78.3,
+    79.32
+   ],
+   [
+    156.54,
+    157.31,
+    157.75,
+    159.0
+   ]
+  ],
+  "note": "Add Tracks 2 auto-match (Demucs vocals + Whisper word timing, vocal-onset snapped); only confident occurrences kept, 2026-10-24."
+ },
+ "KC & The Sunshine Band - Boogie Shoes.mp3": {
+  "panels": [
+   "PUT ON",
+   "MY MY|MY MY",
+   "BOOGIE",
+   "SHOES"
+  ],
+  "times": [
+   [
+    89.95,
+    90.56,
+    92.72,
+    93.01
+   ],
+   [
+    121.95,
+    122.56,
+    124.72,
+    124.98
+   ]
+  ],
+  "note": "Add Tracks 2 auto-match (Demucs vocals + Whisper word timing, vocal-onset snapped); only confident occurrences kept, 2026-10-24."
+ },
+ "Kenny Loggins - Danger Zone.mp3": {
+  "panels": [
+   "HIGHWAY",
+   "TO THE",
+   "DANGER",
+   "ZONE"
+  ],
+  "times": [
+   [
+    123.43,
+    124.22,
+    126.5,
+    127.06
+   ],
+   [
+    135.64,
+    136.44,
+    138.68,
+    139.28
+   ],
+   [
+    169.15,
+    169.97,
+    172.23,
+    172.81
+   ],
+   [
+    181.2,
+    182.01,
+    184.18,
+    184.76
+   ]
+  ],
+  "note": "Add Tracks 2 auto-match (Demucs vocals + Whisper word timing, vocal-onset snapped); only confident occurrences kept, 2026-10-24."
+ },
+ "Kiss - I Was Made for Lovin' You.mp3": {
+  "panels": [
+   "I WAS",
+   "MADE",
+   "FOR|LOVIN'",
+   "YOU"
+  ],
+  "times": [
+   [
+    244.09,
+    244.76,
+    245.13,
+    246.31
+   ]
+  ],
+  "note": "Add Tracks 2 auto-match (Demucs vocals + Whisper word timing, vocal-onset snapped); only confident occurrences kept, 2026-10-24."
+ },
+ "Kool & The Gang - Celebration.mp3": {
+  "panels": [
+   "CELE|BRATE",
+   "GOOD",
+   "TIMES",
+   "COME|ON!"
+  ],
+  "times": [
+   [
+    42.11,
+    43.71,
+    44.18,
+    44.82
+   ],
+   [
+    109.57,
+    111.05,
+    111.51,
+    112.3
+   ],
+   [
+    117.64,
+    119.16,
+    119.45,
+    120.3
+   ],
+   [
+    248.73,
+    250.33,
+    250.67,
+    251.4
+   ],
+   [
+    256.12,
+    257.64,
+    258.16,
+    258.83
+   ],
+   [
+    280.39,
+    281.91,
+    282.49,
+    283.26
+   ]
+  ],
+  "note": "Add Tracks 2 auto-match (Demucs vocals + Whisper word timing, vocal-onset snapped); only confident occurrences kept, 2026-10-24."
+ },
+ "Kool & The Gang - Ladies' Night.mp3": {
+  "panels": [
+   "LADIES'",
+   "NIGHT",
+   "OH WHAT|A",
+   "NIGHT"
+  ],
+  "times": [
+   [
+    74.55,
+    75.34,
+    75.92,
+    76.7
+   ]
+  ],
+  "note": "Add Tracks 2 auto-match (Demucs vocals + Whisper word timing, vocal-onset snapped); only confident occurrences kept, 2026-10-24."
+ },
+ "Lynyrd Skynyrd - Sweet Home Alabama.mp3": {
+  "panels": [
+   "SWEET",
+   "HOME",
+   "ALA",
+   "BAMA"
+  ],
+  "times": [
+   [
+    72.22,
+    72.43,
+    73.13,
+    73.57
+   ],
+   [
+    82.21,
+    82.64,
+    83.35,
+    83.9
+   ],
+   [
+    121.85,
+    122.31,
+    122.95,
+    123.46
+   ],
+   [
+    131.58,
+    131.92,
+    132.77,
+    133.21
+   ],
+   [
+    219.76,
+    220.0,
+    220.76,
+    221.08
+   ],
+   [
+    229.85,
+    230.21,
+    230.93,
+    231.41
+   ],
+   [
+    239.72,
+    240.03,
+    240.82,
+    241.29
+   ]
+  ],
+  "note": "Add Tracks 2 auto-match (Demucs vocals + Whisper word timing, vocal-onset snapped); only confident occurrences kept, 2026-10-24."
+ },
+ "Madonna - Material Girl.mp3": {
+  "panels": [
+   "AND I",
+   "AM A",
+   "MATERIAL",
+   "GIRL"
+  ],
+  "times": [
+   [
+    60.84,
+    61.5,
+    61.73,
+    62.55
+   ],
+   [
+    68.0,
+    68.65,
+    68.93,
+    69.68
+   ],
+   [
+    116.26,
+    116.73,
+    116.99,
+    117.79
+   ],
+   [
+    164.67,
+    165.07,
+    165.3,
+    166.28
+   ],
+   [
+    185.84,
+    186.47,
+    186.69,
+    187.47
+   ]
+  ],
+  "note": "Add Tracks 2 auto-match (Demucs vocals + Whisper word timing, vocal-onset snapped); only confident occurrences kept, 2026-10-24."
+ },
+ "Michael Jackson - The Way You Make Me Feel.mp3": {
+  "panels": [
+   "THE WAY",
+   "YOU MAKE",
+   "ME",
+   "FEEL"
+  ],
+  "times": [
+   [
+    68.75,
+    69.25,
+    69.78,
+    70.12
+   ],
+   [
+    119.03,
+    119.54,
+    120.08,
+    120.43
+   ],
+   [
+    169.34,
+    169.85,
+    170.39,
+    170.74
+   ],
+   [
+    255.09,
+    255.64,
+    256.07,
+    256.38
+   ]
+  ],
+  "note": "Add Tracks 2 auto-match (Demucs vocals + Whisper word timing, vocal-onset snapped); only confident occurrences kept, 2026-10-24."
+ },
+ "The Monkees - Daydream Believer.mp3": {
+  "panels": [
+   "DAYDREAM",
+   "BELIEVER",
+   "AND A",
+   "HOMECOMING|QUEEN"
+  ],
+  "times": [
+   [
+    101.14,
+    102.13,
+    102.92,
+    104.83
+   ],
+   [
+    160.39,
+    161.33,
+    162.19,
+    164.27
+   ]
+  ],
+  "note": "Add Tracks 2 auto-match (Demucs vocals + Whisper word timing, vocal-onset snapped); only confident occurrences kept, 2026-10-24."
+ },
+ "The Monkees - Last Train to Clarksville.mp3": {
+  "panels": [
+   "LAST",
+   "TRAIN",
+   "TO",
+   "CLARKS|VILLE"
+  ],
+  "times": [
+   [
+    10.1,
+    11.02,
+    11.48,
+    11.63
+   ],
+   [
+    51.76,
+    52.64,
+    53.11,
+    53.39
+   ]
+  ],
+  "note": "Add Tracks 2 auto-match (Demucs vocals + Whisper word timing, vocal-onset snapped); only confident occurrences kept, 2026-10-24."
+ },
+ "New Radicals - You Get What You Give.mp3": {
+  "panels": [
+   "YOU'VE|GOT THE",
+   "MUSIC",
+   "IN",
+   "YOU"
+  ],
+  "times": [
+   [
+    82.67,
+    82.99,
+    83.79,
+    83.98
+   ],
+   [
+    86.92,
+    87.21,
+    87.96,
+    88.16
+   ],
+   [
+    145.87,
+    146.18,
+    146.98,
+    147.19
+   ],
+   [
+    198.56,
+    198.86,
+    199.68,
+    199.86
+   ]
+  ],
+  "note": "Add Tracks 2 auto-match (Demucs vocals + Whisper word timing, vocal-onset snapped); only confident occurrences kept, 2026-10-24."
+ },
+ "Norman Greenbaum - Spirit in the Sky.mp3": {
+  "panels": [
+   "GOIN' UP|TO THE",
+   "SPIRIT",
+   "IN THE",
+   "SKY"
+  ],
+  "times": [
+   [
+    41.51,
+    42.59,
+    43.56,
+    44.01
+   ],
+   [
+    46.08,
+    47.48,
+    47.87,
+    48.4
+   ]
+  ],
+  "note": "Add Tracks 2 auto-match (Demucs vocals + Whisper word timing, vocal-onset snapped); only confident occurrences kept, 2026-10-24."
+ },
+ "Ozzy Osbourne - Mama, I'm Coming Home.mp3": {
+  "panels": [
+   "MAMA",
+   "I'M",
+   "COMIN'",
+   "HOME"
+  ],
+  "times": [
+   [
+    23.93,
+    24.33,
+    24.96,
+    25.65
+   ],
+   [
+    38.05,
+    38.3,
+    39.02,
+    39.6
+   ],
+   [
+    65.8,
+    66.06,
+    66.84,
+    67.43
+   ],
+   [
+    79.9,
+    80.27,
+    80.82,
+    81.49
+   ],
+   [
+    120.96,
+    121.22,
+    121.82,
+    122.54
+   ],
+   [
+    210.97,
+    211.2,
+    211.87,
+    212.52
+   ]
+  ],
+  "note": "Add Tracks 2 auto-match (Demucs vocals + Whisper word timing, vocal-onset snapped); only confident occurrences kept, 2026-10-24."
+ },
+ "Pat Benatar - Hit Me with Your Best Shot.mp3": {
+  "panels": [
+   "HIT ME",
+   "WITH|YOUR",
+   "BEST",
+   "SHOT"
+  ],
+  "times": [
+   [
+    124.69,
+    125.11,
+    125.75,
+    126.19
+   ]
+  ],
+  "note": "Add Tracks 2 auto-match (Demucs vocals + Whisper word timing, vocal-onset snapped); only confident occurrences kept, 2026-10-24."
+ },
+ "Pat Benatar - Love Is a Battlefield.mp3": {
+  "panels": [
+   "LOVE",
+   "IS A",
+   "BATTLE",
+   "FIELD"
+  ],
+  "times": [
+   [
+    297.54,
+    297.87,
+    298.47,
+    298.71
+   ]
+  ],
+  "note": "Add Tracks 2 auto-match (Demucs vocals + Whisper word timing, vocal-onset snapped); only confident occurrences kept, 2026-10-24."
+ },
+ "Peaches & Herb - Reunited.mp3": {
+  "panels": [
+   "REUNITED",
+   "AND IT",
+   "FEELS",
+   "SO GOOD"
+  ],
+  "times": [
+   [
+    64.89,
+    65.42,
+    66.55,
+    67.16
+   ],
+   [
+    317.79,
+    318.91,
+    320.02,
+    320.72
+   ]
+  ],
+  "note": "Add Tracks 2 auto-match (Demucs vocals + Whisper word timing, vocal-onset snapped); only confident occurrences kept, 2026-10-24."
+ },
+ "Pink Floyd - Another Brick in the Wall, Pt. 2.mp3": {
+  "panels": [
+   "WE DON'T",
+   "NEED NO",
+   "EDUCA",
+   "TION"
+  ],
+  "times": [
+   [
+    0.99,
+    2.52,
+    3.92,
+    4.6
+   ]
+  ],
+  "note": "Add Tracks 2 auto-match (Demucs vocals + Whisper word timing, vocal-onset snapped); only confident occurrences kept, 2026-10-24."
+ },
+ "The Police - Every Breath You Take.mp3": {
+  "panels": [
+   "EVERY",
+   "BREATH",
+   "YOU",
+   "TAKE"
+  ],
+  "times": [
+   [
+    15.45,
+    16.04,
+    16.48,
+    17.08
+   ]
+  ],
+  "note": "Add Tracks 2 auto-match (Demucs vocals + Whisper word timing, vocal-onset snapped); only confident occurrences kept, 2026-10-24."
+ },
+ "The Police - Roxanne.mp3": {
+  "panels": [
+   "ROXANNE",
+   "YOU DON'T|HAVE TO",
+   "PUT ON|THE",
+   "RED|LIGHT"
+  ],
+  "times": [
+   [
+    47.91,
+    50.54,
+    51.35,
+    51.92
+   ]
+  ],
+  "note": "Add Tracks 2 auto-match (Demucs vocals + Whisper word timing, vocal-onset snapped); only confident occurrences kept, 2026-10-24."
+ },
+ "Prince - 1999.mp3": {
+  "panels": [
+   "PARTY",
+   "LIKE",
+   "IT'S",
+   "1999"
+  ],
+  "times": [
+   [
+    121.95,
+    122.23,
+    122.7,
+    122.98
+   ]
+  ],
+  "note": "Add Tracks 2 auto-match (Demucs vocals + Whisper word timing, vocal-onset snapped); only confident occurrences kept, 2026-10-24."
+ },
+ "Prince - Kiss.mp3": {
+  "panels": [
+   "YOUR",
+   "EXTRA",
+   "TIME AND|YOUR",
+   "KISS"
+  ],
+  "times": [
+   [
+    212.91,
+    213.4,
+    213.66,
+    215.61
+   ]
+  ],
+  "note": "Add Tracks 2 auto-match (Demucs vocals + Whisper word timing, vocal-onset snapped); only confident occurrences kept, 2026-10-24."
+ },
+ "Queen - Don't Stop Me Now.mp3": {
+  "panels": [
+   "DON'T",
+   "STOP",
+   "ME",
+   "NOW"
+  ],
+  "times": [
+   [
+    25.38,
+    25.93,
+    26.48,
+    26.69
+   ],
+   [
+    65.94,
+    66.54,
+    66.89,
+    67.28
+   ],
+   [
+    72.06,
+    72.67,
+    73.04,
+    73.41
+   ],
+   [
+    78.18,
+    78.76,
+    79.17,
+    79.56
+   ],
+   [
+    81.24,
+    81.85,
+    82.14,
+    82.58
+   ],
+   [
+    170.25,
+    170.75,
+    171.16,
+    171.49
+   ],
+   [
+    176.27,
+    176.88,
+    177.27,
+    177.65
+   ]
+  ],
+  "note": "Add Tracks 2 auto-match (Demucs vocals + Whisper word timing, vocal-onset snapped); only confident occurrences kept, 2026-10-24."
+ },
+ "Queen - Somebody to Love.mp3": {
+  "panels": [
+   "FIND ME",
+   "SOME|BODY",
+   "TO",
+   "LOVE"
+  ],
+  "times": [
+   [
+    146.71,
+    149.37,
+    150.58,
+    151.1
+   ],
+   [
+    244.69,
+    247.43,
+    248.63,
+    249.19
+   ]
+  ],
+  "note": "Add Tracks 2 auto-match (Demucs vocals + Whisper word timing, vocal-onset snapped); only confident occurrences kept, 2026-10-24."
+ },
+ "Queen - We Are the Champions.mp3": {
+  "panels": [
+   "WE ARE",
+   "THE",
+   "CHAMPIONS",
+   "MY|FRIENDS"
+  ],
+  "times": [
+   [
+    109.31,
+    110.89,
+    111.72,
+    113.4
+   ],
+   [
+    141.5,
+    143.09,
+    143.86,
+    145.41
+   ]
+  ],
+  "note": "Add Tracks 2 auto-match (Demucs vocals + Whisper word timing, vocal-onset snapped); only confident occurrences kept, 2026-10-24."
+ },
+ "Queen - We Will Rock You.mp3": {
+  "panels": [
+   "WE",
+   "WILL",
+   "WE WILL",
+   "ROCK YOU"
+  ],
+  "times": [
+   [
+    23.95,
+    24.25,
+    25.18,
+    26.74
+   ],
+   [
+    29.85,
+    30.18,
+    31.13,
+    32.67
+   ],
+   [
+    47.86,
+    48.26,
+    49.02,
+    50.51
+   ],
+   [
+    53.53,
+    54.13,
+    54.75,
+    56.46
+   ],
+   [
+    71.15,
+    71.52,
+    72.45,
+    73.99
+   ],
+   [
+    76.74,
+    77.2,
+    78.19,
+    79.51
+   ],
+   [
+    82.98,
+    83.32,
+    84.23,
+    85.81
+   ],
+   [
+    88.46,
+    89.07,
+    89.86,
+    91.28
+   ]
+  ],
+  "note": "Add Tracks 2 auto-match (Demucs vocals + Whisper word timing, vocal-onset snapped); only confident occurrences kept, 2026-10-24."
+ },
+ "Robert Palmer - Addicted to Love.mp3": {
+  "panels": [
+   "YOU'RE",
+   "ADDICTED",
+   "TO",
+   "LOVE"
+  ],
+  "times": [
+   [
+    101.94,
+    102.57,
+    102.87,
+    103.37
+   ],
+   [
+    166.3,
+    166.84,
+    167.1,
+    167.5
+   ],
+   [
+    226.59,
+    226.84,
+    227.38,
+    227.67
+   ],
+   [
+    239.42,
+    239.73,
+    240.22,
+    240.62
+   ],
+   [
+    243.74,
+    244.27,
+    244.8,
+    245.07
+   ],
+   [
+    252.29,
+    252.81,
+    253.32,
+    253.51
+   ],
+   [
+    256.57,
+    257.08,
+    257.34,
+    257.62
+   ],
+   [
+    260.89,
+    261.4,
+    261.89,
+    262.19
+   ]
+  ],
+  "note": "Add Tracks 2 auto-match (Demucs vocals + Whisper word timing, vocal-onset snapped); only confident occurrences kept, 2026-10-24."
+ },
+ "Rod Stewart - Da Ya Think I'm Sexy.mp3": {
+  "panels": [
+   "IF YOU|WANT MY",
+   "BODY",
+   "THINK I'M",
+   "SEXY"
+  ],
+  "times": [
+   [
+    51.11,
+    52.57,
+    54.41,
+    55.69
+   ],
+   [
+    111.04,
+    112.43,
+    114.02,
+    115.03
+   ]
+  ],
+  "note": "Add Tracks 2 auto-match (Demucs vocals + Whisper word timing, vocal-onset snapped); only confident occurrences kept, 2026-10-24."
+ },
+ "The Rolling Stones - You Can't Always Get What You Want.mp3": {
+  "panels": [
+   "YOU CAN'T",
+   "ALWAYS",
+   "GET WHAT",
+   "YOU WANT"
+  ],
+  "times": [
+   [
+    47.71,
+    49.18,
+    49.42,
+    50.19
+   ],
+   [
+    53.5,
+    54.74,
+    55.07,
+    55.84
+   ],
+   [
+    59.08,
+    60.42,
+    60.74,
+    61.47
+   ],
+   [
+    226.84,
+    228.12,
+    228.36,
+    229.03
+   ]
+  ],
+  "note": "Add Tracks 2 auto-match (Demucs vocals + Whisper word timing, vocal-onset snapped); only confident occurrences kept, 2026-10-24."
+ },
+ "Semisonic - Closing Time.mp3": {
+  "panels": [
+   "I KNOW|WHO I",
+   "WANT TO",
+   "TAKE ME",
+   "HOME"
+  ],
+  "times": [
+   [
+    120.36,
+    122.64,
+    123.51,
+    123.98
+   ],
+   [
+    125.6,
+    127.83,
+    128.87,
+    129.09
+   ],
+   [
+    130.82,
+    132.9,
+    134.01,
+    134.33
+   ],
+   [
+    199.5,
+    201.69,
+    202.65,
+    202.99
+   ],
+   [
+    220.15,
+    222.38,
+    223.31,
+    223.68
+   ],
+   [
+    230.48,
+    232.73,
+    233.72,
+    234.16
+   ]
+  ],
+  "note": "Add Tracks 2 auto-match (Demucs vocals + Whisper word timing, vocal-onset snapped); only confident occurrences kept, 2026-10-24."
+ },
+ "Shania Twain - Man! I Feel Like a Woman!.mp3": {
+  "panels": [
+   "MAN!",
+   "I FEEL",
+   "LIKE A",
+   "WOMAN"
+  ],
+  "times": [
+   [
+    82.83,
+    83.58,
+    84.3,
+    84.61
+   ],
+   [
+    203.81,
+    204.75,
+    205.24,
+    205.54
+   ]
+  ],
+  "note": "Add Tracks 2 auto-match (Demucs vocals + Whisper word timing, vocal-onset snapped); only confident occurrences kept, 2026-10-24."
+ },
+ "Shania Twain - That Don't Impress Me Much.mp3": {
+  "panels": [
+   "THAT",
+   "DON'T",
+   "IMPRESS|ME",
+   "MUCH"
+  ],
+  "times": [
+   [
+    58.72,
+    59.87,
+    60.62,
+    61.44
+   ],
+   [
+    112.47,
+    113.65,
+    114.19,
+    114.98
+   ],
+   [
+    155.71,
+    156.84,
+    157.59,
+    158.43
+   ],
+   [
+    191.2,
+    192.35,
+    193.25,
+    194.07
+   ]
+  ],
+  "note": "Add Tracks 2 auto-match (Demucs vocals + Whisper word timing, vocal-onset snapped); only confident occurrences kept, 2026-10-24."
+ },
+ "Simon & Garfunkel - Mrs. Robinson.mp3": {
+  "panels": [
+   "HERE'S TO",
+   "YOU",
+   "MRS.",
+   "ROBINSON"
+  ],
+  "times": [
+   [
+    32.9,
+    33.77,
+    34.51,
+    35.02
+   ],
+   [
+    82.64,
+    83.46,
+    84.24,
+    84.98
+   ]
+  ],
+  "note": "Add Tracks 2 auto-match (Demucs vocals + Whisper word timing, vocal-onset snapped); only confident occurrences kept, 2026-10-24."
+ },
+ "Snap! - The Power.mp3": {
+  "panels": [
+   "I'VE",
+   "GOT",
+   "THE",
+   "POWER"
+  ],
+  "times": [
+   [
+    78.42,
+    78.7,
+    79.14,
+    79.33
+   ],
+   [
+    214.76,
+    215.05,
+    215.49,
+    215.77
+   ]
+  ],
+  "note": "Add Tracks 2 auto-match (Demucs vocals + Whisper word timing, vocal-onset snapped); only confident occurrences kept, 2026-10-24."
+ },
+ "Steve Miller Band - The Joker.mp3": {
+  "panels": [
+   "I'M A|PICKER",
+   "I'M A|GRINNER",
+   "I'M A|LOVER",
+   "I'M A|SINNER"
+  ],
+  "times": [
+   [
+    48.63,
+    50.66,
+    51.74,
+    52.32
+   ]
+  ],
+  "note": "Add Tracks 2 auto-match (Demucs vocals + Whisper word timing, vocal-onset snapped); only confident occurrences kept, 2026-10-24."
+ },
+ "The Supremes - Stop! In the Name of Love.mp3": {
+  "panels": [
+   "STOP!",
+   "IN THE",
+   "NAME OF",
+   "LOVE"
+  ],
+  "times": [
+   [
+    52.67,
+    52.93,
+    53.73,
+    55.29
+   ],
+   [
+    61.07,
+    61.4,
+    62.16,
+    63.73
+   ],
+   [
+    111.39,
+    111.73,
+    112.47,
+    114.07
+   ]
+  ],
+  "note": "Add Tracks 2 auto-match (Demucs vocals + Whisper word timing, vocal-onset snapped); only confident occurrences kept, 2026-10-24."
+ },
+ "Tag Team - Whoomp! (There It Is).mp3": {
+  "panels": [
+   "WHOOMP!",
+   "THERE",
+   "IT",
+   "IS"
+  ],
+  "times": [
+   [
+    103.95,
+    104.47,
+    104.89,
+    105.09
+   ],
+   [
+    181.91,
+    182.36,
+    182.81,
+    183.01
+   ]
+  ],
+  "note": "Add Tracks 2 auto-match (Demucs vocals + Whisper word timing, vocal-onset snapped); only confident occurrences kept, 2026-10-24."
+ },
+ "Thin Lizzy - The Boys Are Back in Town.mp3": {
+  "panels": [
+   "THE BOYS",
+   "ARE BACK",
+   "IN",
+   "TOWN"
+  ],
+  "times": [
+   [
+    48.23,
+    48.54,
+    49.16,
+    49.43
+   ],
+   [
+    54.11,
+    54.47,
+    55.06,
+    55.33
+   ],
+   [
+    101.84,
+    102.09,
+    102.71,
+    102.95
+   ],
+   [
+    107.65,
+    107.86,
+    108.62,
+    108.85
+   ]
+  ],
+  "note": "Add Tracks 2 auto-match (Demucs vocals + Whisper word timing, vocal-onset snapped); only confident occurrences kept, 2026-10-24."
+ },
+ "Three Dog Night - Joy to the World.mp3": {
+  "panels": [
+   "JOY TO",
+   "THE WORLD",
+   "ALL THE|BOYS",
+   "AND GIRLS"
+  ],
+  "times": [
+   [
+    24.44,
+    26.27,
+    28.12,
+    29.49
+   ]
+  ],
+  "note": "Add Tracks 2 auto-match (Demucs vocals + Whisper word timing, vocal-onset snapped); only confident occurrences kept, 2026-10-24."
+ },
+ "Toby Keith - Should've Been a Cowboy.mp3": {
+  "panels": [
+   "I|SHOULD'VE",
+   "BEEN",
+   "A",
+   "COWBOY"
+  ],
+  "times": [
+   [
+    46.82,
+    47.28,
+    47.5,
+    47.85
+   ],
+   [
+    132.91,
+    133.23,
+    133.63,
+    134.06
+   ],
+   [
+    154.29,
+    154.74,
+    154.96,
+    155.39
+   ],
+   [
+    185.79,
+    186.25,
+    186.47,
+    186.91
+   ]
+  ],
+  "note": "Add Tracks 2 auto-match (Demucs vocals + Whisper word timing, vocal-onset snapped); only confident occurrences kept, 2026-10-24."
+ },
+ "Tom Petty and the Heartbreakers - Refugee.mp3": {
+  "panels": [
+   "DON'T|HAVE TO",
+   "LIVE|LIKE",
+   "A",
+   "REFUGEE"
+  ],
+  "times": [
+   [
+    46.88,
+    48.06,
+    49.0,
+    49.25
+   ],
+   [
+    76.64,
+    77.88,
+    78.81,
+    79.08
+   ],
+   [
+    154.64,
+    155.83,
+    156.69,
+    157.11
+   ],
+   [
+    163.18,
+    164.47,
+    165.36,
+    165.52
+   ]
+  ],
+  "note": "Add Tracks 2 auto-match (Demucs vocals + Whisper word timing, vocal-onset snapped); only confident occurrences kept, 2026-10-24."
+ },
+ "U2 - I Still Haven't Found What I'm Looking For.mp3": {
+  "panels": [
+   "BUT I",
+   "STILL HAVEN'T|FOUND",
+   "WHAT I'M",
+   "LOOKING|FOR"
+  ],
+  "times": [
+   [
+    65.89,
+    66.58,
+    69.95,
+    71.45
+   ],
+   [
+    123.19,
+    123.79,
+    126.91,
+    128.63
+   ],
+   [
+    132.66,
+    133.33,
+    136.52,
+    138.03
+   ],
+   [
+    204.25,
+    204.91,
+    208.0,
+    209.61
+   ],
+   [
+    213.89,
+    214.5,
+    217.67,
+    219.26
+   ]
+  ],
+  "note": "Add Tracks 2 auto-match (Demucs vocals + Whisper word timing, vocal-onset snapped); only confident occurrences kept, 2026-10-24."
+ },
+ "Van Halen - Jump.mp3": {
+  "panels": [
+   "MIGHT AS",
+   "WELL",
+   "JUMP",
+   "JUMP!"
+  ],
+  "times": [
+   [
+    74.68,
+    75.02,
+    75.4,
+    76.05
+   ]
+  ],
+  "note": "Add Tracks 2 auto-match (Demucs vocals + Whisper word timing, vocal-onset snapped); only confident occurrences kept, 2026-10-24."
+ },
+ "Whitesnake - Here I Go Again.mp3": {
+  "panels": [
+   "HERE I",
+   "GO",
+   "AGAIN",
+   "ON MY|OWN"
+  ],
+  "times": [
+   [
+    76.58,
+    77.19,
+    77.8,
+    78.45
+   ],
+   [
+    129.77,
+    130.42,
+    130.94,
+    131.58
+   ],
+   [
+    204.28,
+    204.96,
+    205.46,
+    206.1
+   ],
+   [
+    230.89,
+    231.58,
+    232.08,
+    232.72
+   ],
+   [
+    257.55,
+    258.2,
+    258.68,
+    259.36
+   ]
+  ],
+  "note": "Add Tracks 2 auto-match (Demucs vocals + Whisper word timing, vocal-onset snapped); only confident occurrences kept, 2026-10-24."
+ },
+ "The Who - Baba O'Riley.mp3": {
+  "panels": [
+   "IT'S ONLY",
+   "TEENAGE",
+   "WASTE",
+   "LAND"
+  ],
+  "times": [
+   [
+    143.09,
+    146.04,
+    148.4,
+    148.97
+   ]
+  ],
+  "note": "Add Tracks 2 auto-match (Demucs vocals + Whisper word timing, vocal-onset snapped); only confident occurrences kept, 2026-10-24."
+ },
+ "The Who - My Generation.mp3": {
+  "panels": [
+   "TALKIN'",
+   "'BOUT",
+   "MY",
+   "GENERA|TION"
+  ],
+  "times": [
+   [
+    7.36,
+    8.13,
+    8.44,
+    8.88
+   ],
+   [
+    12.42,
+    13.24,
+    13.61,
+    13.96
+   ],
+   [
+    45.21,
+    45.92,
+    46.26,
+    46.76
+   ],
+   [
+    94.91,
+    95.62,
+    95.97,
+    96.45
+   ]
+  ],
+  "note": "Add Tracks 2 auto-match (Demucs vocals + Whisper word timing, vocal-onset snapped); only confident occurrences kept, 2026-10-24."
  }
 }

@@ -213,8 +213,8 @@ class EnttecDMXPro:
         except Exception as e:
             print(f"[DMX HEAD] apply failed: {e}")
         frame = self.dmx_data
-        if state.blackout_active:
-            # Admin blackout: every light channel 0 on the wire (dmx_data
+        if state.lights_out:
+            # Admin blackout / after-show dark bed: every light channel 0 on the wire (dmx_data
             # itself untouched, so the look returns on release), relays kept.
             frame = bytearray(len(self.dmx_data))
             for ch in (config.RELAY1_CHANNEL, config.RELAY2_CHANNEL, config.RELAY3_CHANNEL):

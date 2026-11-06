@@ -1,6 +1,6 @@
 """drivers/shutdown_button.py
-Physical shutdown push button (2026-10-07): a momentary switch between
-GPIO26 (physical pin 37) and GND (physical pin 39), internal pull-up, active
+Physical shutdown push button (2026-10-07): a momentary switch on config.SHUTDOWN_BUTTON_PIN
+(GPIO16 / pin 36 since the 2026-10-28 swap; was GPIO26) and GND, internal pull-up, active
 LOW. Held for SHUTDOWN_BUTTON_HOLD_SECONDS it:
 
   1. engages the admin blackout (drivers/blackout_engine.py) -- every light,
@@ -32,6 +32,7 @@ _fired_at = 0.0  # blackout engaged, poweroff pending
 _armed_at = 0.0
 _seen_released = False  # a press only counts after the pin has read HIGH once
 _stuck_warned = False
+_reason = "SHUTDOWN BUTTON (GPIO)"
 
 
 def init():
@@ -45,7 +46,7 @@ def init():
     global _armed_at
     _initialized = True
     _armed_at = time.monotonic()
-    print(f"[SHUTDOWN BTN] Armed on GPIO{config.SHUTDOWN_BUTTON_PIN} (physical pin 37), "
+    print(f"[SHUTDOWN BTN] Armed on GPIO{config.SHUTDOWN_BUTTON_PIN} (physical pin {config.GPIO_PHYSICAL_PIN.get(config.SHUTDOWN_BUTTON_PIN, '?')}), "
           f"hold {config.SHUTDOWN_BUTTON_HOLD_SECONDS:.1f}s.")
 
 
@@ -55,6 +56,16 @@ def _fire(now):
     _fired_at = now
     blackout_engine.engage()
     print("[SHUTDOWN BTN] Pressed -- blackout engaged, powering off the Pi.")
+
+
+def request(reason):
+    """Same blackout -> graceful poweroff as the GPIO26 hold, triggered from
+    elsewhere (the green+blue panel-button hold). poll() finishes the hand-off."""
+    global _reason
+    if _fired_at or not _AVAILABLE or not _initialized:
+        return
+    _reason = reason
+    _fire(time.monotonic())
 
 
 def poll(now=None):
@@ -72,7 +83,7 @@ def poll(now=None):
         if now - _fired_at >= config.SHUTDOWN_BUTTON_DARK_SECONDS:
             from state import state
             if not state.shutdown_requested:
-                state.shutdown_reason = "SHUTDOWN BUTTON (GPIO)"
+                state.shutdown_reason = _reason
                 state.poweroff_after_exit = True
                 state.shutdown_requested = True
         return

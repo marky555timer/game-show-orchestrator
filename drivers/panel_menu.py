@@ -9,7 +9,8 @@ as a word (graphics/menu_pages.py draws view()):
   NETWORK      WiFi name, IP, tunnel -- moves on once all are good, or after
                30s regardless (blue = skip ahead)
   LOAD SHOW    only if saves exist. green PREV / red MORE browse (most recently
-               played first), yellow NEW = the designer, blue NEXT = run it
+               played first; green is DIAG on the first one), yellow NEW = the
+               designer, blue START = run it
   INTRO?       \\ designer: green YES / red NO, or green OLDER / red NEWER,
   QUESTIONS     } yellow BACK, blue NEXT (LOW pushes HIGH up; HIGH stops at LOW)
   LOW DECADE    }
@@ -87,6 +88,27 @@ def _ensure_ssid_thread():
 _net_cache = (0.0, None)
 
 
+def _wifi_dbm():
+    """Signal strength of wlan0 in dBm (Pi only; None elsewhere)."""
+    try:
+        with open("/proc/net/wireless") as f:
+            for line in f.readlines()[2:]:
+                parts = line.split()
+                if len(parts) > 3:
+                    return int(float(parts[3]))
+    except (OSError, ValueError):
+        pass
+    return None
+
+
+def _cpu_temp_c():
+    try:
+        with open("/sys/class/thermal/thermal_zone0/temp") as f:
+            return int(f.read().strip()) / 1000.0
+    except (OSError, ValueError):
+        return None
+
+
 def network_status():
     """WiFi name, IP, tunnel, internet -- re-read at most once a second (the
     view is drawn every frame)."""
@@ -102,6 +124,8 @@ def network_status():
         "ip": "" if ip.startswith("127.") else ip,
         "tunnel": bool(tunnel_engine.get_current_tunnel_url()),
         "internet": tunnel_engine.internet_reachable(),
+        "dbm": _wifi_dbm(),
+        "temp": _cpu_temp_c(),
     }
     _net_cache = (mono, st)
     return st
@@ -223,10 +247,11 @@ def _decade_floor(key):
 
 
 def _short(color):
-    global _load_index
+    global _load_index, _diag_return
     page = _page
     if page == "diag":
-        _go(_diag_return)
+        if color == "green":
+            _go(_diag_return)
         return
     if page == "blink":
         return
@@ -235,8 +260,12 @@ def _short(color):
             _go(_first_page())
         return
     if page == "load":
-        if color == "green" and _load_index > 0:
-            _load_index -= 1
+        if color == "green":
+            if _load_index > 0:
+                _load_index -= 1
+            else:
+                _diag_return = "load"   # first show: green is DIAG, not PREV
+                _go("diag")
         elif color == "red" and _load_index < len(_load_names) - 1:
             _load_index += 1
         elif color == "yellow":
@@ -311,8 +340,11 @@ def update(now):
         _go("network")
     if _page == "network":
         waited = mono - _page_at
-        if (network_ok() and waited >= 3.0) or waited >= config.MENU_NETWORK_WAIT_SECONDS:
+        if (network_ok() and waited >= 3.0) or (
+                network_status()["ip"] and waited >= config.MENU_NETWORK_WAIT_SECONDS):
             _go(_first_page())
+        elif not network_status()["ip"]:
+            return  # no IP: hold here (blue SKIP only); no timeout, no hands-off start
     elif _page == "blink":
         if _blink and mono >= _blink[-1][2] and _after_blink:
             _finish_blink()
@@ -348,25 +380,33 @@ def view():
         return {"lines": (line1, line2), "buttons": buttons, "blink": False}
     if page == "load":
         name = _load_names[_load_index] if _load_names else ""
-        buttons = {"green": "PREV" if _load_index > 0 else "",
+        buttons = {"green": "PREV" if _load_index > 0 else "DIAG",
                    "red": "MORE" if _load_index < len(_load_names) - 1 else "",
-                   "yellow": "NEW", "blue": "NEXT"}
+                   "yellow": "NEW", "blue": "START"}
         return {"lines": ("LOAD SHOW", name), "buttons": buttons, "blink": False}
     if page == "diag":
+        # One page: IP + (cycling) extras on panels 1+2, the readings on the
+        # four button panels (graphics/menu_pages.py "cells"), green = BACK.
         st = network_status()
         from drivers import led_bridge
         from drivers.dmx_driver import dmx
         from inputs import gamepad
-        pairs = [
-            (f"WIFI {st['ssid'] or '-'}", st["ip"] or "NO IP"),
-            ("TUNNEL " + ("OK" if st["tunnel"] else "NO"), "NET " + ("OK" if st["internet"] else "NO")),
-            ("LED " + ("USB" if led_bridge.current_transport().startswith("SERIAL") else "UDP"),
-             "DMX " + ("OK" if dmx.active else "NO")),
-            ("JOY " + ("OK" if gamepad.joysticks else "NO"), f"SHOWS {len(_load_names)}"),
+        extras = [
+            f"WIFI {st['ssid'] or '-'}",
+            "LED " + ("USB" if led_bridge.current_transport().startswith("SERIAL") else "UDP")
+            + "  DMX " + ("OK" if dmx.active else "NO"),
+            ("JOY " + ("OK" if gamepad.joysticks else "NO")) + f"  SHOWS {len(_load_names)}",
         ]
-        line1, line2 = pairs[int((mono - _page_at) / 2.5) % len(pairs)]
-        return {"lines": (line1, line2),
-                "buttons": {"green": "BACK", "red": "BACK", "yellow": "BACK", "blue": "BACK"}, "blink": False}
+        dbm, temp = st["dbm"], st["temp"]
+        tunnel = "OK" if st["tunnel"] else ("NO" if st["internet"] else "NO NET")
+        cells = {
+            "green": ("BACK", ""),
+            "red": ("WIFI", f"{dbm}dB" if dbm is not None else "--"),
+            "yellow": ("TEMP", f"{temp:.0f}C" if temp is not None else "--"),
+            "blue": ("TUNL", tunnel),
+        }
+        return {"lines": (st["ip"] or "NO IP", extras[int((mono - _page_at) / 2.5) % len(extras)]),
+                "buttons": {}, "cells": cells, "blink": False}
     if page == "blink":
         current = next((b for b in _blink if mono < b[2]), _blink[-1] if _blink else ("", "", 0))
         return {"lines": (current[0], current[1]), "buttons": {}, "blink": True}

@@ -52,6 +52,10 @@ from graphics import secondary_canvas
 from drivers import announcement_engine
 from drivers import hot_track_engine
 from drivers import relay_engine
+from drivers import honk_engine
+from drivers import ask_questions
+from drivers import strobe_engine
+from drivers import green_light_engine
 from audio.audio_engine import (
     play_processed_sound, raw_buzzer, raw_bigwin, raw_clear, raw_ding,
     raw_coin, raw_buzz_short, stop_previous_audio, reverb_enabled
@@ -109,7 +113,7 @@ def trigger_loss(play_sfx=True):
     timed out (state.round_timed_out), rather than via a real Grade-button
     press (2026-09-18, generalized from two narrower timeout-only cases --
     see both call sites' own comments for that history). A timed-out
-    round's own visual (graphics/matrix_canvas.py's "TIMES UP!" + bare
+    round's own visual (graphics/matrix_canvas.py's "Time's up!" + bare
     correct-answer reveal) never blames a specific wrong pick the way a
     real loss does, so an audible buzzer over it read as a mismatch between
     what's on screen and what's heard, even when someone HAD armed a
@@ -122,6 +126,8 @@ def trigger_loss(play_sfx=True):
     if state.sfx_enabled and play_sfx:
         play_processed_sound(raw_buzzer)
         wled_engine.flash(255, 0, 0)
+    if play_sfx:
+        honk_engine.note_wrong()   # every 2nd wrong answer in a row honks (timeouts don't count)
 
     # Fixture 1 (win/loss indicator lamp): solid red, latched until an
     # explicit reset (board clear / new question / return to DJ mode) --
@@ -270,7 +276,7 @@ def _do_grade_quiz_selection():
 
     # Any 30s-timeout loss is silent (2026-09-18, generalized from the
     # narrower "nobody ever selected anything" case below): a timed-out
-    # round's own visual (graphics/matrix_canvas.py's "TIMES UP!" + bare
+    # round's own visual (graphics/matrix_canvas.py's "Time's up!" + bare
     # correct-answer reveal, never a specific wrong-pick callout) never
     # blames a particular choice the way a real Grade-button loss does, so
     # buzzing the wrong-answer sound over it reads as a mismatch between
@@ -299,6 +305,7 @@ def _do_grade_quiz_selection():
     state.quiz_score_total += 1
     if is_correct:
         state.quiz_score_correct += 1
+        green_light_engine.on_correct_round("panel answer correct")
         trigger_big_win()
     else:
         trigger_loss(play_sfx=not silent_timeout)
@@ -361,7 +368,6 @@ def _grade_multiplayer_round():
             player["score"] += 1
         results.append({"player_id": player_id, "initials": player["initials"], "correct": correct})
     state.quiz_last_round_results = results
-    state.round_winner_initials = [r["initials"] for r in results if r["correct"]]
 
     # First-correct-answer bonus (2026-08-11): only for the mystery/identify
     # "who is this?" question -- the FIRST player to lock in the right
@@ -377,7 +383,12 @@ def _grade_multiplayer_round():
             if p["locked"] and p["selected_index"] == state.factoid_correct_index
         ]
         if correct_locked:
-            first_id, first_player = min(correct_locked, key=lambda item: item[1].get("locked_at", 0.0))
+            # Normally already decided when that lock arrived (and told to
+            # the winner's phone then); the earliest locked_at is the same
+            # player, kept as the fallback.
+            first_id, first_player = next(
+                ((pid, p) for pid, p in correct_locked if pid == state.round_first_correct_pid),
+                min(correct_locked, key=lambda item: item[1].get("locked_at", 0.0)))
             first_player["score"] += 1
             state.round_bonus_player_id = first_id
             print(f"[MULTIPLAYER QUIZ] First-correct bonus -> {first_player['initials']} (+1 extra point).")
@@ -404,13 +415,27 @@ def _grade_multiplayer_round():
           f"({not_locked} didn't lock in an answer). Operator pick correct: {operator_correct}.")
 
     state.round_any_correct = correct_count > 0 or operator_correct
+    # Green light (relay 2): everybody connected got it right, or the panel
+    # pick was right. Phones that dropped off don't block it, same rule as
+    # live_round_engine's "everyone has answered" early grade.
+    now = time.time()
+    correct_ids = {r["player_id"] for r in results if r["correct"]}
+    connected = [pid for pid, p in state.quiz_players.items()
+                 if now - p.get("last_seen", 0) <= config.CONNECTED_PLAYER_TIMEOUT_SECONDS]
+    if connected and all(pid in correct_ids for pid in connected):
+        green_light_engine.on_correct_round("everybody got it right")
+    elif operator_correct:
+        green_light_engine.on_correct_round("panel answer correct")
     if correct_count > 0 or operator_correct:
         trigger_big_win()
     else:
+        if not state.round_timed_out:
+            # "No winners" on the panels (a timeout already strobed its last seconds)
+            strobe_engine.flash(config.STROBE_NO_WINNERS_SECONDS, "(no winners)")
         # Any 30s-timeout loss is silent (2026-09-18, generalized from the
         # identify_band-only, nobody-ever-answered case below -- same
         # change as _do_grade_quiz_selection()'s solo path): a timed-out
-        # round's own visual (graphics/matrix_canvas.py's "TIMES UP!" +
+        # round's own visual (graphics/matrix_canvas.py's "Time's up!" +
         # bare correct-answer reveal) never blames a specific wrong pick
         # the way a real Grade-button loss does, so buzzing the
         # wrong-answer sound over it reads as a mismatch between what's on
@@ -482,6 +507,7 @@ def trigger_big_win():
     stop_previous_audio()
     state.set_message("CORRECT ANSWER! BIG WIN!", 2.0)
     print("[ACTION] BIG WIN")
+    honk_engine.note_right()
     if state.sfx_enabled:
         # Swapped for the doorbell (2026-09-18, operator request) -- rings
         # the physical solenoid USB_RELAY_BIG_WIN_RING_COUNT times rapidly
@@ -1422,7 +1448,7 @@ def _sync_panel_leds():
     -- same "cheap no-op unless changed" convention used elsewhere in this
     app (e.g. drivers/wled_engine.py's own sync_to_show_state())."""
     global _panel_led_state
-    if state.blackout_active:
+    if state.lights_out:
         if _panel_led_state != "blackout":
             simon_hardware.set_all_leds(False)
             _panel_led_state = "blackout"
@@ -1486,6 +1512,7 @@ def process_events():
 
     _process_quiz_gate()
     deck_orchestrator.update(time.time())
+    ask_questions.update()
     price_game_engine.update(time.time())
     mystery_band_engine.update(time.time())
     auto_dj_engine.update(time.time())

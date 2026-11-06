@@ -39,9 +39,13 @@ _last_t = 0.0
 _hold_until = 0.0
 _hold_pan = None
 _hold_tilt = None
-# 360-degree "look-around" spin (pan ramps 0 -> 255, which aliases back to 0
-# on this unit): started on round start / winner / web button.
+# 360-degree "look-around" spin: started on round start / winner / web
+# button. Turns from the current front position (_pan_home) to the other one
+# a full turn away, which becomes the new home (540-deg pan setting, see
+# config.DMX_HEAD_PAN_TURN_UNITS) -- so spins alternate direction.
 _spin_start = 0.0
+_pan_home = config.DMX_HEAD_PAN_CENTER
+_spin_from = _spin_to = _pan_home
 _seen_mode = None
 _seen_win = False
 
@@ -49,8 +53,14 @@ _seen_win = False
 def spin(now=None):
     """Starts one full-turn spin (web /api/dmx/head-spin, and automatically
     on a game round starting or a winner sequence)."""
-    global _spin_start
-    _spin_start = time.time() if now is None else now
+    global _spin_start, _spin_from, _spin_to
+    now = time.time() if now is None else now
+    if _spin_start and now - _spin_start < config.DMX_HEAD_SPIN_SECONDS:
+        return   # one already turning
+    turn = config.DMX_HEAD_PAN_TURN_UNITS
+    _spin_from = _pan_home
+    _spin_to = _pan_home + turn if _pan_home + turn <= 255.0 else _pan_home - turn
+    _spin_start = now
 
 
 def hold(pan=None, tilt=None, seconds=120.0):
@@ -147,7 +157,7 @@ def _scan(now, pc):
 
 def apply(data, now=None):
     """Fills the head's channels in `data` (the bytearray DMX universe)."""
-    global _smooth, _last_color, _last_t, _react_mode
+    global _smooth, _last_color, _last_t, _react_mode, _pan_home
     if not config.DMX_HEAD_ENABLED:
         return
     if now is None:
@@ -174,7 +184,10 @@ def apply(data, now=None):
         _smooth = tuple(c + (t - c) * a for c, t in zip(_smooth, target))
     dimmer, r, g, b, w = (int(round(v)) for v in _smooth)
 
-    pc, tc = config.DMX_HEAD_PAN_CENTER, config.DMX_HEAD_TILT_CENTER
+    spin_t = now - _spin_start
+    if _spin_start and spin_t >= config.DMX_HEAD_SPIN_SECONDS:
+        _pan_home = _spin_to   # same facing, a full turn along
+    pc, tc = _pan_home, config.DMX_HEAD_TILT_CENTER
     pan, tilt = pc, tc
     speed = config.DMX_HEAD_SWAY_SPEED
     behavior = _behavior()
@@ -233,14 +246,12 @@ def apply(data, now=None):
             if blink_off:
                 dimmer = 0  # rapid green blink: dark between flashes
 
-    spin_t = now - _spin_start
     spin_len = config.DMX_HEAD_SPIN_SECONDS
     if _spin_start and spin_t < spin_len + 0.6:
-        # Ramp pan through the whole 0-255 range (one full turn), ease in/out,
-        # then hold the end briefly; 255 == 0 physically, so handing back to
-        # pan 0 afterwards doesn't move it.
+        # One full turn from home to the other front position, ease in/out,
+        # then hold there briefly (it is the new home from then on).
         x = min(1.0, spin_t / spin_len)
-        pan = 255.999 * (1.0 - math.cos(math.pi * x)) / 2.0
+        pan = _spin_from + (_spin_to - _spin_from) * (1.0 - math.cos(math.pi * x)) / 2.0
         tilt = tc
         speed = config.DMX_HEAD_REACT_SPEED
 

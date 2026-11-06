@@ -1,6 +1,7 @@
-"""Run on the Pi from the app folder with the app STOPPED: pi_questions.py questionsN.json
+"""Run on the Pi from the app folder with the app STOPPED: pi_questions.py questionsN.json [stage] [note]
 Adds pre-written questions to track_cache.json through the app's own engine, as unverified (red)
-questions. A song that already has questions is left alone."""
+questions -- or at `stage` (e.g. audited_ok after a fact-check pass) with `note`. A song that already
+has questions is left alone."""
 import json
 import os
 import sys
@@ -12,6 +13,9 @@ from drivers import question_audit
 
 WHO = "Claude Code (Opus 5.5)"
 data = json.load(open(sys.argv[1], encoding="utf-8"))
+STAGE = sys.argv[2] if len(sys.argv) > 2 else "generated"
+NOTE = sys.argv[3] if len(sys.argv) > 3 else "Written offline, not yet checked"
+assert STAGE in question_audit.STAGES, STAGE
 eng = question_audit._engine()
 question_audit._backup_once()
 added = skipped = 0
@@ -22,9 +26,10 @@ for key, qs in data.items():
         now = time.time()
         for q in qs:
             q = dict(q, qid=uuid.uuid4().hex[:12], ts=now, source="ai", led_short=True)
-            q["audit"] = {"stage": "generated", "by": WHO, "ts": now, "note": "Written offline, not yet checked",
+            q["audit"] = {"stage": STAGE, "by": WHO, "ts": now, "note": NOTE,
                           "deep": False, "original": None,
-                          "history": [{"ts": now, "who": WHO, "action": "generated", "note": ""}]}
+                          "history": [{"ts": now, "who": WHO, "action": "generated", "note": ""}]
+                                     + ([{"ts": now, "who": WHO, "action": STAGE, "note": NOTE}] if STAGE != "generated" else [])}
             lst.append(q)
         return len(qs)
     n = eng.edit(key, apply)

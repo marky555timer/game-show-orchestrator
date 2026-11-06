@@ -79,6 +79,9 @@ def trigger_test():
     Bypasses the automatic top-of-hour clock gate; a no-op if a sequence is
     already in progress (same guard shape as
     price_game_engine.start_price_game's `if state.price_game_active: return`)."""
+    if not config.WESTMINSTER_ENABLED:
+        print("[WESTMINSTER] Retired (config.WESTMINSTER_ENABLED = False) -- test ignored.")
+        return
     if state.westminster_active:
         print("[WESTMINSTER] Test trigger ignored -- a sequence is already in progress.")
         return
@@ -157,6 +160,8 @@ def update(now):
     # hour turns over during setup/countdown/intro/outro, that hour's
     # chime is simply skipped rather than deferred, since firing it late
     # into a different moment would be just as wrong.
+    if not config.WESTMINSTER_ENABLED:
+        return  # retired 2026-10-28
     lt = time.localtime(now)
     if (state.show_phase == "live" and lt.tm_min == 0 and lt.tm_sec < 2
             and state.westminster_last_fired_hour != lt.tm_hour):

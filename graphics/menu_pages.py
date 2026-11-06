@@ -34,7 +34,18 @@ def draw(surface):
 
     # The real panels are 1-bit (lit = any red, drivers/led_bridge.py), so no
     # tinted backgrounds or button colours: just the word, lit on black.
+    cells = v.get("cells")
     for color, panel in _BUTTON_PANELS.items():
+        if cells:
+            # two 8px lines per panel: label over value (diagnostics page)
+            label, value = cells.get(color, ("", ""))
+            px, py, pw, ph = PANELS[panel]
+            if value:
+                draw_marquee(surface, f"menu_cell_{color}_a", label, (px, py, pw, ph // 2), color=RED_FULL, align="center")
+                draw_marquee(surface, f"menu_cell_{color}_b", value, (px, py + ph // 2, pw, ph - ph // 2), color=RED_FULL, align="center")
+            elif label:
+                draw_marquee(surface, f"menu_btn_{color}", label, PANELS[panel], color=RED_FULL, align="center")
+            continue
         label = v["buttons"].get(color, "")
         if label:
             draw_marquee(surface, f"menu_btn_{color}", label, PANELS[panel], color=RED_FULL, align="center")

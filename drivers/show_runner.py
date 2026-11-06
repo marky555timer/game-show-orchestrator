@@ -52,7 +52,8 @@ def track_decade(track):
 
 
 def wheel_can_land(decade):
-    return decade in config.SHOW_INTRO_WHEEL_DECADES
+    from drivers import intro_wheel
+    return intro_wheel.can_land(decade)
 
 
 def _elapsed(now):
@@ -186,7 +187,10 @@ def intercept_next():
     automatic = bool(_pending_ending)
     nxt = _next_song_index(_pos)
     if nxt is None:
-        if automatic and _on_script:
+        # Any "next" off the last scripted song ends the show -- not only an
+        # auto-DJ one (when the track wasn't identified, auto-DJ never fires,
+        # and the deck used to roll on into random songs).
+        if _on_script:
             _pending_ending = ""
             return "stop"
         return None
@@ -235,7 +239,9 @@ def _on_song_change(path):
     if nxt is not None and _items[nxt]["path"] == path:
         _pos, _on_script = nxt, True
     else:
-        later = next((i for i in range(_pos + 1, len(_items))
+        # Later in the playlist first; then anywhere (a BACK onto an earlier
+        # scripted song must re-sync, or the last song never ends the show).
+        later = next((i for i in list(range(_pos + 1, len(_items))) + list(range(0, max(_pos, 0)))
                       if _items[i]["type"] == "song" and _items[i]["path"] == path), None)
         if later is not None:
             _pos, _on_script = later, True

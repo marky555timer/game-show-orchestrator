@@ -144,7 +144,7 @@ def _lookup_duration(title):
     return config.AUTODJ_DEFAULT_TRACK_SECONDS
 
 
-def _start_timer(track_key, title):
+def _start_timer(track_key, title, keep_quiz=False):
     global _transition_cycle
     _transition_cycle += 1  # single-trigger guard: opens a fresh transition window
     state.auto_dj_track_key = track_key
@@ -152,9 +152,14 @@ def _start_timer(track_key, title):
     state.auto_dj_track_duration = _lookup_duration(title)
     state.auto_dj_announcement_played = False
     state.auto_dj_transition_at = 0.0
-    state.autoadv_questions_asked = 0
-    state.autoadv_need_leaderboard = False
-    state.autoadv_leaderboard_reviewed = False
+    # The new song's first question (Mystery Band) can be served a frame
+    # before this runs; keep the count if it already belongs to this track
+    # (2026-10-26: a mystery-only song otherwise never advanced after quiz).
+    if not (keep_quiz and state.autoadv_track_key == track_key):
+        state.autoadv_questions_asked = 0
+        state.autoadv_need_leaderboard = False
+        state.autoadv_leaderboard_reviewed = False
+        state.autoadv_track_key = ""
     dur = state.now_playing_duration
     if (config.TRACK_CUES_ENABLED and state.now_playing_path and dur
             and dur >= config.AUTODJ_MIN_PLAUSIBLE_DURATION_SECONDS
@@ -303,14 +308,24 @@ def advance_now():
         _fire_transition(track_key)
 
 
+def quiz_advance_enabled():
+    """Should this song move on once its quiz is done? A saved-show song set
+    to "quiz" always does and one set to "cut" never does (it has its own cut
+    point). Everything else, including show songs left at the default "full",
+    follows the remote's Auto-advance checkbox (2026-10-26: "full" used to
+    override the checkbox, so it silently did nothing during saved shows)."""
+    rule = state.show_song_ending
+    if rule == "quiz":
+        return True
+    if rule == "cut":
+        return False
+    return state.auto_advance_after_quiz
+
+
 def _quiz_done_advance_due():
     """True once the track's questions are all asked, the last round is over,
-    and the leaderboard has fully played (remote-toggled, default on). A saved
-    show overrides the checkbox per song: only songs set to end this way
-    advance early."""
-    rule = state.show_song_ending
-    enabled = (rule == "quiz") if rule else state.auto_advance_after_quiz
-    if not enabled or not state.autoadv_leaderboard_reviewed:
+    and the leaderboard has fully played (see quiz_advance_enabled)."""
+    if not quiz_advance_enabled() or not state.autoadv_leaderboard_reviewed:
         return False
     if state.autoadv_questions_asked <= 0 or state.autoadv_need_leaderboard:
         return False
@@ -329,7 +344,7 @@ def update(now):
 
     if track_key != state.auto_dj_track_key:
         title, _artist = get_rekordbox_track()
-        _start_timer(track_key, title)
+        _start_timer(track_key, title, keep_quiz=True)
         return
 
     # Auto-DJ keeps running (timers, announcements, transitions) regardless

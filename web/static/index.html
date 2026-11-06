@@ -37,7 +37,7 @@
   .btn.medley.on { background: #111; color: #ffd400; border-color: #ffd400; }
   #medley-status { margin-top: 8px; font-size: .85rem; color: #ffe266; line-height: 1.35; }
   /* Medley mode: the per-song controls are removed until the operator exits */
-  body.medley-on #audition-btn, body.medley-on #hookwords-btn, body.medley-on #song-theme-box,body.medley-on #jukebox-btn, body.medley-on #medley-options { display: none !important; }
+  body.medley-on #audition-btn, body.medley-on #song-theme-box, body.medley-on #medley-options { display: none !important; }
   .mo-n { color: #999; font-size: .75rem; }
   .wled-slot { flex: 1; padding: 8px 4px; border: 2px solid #444; border-radius: 10px; background: #1a1a1a; color: #ddd; font-weight: 700; cursor: pointer; }
   .wled-slot.sel { border-color: #fff; }
@@ -48,8 +48,9 @@
   .wled-dot { width: 34px; height: 34px; border-radius: 50%; border: 2px solid #555; padding: 0; cursor: pointer; font-weight: 800; }
   /* ...except Volume (operator, 2026-10-01): keep the live panel up but show only its Volume section */
   body.medley-on #live-panel { display: block !important; }
-  body.medley-on #live-panel > :not(#volume-section) { display: none !important; }
+  body.medley-on #live-panel > :not(#volume-section):not(#medley-bar) { display: none !important; }
   body.medley-on #medley-btn { padding: 26px 14px; font-size: 1.25rem; }
+  .btn.ask { background: #0a7d3b; border-color: #34c759; color: #fff; font-weight: 800; letter-spacing: .04em; }
   .btn.big { width: 100%; padding: 18px 14px; font-size: 1.1rem; }
   .timer { font-size: 1.6rem; font-variant-numeric: tabular-nums; }
   input[type=range] { width: 100%; }
@@ -218,81 +219,15 @@
   </div>
   <h1>Game Show Orchestrator &mdash; Remote</h1>
 
-  <section id="medley-bar" style="display:none">
-    <button class="btn medley big" id="medley-btn" onclick="toggleMedley()">DANCE MEDLEY</button>
-    <div id="medley-status"></div>
-    <!-- Medley options (2026-10-01): which songs a medley draws from + how many. Hidden while one runs. -->
-    <div id="medley-options" style="margin-top:10px;font-size:.88rem">
-      <label style="display:block;margin:4px 0"><input type="radio" name="medley-source" value="latest" onchange="medleyOptionsSave()"> Latest edited <span class="mo-n" id="mo-n-latest"></span><br><span style="color:#999;font-size:.75rem;margin-left:22px">human-edited songs first, newest edits leading; AI-included fill any gaps</span></label>
-      <label style="display:block;margin:4px 0"><input type="radio" name="medley-source" value="green" onchange="medleyOptionsSave()"> Human-edited only (green) <span class="mo-n" id="mo-n-green"></span></label>
-      <label style="display:block;margin:4px 0"><input type="radio" name="medley-source" value="yellow" onchange="medleyOptionsSave()"> AI-included only (yellow) <span class="mo-n" id="mo-n-yellow"></span></label>
-      <label style="display:block;margin:8px 0 2px"><input type="checkbox" id="medley-next-only" onchange="medleyOptionsSave()"> Next track plays medley songs only
-        <br><span style="color:#999;font-size:.75rem;margin-left:22px">for dressing your hottest tracks with lighting; each lighting change stamps Last edited</span></label>
-      <label style="display:block;margin:8px 0 2px">Songs in the medley
-        <input type="number" id="medley-songs" min="4" max="60" step="1" value="10" style="width:64px;margin-left:6px" onchange="medleyOptionsSave()">
-        <span style="color:#999;font-size:.75rem">(sets the medley length &mdash; hooks run ~15-20s each)</span></label>
-    </div>
-    <button class="btn editbtn" id="medley-edit-btn" style="display:none;margin-top:10px" onclick="editBegin()">EDIT TRANSITION</button>
-    <div id="medley-edit" style="display:none; margin-top:10px">
-      <div style="font-size:.75rem;color:#ff8a80;letter-spacing:.06em">EDITING THIS TRANSITION</div>
-      <div id="medley-edit-state" style="font-size:.8rem;color:#ffe266;margin-top:2px"></div>
-
-      <div style="margin-top:10px;padding:10px;border:1px solid #ff3b30;border-radius:8px">
-        <div style="font-weight:700" id="medley-edit-a">Song A</div>
-        <div style="display:flex;gap:6px;margin-top:8px;align-items:center;flex-wrap:wrap">
-          <span style="width:54px;font-size:.85rem">In</span>
-          <button class="btn" onclick="editAdjust('a_start',-4)">&minus;4</button>
-          <button class="btn" onclick="editAdjust('a_start',-1)">&minus;1</button>
-          <button class="btn" onclick="editAdjust('a_start',1)">+1</button>
-          <button class="btn" onclick="editAdjust('a_start',4)">+4</button>
-          <span id="medley-edit-a-start" style="font-size:.8rem;color:#ffe266"></span>
-        </div>
-        <div style="display:flex;gap:6px;margin-top:8px;align-items:center;flex-wrap:wrap">
-          <span style="width:54px;font-size:.85rem">Out</span>
-          <button class="btn" onclick="editAdjust('a_end',-4)">&minus;4</button>
-          <button class="btn" onclick="editAdjust('a_end',-1)">&minus;1</button>
-          <button class="btn" onclick="editAdjust('a_end',1)">+1</button>
-          <button class="btn" onclick="editAdjust('a_end',4)">+4</button>
-          <span id="medley-edit-a-end" style="font-size:.8rem;color:#ffe266"></span>
-        </div>
-      </div>
-
-      <div style="display:flex;align-items:center;gap:8px;margin:10px 0;color:#ff3b30;font-size:.75rem;letter-spacing:.1em">
-        <div style="flex:1;border-top:2px solid #ff3b30"></div>TRANSITION<div style="flex:1;border-top:2px solid #ff3b30"></div>
-      </div>
-
-      <div style="padding:10px;border:1px solid #ff3b30;border-radius:8px">
-        <div style="font-weight:700" id="medley-edit-b">Song B</div>
-        <div style="display:flex;gap:6px;margin-top:8px;align-items:center;flex-wrap:wrap">
-          <span style="width:54px;font-size:.85rem">In</span>
-          <button class="btn" onclick="editAdjust('b_start',-4)">&minus;4</button>
-          <button class="btn" onclick="editAdjust('b_start',-1)">&minus;1</button>
-          <button class="btn" onclick="editAdjust('b_start',1)">+1</button>
-          <button class="btn" onclick="editAdjust('b_start',4)">+4</button>
-          <span id="medley-edit-b-start" style="font-size:.8rem;color:#ffe266"></span>
-        </div>
-        <div style="display:flex;gap:6px;margin-top:8px;align-items:center;flex-wrap:wrap">
-          <span style="width:54px;font-size:.85rem">Out</span>
-          <button class="btn" onclick="editAdjust('b_end',-4)">&minus;4</button>
-          <button class="btn" onclick="editAdjust('b_end',-1)">&minus;1</button>
-          <button class="btn" onclick="editAdjust('b_end',1)">+1</button>
-          <button class="btn" onclick="editAdjust('b_end',4)">+4</button>
-          <span id="medley-edit-b-end" style="font-size:.8rem;color:#ffe266"></span>
-        </div>
-      </div>
-      <div style="font-size:.7rem;color:#999;margin-top:6px">Beats. In = where the song enters, Out = where it exits (&minus; sooner, + later). Each tweak replays the part it changes: A&rsquo;s In from the top; A&rsquo;s Out and B&rsquo;s In across the transition; B&rsquo;s Out into the next song.</div>
-
-      <div style="display:flex;gap:8px;margin-top:10px">
-        <button class="btn" style="flex:1;padding:14px 8px" onclick="editReplay('a_top')">&#9654; PLAY A &rarr; B</button>
-        <button class="btn" style="flex:1;padding:14px 8px" id="medley-edit-bnext" onclick="editReplay('b_exit')">&#9654; PLAY B &rarr; NEXT</button>
-      </div>
-      <button class="btn medley big" style="margin-top:8px" onclick="editResume(true)">RESUME (save both songs)</button>
-      <button class="btn" style="margin-top:8px;width:100%" onclick="editResume(false)">Resume without saving</button>
-    </div>
-    <button class="btn" id="medley-replay-btn" style="display:none;margin-top:10px;width:100%;border-color:#ffd400;color:#ffd400" onclick="replayMedley()">&#8635; REPLAY MEDLEY</button>
-    <button class="btn small" id="medley-game-btn" style="margin-top:8px;margin-right:6px" onclick="toggleMedleyGame()">Medley game: ON</button>
-    <button class="btn small" id="medley-sweep-btn" style="margin-top:8px" onclick="cycleMedleySweepers()">Medley sweepers: MEDLEY</button>
-  </section>
+  <!-- Connection health (2026-10-18, drivers/net_health_engine.py): amber =
+       shaky, red = phones can't reach the game reliably. While red, the
+       panels blink a warning sign and the next question waits; CONTINUE
+       ANYWAY stops the waiting for this spell of trouble. -->
+  <div id="net-banner" style="display:none; border-radius:10px; padding:12px 14px; margin-bottom:14px;">
+    <div style="font-weight:700; margin-bottom:4px;" id="net-banner-title"></div>
+    <div style="font-size:.82rem; color:#ddd;" id="net-banner-text"></div>
+    <button class="btn" style="margin-top:10px; display:none" id="net-continue-btn" onclick="netContinue()">CONTINUE ANYWAY</button>
+  </div>
 
   <section>
     <h2>Now Playing</h2>
@@ -301,16 +236,6 @@
     <div class="now-tags" id="np-tags"></div>
     <div class="now-timer" id="autodj-remaining">--:--</div>
     <button class="btn" style="margin-top:8px" id="audition-btn" onclick="auditionEnding()">AUDITION ENDING (jump to -15s)</button>
-    <button class="btn" style="margin-top:8px" id="hookwords-btn" onclick="hookWordsDemo()">HOOK WORDS DEMO</button>
-    <div id="song-theme-box" style="margin-top:10px">
-      <label style="font-size:.85rem;font-weight:700">Panel theme for this song
-        <select id="song-theme-select" onchange="songThemeSet(this.value)" style="width:100%;margin-top:4px">
-          <option value="">Automatic</option>
-        </select>
-      </label>
-      <div id="song-theme-status" style="color:#999;font-size:.75rem;margin-top:3px"></div>
-    </div>
-    <button class="btn" style="margin-top:8px; display:none" id="jukebox-btn" onclick="toggleJukebox()">JUKEBOX MODE</button>
   </section>
 
   <!-- Dark-phase lockdown (2026-08-18): shown ONLY while show_phase ==
@@ -351,17 +276,18 @@
        disclosure at the bottom. -->
   <div id="live-panel" style="display:none">
 
-    <!-- Saved show running (drivers/show_runner.py) / after-show background
-         music (2026-10-17). BACK TO SHOW MENU = full reset to the panel menu. -->
-    <div id="show-banner" style="display:none; background:#132a3a; border:1px solid #3a7bd5; border-radius:10px; padding:12px 14px; margin-bottom:14px;">
-      <div style="font-weight:700; color:#9cc9ff; margin-bottom:2px;" id="show-banner-title"></div>
-      <div style="font-size:.82rem; color:#ccc; margin-bottom:10px;" id="show-banner-text"></div>
-      <button class="btn" onclick="backToMenu()">BACK TO SHOW MENU</button>
-    </div>
-
     <section>
       <button class="btn primary big" onclick="transportNext()">NEXT TRACK</button>
       <button class="btn big" style="margin-top:8px" onclick="transportPrev()">&laquo; PREVIOUS TRACK</button>
+      <!-- ASK QUESTIONS panic button (2026-10-27, drivers/ask_questions.py):
+           unchecks Suppress Questions, asks now (unasked first, then repeats),
+           or jumps to the next song that has questions. -->
+      <button class="btn ask big" style="margin-top:8px" id="ask-btn" onclick="askQuestions()">ASK QUESTIONS</button>
+      <div id="ask-out" style="font-size:.8rem;color:#bbb;margin-top:4px;min-height:1em"></div>
+      <label style="display:flex;align-items:center;gap:6px;font-weight:700;margin-top:6px">
+        <input type="checkbox" id="suppress-q-checkbox" onchange="toggleJukebox()">
+        Suppress Questions
+      </label>
       <button class="btn danger big" style="margin-top:8px" onclick="cancelQuestion()">CANCEL QUESTION</button>
       <button class="btn big" style="margin-top:8px" onclick="reconnectGamepad()">RECONNECT GAMEPAD</button>
 
@@ -371,8 +297,12 @@
           ANNOUNCEMENTS
         </label>
         <label style="display:flex;align-items:center;gap:6px;font-weight:700;margin-left:8px">
+          <input type="checkbox" id="sweepers-checkbox" onchange="sweepersToggle()">
+          SWEEPERS
+        </label>
+        <label style="display:flex;align-items:center;gap:6px;font-weight:700;margin-left:8px">
           <input type="checkbox" id="sfx-checkbox" onchange="sfxToggle()">
-          SFX (SWEEPERS + GAME)
+          SOUND EFFECTS
         </label>
         <label style="display:flex;align-items:center;gap:6px;font-weight:700;margin-left:8px">
           <input type="checkbox" id="autoadvance-checkbox" onchange="autoAdvanceToggle()">
@@ -385,6 +315,88 @@
       <h2>Volume</h2>
       <input type="range" id="volume-slider" min="0" max="100" value="100" oninput="volumeSlide(this.value)">
       <div class="volume-value" id="volume-value">100%</div>
+      <div class="row" style="margin-top:10px;align-items:center">
+        <!-- Duck-call blower (2026-10-18): honks by itself on every 2nd wrong answer in a row -->
+        <button class="btn" title="Duck-call blower, relay 4 (10 s cooldown between honks)" onclick="testHonk(false)">HONK</button>
+        <button class="btn" title="The lost-Simon blast: 3 s solid + staccatos" onclick="testHonk(true)">SUPER BLAST</button>
+        <span id="honk-out" style="font-size:.78rem;color:#bbb;margin-left:6px"></span>
+      </div>
+    </section>
+
+    <section id="medley-bar" style="display:none">
+      <button class="btn medley big" id="medley-btn" onclick="toggleMedley()">DANCE MEDLEY</button>
+      <div id="medley-status"></div>
+      <!-- Medley options (2026-10-01): which songs a medley draws from + how many. Hidden while one runs. -->
+      <div id="medley-options" style="margin-top:10px;font-size:.88rem">
+        <label style="display:block;margin:4px 0"><input type="radio" name="medley-source" value="latest" onchange="medleyOptionsSave()"> Latest edited <span class="mo-n" id="mo-n-latest"></span><br><span style="color:#999;font-size:.75rem;margin-left:22px">human-edited songs first, newest edits leading; AI-included fill any gaps</span></label>
+        <label style="display:block;margin:4px 0"><input type="radio" name="medley-source" value="green" onchange="medleyOptionsSave()"> Human-edited only (green) <span class="mo-n" id="mo-n-green"></span></label>
+        <label style="display:block;margin:4px 0"><input type="radio" name="medley-source" value="yellow" onchange="medleyOptionsSave()"> AI-included only (yellow) <span class="mo-n" id="mo-n-yellow"></span></label>
+        <label style="display:block;margin:8px 0 2px"><input type="checkbox" id="medley-next-only" onchange="medleyOptionsSave()"> Next track plays medley songs only
+          <br><span style="color:#999;font-size:.75rem;margin-left:22px">for dressing your hottest tracks with lighting; each lighting change stamps Last edited</span></label>
+        <label style="display:block;margin:8px 0 2px">Songs in the medley
+          <input type="number" id="medley-songs" min="4" max="60" step="1" value="10" style="width:96px;margin-left:6px;font-size:1.6rem;font-weight:700;padding:6px 8px;text-align:center" onchange="medleyOptionsSave()">
+          <span style="color:#999;font-size:.75rem">(sets the medley length &mdash; hooks run ~15-20s each)</span></label>
+      </div>
+      <button class="btn editbtn" id="medley-edit-btn" style="display:none;margin-top:10px" onclick="editBegin()">EDIT TRANSITION</button>
+      <div id="medley-edit" style="display:none; margin-top:10px">
+        <div style="font-size:.75rem;color:#ff8a80;letter-spacing:.06em">EDITING THIS TRANSITION</div>
+        <div id="medley-edit-state" style="font-size:.8rem;color:#ffe266;margin-top:2px"></div>
+
+        <div style="margin-top:10px;padding:10px;border:1px solid #ff3b30;border-radius:8px">
+          <div style="font-weight:700" id="medley-edit-a">Song A</div>
+          <div style="display:flex;gap:6px;margin-top:8px;align-items:center;flex-wrap:wrap">
+            <span style="width:54px;font-size:.85rem">In</span>
+            <button class="btn" onclick="editAdjust('a_start',-4)">&minus;4</button>
+            <button class="btn" onclick="editAdjust('a_start',-1)">&minus;1</button>
+            <button class="btn" onclick="editAdjust('a_start',1)">+1</button>
+            <button class="btn" onclick="editAdjust('a_start',4)">+4</button>
+            <span id="medley-edit-a-start" style="font-size:.8rem;color:#ffe266"></span>
+          </div>
+          <div style="display:flex;gap:6px;margin-top:8px;align-items:center;flex-wrap:wrap">
+            <span style="width:54px;font-size:.85rem">Out</span>
+            <button class="btn" onclick="editAdjust('a_end',-4)">&minus;4</button>
+            <button class="btn" onclick="editAdjust('a_end',-1)">&minus;1</button>
+            <button class="btn" onclick="editAdjust('a_end',1)">+1</button>
+            <button class="btn" onclick="editAdjust('a_end',4)">+4</button>
+            <span id="medley-edit-a-end" style="font-size:.8rem;color:#ffe266"></span>
+          </div>
+        </div>
+
+        <div style="display:flex;align-items:center;gap:8px;margin:10px 0;color:#ff3b30;font-size:.75rem;letter-spacing:.1em">
+          <div style="flex:1;border-top:2px solid #ff3b30"></div>TRANSITION<div style="flex:1;border-top:2px solid #ff3b30"></div>
+        </div>
+
+        <div style="padding:10px;border:1px solid #ff3b30;border-radius:8px">
+          <div style="font-weight:700" id="medley-edit-b">Song B</div>
+          <div style="display:flex;gap:6px;margin-top:8px;align-items:center;flex-wrap:wrap">
+            <span style="width:54px;font-size:.85rem">In</span>
+            <button class="btn" onclick="editAdjust('b_start',-4)">&minus;4</button>
+            <button class="btn" onclick="editAdjust('b_start',-1)">&minus;1</button>
+            <button class="btn" onclick="editAdjust('b_start',1)">+1</button>
+            <button class="btn" onclick="editAdjust('b_start',4)">+4</button>
+            <span id="medley-edit-b-start" style="font-size:.8rem;color:#ffe266"></span>
+          </div>
+          <div style="display:flex;gap:6px;margin-top:8px;align-items:center;flex-wrap:wrap">
+            <span style="width:54px;font-size:.85rem">Out</span>
+            <button class="btn" onclick="editAdjust('b_end',-4)">&minus;4</button>
+            <button class="btn" onclick="editAdjust('b_end',-1)">&minus;1</button>
+            <button class="btn" onclick="editAdjust('b_end',1)">+1</button>
+            <button class="btn" onclick="editAdjust('b_end',4)">+4</button>
+            <span id="medley-edit-b-end" style="font-size:.8rem;color:#ffe266"></span>
+          </div>
+        </div>
+        <div style="font-size:.7rem;color:#999;margin-top:6px">Beats. In = where the song enters, Out = where it exits (&minus; sooner, + later). Each tweak replays the part it changes: A&rsquo;s In from the top; A&rsquo;s Out and B&rsquo;s In across the transition; B&rsquo;s Out into the next song.</div>
+
+        <div style="display:flex;gap:8px;margin-top:10px">
+          <button class="btn" style="flex:1;padding:14px 8px" onclick="editReplay('a_top')">&#9654; PLAY A &rarr; B</button>
+          <button class="btn" style="flex:1;padding:14px 8px" id="medley-edit-bnext" onclick="editReplay('b_exit')">&#9654; PLAY B &rarr; NEXT</button>
+        </div>
+        <button class="btn medley big" style="margin-top:8px" onclick="editResume(true)">RESUME (save both songs)</button>
+        <button class="btn" style="margin-top:8px;width:100%" onclick="editResume(false)">Resume without saving</button>
+      </div>
+      <button class="btn" id="medley-replay-btn" style="display:none;margin-top:10px;width:100%;border-color:#ffd400;color:#ffd400" onclick="replayMedley()">&#8635; REPLAY MEDLEY</button>
+      <button class="btn small" id="medley-game-btn" style="margin-top:8px;margin-right:6px" onclick="toggleMedleyGame()">Medley game: ON</button>
+      <button class="btn small" id="medley-sweep-btn" style="margin-top:8px" onclick="cycleMedleySweepers()">Medley sweepers: MEDLEY</button>
     </section>
 
     <section>
@@ -392,6 +404,7 @@
       <div class="row" style="margin-bottom:10px">
         <span id="quiz-player-count" style="color:#999; font-size:.85rem;">0 players signed up</span>
       </div>
+      <div id="net-phones" style="display:none; margin-bottom:12px; font-size:.82rem;"></div>
       <div id="roster-section" style="display:none; margin-bottom:12px;">
         <div style="font-size:.75rem; text-transform:uppercase; letter-spacing:.05em; color:#777; margin-bottom:6px;">Round Roster</div>
         <div id="roster-grid"></div>
@@ -446,10 +459,43 @@
         <button class="btn danger" style="flex:1" onclick="stopShow()">STOP GAME</button>
         <button class="btn" style="flex:1" onclick="startNewGame()">START NEW GAME</button>
       </div>
+      <!-- Saved show running (drivers/show_runner.py) / after-show background
+           music (2026-10-17). BACK TO SHOW MENU = full reset to the panel menu, so it sits
+           below STOP / START NEW GAME (2026-10-27). -->
+      <div id="show-banner" style="display:none; background:#132a3a; border:1px solid #3a7bd5; border-radius:10px; padding:12px 14px; margin-top:14px;">
+        <div style="font-weight:700; color:#9cc9ff; margin-bottom:2px;" id="show-banner-title"></div>
+        <div style="font-size:.82rem; color:#ccc; margin-bottom:10px;" id="show-banner-text"></div>
+        <button class="btn" onclick="backToMenu()">BACK TO SHOW MENU</button>
+      </div>
+      <div class="dj-look-subhead">Hold DMX Uplights Solid</div>
+      <label style="display:flex;align-items:center;gap:6px;font-size:.85rem;font-weight:700">
+        <input type="checkbox" id="dmx-hold-checkbox" onchange="dmxHoldSend({enabled: this.checked})">
+        Solid color only &mdash; no flashes or effects (stays on between games)
+      </label>
+      <label style="display:flex;align-items:center;gap:6px;font-size:.85rem;font-weight:700;margin-top:6px">
+        <input type="checkbox" id="dmx-hold-override-checkbox" onchange="dmxHoldSend({override_color: this.checked})">
+        Override color (off = follow each song's color, still solid)
+      </label>
+      <div id="dmx-hold-swatches" class="color-swatch-picker"></div>
+      <label style="font-size:.85rem;font-weight:700">Brightness <span id="dmx-hold-brightness-label">100</span>%
+        <input type="range" id="dmx-hold-brightness" min="0" max="100" step="1" value="100" style="width:100%"
+          oninput="document.getElementById('dmx-hold-brightness-label').textContent=this.value"
+          onchange="dmxHoldSend({brightness: parseInt(this.value, 10)})">
+      </label>
     </section>
 
     <details class="advanced-group" id="advanced-panel" ontoggle="advancedOnToggle()">
       <summary>Advanced / Show Configuration</summary>
+
+      <div class="dj-look-subhead" style="margin-top:6px;padding-top:0;border-top:none">Panel Theme</div>
+      <div id="song-theme-box">
+        <label style="font-size:.85rem;font-weight:700">Panel theme for this song
+          <select id="song-theme-select" onchange="songThemeSet(this.value)" style="width:100%;margin-top:4px">
+            <option value="">Automatic</option>
+          </select>
+        </label>
+        <div id="song-theme-status" style="color:#999;font-size:.75rem;margin-top:3px"></div>
+      </div>
 
       <!-- DJ-look controls (2026-09-17): DMX/marquee/outline each pick
            their own color/pattern/gradient independently -- replaces the
@@ -464,7 +510,7 @@
            complements to whatever the outline is showing, not the other
            way around -- so it's the first thing to set per song, not the
            last. -->
-      <div class="dj-look-subhead" style="margin-top:6px;padding-top:0;border-top:none">Outline Strip (Accent)</div>
+      <div class="dj-look-subhead">Outline Strip (Accent)</div>
       <!-- Full WLED default effect catalog (config.ACCENT_EFFECT_NAMES,
            220 entries as of 2026-09-18, verified live against the board's
            own /json/eff) -- deliberately not curated/trimmed down, per
@@ -681,11 +727,15 @@
       <!-- Instant blackout/mute (2026-10-06): no confirm -- it has to be
            instant, and a second press puts everything back. -->
       <button class="btn danger big" id="blackout-btn" style="margin-bottom:12px" onclick="toggleBlackout()">BLACKOUT + MUTE</button>
-      <button class="btn danger" onclick="openRestartAppModal()">RESTART APP</button>
+      <button class="btn" id="mono-btn" onclick="toggleMono()">MUSIC: STEREO</button>
 
-      <div class="subhead">Administrator</div>
-      <button class="btn danger" onclick="openPoweroffModal()">SHUT DOWN PI</button>
-      <button class="btn danger" onclick="openRebootModal()">RESTART PI</button>
+      <!-- Collapsed by default on purpose (2026-10-27): each of these ends the show. -->
+      <details class="advanced-group" style="margin-top:14px;margin-bottom:0;padding:10px 0 0">
+        <summary>Administrator</summary>
+        <button class="btn danger" onclick="openRestartAppModal()">RESTART APP</button>
+        <button class="btn danger" onclick="openPoweroffModal()">SHUT DOWN PI</button>
+        <button class="btn danger" onclick="openRebootModal()">RESTART PI</button>
+      </details>
     </section>
 
   </div>
@@ -971,10 +1021,20 @@ async function refreshAutoDj() {
   const ss = String(s % 60).padStart(2, '0');
   document.getElementById('autodj-remaining').textContent =
     (d.enabled ? '' : '(OFF) ') + mm + ':' + ss;
-  const jb = document.getElementById('jukebox-btn');
-  jb.style.display = d.live ? '' : 'none';
   refreshMedley();
-  jb.textContent = d.jukebox ? 'JUKEBOX: ON (no questions) — tap for trivia' : 'TRIVIA: ON — tap for jukebox';
+  document.getElementById('suppress-q-checkbox').checked = !!d.jukebox;
+}
+
+let _askOutTimer = null;
+async function askQuestions() {
+  const out = document.getElementById('ask-out');
+  document.getElementById('suppress-q-checkbox').checked = false;
+  out.textContent = 'Asking...';
+  const d = await api('/api/questions/ask', {method: 'POST'});
+  out.textContent = (d && d.message) || 'No answer from the Pi.';
+  clearTimeout(_askOutTimer);
+  _askOutTimer = setTimeout(() => { out.textContent = ''; }, 6000);
+  refreshAutoDj();
 }
 
 async function toggleJukebox() {
@@ -1024,16 +1084,6 @@ async function tdDemo() {
   const old = b.textContent;
   b.textContent = d && d.ok ? 'Playing (' + d.seconds + 's) -- watch panels 3-6' : ((d && d.error) || 'Failed');
   setTimeout(() => { b.textContent = old; }, 4000);
-}
-
-async function hookWordsDemo() {
-  const b = document.getElementById('hookwords-btn');
-  const d = await api('/api/hook-words/demo', {method: 'POST'});
-  const old = b.textContent;
-  b.textContent = !(d && d.ok) ? ((d && d.error) || 'Failed')
-    : d.switching ? 'Switching song, then jumping...' : 'Jumped to ' + Math.round(d.seek_to_seconds) + 's -- watch panels 3-6';
-  setTimeout(() => { b.textContent = old; }, 4000);
-  refreshAutoDj();
 }
 
 async function refreshHostPreview() {
@@ -1318,6 +1368,38 @@ function pickDjColor(feature, colorIndex) {
   api(`/api/dj-look/${feature}`, {
     method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({color_index: colorIndex}),
   }).then(djLookPoll);
+}
+
+function dmxHoldSend(body) {
+  api('/api/show/dmx-hold', {
+    method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(body),
+  }).then(d => { if (d && d.ok) dmxHoldRender(d); });
+}
+
+function dmxHoldRender(h) {
+  if (!DJ_LOOK_OPTIONS) return;
+  const box = document.getElementById('dmx-hold-swatches');
+  if (!box.dataset.rendered) {
+    box.innerHTML = DJ_LOOK_OPTIONS.colors.map(c => `
+      <button type="button" class="color-swatch-btn" data-color-index="${c.index}"
+        style="background:rgb(${c.r},${c.g},${c.b})" title="${_escapeHtml(c.name)}"
+        onclick="dmxHoldSend({color_index: ${c.index}})"></button>`).join('');
+    box.dataset.rendered = '1';
+  }
+  box.querySelectorAll('.color-swatch-btn').forEach(btn => {
+    btn.classList.toggle('selected', Number(btn.dataset.colorIndex) === h.color_index);
+  });
+  _setCheckedIfNotFocused('dmx-hold-checkbox', h.enabled);
+  _setCheckedIfNotFocused('dmx-hold-override-checkbox', h.override_color);
+  // Swatches only mean something while Override Color is on.
+  box.style.opacity = h.override_color ? '' : '.3';
+  box.style.pointerEvents = h.override_color ? '' : 'none';
+  if (!h.override_color) box.querySelectorAll('.color-swatch-btn').forEach(btn => btn.classList.remove('selected'));
+  const slider = document.getElementById('dmx-hold-brightness');
+  if (document.activeElement !== slider) {
+    slider.value = h.brightness;
+    document.getElementById('dmx-hold-brightness-label').textContent = h.brightness;
+  }
 }
 
 function pickDjTheme(feature, themeIndex) {
@@ -1658,6 +1740,9 @@ function announcementsToggle() {
 function autoAdvanceToggle() {
   api('/api/autoadvance/toggle', { method: 'POST' }).then(refreshGamepadStatus);
 }
+function sweepersToggle() {
+  api('/api/sweepers/toggle', { method: 'POST' }).then(refreshGamepadStatus);
+}
 function sfxToggle() {
   api('/api/sfx/toggle', { method: 'POST' }).then(refreshGamepadStatus);
 }
@@ -1743,9 +1828,45 @@ function volumeSlide(value) {
   });
 }
 
+function renderNetHealth(n) {
+  const banner = document.getElementById('net-banner');
+  const phones = document.getElementById('net-phones');
+  if (!n) { banner.style.display = 'none'; phones.style.display = 'none'; return; }
+  if (n.level === 'ok') {
+    banner.style.display = 'none';
+  } else {
+    const red = n.level === 'bad';
+    banner.style.display = '';
+    banner.style.background = red ? '#3a1414' : '#3a2e10';
+    banner.style.border = '1px solid ' + (red ? '#e04848' : '#e0a030');
+    document.getElementById('net-banner-title').style.color = red ? '#ff8a8a' : '#ffd27a';
+    document.getElementById('net-banner-title').textContent = red ? 'NETWORK TROUBLE' : 'NETWORK SHAKY';
+    let text = (n.reasons || []).join(' · ') || 'Looks better — making sure it holds';
+    if (n.holding) text += ' — next question is waiting until it recovers.';
+    else if (red && n.override) text += ' — continuing anyway.';
+    document.getElementById('net-banner-text').textContent = text;
+    document.getElementById('net-continue-btn').style.display = n.holding ? '' : 'none';
+  }
+  // Per-phone list: only the ones worth a look.
+  const label = {bad: 'very laggy', slow: 'laggy', silent: 'no contact'};
+  const color = {bad: '#ff6b6b', slow: '#ffc04d', silent: '#aaa'};
+  const odd = (n.players || []).filter((p) => label[p.status]);
+  if (!odd.length) { phones.style.display = 'none'; return; }
+  phones.style.display = '';
+  phones.innerHTML = odd.map((p) => {
+    const detail = p.status === 'silent' ? Math.round(p.silent_s) + ' s' : (p.rtt_ms != null ? (p.rtt_ms / 1000).toFixed(1) + ' s round trip' : '');
+    return `<div style="color:${color[p.status]}">${String(p.initials).replace(/</g, '&lt;')} — ${label[p.status]}${detail ? ' (' + detail + ')' : ''}</div>`;
+  }).join('');
+}
+async function netContinue() {
+  await api('/api/net/continue', {method: 'POST'});
+  refreshGamepadStatus();
+}
+
 async function refreshGamepadStatus() {
   const d = await api('/api/gamepad/status');
   if (!d) return;
+  renderNetHealth(d.net_health);
 
   // Trivia Night show flow (2026-08-13, "dark" added 2026-08-18): the
   // admin panel belongs on the Setup page whenever a show isn't actually
@@ -1767,6 +1888,7 @@ async function refreshGamepadStatus() {
   // The full panel only unlocks once the server confirms the phase
   // actually flipped to "live" -- not optimistically the instant a
   // lockdown button is tapped.
+  if (d.dmx_hold) dmxHoldRender(d.dmx_hold);
   document.getElementById('dark-lockdown').style.display = (d.show_phase === 'dark') ? '' : 'none';
   document.getElementById('dark-show-name').textContent = d.show_selected || '';
   document.getElementById('intro-lockdown').style.display = (d.show_phase === 'intro') ? '' : 'none';
@@ -1794,6 +1916,8 @@ async function refreshGamepadStatus() {
   document.getElementById('announcements-checkbox').checked = !!d.auto_announce_enabled;
   document.getElementById('autoadvance-checkbox').checked = !!d.auto_advance_after_quiz;
   document.getElementById('sfx-checkbox').checked = !!d.sfx_enabled;
+  document.getElementById('sweepers-checkbox').checked = !!d.sweepers_enabled;
+  document.getElementById('suppress-q-checkbox').checked = !!d.questions_suppressed;
 
   const count = d.quiz_player_count || 0;
   document.getElementById('quiz-player-count').textContent =
@@ -1843,6 +1967,28 @@ async function toggleBlackout() {
   if (d) renderBlackout(d.active);
 }
 
+async function testHonk(superBlast) {
+  const out = document.getElementById('honk-out');
+  const d = await api('/api/honk' + (superBlast ? '?super_blast=true' : ''), {method: 'POST'});
+  out.textContent = d ? (d.ok ? 'Honk!' : 'No honk: ' + d.message) : '';
+  setTimeout(() => { out.textContent = ''; }, 4000);
+}
+
+function renderMono(on) {
+  const b = document.getElementById('mono-btn');
+  if (b) b.textContent = on ? 'MUSIC: MONO (next track)' : 'MUSIC: STEREO';
+}
+
+async function toggleMono() {
+  const d = await api('/api/audio/mono/toggle', {method: 'POST'});
+  if (d) renderMono(d.mono);
+}
+
+async function refreshMono() {
+  const d = await api('/api/audio/mono');
+  if (d) renderMono(d.mono);
+}
+
 async function refreshBlackout() {
   const d = await api('/api/blackout');
   if (d) renderBlackout(d.active);
@@ -1879,6 +2025,7 @@ async function autoThemeSet(on) {
 
 function refreshAll() {
   refreshBlackout();
+  refreshMono();
   refreshSongTheme();
   refreshNowPlaying();
   refreshAutoDj();

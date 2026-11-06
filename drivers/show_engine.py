@@ -17,8 +17,8 @@ Trivia Night show flow. Phases (state.show_phase):
                A spin item mid-show fades the song out, spins the wheel, plays
                the decade stab and dovetails into the next song.
   outro     -- ShowEnd.mp3 + champion banner; afterwards the rig plays
-               easy-listening background music (live, show_background) until a
-               panel press starts an on-the-fly encore.
+               easy-listening background music (live, show_background) with
+               every light dark until a Simon button returns to the panel menu.
 
 Rendering lives in graphics/matrix_canvas.py (+ graphics/menu_pages.py),
 drivers/lighting_engine.py, drivers/wled_engine.py and drivers/accent_engine.py,
@@ -56,6 +56,8 @@ def _prepare(show):
     show_library.apply_settings(show)
     state.show_selected = show["name"]
     state.questions_suppressed = not show.get("questions", False)
+    state.listen_enabled = bool(show.get("listen", False))  # phone "Listen to the show" checkbox
+    state.show_outro_enabled = bool(show.get("outro", True))
     show_runner.begin(show)
 
 
@@ -196,7 +198,8 @@ def start_spin(decade, path):
 def _start_wheel(now):
     state.show_wheel_target = _seq["decade"]
     state.show_wheel_landed = False
-    state.show_wheel_spin_seconds = max(config.SHOW_WHEEL_MIN_SPIN_SECONDS, show_bed.wheel_theme_seconds())
+    state.show_wheel_spin_seconds = (max(config.SHOW_WHEEL_MIN_SPIN_SECONDS, show_bed.wheel_theme_seconds())
+                                     + config.SHOW_WHEEL_EXTRA_SECONDS)
     state.show_wheel_started_at = now
     show_bed.start_wheel_theme()
     _seq["stage"] = "wheel"
@@ -245,6 +248,9 @@ def _start_song(now):
     if state.show_phase == "intro":
         state.show_phase = "live"
         state.show_phase_started_at = now
+        # Panels stay black until the first song's transition fires, so the
+        # previous song's board never flashes up first (2026-10-26).
+        state.show_first_song_pending_at = time.time()
         print("[SHOW] Intro finished -- live show begins.")
     midi_driver.tween_channel_faders_to(state.music_volume, config.SHOW_SONG_DOVETAIL_FADE_SECONDS)
     state.board_wipe_fresh = True   # the wheel/intro must not slide out over the new song
@@ -328,6 +334,14 @@ def start_outro():
     _outro_music_started = False
     midi_driver.tween_channel_faders_to(0, config.SHOW_OUTRO_DECK_FADE_SECONDS)
 
+    if not state.show_outro_enabled:
+        # Outro switched off in the designer: no ShowEnd/applause/banner. Once
+        # the deck has faded, update() hands over to the mellow music + blackout.
+        _outro_music_started = True
+        state.show_outro_message = ""
+        state.show_outro_music_ends_at = now + config.SHOW_OUTRO_DECK_FADE_SECONDS - 1.0
+        print("[SHOW] Outro suppressed -- fading to blackout + mellow music.")
+        return
     state.show_outro_message = _compute_champion_message()
     state.show_outro_music_ends_at = (
         now + config.SHOW_OUTRO_DECK_FADE_SECONDS + show_end_sound.get_length())
@@ -374,7 +388,8 @@ def _pick_energy(low=None, high=None):
 
 
 def _start_background(now):
-    """The outro is over: easy-listening background music."""
+    """The outro is over: easy-listening background music, every light dark
+    (state.lights_out) until a Simon button returns to the panel menu."""
     global _seq
     _seq = None
     show_bed.stop_all(400)
@@ -393,7 +408,7 @@ def _start_background(now):
     midi_driver.tween_channel_faders_to(
         state.music_volume * config.SHOW_BACKGROUND_VOLUME_PCT / 100.0, 3.0)
     deck_orchestrator.trigger_plain_move()
-    print("[SHOW] Background music after the show (a panel press starts an encore).")
+    print("[SHOW] Background music after the show, lights out (a panel press returns to the menu).")
 
 
 def _stop_background():

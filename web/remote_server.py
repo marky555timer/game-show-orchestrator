@@ -43,6 +43,7 @@ from drivers import show_runner
 from drivers.dmx_driver import dmx
 from drivers import led_bridge
 from drivers import tunnel_engine
+from drivers import net_health_engine
 from drivers import bluetooth_engine
 from drivers import audio_stream_bridge
 from drivers import factoid_engine
@@ -94,7 +95,31 @@ _ADMIN_PAGES = {"/", "/setup", "/designer", "/library", "/questions", "/medley-e
 
 app = FastAPI(title="Game Show Orchestrator Remote") if FastAPI else None
 
+# Compression (2026-10-18): pages + JSON go through the tunnel to every
+# phone, so gzip them (/play is ~85 KB, a poll ~1-2 KB). Audio, the live
+# MP3 stream, range requests and the host preview image pass untouched --
+# gzip there buys nothing and would buffer the stream.
+_NO_GZIP_PREFIXES = ("/api/audio/", "/api/library/audio", "/api/medley/clip",
+                     "/api/shows/bed-audio", "/api/host/preview")
+
+
+class _GzipExceptMedia:
+    def __init__(self, app):
+        from starlette.middleware.gzip import GZipMiddleware
+        self.app = app
+        self.gzip = GZipMiddleware(app, minimum_size=500)
+
+    async def __call__(self, scope, receive, send):
+        if (scope["type"] == "http" and not scope["path"].startswith(_NO_GZIP_PREFIXES)
+                and not any(k == b"range" for k, _ in scope.get("headers", []))):
+            await self.gzip(scope, receive, send)
+        else:
+            await self.app(scope, receive, send)
+
+
 if app is not None:
+    app.add_middleware(_GzipExceptMedia)
+
     @app.middleware("http")
     async def _mark_operator_interaction_middleware(request: Request, call_next):
         # Panel menu hands-off rule (drivers/panel_menu.py): the admin
@@ -270,6 +295,12 @@ if app is not None:
     class ShowSchedule(ShowSetupSave):
         target_epoch: float
 
+    class DmxHoldSet(BaseModel):
+        enabled: bool | None = None
+        override_color: bool | None = None
+        color_index: int | None = None
+        brightness: int | None = None  # percent, 0-100
+
     class OverlayHold(BaseModel):
         active: bool
 
@@ -294,6 +325,8 @@ if app is not None:
 
     class PlayerLock(BaseModel):
         player_id: str
+        index: int | None = None     # pick + lock in one request (play.html, 2026-10-18)
+        round_id: int | None = None  # the question the phone was looking at
 
     class JoystickBind(BaseModel):
         action_id: str
@@ -583,8 +616,18 @@ if app is not None:
             })
         return roster
 
+    def _reveal_correction():
+        """The explanation shown with the answer: the song itself for the
+        "Who is this?" question, the correction for a True/False one."""
+        if state.factoid_category == "identify_band":
+            now_title, now_artist = deck_orchestrator.get_now_playing()
+            return f"it's \"{now_title}\" by {now_artist}."
+        if state.factoid_choices == ["True", "False"]:
+            return state.factoid_correction
+        return ""
+
     @app.get("/api/player/question")
-    def player_question(player_id: str):
+    def player_question(player_id: str, rtt: float | None = None):
         player = state.quiz_players.get(player_id)
         if player is None:
             return {"ok": False}
@@ -592,6 +635,9 @@ if app is not None:
         # check -- a player who's stopped polling (page closed, phone
         # locked) shouldn't block grading forever.
         player["last_seen"] = time.time()
+        player["away"] = False
+        if rtt is not None:
+            net_health_engine.record_rtt(player_id, rtt)  # the phone's previous poll
         # Beta-Fix Feature Set item 2: a question is answerable the instant
         # the Mystery Band teaser arms it (drivers/mystery_band_engine.py::
         # _start_mystery(), which populates factoid_choices without
@@ -652,9 +698,11 @@ if app is not None:
         # never disagree about how much time is left.
         intermission_remaining = win_sequence_engine.get_intermission_remaining_seconds(time.time())
 
-        # Only reveal the correct answer once the round is actually graded
-        # (state.quiz_locked) -- never send it while a question is still
-        # live, so a client can't just read it out of the response.
+        # correct_index is still only filled in once the round is graded
+        # (state.quiz_locked); the phone's instant reveal at the deadline uses
+        # `answer_index` below instead (2026-10-18: snappy answers -- the
+        # user chose not to hide it, "if a hacker is amongst the crew I would
+        # love to meet that person").
         correct_index = state.factoid_correct_index if state.quiz_locked else -1
         # T/F explanation text (item: "put the right answer on their
         # screens") -- same correction string the matrix already shows,
@@ -670,13 +718,7 @@ if app is not None:
         # for next song" view -- matches the reveal-then-resume sequence
         # graphics/matrix_canvas.py already runs on the physical board
         # (mystery_reveal blink of the real title/artist).
-        if state.quiz_locked and state.factoid_category == "identify_band":
-            now_title, now_artist = deck_orchestrator.get_now_playing()
-            correction = f"it's \"{now_title}\" by {now_artist}."
-        elif state.quiz_locked and state.factoid_choices == ["True", "False"]:
-            correction = state.factoid_correction
-        else:
-            correction = ""
+        correction = _reveal_correction() if state.quiz_locked else ""
 
         # Leaderboard for the "waiting for next question" view (item 18) --
         # top scorers, ranked descending, ties broken by join order.
@@ -731,8 +773,22 @@ if app is not None:
                     if q.get("question") and q.get("choices") and q.get("question") not in unasked
                 ]
 
+        live = active and not state.quiz_locked
         return {
             "ok": True,
+            # Snappy answers (2026-10-18): the phone keeps its own clock in
+            # step with server_time, counts down to deadline_at itself and
+            # shows right/wrong (answer_index, reveal_text) the instant it
+            # hits zero; my_first = this phone already won the first-right
+            # bonus (decided when its lock arrived). The Pi stays the judge:
+            # locked_globally/correct_index/score correct the phone if needed.
+            "server_time": time.time(),
+            "deadline_at": state.round_deadline_at if live else 0.0,
+            "answer_index": state.factoid_correct_index if active else -1,
+            "reveal_text": _reveal_correction() if active else "",
+            "bonus_round": active and state.factoid_category == "identify_band",
+            "my_first": player_id_is_first(player_id),
+            "listen_enabled": state.listen_enabled,
             "round_id": state.quiz_round_id,
             # Lets play.html distinguish "waiting between queued questions
             # for this song" (still MODE_GAME) from "the round's fully over,
@@ -805,6 +861,19 @@ if app is not None:
         player = state.quiz_players.get(body.player_id)
         if player is None:
             return {"ok": False}
+        if body.round_id is not None and body.round_id != state.quiz_round_id:
+            return {"ok": False, "reason": "stale"}
+        if player["locked"]:
+            # A retry of a lock that already landed: same answer as before.
+            return {"ok": True, "first": player_id_is_first(body.player_id)}
+        if state.quiz_locked or not state.factoid_choices:
+            return {"ok": False, "reason": "too late"}
+        if body.index is not None:
+            if not (0 <= body.index < len(state.factoid_choices)):
+                return {"ok": False, "reason": "bad index"}
+            player["selected_index"] = body.index
+            if not state.round_first_answer_at:
+                state.round_first_answer_at = time.time()
         if player["selected_index"] < 0:
             return {"ok": False, "reason": "no selection"}
         player["locked"] = True
@@ -812,6 +881,25 @@ if app is not None:
         # uses this to find who answered the mystery question first (bonus
         # point), not just who's correct.
         player["locked_at"] = time.time()
+        # First right answer: final the moment it arrives (nothing arriving
+        # later can beat it), so the winner's phone hears now and can show
+        # the bonus right at the reveal.
+        if (state.factoid_category == "identify_band" and not state.round_first_correct_pid
+                and player["selected_index"] == state.factoid_correct_index):
+            state.round_first_correct_pid = body.player_id
+        return {"ok": True, "first": player_id_is_first(body.player_id)}
+
+    def player_id_is_first(player_id):
+        return bool(player_id) and player_id == state.round_first_correct_pid
+
+    @app.post("/api/player/away")
+    def player_away(player_id: str):
+        """play.html going to the background (screen locked, app switched):
+        a quiet phone that said so first isn't counted as network lag
+        (drivers/net_health_engine.py). Cleared by its next poll."""
+        player = state.quiz_players.get(player_id)
+        if player is not None:
+            player["away"] = True
         return {"ok": True}
 
     @app.get("/api/now-playing")
@@ -915,6 +1003,7 @@ if app is not None:
                 "clip": clip,
                 "last_played": st.get("last_played"),
                 "last_edited": st.get("last_edited"),
+                "date_added": (music_metadata_engine.get_metadata_for(track_key) or {}).get("date_added") or "",
             })
         out.sort(key=lambda t: (t["artist"].lower(), t["title"].lower()))
         return {
@@ -2265,10 +2354,16 @@ if app is not None:
         return {"ok": True}
 
     @app.post("/api/usb-relay/test-4")
-    def usb_relay_test_4():
-        print("[WEB REMOTE] Test USB Relay 4 requested via web remote.")
-        relay_engine.pulse(4)
-        return {"ok": True}
+    @app.post("/api/honk")
+    def usb_relay_test_4(super_blast: bool = False):
+        """Channel 4 is the duck-call blower (2026-10-18): a plain short pulse
+        neither honks nor is kind to the contacts, so the test runs the real
+        honk pattern (?super_blast=true: the lost-Simon blast), with its
+        safety caps and cooldown."""
+        from drivers import honk_engine
+        print("[WEB REMOTE] Test honk requested via web remote.")
+        ok, msg = honk_engine.honk("(test button)", super_blast=super_blast)
+        return {"ok": ok, "message": msg}
 
     @app.get("/api/dmx/head-status")
     def dmx_head_status():
@@ -2294,6 +2389,19 @@ if app is not None:
         active = blackout_engine.toggle()
         print(f"[WEB REMOTE] Blackout {'ON' if active else 'OFF'}.")
         return {"ok": True, "active": active}
+
+    @app.get("/api/audio/mono")
+    def audio_mono_status():
+        from audio import mono_mode
+        return {"mono": mono_mode.enabled()}
+
+    @app.post("/api/audio/mono/toggle")
+    def audio_mono_toggle():
+        # Music-only mono downmix for a single-speaker setup -- audio/mono_mode.py.
+        from audio import mono_mode
+        on = mono_mode.set_enabled(not mono_mode.enabled())
+        print(f"[WEB REMOTE] Music mono {'ON' if on else 'OFF'}.")
+        return {"ok": True, "mono": on}
 
     @app.post("/api/dmx/head-hold")
     def dmx_head_hold(body: DmxHeadHold):
@@ -2621,6 +2729,9 @@ if app is not None:
             "auto_announce_enabled": state.auto_announce_enabled,
             "auto_advance_after_quiz": state.auto_advance_after_quiz,
             "sfx_enabled": state.sfx_enabled,
+            "sweepers_enabled": state.sweepers_enabled,
+            "questions_suppressed": state.questions_suppressed,
+            "dmx_hold": _dmx_hold_status(),
             "quiz_player_count": len(state.quiz_players),
             "round_roster": _build_round_roster(),
             "game_win_score": state.game_win_score,
@@ -2635,6 +2746,7 @@ if app is not None:
             "show_mode": show_runner.mode(),
             "show_background": state.show_background,
             "show_spin_active": state.show_spin_active,
+            "net_health": net_health_engine.snapshot(),
         }
 
     @app.post("/api/game/price-game")
@@ -2687,6 +2799,25 @@ if app is not None:
             if body.auto_final_round and body.rounds_estimate else None
         )
 
+    def _dmx_hold_status():
+        return {"enabled": state.show_dmx_hold,
+                "override_color": state.show_dmx_hold_override_color,
+                "color_index": state.show_dmx_hold_color_index,
+                "brightness": state.show_dmx_hold_brightness}
+
+    @app.post("/api/show/dmx-hold")
+    def show_dmx_hold_set(body: DmxHoldSet):
+        if body.enabled is not None:
+            state.show_dmx_hold = body.enabled
+        if body.override_color is not None:
+            state.show_dmx_hold_override_color = body.override_color
+        if body.color_index is not None:
+            state.show_dmx_hold_color_index = body.color_index % len(config.DJ_COLOR_PALETTE)
+        if body.brightness is not None:
+            state.show_dmx_hold_brightness = max(0, min(100, body.brightness))
+        print(f"[WEB REMOTE] DMX hold -> {_dmx_hold_status()}")
+        return {"ok": True, **_dmx_hold_status()}
+
     @app.get("/api/show/status")
     def show_status():
         now = time.time()
@@ -2707,6 +2838,7 @@ if app is not None:
             "allowed_decades": state.show_allowed_decades,
             "music_decades": [{"value": d, "label": config.MUSIC_DECADE_LABELS.get(d, d)} for d in config.MUSIC_DECADES],
             "show_selected": state.show_selected,
+            "dmx_hold": _dmx_hold_status(),
             "auto_final_round": state.show_final_round_number is not None,
             "final_round_number": state.show_final_round_number,
             "game_round_number": state.game_round_number,
@@ -2719,6 +2851,13 @@ if app is not None:
             "tunnel_live": tunnel_engine.get_current_tunnel_url() != "",
             "internet_reachable": tunnel_engine.internet_reachable(),
         }
+
+    @app.post("/api/net/continue")
+    def net_continue():
+        """Admin CONTINUE ANYWAY: stop holding questions for this spell of
+        network trouble (drivers/net_health_engine.py)."""
+        net_health_engine.override_hold()
+        return {"ok": True}
 
     @app.post("/api/show/save-and-start-now")
     def show_save_and_start_now(body: ShowSetupSave):
@@ -2796,7 +2935,9 @@ if app is not None:
     class ShowSave(BaseModel):
         name: str
         intro: Optional[bool] = None
+        outro: Optional[bool] = None
         questions: Optional[bool] = None
+        listen: Optional[bool] = None
         low: Optional[str] = None
         high: Optional[str] = None
         items: Optional[list[dict]] = None
@@ -2811,7 +2952,7 @@ if app is not None:
         return {"ok": True, "shows": show_library.all_shows("created"),
                 "selected": state.show_selected, "last_played": last["name"] if last else "",
                 "running": show_runner.running_name(), "decades": show_library.DECADES,
-                "wheel_decades": config.SHOW_INTRO_WHEEL_DECADES, "name_max": show_library.NAME_MAX}
+                "wheel_decades": sorted(config.MUSIC_DECADES), "name_max": show_library.NAME_MAX}
 
     @app.get("/api/shows/get")
     def shows_get(name: str):
@@ -2959,15 +3100,29 @@ if app is not None:
 
     @app.post("/api/sfx/toggle")
     def sfx_toggle():
-        # Operator page "SFX" checkbox -- mutes the song-change and medley
-        # sweepers (2026-10-07) plus the game sounds ding/buzzer/bigwin/
-        # coin/buzz_short (inputs/gamepad.py), without touching music volume
-        # or the spoken announcements (that's the ANNOUNCEMENTS checkbox).
+        # Operator page "SOUND EFFECTS" checkbox -- the game sounds ding/
+        # buzzer/bigwin/coin/buzz_short (inputs/gamepad.py), honk, siren.
+        # Sweepers have their own checkbox since 2026-10-27 (below).
         state.sfx_enabled = not state.sfx_enabled
-        if not state.sfx_enabled:
-            deck_orchestrator.dj_engine.stop_sweeper()
         print(f"[WEB REMOTE] Game SFX -> {state.sfx_enabled}")
         return {"ok": True, "sfx_enabled": state.sfx_enabled}
+
+    @app.post("/api/sweepers/toggle")
+    def sweepers_toggle():
+        # Operator page "SWEEPERS" checkbox -- song-change and medley whooshes
+        # only; the spoken announcements are the ANNOUNCEMENTS checkbox.
+        state.sweepers_enabled = not state.sweepers_enabled
+        if not state.sweepers_enabled:
+            deck_orchestrator.dj_engine.stop_sweeper()
+        print(f"[WEB REMOTE] Sweepers -> {state.sweepers_enabled}")
+        return {"ok": True, "sweepers_enabled": state.sweepers_enabled}
+
+    @app.post("/api/questions/ask")
+    def questions_ask():
+        # ASK QUESTIONS panic button (drivers/ask_questions.py): lifts
+        # suppression, asks now, or jumps to the next song with questions.
+        from drivers import ask_questions
+        return ask_questions.ask()
 
     @app.post("/api/space-invaders/toggle")
     def space_invaders_toggle():

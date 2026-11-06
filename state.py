@@ -299,6 +299,7 @@ class State:
         # this session -- drivers/factoid_engine.py._apply_active_question()
         # populates this every time a question actually gets served.
         self.asked_artists = set()
+        self.asked_question_texts = set()  # every question served this session (ASK QUESTIONS asks unasked ones first)
 
         self.mystery_active = False        # teaser or reveal-blink in progress
         self.mystery_resolved = False       # True once the 10s window has expired unanswered
@@ -324,6 +325,7 @@ class State:
         self.autoadv_questions_asked = 0          # questions shown on the current track
         self.autoadv_need_leaderboard = False     # a question ran; idle cycle must show the leaderboard
         self.autoadv_leaderboard_reviewed = False # leaderboard has fully played since the last question
+        self.autoadv_track_key = ""               # track the three counters above belong to
 
         # --- Auto-DJ: overlapping station-announcement transition ---
         self.auto_dj_announcement_played = False  # True once this cycle's VO has fired
@@ -336,6 +338,9 @@ class State:
 
         # --- Game SFX (ding/buzzer/bigwin/coin/buzz_short) admin toggle ---
         self.sfx_enabled = config.SFX_ENABLED_BY_DEFAULT
+        # Sweepers (song-change + medley whooshes) muted separately from the game
+        # SFX since 2026-10-27 -- the operator mutes sweepers far more often.
+        self.sweepers_enabled = config.SFX_ENABLED_BY_DEFAULT
 
         # --- Mystery-teaser defer point (drivers/deck_orchestrator.py sets
         # this on an announced transition; drivers/mystery_band_engine.py
@@ -404,7 +409,6 @@ class State:
         self.round_timeout_seconds = 0.0
         self.round_timed_out = False
         self.round_first_answer_at = 0.0
-        self.round_winner_initials = []
         # Manual backup skip (2026-09-18, drivers/simon_engine.py::
         # poll_hardware()): set True by ANY panel button press while a
         # graded round is just sitting in its post-grade wait (celebration
@@ -420,6 +424,14 @@ class State:
         # bonus this round ("" most of the time -- only set on the
         # identify_band question, cleared every _grade_multiplayer_round()).
         self.round_bonus_player_id = ""
+        # Who locked in the right answer first, decided the moment that lock
+        # arrives (web/remote_server.py's /api/player/lock) so the winner's
+        # phone can show the bonus at the reveal without waiting. Reset per
+        # question (factoid_engine._apply_active_question()).
+        self.round_first_correct_pid = ""
+        # Phone "Listen to the show" checkbox: hidden unless the running
+        # saved show turns it on (Show Designer, show_library "listen").
+        self.listen_enabled = False
 
         # --- Win sequence: duck music, applause, restore, then reset on
         # next game entry (drivers/win_sequence_engine.py) ---
@@ -572,6 +584,7 @@ class State:
         # twinkle-vs-fade-to-black swap (lighting_engine.py) key off the
         # same timestamp so they can never drift out of sync with each other.
         self.show_outro_message = ""
+        self.show_outro_enabled = True   # the loaded show's "outro" setting (False = straight to blackout + mellow music)
         self.show_outro_music_ends_at = 0.0
 
         # --- Panel Show Maker + saved shows (2026-10-17, docs/panel_show_maker_design.md) ---
@@ -589,6 +602,7 @@ class State:
         self.show_energy_max = 0           # after-show background music: energy_rank cap (0 = off)
         self.show_background = False       # after the outro: easy-listening music until a panel press
         self.board_wipe_fresh = False      # next song wipe starts from a black board (no snapshot)
+        self.show_first_song_pending_at = 0.0  # show went live, first song's wipe not fired yet: panels held black
 
         # --- Jukebox mode (2026-09-29): while questions_suppressed is True no
         # questions are asked (no Mystery Band teaser, no white/dark question
@@ -610,6 +624,16 @@ class State:
         self.medley_songs_total = 0
         self.medley_sweeper_mode = config.MEDLEY_SWEEPER_MODE_DEFAULT  # "off" | "medley" | "all"
         self.questions_suppressed = False  # jukebox mode: no questions asked (a show saved with QUESTIONS NO, or the encore)
+        # Show-wide "hold the DMX uplights solid" override (remote Show panel):
+        # while on, the uplights stay one color at one brightness and every
+        # flash/chase/theme effect is suppressed. A show setting, so it
+        # survives game resets like the other show_* fields.
+        self.show_dmx_hold = False
+        self.show_dmx_hold_color_index = 0
+        # Override Color off = the hold uses each song's own look color
+        # (still solid); on = the swatch above.
+        self.show_dmx_hold_override_color = False
+        self.show_dmx_hold_brightness = 100   # percent, 0-100
         self.trivia_confirm_active = False
         self.trivia_confirm_until = 0.0
         # Blue, same "setup" window: kicks off a Bluetooth gamepad reconnect
@@ -689,6 +713,12 @@ class State:
         # mixer wedged at boot, see project history) without needing
         # physical/SSH access to the Pi.
         self.restart_app_after_exit = False
+
+    @property
+    def lights_out(self):
+        """Every light output dark: admin blackout, or the after-show mellow music
+        (show_background) -- unlike blackout, the audio keeps playing."""
+        return self.blackout_active or self.show_background
 
     def set_status(self, msg, duration=2.0):
         self.status_msg = msg

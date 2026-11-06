@@ -77,6 +77,8 @@
   .ending input { width: 62px; background: #111; color: #f2f2f2; border: 1px solid #333; border-radius: 6px; padding: 3px 5px; font-size: .78rem; }
   .ending input.bad { border-color: #ff3b30; }
   .insert-bar { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
+  .dice-bar { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; align-items: center; font-size: .8rem; color: #aaa; }
+  .dice-bar input { width: 52px; background: #111; color: #f2f2f2; border: 1px solid #333; border-radius: 6px; padding: 4px 6px; font-size: .85rem; text-align: center; }
   .empty { color: #777; font-size: .85rem; padding: 14px; text-align: center; border: 1px dashed #333; border-radius: 8px; }
 
   .search { width: 100%; padding: 8px 10px; background: #111; color: #f2f2f2; border: 1px solid #333; border-radius: 8px; font-size: .9rem; }
@@ -144,7 +146,9 @@
         </div>
         <div class="settings">
           <label>Intro <span class="seg" id="seg-intro"><button data-v="1">YES</button><button data-v="0">NO</button></span></label>
+          <label title="YES plays the show-end theme, applause and champion banner. NO fades straight to blackout with the mellow music.">Outro <span class="seg" id="seg-outro"><button data-v="1">YES</button><button data-v="0">NO</button></span></label>
           <label>Questions <span class="seg" id="seg-questions"><button data-v="1">YES</button><button data-v="0">NO</button></span></label>
+          <label title="Shows the &quot;Listen to the show&quot; checkbox on players' phones. Each listening phone streams about 58 MB an hour.">Phone listen <span class="seg" id="seg-listen"><button data-v="1">YES</button><button data-v="0">NO</button></span></label>
           <label>Decades <select id="low-sel"></select> to <select id="high-sel"></select></label>
         </div>
         <div class="muted" style="margin-top:6px">The decade range only matters while a show without songs is being recorded (songs are then picked from it).</div>
@@ -157,7 +161,16 @@
         <div class="playlist" id="playlist"></div>
         <div class="insert-bar">
           <button class="btn" onclick="insertSpin()">+ INSERT WHEEL SPIN</button>
+          <button class="btn danger" onclick="clearPlaylist()" title="Remove every song and spin; the show itself and its settings stay">CLEAR ALL TRACKS</button>
           <span class="muted" id="insert-hint">Inserts at the end. Click a row first to insert above it.</span>
+        </div>
+        <!-- Throw dice (2026-10-27): a random playlist from the show's decades,
+             with a wheel spin every N songs. Both numbers are editable. -->
+        <div class="dice-bar">
+          <button class="btn primary" onclick="throwDice()" title="Replace the playlist with random songs from the show's decades">&#127922; THROW DICE</button>
+          <input type="number" id="dice-songs" min="1" max="200" value="20"> songs, a wheel spin every
+          <input type="number" id="dice-every" min="0" max="50" value="5"> songs
+          <span class="muted">(0 = no spins)</span>
         </div>
       </div>
     </section>
@@ -299,7 +312,7 @@ function openShow(sh) {
   document.getElementById('show-editor').style.display = '';
   document.getElementById('name-input').value = _show.name;
   document.getElementById('name-input').classList.remove('bad');
-  setSeg('seg-intro', _show.intro); setSeg('seg-questions', _show.questions);
+  setSeg('seg-intro', _show.intro); setSeg('seg-outro', _show.outro !== false); setSeg('seg-questions', _show.questions); setSeg('seg-listen', _show.listen);
   fillDecadeSelect('low-sel', _show.low); fillDecadeSelect('high-sel', _show.high);
   document.getElementById('save-state').textContent = 'Saved';
   renderShowList(); renderPlaylist(); renderSongs();
@@ -309,10 +322,10 @@ function openShow(sh) {
 function setSeg(id, on) {
   document.querySelectorAll(`#${id} button`).forEach((b) => b.classList.toggle('on', (b.dataset.v === '1') === !!on));
 }
-['seg-intro', 'seg-questions'].forEach((id) => {
+['seg-intro', 'seg-outro', 'seg-questions', 'seg-listen'].forEach((id) => {
   document.getElementById(id).addEventListener('click', (e) => {
     const b = e.target.closest('button'); if (!b || !_show) return;
-    const key = id === 'seg-intro' ? 'intro' : 'questions';
+    const key = id.slice(4);
     _show[key] = b.dataset.v === '1'; setSeg(id, _show[key]); scheduleSave();
   });
 });
@@ -347,7 +360,7 @@ async function flushSave() {
   _dirty = false; _saving = true;
   document.getElementById('save-state').textContent = 'Saving…';
   const r = await post('/api/shows/save', {
-    name: _show.name, intro: _show.intro, questions: _show.questions,
+    name: _show.name, intro: _show.intro, outro: _show.outro !== false, questions: _show.questions, listen: !!_show.listen,
     low: _show.low, high: _show.high, items: _show.items,
   });
   _saving = false;
@@ -511,6 +524,69 @@ function insertItem(item) {
   renderPlaylist(); scheduleSave();
 }
 function insertSpin() { if (_show) insertItem({ type: 'spin' }); }
+// Empties the playlist only -- the show, its name and settings stay (2026-10-27).
+function clearPlaylist() {
+  if (!_show || !(_show.items || []).length) return;
+  if (!confirm(`Remove all ${_show.items.length} items from "${_show.name}"? The show itself stays.`)) return;
+  _show.items = []; _insertAt = null;
+  renderPlaylist(); scheduleSave();
+  showToast('Playlist cleared');
+}
+
+// Throw dice (2026-10-27 rule): with spins on, the playlist is decade blocks --
+// each block opens with a wheel spin and its next N songs all come from the
+// decade the wheel lands on. Decades take turns (shuffled, no repeat back to
+// back while there's a choice). With spins off it's a random mix.
+function _diceNum(id, lo, hi, dflt) {
+  const v = Math.round(Number(document.getElementById(id).value));
+  return Number.isFinite(v) ? Math.min(hi, Math.max(lo, v)) : dflt;
+}
+(function restoreDice() {
+  try {
+    const d = JSON.parse(localStorage.getItem('tc_dice') || 'null');
+    if (d) { document.getElementById('dice-songs').value = d.songs; document.getElementById('dice-every').value = d.every; }
+  } catch (e) {}
+})();
+function throwDice() {
+  if (!_show) return;
+  const want = _diceNum('dice-songs', 1, 200, 20), every = _diceNum('dice-every', 0, 50, 5);
+  try { localStorage.setItem('tc_dice', JSON.stringify({ songs: want, every })); } catch (e) {}
+  const decs = _meta.decades || [];
+  const lo = decs.indexOf(_show.low), hi = decs.indexOf(_show.high);
+  const shuffle = (a) => { for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+  const pool = shuffle(_songs.filter((s) => { const k = decs.indexOf(s.decade); return s.decade && k >= lo && k <= hi; }));
+  if (!pool.length) { showToast('No songs with a decade in ' + decLabel(_show.low) + '–' + decLabel(_show.high) + '.'); return; }
+  if ((_show.items || []).length && !confirm('Replace the current playlist with a random one?')) return;
+  const song = (s) => ({ type: 'song', file: s.file, title: s.title, artist: s.artist, ending: 'full' });
+  const items = [];
+  let count = 0, spins = 0;
+  if (!every) {
+    pool.slice(0, want).forEach((s) => { items.push(song(s)); count++; });
+  } else {
+    const byDec = {};
+    pool.forEach((s) => { (byDec[s.decade] = byDec[s.decade] || []).push(s); });
+    let turn = [], last = null;
+    while (count < want) {
+      const need = Math.min(every, want - count);
+      const left = Object.keys(byDec).filter((d) => byDec[d].length);
+      if (!left.length) break;
+      // next decade in the rotation that can fill a whole block (else any with songs left)
+      if (!turn.some((d) => left.includes(d))) turn = shuffle(left.slice());
+      const full = turn.filter((d) => byDec[d].length >= need);
+      let cands = (full.length ? full : turn.filter((d) => left.includes(d)));
+      if (cands.length > 1) cands = cands.filter((d) => d !== last);
+      const dec = cands[0];
+      turn.splice(turn.indexOf(dec), 1);
+      items.push({ type: 'spin' }); spins++;
+      byDec[dec].splice(0, need).forEach((s) => { items.push(song(s)); count++; });
+      last = dec;
+    }
+  }
+  _show.items = items; _insertAt = null;
+  renderPlaylist(); scheduleSave();
+  showToast(`Rolled ${count} song${count === 1 ? '' : 's'}` + (spins ? ` in ${spins} decade block${spins === 1 ? '' : 's'}` : '') +
+            (count < want ? ` (only ${count} in these decades)` : ''));
+}
 function moveItem(i, d) {
   const items = _show.items, j = i + d;
   if (j < 0 || j >= items.length) return;
@@ -573,7 +649,8 @@ function renderSongs() {
   if (onlyRange) { lo = decs.indexOf(_show.low); hi = decs.indexOf(_show.high); }
   const list = _songs.filter((s) => {
     if (q && !(s.title.toLowerCase().includes(q) || s.artist.toLowerCase().includes(q))) return false;
-    if (onlyRange && s.decade) { const k = decs.indexOf(s.decade); if (k < lo || k > hi) return false; }
+    // Undated songs never play in a show, so the decade filter hides them too (2026-10-27).
+    if (onlyRange) { const k = decs.indexOf(s.decade); if (!s.decade || k < lo || k > hi) return false; }
     return true;
   });
   const shown = list.slice(0, 400);

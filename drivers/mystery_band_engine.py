@@ -6,6 +6,7 @@ from state import state
 from drivers.music_library import music_library
 from drivers.factoid_engine import apply_mystery_identify_question
 from drivers import lighting_engine
+from drivers import net_health_engine
 
 # Generic distractor names, used only if the loaded rekordbox.xml library
 # doesn't have 3 other distinct artists to draw decoys from.
@@ -52,6 +53,8 @@ def check_new_track(title, artist, confident):
         return  # jukebox mode (auto-start / Setup box) or a running Dance Medley: no questions
     if not confident or not artist:
         return
+    if net_health_engine.holding():
+        return  # phones can't reach the game: try again once it recovers (re-checked every frame)
 
     track_key = state.factoid_track_key
     if not track_key or track_key == state.mystery_track_key:

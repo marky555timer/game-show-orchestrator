@@ -38,8 +38,9 @@ def _enter_phase(phase, now):
     elif phase == "dancing":
         # Technical Dreams: every other dancing turn is a slice of the
         # four-panel demo, which sets its own length (graphics/technical_dreams.py).
-        from graphics import technical_dreams
+        from graphics import technical_dreams, animations
         state.idle_dance_seconds = technical_dreams.on_dancing(now) or config.IDLE_DANCE_SECONDS
+        animations.on_dancing_turn()   # a new hand of single-panel animations each return
 
 
 def update(now):
@@ -55,7 +56,8 @@ def update(now):
 
     # Auto-advance after quiz: after a question round, show the leaderboard
     # from the top so "reviewed" means it was actually seen.
-    if state.auto_advance_after_quiz and state.autoadv_need_leaderboard:
+    from drivers import auto_dj_engine
+    if state.autoadv_need_leaderboard and auto_dj_engine.quiz_advance_enabled():
         state.autoadv_need_leaderboard = False
         if state.quiz_players:
             _enter_phase("leaderboard", now)
