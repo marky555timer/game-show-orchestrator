@@ -2066,6 +2066,11 @@ AUTODJ_ENABLED_BY_DEFAULT = True
 # Skip to the next song once all the track's questions are in and the leaderboard
 # has been shown (cancels a running Simon game). Toggle on the web remote.
 AUTO_ADVANCE_AFTER_QUIZ_BY_DEFAULT = True
+# Linger slider on the remote (2026-11-08): once the quiz is done, wait this
+# share of the song's remaining time before advancing. 0 = advance right
+# away, 100 = play the song out to its normal end. Saved across restarts.
+AUTO_ADVANCE_LINGER_DEFAULT_PCT = 0
+AUTO_ADVANCE_LINGER_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "autoadvance_linger.json")
 
 # Used when a track has no usable duration metadata (rekordbox.xml's
 # TotalTime attribute, looked up via drivers/rekordbox_driver.py).
@@ -2305,6 +2310,19 @@ TUNNEL_REDIRECT_SECRET = "m8YaRwCJ_cmRybVu0VGhNbKuvyU9T_xqw4c79ZjXQlQ"
 # SECONDS in its config.php) never times out while the app is running.
 TUNNEL_HEARTBEAT_SECONDS = 60.0
 TUNNEL_REPORT_RETRY_SECONDS = 5.0   # until the redirector accepts a new URL (cold boot), retry this often
+
+# Backup-Pi failover (2026-11-08, drivers/failover_engine.py): the Pi running
+# the show posts where it is to triviacade.com every few seconds; the other
+# Pi shows that on its admin remote with TAKE CONTROL, which resumes on the
+# next song. Only the Pi that owns the show points the QR redirect at itself.
+# A Pi is the primary unless its failover_role.json (next to this file, not in
+# git) says {"role": "backup", "name": "Backup Pi"}. Linux (the Pi) only.
+FAILOVER_ENABLED = True
+FAILOVER_URL = "https://triviacade.com/play/failover.php"
+FAILOVER_REPORT_SECONDS = 5.0        # how often each Pi checks in
+FAILOVER_ALIVE_SECONDS = 30          # a Pi silent longer than this counts as down (failover.php matches)
+FAILOVER_ROLE_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "failover_role.json")
+FAILOVER_BACKUP_ADMIN_URL = "https://triviacade.com/play/backup.php"
 
 # Web Show Designer (2026-10-18): https://triviacade.com/play/designer/ -- make
 # shows while the Pi is off. drivers/web_sync.py keeps it in step (Pi only);

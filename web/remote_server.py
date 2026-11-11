@@ -210,6 +210,9 @@ if app is not None:
     class AccentSpeedSet(BaseModel):
         speed: int
 
+    class LingerSet(BaseModel):
+        pct: int
+
     class MarqueeDialsSet(BaseModel):
         brightness: Optional[int] = None
         speed: Optional[int] = None
@@ -382,6 +385,10 @@ if app is not None:
         # waveform, quantize to the beat grid, preview locally, save. Opened
         # from the File Manager's Medley column.
         return FileResponse(_MEDLEY_EDIT_HTML_PATH)
+
+    @app.get("/failover.js")
+    def failover_js():
+        return FileResponse(os.path.join(_STATIC_DIR, "failover.js"), media_type="text/javascript")
 
     @app.get("/setup")
     def setup_page():
@@ -1930,6 +1937,25 @@ if app is not None:
         print(f"[AUTO-DJ] Auto-advance after quiz -> {state.auto_advance_after_quiz}")
         return {"ok": True, "enabled": state.auto_advance_after_quiz}
 
+    @app.get("/api/failover/status")
+    def failover_status():
+        # Backup-Pi failover panel (drivers/failover_engine.py): who has the
+        # show and, on the other Pi, where it is.
+        from drivers import failover_engine
+        return failover_engine.status()
+
+    @app.post("/api/failover/take")
+    def failover_take():
+        # TAKE CONTROL: this Pi claims the show and resumes on the next song.
+        from drivers import failover_engine
+        return failover_engine.request_take()
+
+    @app.post("/api/autoadvance/linger")
+    def autoadvance_linger(body: LingerSet):
+        # Remote slider: how long to stay on a song after its quiz is done
+        # (0 = advance right away, 100 = at the song's normal end).
+        return {"ok": True, "pct": auto_dj_engine.set_linger(body.pct)}
+
     @app.post("/api/announcement/toggle")
     def announcement_toggle():
         # Virtual Gamepad "Announcements" checkbox -- same engine hook as
@@ -2728,6 +2754,7 @@ if app is not None:
             "auto_dj_enabled": state.auto_dj_enabled,
             "auto_announce_enabled": state.auto_announce_enabled,
             "auto_advance_after_quiz": state.auto_advance_after_quiz,
+            "autoadv_linger_pct": state.autoadv_linger_pct,
             "sfx_enabled": state.sfx_enabled,
             "sweepers_enabled": state.sweepers_enabled,
             "questions_suppressed": state.questions_suppressed,

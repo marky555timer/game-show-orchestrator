@@ -50,6 +50,7 @@ from drivers import net_health_engine
 from drivers import strobe_engine
 from drivers import green_light_engine
 from drivers import web_sync
+from drivers import failover_engine
 from drivers import status_display_engine
 
 def _handle_sigterm(signum, frame):
@@ -86,6 +87,7 @@ def main():
     except Exception as e:
         print(f"[MUSIC METADATA] date_added stamp failed: {e}")
     web_sync.start()
+    failover_engine.start()
     status_display_engine.start()
     simon_hardware.init()
     recovery_button.init()

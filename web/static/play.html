@@ -361,6 +361,30 @@ const AVATAR_COLOR_VARS = {
   green: 'var(--signal-green)', violet: 'var(--signal-violet)',
 };
 
+// Backup-Pi failover (2026-11-08): a phone that lost the show comes back
+// through https://triviacade.com/play/?pid=<id>, which forwards the id here
+// -- each Pi's tunnel is a different site, so its own storage starts empty.
+(function () {
+  const pid = new URLSearchParams(location.search).get('pid');
+  if (pid && /^[0-9a-f]{32}$/.test(pid)) {
+    try { localStorage.setItem('player_id', pid); } catch (e) {}
+    history.replaceState(null, '', location.pathname);
+  }
+})();
+const _REJOIN_URL = 'https://triviacade.com/play/';
+let _pollFails = 0;
+let _lastPollOk = Date.now();
+let _rejoining = false;
+function _maybeRejoin() {
+  // Only from a tunnel page (a LAN-address page just keeps retrying in place),
+  // and only after ~15 s of nothing: then the show may have moved to the
+  // backup Pi, or this Pi's tunnel restarted -- the redirector knows where.
+  if (_rejoining || !playerId || !location.hostname.endsWith('trycloudflare.com')) return;
+  if (navigator.onLine === false) return;
+  if (_pollFails < 8 || Date.now() - _lastPollOk < 15000) return;
+  _rejoining = true;
+  location.href = _REJOIN_URL + '?pid=' + encodeURIComponent(playerId);
+}
 let playerId = localStorage.getItem('player_id');
 let myAvatarColor = localStorage.getItem('avatar_color') || AVATAR_COLORS[0];
 let selectedAvatarColor = myAvatarColor;
@@ -728,7 +752,9 @@ async function poll() {
   // Every 1.2 s; quicker while this phone is locked in and waiting on the reveal.
   const waitingOnReveal = myPick.locked && lastD && lastD.active && !lastD.locked_globally;
   schedulePoll(Math.max(200, (waitingOnReveal ? 500 : 1200) - rtt));
-  if (!d) return;
+  if (!d) { _pollFails++; _maybeRejoin(); return; }
+  _pollFails = 0;
+  _lastPollOk = Date.now();
   _lastRtt = rtt;
   noteClock(d.server_time, rtt);
   if (!d.ok) {

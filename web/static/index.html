@@ -229,6 +229,10 @@
     <button class="btn" style="margin-top:10px; display:none" id="net-continue-btn" onclick="netContinue()">CONTINUE ANYWAY</button>
   </div>
 
+  <!-- Backup-Pi failover (2026-11-08): filled by /failover.js -->
+  <section id="failover-panel" style="display:none"></section>
+  <script src="/failover.js" defer></script>
+
   <section>
     <h2>Now Playing</h2>
     <div class="now-title" id="np-title">&mdash;</div>
@@ -309,6 +313,15 @@
           AUTO-ADVANCE AFTER QUIZ
         </label>
       </div>
+      <!-- Linger (2026-11-08): left = advance as soon as the quiz is done, right = play the song out -->
+      <label style="display:block;margin-top:8px;font-size:.85rem;font-weight:700"
+        title="After the last question and leaderboard, how much of the rest of the song to play before moving on">
+        LINGER AFTER QUIZ: <span id="autoadv-linger-label">Advance now</span>
+        <input type="range" id="autoadv-linger-slider" min="0" max="100" step="5" value="0" style="width:100%"
+          oninput="autoAdvanceLingerLabel(this.value)" onchange="autoAdvanceLingerSet(this.value)">
+        <span style="display:flex;justify-content:space-between;font-weight:400;font-size:.75rem;opacity:.7">
+          <span>Advance now</span><span>End of song</span></span>
+      </label>
     </section>
 
     <section id="volume-section">
@@ -1740,6 +1753,19 @@ function announcementsToggle() {
 function autoAdvanceToggle() {
   api('/api/autoadvance/toggle', { method: 'POST' }).then(refreshGamepadStatus);
 }
+let _lingerDragging = false;
+function autoAdvanceLingerLabel(value) {
+  _lingerDragging = true;
+  const v = parseInt(value, 10);
+  document.getElementById('autoadv-linger-label').textContent =
+    v <= 0 ? 'Advance now' : v >= 100 ? 'End of song' : v + '% of the rest of the song';
+}
+function autoAdvanceLingerSet(value) {
+  autoAdvanceLingerLabel(value);
+  api('/api/autoadvance/linger', {
+    method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({pct: parseInt(value, 10)}),
+  }).finally(() => { _lingerDragging = false; });
+}
 function sweepersToggle() {
   api('/api/sweepers/toggle', { method: 'POST' }).then(refreshGamepadStatus);
 }
@@ -1915,6 +1941,11 @@ async function refreshGamepadStatus() {
 
   document.getElementById('announcements-checkbox').checked = !!d.auto_announce_enabled;
   document.getElementById('autoadvance-checkbox').checked = !!d.auto_advance_after_quiz;
+  if (!_lingerDragging && d.autoadv_linger_pct !== undefined) {
+    document.getElementById('autoadv-linger-slider').value = d.autoadv_linger_pct;
+    autoAdvanceLingerLabel(d.autoadv_linger_pct);
+    _lingerDragging = false;
+  }
   document.getElementById('sfx-checkbox').checked = !!d.sfx_enabled;
   document.getElementById('sweepers-checkbox').checked = !!d.sweepers_enabled;
   document.getElementById('suppress-q-checkbox').checked = !!d.questions_suppressed;

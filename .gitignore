@@ -46,3 +46,5 @@ tools/add_tracks/*.log
 tools/add_tracks/*.corrupt.json
 # OCR cache -- contained fragments of an API key screenshot
 ai_cleanup_cache.json
+autoadvance_linger.json
+failover_role.json

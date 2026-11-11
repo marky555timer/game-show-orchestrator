@@ -25,9 +25,47 @@ function trivia_redirect_to_current($suffix) {
     exit;
 }
 
+/**
+ * Backup-Pi failover (2026-11-08): a player's phone that lost the show comes
+ * back as /play/?pid=<id> (web/static/play.html) -- pass the id on so the Pi
+ * now running the show recognises the player.
+ */
+function trivia_pid_query() {
+    $pid = $_GET['pid'] ?? '';
+    return (is_string($pid) && preg_match('/^[0-9a-f]{32}$/', $pid)) ? '?pid=' . $pid : '';
+}
+
 function trivia_show_offline() {
     http_response_code(503);
     header('Content-Type: text/html; charset=utf-8');
+    if (trivia_pid_query() !== '') {
+        // A player mid-show: the backup Pi may be taking over -- keep trying.
+        echo <<<HTML
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="refresh" content="5">
+<title>Triviacade</title>
+<style>
+  body {
+    margin: 0; padding: 60px 20px; text-align: center;
+    background: #130F2A; color: #F1EEFF;
+    font-family: -apple-system, Segoe UI, Roboto, sans-serif;
+  }
+  h1 { color: #FFB21E; font-size: 1.3rem; }
+  p { color: #B9B2DE; }
+</style>
+</head>
+<body>
+  <h1>Reconnecting to the show&hellip;</h1>
+  <p>Hang tight &mdash; your score is safe. This page keeps trying by itself.</p>
+</body>
+</html>
+HTML;
+        exit;
+    }
     echo <<<HTML
 <!doctype html>
 <html lang="en">

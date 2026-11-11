@@ -4,6 +4,19 @@ Versioning: `0.MINOR.PATCH` until the first paid gig, which is released as `1.0.
 MINOR = new mode/feature/subsystem, PATCH = fixes and tuning.
 Source of truth: the `VERSION` file.
 
+## 0.10.0 - 2026-11-11
+
+- Backup-Pi failover: both Pis check in with triviacade.com/play/failover.php,
+  which tracks which one owns the show and its latest position (show, song,
+  players, scores, round, questions asked). The backup's remote shows the
+  owner's position and a TAKE CONTROL button that restores players/scores and
+  resumes on the next song; a Pi that loses ownership stands down. Role comes
+  from `failover_role.json` (not in git). No internet = no change.
+- Auto-advance linger slider on the remote: wait 0-100% of the time left in
+  the song after the quiz finishes before advancing (saved across restarts).
+- New show now forgets asked artists/questions, so a restarted show no longer
+  skips the "Who is this?" teaser or reuses last run's question queue.
+
 ## 0.9.1 - 2026-11-06
 
 - Marquee "awaiting answer" look: clear brightness pop on the first beat of

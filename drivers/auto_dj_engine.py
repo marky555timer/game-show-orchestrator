@@ -160,6 +160,7 @@ def _start_timer(track_key, title, keep_quiz=False):
         state.autoadv_need_leaderboard = False
         state.autoadv_leaderboard_reviewed = False
         state.autoadv_track_key = ""
+    state.autoadv_done_at = 0.0
     dur = state.now_playing_duration
     if (config.TRACK_CUES_ENABLED and state.now_playing_path and dur
             and dur >= config.AUTODJ_MIN_PLAUSIBLE_DURATION_SECONDS
@@ -322,6 +323,34 @@ def quiz_advance_enabled():
     return state.auto_advance_after_quiz
 
 
+def _load_linger():
+    try:
+        with open(config.AUTO_ADVANCE_LINGER_PATH, encoding="utf-8") as f:
+            state.autoadv_linger_pct = max(0, min(100, int(json.load(f).get("pct", 0))))
+    except FileNotFoundError:
+        pass
+    except Exception as e:
+        print(f"[AUTO-DJ] Couldn't read linger setting: {e}")
+
+
+def set_linger(pct):
+    """Remote slider: 0 = advance as soon as the quiz is done, 100 = at the
+    song's normal end. Saved so it survives a restart."""
+    state.autoadv_linger_pct = max(0, min(100, int(pct)))
+    try:
+        tmp = config.AUTO_ADVANCE_LINGER_PATH + ".tmp"
+        with open(tmp, "w", encoding="utf-8") as f:
+            json.dump({"pct": state.autoadv_linger_pct}, f)
+        os.replace(tmp, config.AUTO_ADVANCE_LINGER_PATH)
+    except Exception as e:
+        print(f"[AUTO-DJ] Couldn't save linger setting: {e}")
+    print(f"[AUTO-DJ] Auto-advance linger -> {state.autoadv_linger_pct}%")
+    return state.autoadv_linger_pct
+
+
+_load_linger()
+
+
 def _quiz_done_advance_due():
     """True once the track's questions are all asked, the last round is over,
     and the leaderboard has fully played (see quiz_advance_enabled)."""
@@ -362,6 +391,19 @@ def update(now):
     trigger_at = max(0.0, state.auto_dj_track_duration - config.AUTODJ_PRE_SWITCH_SECONDS)
     if elapsed < trigger_at:
         if not _quiz_done_advance_due():
+            state.autoadv_done_at = 0.0   # (another question was asked: start over)
+            return
+        # Linger slider: wait a share of the time left in the song. At 100%
+        # this never fires early, so the song plays out to its normal end.
+        if not state.autoadv_done_at:
+            state.autoadv_done_at = now
+            if state.autoadv_linger_pct > 0:
+                left = trigger_at - elapsed
+                print(f"[AUTO-DJ] Quiz done -- lingering {state.autoadv_linger_pct}% "
+                      f"of the {left:.0f}s left ({left * state.autoadv_linger_pct / 100:.0f}s).")
+        done_elapsed = state.autoadv_done_at - state.auto_dj_track_started_at
+        linger = max(0.0, trigger_at - done_elapsed) * state.autoadv_linger_pct / 100.0
+        if now < state.autoadv_done_at + linger:
             return
         print("[AUTO-DJ] All questions in and leaderboard reviewed -- advancing early.")
         show_runner.note_ending("quiz")

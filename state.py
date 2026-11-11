@@ -326,6 +326,8 @@ class State:
         self.autoadv_need_leaderboard = False     # a question ran; idle cycle must show the leaderboard
         self.autoadv_leaderboard_reviewed = False # leaderboard has fully played since the last question
         self.autoadv_track_key = ""               # track the three counters above belong to
+        self.autoadv_linger_pct = config.AUTO_ADVANCE_LINGER_DEFAULT_PCT  # remote slider, 0-100
+        self.autoadv_done_at = 0.0                # when this track's quiz finished (0 = not yet)
 
         # --- Auto-DJ: overlapping station-announcement transition ---
         self.auto_dj_announcement_played = False  # True once this cycle's VO has fired

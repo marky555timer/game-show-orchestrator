@@ -350,6 +350,9 @@ def update(now):
             _finish_blink()
         return
     if not _touched and mono - _boot_mono >= config.MENU_HANDS_OFF_SECONDS:
+        from drivers import failover_engine
+        if not failover_engine.hands_off_allowed():
+            return   # the backup Pi never starts a show by itself
         show = show_library.last_played()
         print("[MENU] Hands-off for 90s -- running the last played show.")
         if show:

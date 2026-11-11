@@ -36,6 +36,7 @@ _pending_ending = ""  # why the move that is about to happen was made
 _pending_at = None
 _rec_count = 0        # record: songs appended so far
 _cut_fired = False
+_resume_at = 0.0      # backup takeover: the first song to START after this is a song change
 
 
 # --------------------------------------------------------------- helpers
@@ -72,8 +73,9 @@ def mode():
 def begin(show):
     """show_engine.start_show(): this show is about to run."""
     global _show, _mode, _items, _pos, _on_script, _cur_path, _pending_ending, _pending_at
-    global _rec_count, _cut_fired
+    global _rec_count, _cut_fired, _resume_at
     _show = show
+    _resume_at = 0.0
     _pos, _on_script, _cut_fired = -1, False, False
     _cur_path = state.now_playing_path
     _pending_ending, _pending_at = "", None
@@ -254,6 +256,61 @@ def _on_song_change(path):
         deck_orchestrator.set_cued_track(_items[upcoming]["path"])
 
 
+def snapshot():
+    """Where the running show is, for the backup Pi (drivers/failover_engine.py)."""
+    if _show is None:
+        return None
+    songs = [i for i, it in enumerate(_items) if it["type"] == "song"]
+    nxt = _next_song_index(_pos)
+    cur = _items[_pos] if _mode == "play" and 0 <= _pos < len(_items) else None
+    return {
+        "name": _show["name"],
+        "mode": _mode,
+        "pos": _pos,
+        "song_number": songs.index(_pos) + 1 if _pos in songs else 0,
+        "song_count": len(songs),
+        "on_script": _on_script,
+        "file": os.path.basename(cur["path"]) if cur else "",
+        "next_file": os.path.basename(_items[nxt]["path"]) if nxt is not None else "",
+        "next_title": _items[nxt].get("title", "") if nxt is not None else "",
+        "next_artist": _items[nxt].get("artist", "") if nxt is not None else "",
+        # The saved show itself, so the backup can run it even if the web sync
+        # hasn't brought it over yet (a recording show grows as it plays).
+        "data": show_library.get(_show["name"]) or _show,
+    }
+
+
+def resume_point(snap):
+    """Backup takeover: line the playlist up on the song the other Pi was
+    playing. Returns (path, decade) of the NEXT song to play -- (None, "")
+    when that was the last song (play mode) or when the next song is picked
+    live (record mode, path None, decade "")."""
+    global _pos, _on_script, _cur_path, _resume_at
+    if _mode != "play":
+        return None, ""
+    target = snap.get("file", "")
+    idx = next((i for i, it in enumerate(_items)
+                if it["type"] == "song" and os.path.basename(it["path"]) == target), None)
+    if idx is None:
+        # The song isn't in our library copy: fall back to its playlist slot.
+        idx = min(int(snap.get("pos", -1)), len(_items) - 1)
+    _pos, _on_script = idx, True
+    # Whatever this deck last held is not a song change -- but the next song
+    # to start is, even if it's the same file (it may be the one this Pi
+    # played last).
+    _cur_path = state.now_playing_path
+    _resume_at = time.time()
+    nxt = _next_song_index(_pos)
+    if nxt is None:
+        return None, ""
+    decade = ""
+    if _spin_before(nxt):
+        d = track_decade(_items[nxt]["track"])
+        if d and wheel_can_land(d):
+            decade = d
+    return _items[nxt]["path"], decade
+
+
 def ending_rule():
     """The saved ending of the song playing now ("" = live behaviour)."""
     if _mode != "play" or not _on_script or _pos < 0:
@@ -271,11 +328,15 @@ def note_show_end():
 
 # ------------------------------------------------------------------ frame
 def update(now):
-    global _cur_path, _cut_fired, _pending_ending
+    global _cur_path, _cut_fired, _pending_ending, _resume_at
     if _mode is None or state.show_phase != "live" or state.medley_active or state.show_spin_active:
         return
     path = state.now_playing_path
-    if path and path != _cur_path:
+    if _resume_at and state.now_playing_started_at >= _resume_at and path:
+        _resume_at = 0.0
+        _cur_path = path
+        _on_song_change(path)
+    elif path and path != _cur_path:
         _cur_path = path
         _on_song_change(path)
 

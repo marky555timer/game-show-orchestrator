@@ -24,6 +24,7 @@ Rendering lives in graphics/matrix_canvas.py (+ graphics/menu_pages.py),
 drivers/lighting_engine.py, drivers/wled_engine.py and drivers/accent_engine.py,
 all reading state. update(now) is pumped from inputs/gamepad.py::process_events().
 """
+import os
 import random
 import time
 
@@ -79,6 +80,10 @@ def start_show(name=None, hands_off=False):
         return False
     if state.show_phase == "live" and not state.show_background:
         return False
+    from drivers import failover_engine
+    if not failover_engine.start_allowed():
+        print("[SHOW] Start refused -- the other Pi is running the show (TAKE CONTROL on this Pi's remote).")
+        return False
     _stop_background()
     _prepare(resolve_show(name))
     state.show_hands_off = hands_off
@@ -110,6 +115,8 @@ def _enter_dark():
     from inputs import gamepad
     gamepad.cancel_question()
 
+    _reset_asked_tracking()
+
     now = time.time()
     state.show_phase = "dark"
     state.show_phase_started_at = now
@@ -124,6 +131,109 @@ def _enter_dark():
         player["score"] = 0
     print(f"[SHOW] BLACK -- '{state.show_selected}' loaded"
           f"{' (hands-off)' if state.show_hands_off else ', waiting for a button'}.")
+
+
+def _reset_asked_tracking():
+    """New show = nobody has heard anything yet. The "already asked" memory
+    used to last the whole app session, so a restarted show skipped the
+    "Who is this?" teaser (the thing that starts each song's questions) for
+    every artist asked about in the earlier run, and the first song kept
+    last run's half-used question queue."""
+    from drivers import mystery_band_engine, ask_questions
+    print(f"[SHOW] New show -- forgetting {len(state.asked_artists)} asked artist(s) and "
+          f"{len(state.asked_question_texts)} asked question(s).")
+    state.asked_artists.clear()
+    state.asked_question_texts.clear()
+    state.mystery_track_key = ""          # re-evaluate the teaser even on the same song
+    mystery_band_engine._pending_mystery = None
+    ask_questions._pending = None
+    state.factoid_track_key = ""          # first song reloads its full question list
+    state.track_question_queue = []
+    state.autoadv_questions_asked = 0
+    state.autoadv_need_leaderboard = False
+    state.autoadv_leaderboard_reviewed = False
+    state.autoadv_track_key = ""
+    state.autoadv_done_at = 0.0
+    state.game_active = False             # fresh per-game question count / era slot
+
+
+def resume_from(snap):
+    """Backup takeover (drivers/failover_engine.py): pick the show up from the
+    other Pi's last report -- same show, players, scores, round and asked
+    questions, starting on the NEXT song. Returns a message for the remote."""
+    global _seq
+    phase = snap.get("phase", "setup")
+    info = snap.get("show") or {}
+    name = info.get("name", "")
+    if phase in ("setup", "countdown") or not name:
+        return "The other Pi wasn't running a show -- this Pi is now in charge."
+    if phase == "outro" or snap.get("background"):
+        return "The other Pi's show was already over -- this Pi is now in charge."
+
+    # Make sure we have the show (the web sync may not have brought it yet).
+    if info.get("data"):
+        try:
+            show_library.merge([info["data"]], {})
+        except Exception as e:
+            print(f"[FAILOVER] Couldn't merge the show copy: {e}")
+    show = show_library.get(name) or info.get("data")
+    if not show:
+        return f"Show '{name}' isn't on this Pi."
+
+    if phase in ("dark", "intro"):
+        state.show_phase = "setup"
+        start_show(name)
+        _restore_players(snap)
+        if phase == "intro":
+            begin_intro()
+        return f"Took over '{name}' at the {'intro' if phase == 'intro' else 'BLACK hold'}."
+
+    # Live: load the show quietly, restore the room, go straight to the next song.
+    _stop_background()
+    from inputs import gamepad
+    gamepad.cancel_question()
+    _reset_asked_tracking()
+    _prepare(show)
+    _restore_players(snap)
+    path, decade = show_runner.resume_point(info)
+    now = time.time()
+    state.show_hands_off = False
+    state.show_intro_waiting = False
+    state.show_scheduled_start_at = 0.0
+    state.show_spin_active = False
+    state.show_wheel_started_at = 0.0
+    state.trivia_confirm_active = False
+    if path is None and show_runner.mode() == "play":
+        state.show_phase = "live"
+        state.show_phase_started_at = now
+        stop_show()
+        return f"'{name}' was on its last song -- went to the outro."
+    state.show_phase = "intro"      # _start_song() flips it to live as the song lands
+    state.show_phase_started_at = now
+    _seq = {"context": "resume", "stage": "pre", "at": 0.0, "decade": decade, "path": path}
+    nxt = info.get("next_title") or (os.path.basename(path) if path else "a new song")
+    return f"Took over '{name}' -- next song: {nxt}."
+
+
+def _restore_players(snap):
+    """Players, scores, round and what's been asked, from the other Pi."""
+    players = {}
+    for pid, p in (snap.get("players") or {}).items():
+        players[pid] = {"initials": p.get("initials", "???"), "selected_index": -1, "locked": False,
+                        "score": int(p.get("score", 0) or 0),
+                        "avatar_color": p.get("avatar_color") or state.AVATAR_COLORS[0]}
+    state.quiz_players = players
+    state.show_cumulative_scores = {k: int(v) for k, v in (snap.get("cumulative") or {}).items()}
+    state.game_round_number = int(snap.get("round", 1) or 1)
+    state.asked_artists = set(snap.get("asked_artists") or [])
+    state.asked_question_texts = set(snap.get("asked_questions") or [])
+    s = snap.get("settings") or {}
+    for key in ("questions_suppressed", "listen_enabled", "show_outro_enabled", "auto_advance_after_quiz",
+                "auto_dj_enabled", "auto_announce_enabled", "sweepers_enabled", "sfx_enabled"):
+        if key in s and hasattr(state, key):
+            setattr(state, key, bool(s[key]))
+    print(f"[FAILOVER] Restored {len(players)} player(s), round {state.game_round_number}, "
+          f"{len(state.asked_question_texts)} asked question(s).")
 
 
 def begin_intro():
@@ -470,6 +580,8 @@ def update(now):
         panel_menu.update(now)
     show_runner.update(now)
     show_bed.update(now)
+    from drivers import failover_engine
+    failover_engine.update(now)
 
     if _pending_deck_stop[0] and now >= _pending_deck_stop[0]:
         _pending_deck_stop[0] = 0.0

@@ -107,9 +107,20 @@ def _set_status(value):
         _status = value
 
 
+def publish_now():
+    """drivers/failover_engine.py: this Pi just took over -- point the guests'
+    QR redirect here right away instead of on the next heartbeat."""
+    url = get_current_tunnel_url()
+    if url:
+        _post_update(url)
+
+
 def _post_update(url):
     if requests is None or not config.TUNNEL_REDIRECT_UPDATE_URL:
         return
+    from drivers import failover_engine
+    if not failover_engine.may_publish_tunnel():
+        return   # the other Pi runs the show: its tunnel owns the QR redirect
     global _last_report_result, _accepted_url, _last_post_at
     _last_post_at = time.monotonic()
     try:
