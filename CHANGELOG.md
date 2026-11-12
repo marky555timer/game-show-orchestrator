@@ -4,6 +4,22 @@ Versioning: `0.MINOR.PATCH` until the first paid gig, which is released as `1.0.
 MINOR = new mode/feature/subsystem, PATCH = fixes and tuning.
 Source of truth: the `VERSION` file.
 
+## 0.11.0 - 2026-11-12
+
+- Practice rig: a computer with no game board attached rehearses the show on
+  an HDMI TV. `graphics/rig_view.py` draws the whole board full-screen -- the
+  six LED panels, the 102 marquee bulbs at their measured places, the outline
+  strip (an approximation: WLED's own effects run on the real board) and the
+  four button lights -- in its own process, fed by `graphics/rig_feed.py`.
+  Switched on by `practice_rig.json` (not in git). Runs on a Pi 3 (720p) and
+  on a Lenovo M700 Tiny with Debian + Xfce (1080p); see pi_deploy/README.md.
+- Remote: new Arcade Buttons page (`/buttons`) presses, holds and combines
+  the four panel buttons from a phone, and shows which button lights are lit.
+- `start.sh` also runs on an X11 desktop: no screen blanking, and sound goes
+  to the HDMI/DisplayPort output that has a screen on it.
+- Decode worker frees each decoded song after handing it over (~120 MB less
+  memory held between tracks).
+
 ## 0.10.0 - 2026-11-11
 
 - Backup-Pi failover: both Pis check in with triviacade.com/play/failover.php,

@@ -10,9 +10,28 @@
 # session. Forcing SDL_VIDEODRIVER=wayland directly and NOT setting DISPLAY
 # makes `import pygame` + pygame.init() complete in ~0.07s every time.
 export XDG_RUNTIME_DIR=/run/user/1000
-export WAYLAND_DISPLAY=wayland-0
-export SDL_VIDEODRIVER=wayland
 export DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/1000/bus
+if [ -S "$XDG_RUNTIME_DIR/wayland-0" ]; then
+    export WAYLAND_DISPLAY=wayland-0
+    export SDL_VIDEODRIVER=wayland
+else
+    # X11 desktop (2026-11-11: the Lenovo practice box, Debian + Xfce). The
+    # DISPLAY hang above is specific to the Pi's labwc session.
+    export DISPLAY=${DISPLAY:-:0}
+    export XAUTHORITY=${XAUTHORITY:-$HOME/.Xauthority}
+    xset s off -dpms 2>/dev/null          # never blank the TV
+    # Sound follows the TV: switch PulseAudio to the HDMI/DisplayPort output
+    # that has a screen on it (its default is the analog jack).
+    if command -v pactl >/dev/null 2>&1; then
+        for _i in $(seq 1 15); do pactl info >/dev/null 2>&1 && break; sleep 1; done
+        _card=$(pactl list cards short | awk 'NR==1 {print $2}')
+        _prof=$(pactl list cards | awk '/^[ \t]*output:hdmi-stereo[^+ ]*: .*available: yes/ {sub(":$", "", $1); print $1; exit}')
+        if [ -n "$_card" ] && [ -n "$_prof" ]; then
+            pactl set-card-profile "$_card" "$_prof"
+            echo "[START] sound output: $_prof" >> /home/mark/game-show-orchestrator/startup.log
+        fi
+    fi
+fi
 
 sleep 5
 cd /home/mark/game-show-orchestrator

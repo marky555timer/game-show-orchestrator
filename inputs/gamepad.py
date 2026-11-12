@@ -1618,7 +1618,7 @@ def process_events():
                     state.btn3_swear_toggle_active = False
 
         elif event.type == pygame.MOUSEBUTTONDOWN:
-            if event.button == 1:  # left click
+            if event.button == 1 and not config.PRACTICE_RIG:  # left click (no overlay panel on the practice TV view)
                 click_id = overlay_panel.hit_test(event.pos)
                 if click_id:
                     overlay_panel.handle_click(click_id)

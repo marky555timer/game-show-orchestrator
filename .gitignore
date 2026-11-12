@@ -48,3 +48,5 @@ tools/add_tracks/*.corrupt.json
 ai_cleanup_cache.json
 autoadvance_linger.json
 failover_role.json
+# Marks a Pi as the TV practice rig (config.PRACTICE_RIG)
+practice_rig.json

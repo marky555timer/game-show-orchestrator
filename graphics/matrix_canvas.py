@@ -58,7 +58,12 @@ from graphics import simon_trip
 from graphics import secondary_canvas
 
 # Initialize Pygame Display Engine
-screen = pygame.display.set_mode((WINDOW_W, WINDOW_H))
+if config.PRACTICE_RIG:
+    # Practice rig: the TV is drawn by a separate process (graphics/rig_view.py,
+    # fed by graphics/rig_feed.py), so this window stays hidden and unused.
+    screen = pygame.display.set_mode((WINDOW_W, WINDOW_H), pygame.HIDDEN)
+else:
+    screen = pygame.display.set_mode((WINDOW_W, WINDOW_H))
 pygame.display.set_caption(CANVAS_WINDOW_TITLE)
 
 
@@ -2219,6 +2224,11 @@ def render_led_grid():
     # while drawn to a desktop with no monitor attached. Skip it entirely
     # when headless -- the real panels were already fed on the line above.
     if not _preview_visible():
+        return
+
+    if config.PRACTICE_RIG:
+        from graphics import rig_feed
+        rig_feed.send(matrix_surface)
         return
 
     screen.fill((5, 0, 0))

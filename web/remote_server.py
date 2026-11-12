@@ -91,7 +91,8 @@ _COUNTDOWN_HTML_PATH = os.path.join(_STATIC_DIR, "countdown.html")
 _JOYASSIGN_HTML_PATH = os.path.join(_STATIC_DIR, "joyassign.html")
 _DESIGNER_HTML_PATH = os.path.join(_STATIC_DIR, "designer.html")
 _SIM_HTML_PATH = os.path.join(_STATIC_DIR, "show_sim.html")
-_ADMIN_PAGES = {"/", "/setup", "/designer", "/library", "/questions", "/medley-edit", "/joyassign", "/countdown"}
+_BUTTONS_HTML_PATH = os.path.join(_STATIC_DIR, "buttons.html")
+_ADMIN_PAGES = {"/", "/setup", "/designer", "/library", "/questions", "/medley-edit", "/joyassign", "/countdown", "/buttons"}
 
 app = FastAPI(title="Game Show Orchestrator Remote") if FastAPI else None
 
@@ -274,6 +275,10 @@ if app is not None:
 
     class SimonHwLedTest(BaseModel):
         color: str
+
+    class ArcadeButton(BaseModel):
+        color: str
+        down: bool
 
     class AccentMovieChase(BaseModel):
         all_panels: bool
@@ -2477,6 +2482,21 @@ if app is not None:
             "available": simon_hardware.available(),
             "buttons": simon_hardware.read_buttons(),
         }
+
+    # The four arcade buttons from a phone (2026-11-11, /buttons): for a Pi
+    # with no buttons wired -- the practice rig. Presses go in at the same
+    # place the GPIO buttons are read, so every mode treats them alike.
+    @app.get("/buttons")
+    def buttons_page():
+        return FileResponse(_BUTTONS_HTML_PATH)
+
+    @app.post("/api/arcade/button")
+    def arcade_button(body: ArcadeButton):
+        return {"ok": simon_hardware.virtual_press(body.color, body.down)}
+
+    @app.get("/api/arcade/state")
+    def arcade_state():
+        return {"ok": True, "leds": simon_hardware.led_states(), "buttons": simon_hardware.read_buttons()}
 
     @app.post("/api/simon-hw/led-test")
     def simon_hw_led_test(body: SimonHwLedTest):

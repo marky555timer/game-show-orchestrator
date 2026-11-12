@@ -168,3 +168,50 @@ WiFi). Live-tested end to end on the show Pi.
   sudo tar -xzf wifi-connect.tar.gz -C /usr/local/bin/
   sudo mkdir -p /usr/local/share/wifi-connect && sudo tar -xzf wifi-connect-ui.tar.gz -C /usr/local/share/wifi-connect/
   ```
+
+## Practice rig: second Pi on an HDMI TV (2026-11-11)
+
+A Pi with no game board attached that rehearses the show: usual audio (over
+HDMI) and web remote, plus the whole board drawn on the TV -- LED panels,
+marquee bulbs, outline strip, the four button lights. Built on a Pi 3 B
+(`trivia2`, 1 GB).
+
+- Switched on by `practice_rig.json` next to `config.py` (not in git):
+  `{"fps": 20, "tv_mode": "1280x720"}`. Delete the file and the Pi behaves
+  like a normal rig again. See config.py's PRACTICE RIG section.
+- `graphics/rig_view.py` is the TV window. It runs as its own process,
+  started and fed by `graphics/rig_feed.py` over localhost UDP, because on a
+  Pi 3 every screen update costs 10-30 ms and stalled the 40 fps show loop
+  when drawn in-process. `tv_mode` drops the TV to 720p for the same reason.
+- The outline strip is an approximation: WLED's effects run on the real
+  board. Solid / blink / rainbow are drawn as such, anything else as the
+  song's colour moving over its background, with the effect name printed
+  under the board. DMX lights are not drawn.
+- No arcade buttons are wired, so the web remote has **Arcade Buttons**
+  (`/buttons`, in the menu): four pads that press, hold and combine like the
+  real ones, and glow when the button's light is lit.
+- The GPIO kill / blackout / recovery buttons are disabled in practice mode.
+- Setup beyond the normal steps above: `wpctl set-default <HDMI sink>` for
+  audio, `raspi-config nonint do_blanking 1`, WiFi power-save off, and
+  `cloudflared` for the tunnel. `rpi-lgpio` is not needed (the venv is made
+  with `--system-site-packages`).
+- With no `failover_role.json` it acts as the primary and points the QR
+  redirect at itself. Switch it off, or give it a backup role, before the
+  main rig goes back on.
+- A weak power supply halves a Pi 3's speed: `vcgencmd get_throttled` should
+  read `0x0`, and `vcgencmd measure_clock arm` 1200 MHz under load, not 600.
+
+### Practice rig on a PC: Lenovo ThinkCentre M700 Tiny (2026-11-11)
+
+Replaced the Pi 3 the same day: i3-6100T, 16 GB, SSD, Debian 13 + Xfce (X11),
+hostname `TriviaLenovo`. Same files and `practice_rig.json` (`{"fps": 30}`,
+no `tv_mode` -- it draws 1080p without trouble). Differences from a Pi:
+
+- `start.sh` detects X11 (no `wayland-0` socket): sets `DISPLAY`, turns
+  screen blanking off, and switches PulseAudio to the HDMI/DisplayPort
+  output that has a screen on it.
+- Autologin: `/etc/lightdm/lightdm.conf.d/50-autologin.conf`. `light-locker`
+  removed; Xfce power manager set to never blank.
+- No GPIO, no `vcgencmd`: the Simon hardware and power monitor report
+  unavailable, which is harmless.
+- `cloudflared` from the amd64 .deb.

@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+<title>Game Show Remote &mdash; Buttons</title>
+<style>
+  :root { color-scheme: dark; }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; }
+  body {
+    margin: 0; padding: 16px; background: #0b0b0d; color: #f2f2f2;
+    font-family: -apple-system, Segoe UI, Roboto, sans-serif;
+    display: flex; flex-direction: column; overscroll-behavior: none;
+  }
+  h1 { font-size: 1.1rem; text-transform: uppercase; letter-spacing: .08em; color: #ff3b30; margin: 0 0 4px; }
+  .top { display: flex; align-items: center; gap: 12px; }
+  .top a { color: #9cc9ff; font-size: .9rem; text-decoration: none; border: 1px solid #333; border-radius: 8px; padding: 6px 12px; }
+  p { color: #9a9aa2; font-size: .85rem; margin: 6px 0 12px; }
+  .pads { flex: 1; display: grid; grid-template-columns: 1fr 1fr; gap: 14px; min-height: 0; }
+  .pad {
+    border-radius: 22px; border: 4px solid #000; font-size: 1.1rem; font-weight: 700; color: rgba(255,255,255,.85);
+    touch-action: none; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none;
+    filter: brightness(.38); transition: filter .06s; cursor: pointer;
+  }
+  .pad.lit { filter: brightness(1); box-shadow: 0 0 26px var(--c); }
+  .pad.down { transform: scale(.97); outline: 4px solid #fff; }
+  .pad.green { background: #0c0; --c: #0c0; } .pad.red { background: #e00; --c: #e00; }
+  .pad.yellow { background: #f90; --c: #f90; } .pad.blue { background: #03f; --c: #03f; }
+  #err { color: #ff8a80; font-size: .85rem; min-height: 1.2em; }
+</style>
+</head>
+<body>
+  <div class="top"><a href="/">&larr; Remote</a><h1>Arcade buttons</h1></div>
+  <p>The four panel buttons. Hold works (yellow long-press), and two fingers press two at once.
+     A pad glows when its button light is lit on the board.</p>
+  <div class="pads">
+    <button class="pad green" data-c="green">GREEN</button>
+    <button class="pad red" data-c="red">RED</button>
+    <button class="pad yellow" data-c="yellow">YELLOW</button>
+    <button class="pad blue" data-c="blue">BLUE</button>
+  </div>
+  <div id="err"></div>
+<script>
+const pads = {}, held = new Set(), err = document.getElementById('err');
+function send(color, down) {
+  return fetch('/api/arcade/button', { method: 'POST', headers: { 'Content-Type': 'application/json' },
+                                       body: JSON.stringify({ color, down }) })
+    .then((r) => { err.textContent = r.ok ? '' : (r.status === 401 ? 'Log in on the Remote page first.' : 'Button not sent (' + r.status + ').'); })
+    .catch(() => { err.textContent = 'No connection to the show machine.'; });
+}
+function press(color) { if (held.has(color)) return; held.add(color); pads[color].classList.add('down'); send(color, true); }
+function release(color) { if (!held.has(color)) return; held.delete(color); pads[color].classList.remove('down'); send(color, false); }
+document.querySelectorAll('.pad').forEach((b) => {
+  const c = b.dataset.c; pads[c] = b;
+  b.addEventListener('pointerdown', (e) => { e.preventDefault(); try { b.setPointerCapture(e.pointerId); } catch (_) {} press(c); });
+  ['pointerup', 'pointercancel', 'lostpointercapture'].forEach((n) => b.addEventListener(n, () => release(c)));
+  b.addEventListener('contextmenu', (e) => e.preventDefault());
+});
+// A held button is re-sent every second; the show machine lets go by itself if these stop (phone lost signal).
+setInterval(() => held.forEach((c) => send(c, true)), 1000);
+window.addEventListener('blur', () => [...held].forEach(release));
+document.addEventListener('visibilitychange', () => { if (document.hidden) [...held].forEach(release); });
+async function poll() {
+  try {
+    const d = await (await fetch('/api/arcade/state')).json();
+    for (const c in pads) pads[c].classList.toggle('lit', !!(d.leds && d.leds[c]));
+  } catch (_) {}
+  setTimeout(poll, 250);
+}
+poll();
+</script>
+</body>
+</html>

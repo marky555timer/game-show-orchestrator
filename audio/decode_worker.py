@@ -86,6 +86,10 @@ def main():
             msg = str(e).encode("utf-8")
             stdout.write(b"\x01" + struct.pack(">I", len(msg)) + msg)
         stdout.flush()
+        # Let go of the decoded song (three copies, ~120 MB for a 4-minute
+        # track) instead of holding it until the next request -- it mattered
+        # on the 1 GB practice Pi (2026-11-11).
+        sound = raw = None
 
 
 if __name__ == "__main__":

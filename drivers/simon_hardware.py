@@ -17,6 +17,7 @@ Windows dev machine or a Pi that hasn't had the button harness wired up
 yet.
 """
 import threading
+import time
 
 import config
 
@@ -29,6 +30,14 @@ except (ImportError, RuntimeError):
 
 _initialized = False
 _led_off_timers = {}  # color -> pending threading.Timer
+# What each LED was last told to be, kept even with no GPIO, so the practice
+# rig's TV view (graphics/rig_view.py) can draw the four button lights.
+_led_state = {}  # color -> True (lit)
+
+
+def led_states():
+    """color -> True/False as last commanded (lit or not)."""
+    return {color: bool(_led_state.get(color)) for color in config.SIMON_HW_COLOR_ORDER}
 
 if not _AVAILABLE:
     print("[SIMON HW] RPi.GPIO not available on this host -- hardware test panel will report unavailable.")
@@ -55,13 +64,53 @@ def init():
           f"(buttons: {config.SIMON_HW_BUTTON_PINS}, LEDs: {config.SIMON_HW_LED_PINS}).")
 
 
+# Buttons pressed from the web remote's /buttons page (2026-11-11), for a Pi
+# with no arcade buttons wired (the practice rig): color -> time.monotonic()
+# until which it counts as held. The page re-sends a held button every second;
+# one that stops arriving lets go by itself after VIRTUAL_HOLD_SECONDS.
+VIRTUAL_HOLD_SECONDS = 3.0
+VIRTUAL_MIN_PRESS_SECONDS = 0.12   # a tap stays down at least this long, so the 40 Hz poll sees it
+_virtual_until = {}
+_virtual_down_at = {}
+_virtual_used = False
+
+
+def virtual_press(color, down):
+    """Web remote: hold `color` down / let it go. Returns False for an unknown color."""
+    global _virtual_used
+    if color not in config.SIMON_HW_BUTTON_PINS:
+        return False
+    now = time.monotonic()
+    _virtual_used = True
+    if down:
+        _virtual_down_at.setdefault(color, now)
+        _virtual_until[color] = now + VIRTUAL_HOLD_SECONDS
+    elif color in _virtual_until:
+        _virtual_until[color] = max(now, _virtual_down_at.pop(color, now) + VIRTUAL_MIN_PRESS_SECONDS)
+    return True
+
+
+def _virtual_down(color, now):
+    until = _virtual_until.get(color)
+    if until is None:
+        return False
+    if now >= until:
+        _virtual_until.pop(color, None)
+        _virtual_down_at.pop(color, None)
+        return False
+    return True
+
+
 def read_buttons():
     """color -> True (pressed) / False, or {} if unavailable/not yet
     init()'d. Buttons are wired to GND with the internal pull-up
-    enabled, so a press reads LOW."""
-    if not _AVAILABLE or not _initialized:
+    enabled, so a press reads LOW. Presses from the web remote's /buttons
+    page count too (and alone on a Pi without GPIO)."""
+    live = _AVAILABLE and _initialized
+    if not live and not _virtual_used and not config.PRACTICE_RIG:
         return {}
-    return {color: GPIO.input(pin) == GPIO.LOW
+    now = time.monotonic()
+    return {color: (live and GPIO.input(pin) == GPIO.LOW) or _virtual_down(color, now)
             for color, pin in config.SIMON_HW_BUTTON_PINS.items()}
 
 
@@ -74,10 +123,11 @@ def pulse_led(color, duration=None):
     manually clicking a test button in the web remote, not from the main
     40fps render loop. Returns False if the color/hardware isn't
     available (caller reports that back to the web remote)."""
-    if not _AVAILABLE or not _initialized:
-        return False
     pin = config.SIMON_HW_LED_PINS.get(color)
     if pin is None:
+        return False
+    live = _AVAILABLE and _initialized
+    if not live and not config.PRACTICE_RIG:
         return False
     duration = config.SIMON_HW_LED_PULSE_SECONDS if duration is None else duration
 
@@ -85,7 +135,9 @@ def pulse_led(color, duration=None):
     if existing is not None:
         existing.cancel()
 
-    GPIO.output(pin, GPIO.HIGH)
+    _led_state[color] = True
+    if live:
+        GPIO.output(pin, GPIO.HIGH)
     timer = threading.Timer(duration, _turn_off_led, args=(color,))
     timer.daemon = True
     _led_off_timers[color] = timer
@@ -101,10 +153,11 @@ def set_led(color, on):
     directly rather than firing a series of independent one-shot pulses.
     Cancels any pending pulse_led() timer for this color first, so a
     leftover timer can't stomp a manually-driven level a moment later."""
-    if not _AVAILABLE or not _initialized:
-        return
     pin = config.SIMON_HW_LED_PINS.get(color)
     if pin is None:
+        return
+    _led_state[color] = bool(on)
+    if not _AVAILABLE or not _initialized:
         return
     existing = _led_off_timers.pop(color, None)
     if existing is not None:
@@ -126,7 +179,8 @@ def set_all_leds(on):
 
 
 def _turn_off_led(color):
-    if not _AVAILABLE:
+    _led_state[color] = False
+    if not _AVAILABLE or not _initialized:
         return
     pin = config.SIMON_HW_LED_PINS.get(color)
     if pin is not None:

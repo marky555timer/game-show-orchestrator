@@ -662,6 +662,50 @@ def sync_to_show_state():
         _last_sent_bri = bri
 
 
+def view_state(now=None):
+    """What the outline strip should be showing right now, for the practice
+    rig's TV view (graphics/rig_view.py), which has no WLED board to run the
+    effect. Returns {"kind", "c1", "c2", "bri", "speed", "label"}: kind is
+    "off", "solid", "blink", "rainbow", "motion" (any other effect, drawn as
+    c1 moving over c2) or "audio" (sound-reactive). A saved WLED preset's own
+    colours live on the board, so a preset is drawn in the song's colour."""
+    now = time.time() if now is None else now
+    off = {"kind": "off", "c1": (0, 0, 0), "c2": (0, 0, 0), "bri": 0, "speed": 128, "label": "off"}
+    if state.lights_out:
+        return off
+    if now < _flash_until and _flash_color is not None:
+        return {"kind": "solid", "c1": _flash_color, "c2": (0, 0, 0), "bri": 255, "speed": 128, "label": "flash"}
+    look = _target_look()
+    bri = _intro_brightness() if state.show_phase == "intro" else max(0, min(255, state.accent_brightness))
+    speed = max(0, min(255, state.accent_speed))
+    if look[0] == "preset":
+        rgb = _palette_rgb(look[2]) if look[2] >= 0 else _resolve_dj_color()
+        kind = "audio" if look[1] in config.ACCENT_AUDIOREACTIVE_PRESETS else "motion"
+        return {"kind": kind, "c1": rgb, "c2": (0, 0, 0), "bri": bri, "speed": speed,
+                "label": f"preset {look[1]}"}
+    fx, r, g, b, sx, r2, g2, b2, _pal, _tt = look
+    name = config.ACCENT_EFFECT_NAMES[fx] if 0 <= fx < len(config.ACCENT_EFFECT_NAMES) else f"fx {fx}"
+    if r is None:
+        return {"kind": "audio", "c1": _resolve_dj_color(), "c2": (0, 0, 0), "bri": bri, "speed": speed,
+                "label": name}
+    c1 = (r, g, b)
+    c2 = (r2, g2, b2) if r2 is not None else (0, 0, 0)
+    if fx == config.ACCENT_FX_SOLID:
+        if not any(c1):
+            return off
+        kind = "solid"
+    elif fx == config.ACCENT_FX_BLINK:
+        kind = "blink"
+    elif fx in (config.ACCENT_FX_RAINBOW, config.ACCENT_FX_THEATER_RAINBOW):
+        kind = "rainbow"
+    elif fx == config.ACCENT_FX_PUDDLES:
+        kind = "audio"
+    else:
+        kind = "motion"
+    return {"kind": kind, "c1": c1, "c2": c2, "bri": bri, "speed": sx if sx is not None else speed,
+            "label": name}
+
+
 def _raw_geometry():
     """Offset / mirror / reverse every raw look is sent with (config.ACCENT_SEGMENT_*),
     matching the Megablinds preset, instead of whatever the board last had."""
@@ -734,6 +778,9 @@ def flash(r, g, b, duration=None):
     polling. Self-expiring; nothing needs to explicitly turn it back off."""
     global _flash_color, _flash_until, _last_sent_look
     if not available():
+        if config.PRACTICE_RIG:  # no board: the TV rig view still shows the flash
+            _flash_color = (r, g, b)
+            _flash_until = time.time() + (duration if duration is not None else config.DJ_FEATURE_FLASH_SECONDS)
         return
     _flash_color = (r, g, b)
     _flash_until = time.time() + (duration if duration is not None else config.DJ_FEATURE_FLASH_SECONDS)

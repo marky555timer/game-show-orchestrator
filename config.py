@@ -2902,3 +2902,33 @@ STATUS_DISPLAY_TUNNEL_WARN_AFTER_SECONDS = 90.0
 STATUS_DISPLAY_BATTERY_WH = 100.0            # PLACEHOLDER -- set to the real pack
 STATUS_DISPLAY_BATTERY_EMPTY_V = 10.5        # PLACEHOLDER
 STATUS_DISPLAY_BATTERY_FULL_V = 12.6         # PLACEHOLDER
+
+# ==========================================
+# PRACTICE RIG (2026-11-11)
+# ==========================================
+# A Pi with no game board attached (the second Pi, on an HDMI TV) rehearses
+# the show: graphics/rig_view.py draws the whole board full-screen -- LED
+# panels, marquee bulbs, outline strip, the four button lights -- in place of
+# the dev simulator window. Switched on by a practice_rig.json next to this
+# file (not in git, same idea as failover_role.json); its contents are
+# optional settings: {"fps": 20, "tv_mode": "1280x720"}. The GPIO kill/blackout/recovery buttons are
+# off here: nothing is wired to those pins on the practice Pi.
+PRACTICE_RIG_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "practice_rig.json")
+PRACTICE_RIG = os.path.exists(PRACTICE_RIG_PATH)
+RIG_VIEW_FPS = 20            # TV frames sent per second (the show loop itself stays at 40)
+RIG_VIEW_PORT = 47821        # localhost UDP: show app -> the practice-board window (graphics/rig_view.py)
+RIG_VIEW_TV_MODE = ""        # e.g. "1280x720": TV mode set before the window opens ("" = leave it)
+RIG_VIEW_OFF_PIXEL = 26      # red level of an unlit panel LED on the TV
+if PRACTICE_RIG:
+    import json as _json
+    try:
+        with open(PRACTICE_RIG_PATH, "r", encoding="utf-8") as _f:
+            _practice = _json.load(_f) or {}
+    except Exception:
+        _practice = {}
+    RIG_VIEW_FPS = int(_practice.get("fps", RIG_VIEW_FPS))
+    RIG_VIEW_TV_MODE = str(_practice.get("tv_mode", RIG_VIEW_TV_MODE))
+    SHUTDOWN_BUTTON_ENABLED = False
+    BLACKOUT_BUTTON_ENABLED = False
+    RECOVERY_BUTTON_ENABLED = False
+    SECONDARY_CANVAS_ENABLED = False
