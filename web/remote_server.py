@@ -1676,6 +1676,14 @@ if app is not None:
         from drivers import medley_engine
         st = medley_engine.status()
         st["live"] = state.show_phase == "live"
+        # Fastest Finger round (2026-11-23): the panel opens with the round's intro, is labelled
+        # Fastest Finger, and carries the round's leaderboard (fastest correct taps break ties).
+        st["ff_round"] = state.round_type == "fastest_finger" and state.show_phase == "live"
+        st["ff_intro"] = bool(state.ff_intro_started_at) and state.ff_intro_kind == "ff"
+        rows = sorted(state.medley_scores.items(), key=lambda kv: (-kv[1].get("points", 0), kv[1].get("time", 0.0)))
+        st["leaderboard"] = [{"name": (state.quiz_players.get(pid) or {}).get("name") or r.get("initials") or "???",
+                              "points": r.get("points", 0), "answered": r.get("answered", 0)}
+                             for pid, r in rows[:12]]
         if not st["active"]:
             try:
                 st["counts"] = medley_engine.pool_counts()

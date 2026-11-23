@@ -179,6 +179,7 @@
         <div class="playlist" id="playlist"></div>
         <div class="insert-bar">
           <button class="btn" onclick="insertSpin()">+ INSERT WHEEL SPIN</button>
+          <button class="btn" onclick="shufflePlaylist()" title="Mix the songs into a random order; wheel spins stay where they are">&#128256; SHUFFLE PLAYLIST</button>
           <button class="btn danger" onclick="clearPlaylist()" title="Remove every song and spin; the show itself and its settings stay">CLEAR ALL TRACKS</button>
           <span class="muted" id="insert-hint">Inserts at the end. Click a row first to insert above it.</span>
         </div>
@@ -673,6 +674,26 @@ function insertItems(items) {   // several at once (ADD ALL SHOWN): one render, 
 }
 function insertSpin() { if (_show) insertItem({ type: 'spin' }); }
 // Empties the playlist only -- the show, its name and settings stay (2026-10-27).
+// Shuffle (2026-11-23): songs added with ADD ALL SHOWN arrive in the list's A-Z order and play that
+// way. This mixes the songs; spins keep their places, so wheel-spin blocks keep their length.
+function shufflePlaylist() {
+  if (!_show) return;
+  const items = _show.items || [];
+  const slots = [], songs = [];
+  items.forEach((it, i) => { if (it.type === 'song') { slots.push(i); songs.push(it); } });
+  if (songs.length < 2) { showToast('Nothing to shuffle yet.'); return; }
+  for (let i = songs.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [songs[i], songs[j]] = [songs[j], songs[i]]; }
+  // No artist twice in a row where it can be helped: swap a repeat with the next different artist.
+  for (let i = 1; i < songs.length; i++) {
+    if ((songs[i].artist || '') !== (songs[i - 1].artist || '')) continue;
+    const k = songs.findIndex((x, j) => j > i && (x.artist || '') !== (songs[i - 1].artist || ''));
+    if (k > 0) [songs[i], songs[k]] = [songs[k], songs[i]];
+  }
+  slots.forEach((slot, n) => { items[slot] = songs[n]; });
+  _insertAt = null;
+  renderPlaylist(); scheduleSave();
+  showToast(`Shuffled ${songs.length} songs.`);
+}
 function clearPlaylist() {
   if (!_show || !(_show.items || []).length) return;
   if (!confirm(`Remove all ${_show.items.length} items from "${_show.name}"? The show itself stays.`)) return;

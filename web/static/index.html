@@ -343,6 +343,8 @@
     <section id="medley-bar" style="display:none">
       <button class="btn medley big" id="medley-btn" onclick="toggleMedley()">DANCE MEDLEY</button>
       <div id="medley-status"></div>
+      <!-- Fastest Finger leaderboard (2026-11-23) -->
+      <div id="ff-board" style="display:none;margin-top:10px;font-size:.95rem"></div>
       <!-- Medley options (2026-10-01): which songs a medley draws from + how many. Hidden while one runs. -->
       <div id="medley-options" style="margin-top:10px;font-size:.88rem">
         <label style="display:block;margin:4px 0"><input type="radio" name="medley-source" value="latest" onchange="medleyOptionsSave()"> Latest edited <span class="mo-n" id="mo-n-latest"></span><br><span style="color:#999;font-size:.75rem;margin-left:22px">human-edited songs first, newest edits leading; AI-included fill any gaps</span></label>
@@ -994,7 +996,27 @@ async function refreshMedley() {
   document.getElementById('medley-bar').style.display = d.live ? '' : 'none';
   const btn = document.getElementById('medley-btn');
   const st = document.getElementById('medley-status');
-  if (d.active) {
+  // Fastest Finger round (2026-11-23): same panel, its own name, opened from the intro on.
+  const ff = !!(d.ff_round || d.ff_intro);
+  const word = ff ? 'Fastest Finger' : 'Medley';
+  const board = document.getElementById('ff-board');
+  const rows = d.leaderboard || [];
+  board.style.display = (ff && rows.length) ? '' : 'none';
+  if (ff && rows.length) {
+    const esc = (x) => String(x).replace(/&/g, '&amp;').replace(/</g, '&lt;');
+    board.innerHTML = '<div style="font-weight:700;color:#ffd400;margin-bottom:4px">FASTEST FINGER LEADERBOARD</div>' +
+      rows.map((r, i) => `<div style="display:flex;justify-content:space-between;padding:3px 0;border-bottom:1px solid #2a2a2e">
+        <span>${i + 1}. ${esc(r.name)}</span><span><b>${r.points}</b> <span style="color:#888;font-size:.8rem">(${r.answered} answered)</span></span></div>`).join('');
+  }
+  if (!d.active && d.ff_intro) {
+    btn.classList.add('on');
+    document.body.classList.add('medley-on');
+    document.getElementById('medley-edit-btn').style.display = 'none';
+    document.getElementById('medley-edit').style.display = 'none';
+    document.getElementById('medley-bar').style.display = '';
+    btn.textContent = 'FASTEST FINGER';
+    st.textContent = 'Intro playing -- the clips start right after it. Get ready!';
+  } else if (d.active) {
     btn.classList.add('on');
     document.body.classList.add('medley-on');
     document.getElementById('medley-edit-btn').style.display = (d.starting || d.edit) ? 'none' : '';
@@ -1013,15 +1035,15 @@ async function refreshMedley() {
         (d.edit.playing ? '\u25B6 playing\u2026' : '\u25A0 stopped') + '  \u00b7  not saved until Resume';    } else {
       ep.style.display = 'none';
     }
-    btn.textContent = 'EXIT MEDLEY MODE';
+    btn.textContent = ff ? 'END FASTEST FINGER' : 'EXIT MEDLEY MODE';
     if (d.starting) {
-      st.textContent = 'Building the mix... ' + d.total + ' hooks planned' + (d.total < d.requested ? ' (only ' + d.total + ' of ' + d.requested + ' songs fit by tempo)' : '');
+      st.textContent = 'Building the mix... ' + d.total + (ff ? ' clips' : ' hooks') + ' planned' + (d.total < d.requested ? ' (only ' + d.total + ' of ' + d.requested + ' songs fit by tempo)' : '');
     } else {
-      let t = 'Track ' + d.index + ' of ' + d.total + ' \u00b7 ' + d.remaining + ' to go';
+      let t = (ff ? 'Clip ' : 'Track ') + d.index + ' of ' + d.total + ' \u00b7 ' + d.remaining + ' to go';
       if (d.current) t += '\nNow: ' + d.current.artist + ' \u2014 ' + d.current.title + ' (' + d.current.tempo + ' BPM)';
       if (d.next) t += '\nNext: ' + d.next.artist + ' \u2014 ' + d.next.title + (d.next_in_seconds != null ? ' in ' + Math.ceil(d.next_in_seconds) + 's' : '');
-      else t += '\nLast hook \u2014 then normal play resumes';
-      if (d.edit) t = 'Medley paused \u2014 editing a transition';
+      else t += ff ? '\nLast clip \u2014 then the winner' : '\nLast hook \u2014 then normal play resumes';
+      if (d.edit) t = word + ' paused \u2014 editing a transition';
       st.innerHTML = t.split('\n').map((x) => x.replace(/&/g, '&amp;').replace(/</g, '&lt;')).join('<br>');
     }
   } else {
@@ -1036,10 +1058,12 @@ async function refreshMedley() {
   rb.style.display = (d.has_last && !d.starting && !d.edit) ? '' : 'none';
   rb.textContent = d.active ? '\u21BB REPLAY MEDLEY FROM THE TOP (with your edits)' : '\u21BB REPLAY LAST MEDLEY (' + (d.last_total || 0) + ' hooks)';
   const gb = document.getElementById('medley-game-btn');
-  if (d.suppressed) { gb.textContent = 'Medley game: OFF (questions suppressed)'; gb.style.opacity = '.6'; }
-  else if (!d.game_switch) { gb.textContent = 'Medley game: OFF (tap to turn on)'; gb.style.opacity = '1'; }
-  else { gb.textContent = 'Medley game: ON (tap to turn off)'; gb.style.opacity = '1'; }
-  document.getElementById('medley-sweep-btn').textContent = 'Medley sweepers: ' + String(d.sweeper_mode || 'medley').toUpperCase();
+  const gname = ff ? 'Fastest Finger questions' : 'Medley game';
+  if (d.suppressed) { gb.textContent = gname + ': OFF (questions suppressed)'; gb.style.opacity = '.6'; }
+  else if (!d.game_switch) { gb.textContent = gname + ': OFF (tap to turn on)'; gb.style.opacity = '1'; }
+  else { gb.textContent = gname + ': ON (tap to turn off)'; gb.style.opacity = '1'; }
+  document.getElementById('medley-sweep-btn').textContent = word + ' sweepers: ' + String(d.sweeper_mode || 'medley').toUpperCase();
+  if (ff) rb.textContent = d.active ? '↻ REPLAY FASTEST FINGER FROM THE TOP' : '↻ REPLAY LAST FASTEST FINGER (' + (d.last_total || 0) + ' clips)';
 }
 
 async function editBegin() {
