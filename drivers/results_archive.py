@@ -81,6 +81,10 @@ def snapshot():
         print(f"[RESULTS] Could not save {sid}: {exc}")
         return None
     cleanup()
+    from drivers import selftest_engine
+    if selftest_engine.active():
+        print(f"[RESULTS] {sid}: self-test show -- not uploaded to the site.")
+        return sid
     _upload_async(sid, data)
     return sid
 

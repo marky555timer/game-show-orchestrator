@@ -4,7 +4,7 @@ everything: a saved show is a name, a few settings and an ordered playlist.
 
   {"id": "3f9a0c1e7b2d", "name": "RedLime", "created_at": ..., "updated_at": ...,
    "updated_ts": 1760750000.0, "last_played": ...,
-   "intro": true, "questions": false, "listen": false, "low": "1950s", "high": "1980s",
+   "intro": true, "questions": true, "listen": false, "low": "1950s", "high": "1980s",
    "settings": {"win_score": 1000, ...},
    "items": [{"type": "spin"},
              {"type": "song", "file": "06 Venus.mp3", "title": "Venus",
@@ -45,7 +45,7 @@ ENDINGS = ("full", "quiz", "cut")
 # Ascending, for the designer's LOW / HIGH decade pages and the web page.
 DECADES = ["1950s", "1960s", "1970s", "1980s", "1990s", "2000s", "2010s", "2020s"]
 
-DEFAULTS = {"intro": True, "outro": True, "questions": False, "listen": False, "low": "1950s", "high": "1980s"}
+DEFAULTS = {"intro": True, "outro": True, "questions": True, "listen": False, "low": "1950s", "high": "1980s"}
 _SETTING_KEYS = ("win_score", "intermission_minutes", "exclude_explicit",
                  "exclude_slow_dance", "exclude_never_charted", "allowed_genres")
 

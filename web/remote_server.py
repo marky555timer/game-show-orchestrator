@@ -3287,6 +3287,29 @@ if app is not None:
         ok = show_engine.start_show(state.show_selected)
         return {"ok": ok}
 
+    # Self test (2026-11-23): plays every show back to back at 0-100% linger (drivers/selftest_engine.py).
+    @app.post("/api/selftest/start")
+    def selftest_start(body: ShowSetupSave):
+        from drivers import selftest_engine
+        _apply_show_setup(body)
+        state.show_final_round_number = None      # the test plays each show's whole round list
+        return {"ok": selftest_engine.request_start(state.show_selected)}
+
+    @app.post("/api/selftest/stop")
+    def selftest_stop():
+        from drivers import selftest_engine
+        return {"ok": selftest_engine.request_stop()}
+
+    @app.post("/api/selftest/clear")
+    def selftest_clear():
+        from drivers import selftest_engine
+        return {"ok": selftest_engine.clear_results()}
+
+    @app.get("/api/selftest")
+    def selftest_status():
+        from drivers import selftest_engine
+        return {"ok": True, **selftest_engine.status()}
+
     @app.post("/api/show/save-and-schedule")
     def show_save_and_schedule(body: ShowSchedule):
         _apply_show_setup(body)

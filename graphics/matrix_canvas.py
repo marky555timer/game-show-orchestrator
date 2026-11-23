@@ -688,16 +688,30 @@ def _render_win_celebration(t):
     """drivers/win_sequence_engine.py's duck->applause->restore window
     (2026-08-12 fix): the top banner used to just go blank for this whole
     stretch, which read as the board having frozen or crashed right at the
-    moment it should be the most exciting. Shows "<INITIALS> WINS!" instead,
-    blinking in sync with the same rhythm the Mystery Band reveal uses so it
-    reads as a deliberate celebration beat, not a stuck line. Bottom panels
-    keep idle-animating rather than sitting dark too."""
+    moment it should be the most exciting.
+
+    2026-11-23 ("winning team is impossible to read on the fastest finger game"): a team name
+    (up to 12 letters) + " WINS!" never fits 64px, so it scrolled AND flashed inverted at the same
+    time. Now line 1 is "WINNER!" (blinking), line 2 the team name, steady -- it scrolls only when
+    it is too wide, and never blinks. After a Fastest Finger round the bottom panels show its
+    leaderboard instead of idle animation."""
     player = state.quiz_players.get(state.game_winner_player_id)
     initials = (player or {}).get("initials", "").strip()
-    label = f"{initials} WINS!" if initials else "WINNER!"
+    tx, ty, tw, th = TOP_COMBINED
+    matrix_surface.fill(BLACK, TOP_COMBINED)
     blink_on = int(t / MYSTERY_REVEAL_BLINK_PERIOD_SECONDS) % 2 == 0
-    draw_marquee(matrix_surface, "win_celebration_banner", label, TOP_COMBINED,
-                 align="center", invert=blink_on)
+    if initials and text_width(f"{initials} WINS!") <= tw:
+        draw_marquee(matrix_surface, "win_celebration_banner", f"{initials} WINS!", TOP_COMBINED,
+                     align="center", invert=blink_on)
+    else:
+        draw_marquee(matrix_surface, "win_celebration_l1", "WINNER!", (tx, ty, tw, LINE_H),
+                     align="center", scroll=False, invert=blink_on)
+        if initials:
+            draw_marquee(matrix_surface, "win_celebration_l2", initials, (tx, ty + LINE_H, tw, LINE_H),
+                         align="center")
+    if state.round_type == "fastest_finger" and state.medley_results:
+        _draw_medley_rows(state.medley_results)
+        return
     for pid in (3, 4, 5, 6):
         render_panel_animation(matrix_surface, pid, PANELS[pid], t)
 
@@ -1931,22 +1945,33 @@ def _draw_medley_game(t):
     return True
 
 
-def _draw_medley_results(t):
-    """End of a medley with the game on: "N total songs" + "Winner <initials>"
-    on panels 1+2, the medley leaderboard (top 4) on panels 3-6."""
-    tx, ty, tw, th = TOP_COMBINED
-    matrix_surface.fill(BLACK, TOP_COMBINED)
-    rows = state.medley_results[:4]
-    draw_marquee(matrix_surface, "medley_res1", f"{state.medley_songs_total} total songs", (tx, ty, tw, LINE_H), align="center", scroll=False)
-    draw_marquee(matrix_surface, "medley_res2", f"Winner {rows[0]['initials']}" if rows else "Medley scores",
-                 (tx, ty + LINE_H, tw, LINE_H), align="center", scroll=False)
+def _draw_medley_rows(rows):
+    """Fastest Finger leaderboard on panels 3-6, one team per panel: "1. 400" over the team name
+    (the name scrolls if it doesn't fit 32px -- it used to be cut off on one line, 2026-11-23)."""
     for k, pid in enumerate((3, 4, 5, 6)):
         x0, y0, w, h = PANELS[pid]
         matrix_surface.fill(BLACK, (x0, y0, w, h))
         if k < len(rows):
             r = rows[k]
-            draw_marquee(matrix_surface, f"medley_row_{pid}", f"{k + 1} {r['initials']} {r['points']}", PANELS[pid],
+            draw_marquee(matrix_surface, f"medley_rank_{pid}", f"{k + 1}. {r['points']}", (x0, y0, w, LINE_H),
                          align="center", scroll=False)
+            draw_marquee(matrix_surface, f"medley_row_{pid}", r["initials"], (x0, y0 + LINE_H, w, LINE_H),
+                         align="center")
+
+
+def _draw_medley_results(t):
+    """End of a medley with the game on: "WINNER" + the winning team on panels 1+2 (the name scrolls
+    if it's too wide), the leaderboard (top 4) on panels 3-6."""
+    tx, ty, tw, th = TOP_COMBINED
+    matrix_surface.fill(BLACK, TOP_COMBINED)
+    rows = state.medley_results[:4]
+    if rows:
+        draw_marquee(matrix_surface, "medley_res1", "WINNER", (tx, ty, tw, LINE_H), align="center", scroll=False)
+        draw_marquee(matrix_surface, "medley_res2", rows[0]["initials"], (tx, ty + LINE_H, tw, LINE_H), align="center")
+    else:
+        draw_marquee(matrix_surface, "medley_res1", f"{state.medley_songs_total} total songs", (tx, ty, tw, LINE_H),
+                     align="center", scroll=False)
+    _draw_medley_rows(rows)
 
 
 def _draw_text_2x(text, x, y, color):

@@ -89,6 +89,15 @@
     <select id="show-select" onchange="onShowSelect()" style="width:100%;padding:10px;background:#111;color:#f2f2f2;border:1px solid #333;border-radius:8px;font-size:1rem"></select>
     <div id="show-summary" style="color:#999;font-size:.8rem;margin-top:6px"></div>
     <div style="font-size:.8rem;margin-top:8px"><a href="/designer" style="color:#6cb4ff">Open the Show Designer</a> to edit playlists, intro, questions and decades.</div>
+    <!-- Self test (2026-11-23): drivers/selftest_engine.py -->
+    <div class="row" style="margin-top:12px;gap:8px;flex-wrap:wrap">
+      <button class="btn" id="st-start" onclick="selfTestStart(this)">START SELF TEST</button>
+      <button class="btn" id="st-stop" style="display:none" onclick="selfTestStop()">STOP SELF TEST</button>
+      <button class="btn" id="st-clear" onclick="selfTestClear()">CLEAR RESULTS</button>
+    </div>
+    <div style="font-size:.78rem;color:#888;margin-top:6px">Closes any running show and plays the show above with no host and 10 bot teams, at 0% linger, then 20%, 40% ... 100%; then every untested show the same way. Tap twice to start.</div>
+    <div id="st-now" style="font-size:.85rem;margin-top:8px"></div>
+    <div id="st-table" style="margin-top:8px;overflow-x:auto"></div>
   </section>
 
   <section>
@@ -451,7 +460,10 @@ async function loadStatus() {
   // If a game is already live (e.g. this page was reached mid-show via
   // the hamburger menu rather than the intended flow), send the operator
   // back to the remote page instead of letting them fire a second intro.
-  if (d.show_phase === 'live' || d.show_phase === 'dark' || d.show_phase === 'intro') {
+  const stNow = await api('/api/selftest');
+  if (stNow && stNow.active) {
+    // a self test is playing the show: stay here to watch its table
+  } else if (d.show_phase === 'live' || d.show_phase === 'dark' || d.show_phase === 'intro') {
     window.location = '/';
   } else if (d.show_phase === 'countdown') {
     window.location = '/countdown';
@@ -483,6 +495,68 @@ async function refreshStatusRow() {
 }
 refreshStatusRow();
 setInterval(refreshStatusRow, 3000);
+
+// ------------------------------------------
+// SELF TEST (2026-11-23)
+// ------------------------------------------
+function _esc(t) { return String(t == null ? '' : t).replace(/[&<>"]/g, (c) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+let _stArmed = 0;
+function selfTestStart(btn) {
+  if (Date.now() - _stArmed > 5000) {
+    _stArmed = Date.now();
+    btn.textContent = 'TAP AGAIN TO START';
+    btn.classList.add('primary');
+    setTimeout(() => { if (Date.now() - _stArmed >= 5000) { btn.textContent = 'START SELF TEST'; btn.classList.remove('primary'); } }, 5100);
+    return;
+  }
+  _stArmed = 0;
+  btn.textContent = 'START SELF TEST'; btn.classList.remove('primary');
+  api('/api/selftest/start', {
+    method: 'POST', headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify(buildSetupPayload()),
+  }).then((r) => { showToast(r && r.ok ? 'Self test starting.' : 'Could not start the self test.'); refreshSelfTest(); });
+}
+function selfTestStop() {
+  api('/api/selftest/stop', { method: 'POST' }).then(() => { showToast('Self test stopping.'); refreshSelfTest(); });
+}
+function selfTestClear() {
+  api('/api/selftest/clear', { method: 'POST' }).then((r) => {
+    showToast(r && r.ok ? 'Results cleared.' : 'Stop the self test first.'); refreshSelfTest();
+  });
+}
+async function refreshSelfTest() {
+  const d = await api('/api/selftest');
+  if (!d) return;
+  document.getElementById('st-stop').style.display = d.active ? '' : 'none';
+  document.getElementById('st-clear').style.display = d.active ? 'none' : '';
+  const now = document.getElementById('st-now');
+  const c = d.current;
+  if (d.active && c) {
+    now.innerHTML = `<b style="color:#ffcc00">TESTING</b> ${_esc(c.show)} at ${c.linger}% linger -- ${c.minutes} min in` +
+      (c.part ? `, ${_esc(c.part)}` : '') + ` &middot; ${c.teams} teams` +
+      (c.queue && c.queue.length ? `<div style="color:#888;font-size:.78rem">Then: ${c.queue.map(_esc).join(', ')}</div>` : '') +
+      (c.notes && c.notes.length ? `<div style="color:#ff9f43;font-size:.78rem">${c.notes.map(_esc).join('<br>')}</div>` : '');
+  } else {
+    now.innerHTML = d.results.length ? '' : '<span style="color:#666">No self-test runs yet.</span>';
+  }
+  if (!d.results.length) { document.getElementById('st-table').innerHTML = ''; return; }
+  const th = 'style="text-align:left;padding:4px 6px;color:#999;font-weight:600;border-bottom:1px solid #333"';
+  const td = 'style="padding:4px 6px;border-bottom:1px solid #222;vertical-align:top"';
+  let h = `<table style="width:100%;border-collapse:collapse;font-size:.8rem"><tr><th ${th}>Show</th><th ${th}>Linger</th><th ${th}>Minutes</th><th ${th}>Linger effect</th><th ${th}>Songs</th><th ${th}>Parts (min)</th><th ${th}>Result</th></tr>`;
+  d.results.slice().reverse().forEach((r) => {
+    const eff = r.vs0 == null ? (r.linger === 0 ? 'baseline' : '') : (r.linger === 0 ? 'baseline' : (r.vs0 >= 0 ? '+' : '') + r.vs0 + ' min');
+    const ok = r.status === 'done';
+    const parts = (r.parts || []).map((p) => `${_esc(p.label)} ${p.min}`).join(' &middot; ');
+    const notes = (r.notes || []).length ? `<div style="color:#ff9f43">${r.notes.map(_esc).join('<br>')}</div>` : '';
+    h += `<tr><td ${td}>${_esc(r.show)}<div style="color:#666">${_esc(r.finished)}</div></td><td ${td}>${r.linger}%</td>` +
+      `<td ${td}><b>${r.minutes}</b></td><td ${td}>${eff}</td><td ${td}>${r.songs}</td>` +
+      `<td ${td} style="color:#aaa">${parts}${notes}</td>` +
+      `<td ${td} style="color:${ok ? '#4caf50' : '#ff3b30'}">${_esc(r.status)}<div style="color:#888">${_esc(r.winner)}</div></td></tr>`;
+  });
+  document.getElementById('st-table').innerHTML = h + '</table>';
+}
+refreshSelfTest();
+setInterval(refreshSelfTest, 5000);
 </script>
 </body>
 </html>

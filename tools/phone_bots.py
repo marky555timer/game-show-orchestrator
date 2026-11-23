@@ -63,8 +63,8 @@ def log(msg):
 class AnswerKey:
     """choices (normalised, sorted) -> correct choice text, from the show machine's question files."""
 
-    def __init__(self, host, key, remote_dir):
-        self.host, self.key, self.dir = host, key, remote_dir
+    def __init__(self, host, key, remote_dir, local_dir=""):
+        self.host, self.key, self.dir, self.local = host, key, remote_dir, local_dir
         self.by_choices, self.by_question, self.ambiguous = {}, {}, set()
         self._tmp = tempfile.mkdtemp(prefix="bots_")
         self.refresh()
@@ -89,14 +89,19 @@ class AnswerKey:
                 self.by_question[self._norm(q[k])] = self._norm(right)
 
     def refresh(self):
-        if not self.host:
+        if not self.host and not self.local:
             return
         for name in ("track_cache.json", "fallback_questions.json"):
-            dest = os.path.join(self._tmp, name)
-            r = subprocess.run(["scp", "-q", "-i", self.key, "-o", "BatchMode=yes", "-o", "ConnectTimeout=8",
-                                f"{self.host}:{self.dir}/{name}", dest], capture_output=True)
-            if r.returncode != 0:
-                continue
+            if self.local:      # running on the show machine itself (the self-test, 2026-11-23)
+                dest = os.path.join(self.local, name)
+                if not os.path.exists(dest):
+                    continue
+            else:
+                dest = os.path.join(self._tmp, name)
+                r = subprocess.run(["scp", "-q", "-i", self.key, "-o", "BatchMode=yes", "-o", "ConnectTimeout=8",
+                                    f"{self.host}:{self.dir}/{name}", dest], capture_output=True)
+                if r.returncode != 0:
+                    continue
             try:
                 data = json.load(open(dest, encoding="utf-8"))
             except Exception:
@@ -251,6 +256,7 @@ def main():
     ap.add_argument("--host", default="mark@192.168.1.26", help="ssh target for the answer key ('' = none)")
     ap.add_argument("--key", default=os.path.expanduser("~/.ssh/trivia_pi"))
     ap.add_argument("--dir", default="game-show-orchestrator")
+    ap.add_argument("--local-dir", default="", help="read the answer key from this folder (on the show machine)")
     a = ap.parse_args()
 
     base = {"url": a.base.rstrip("/")}
@@ -280,12 +286,17 @@ def main():
                 pass
     threading.Thread(target=watch_tunnel, daemon=True).start()
 
-    key = AnswerKey(a.host, a.key, a.dir)
+    key = AnswerKey(a.host, a.key, a.dir, a.local_dir)
     stop = threading.Event()
     bots = [Bot(i, NAMES[i % len(NAMES)], EMOJIS[i % len(EMOJIS)], lambda: base["url"], key, a.skill, stop)
             for i in range(a.teams)]
     for b in bots:
         b.start()
+    import signal
+
+    def _term(*_):
+        raise KeyboardInterrupt     # SIGTERM (the self-test stopping): mark every bot away first
+    signal.signal(signal.SIGTERM, _term)
     try:
         while True:
             time.sleep(60)

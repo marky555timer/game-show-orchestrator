@@ -662,6 +662,11 @@ def update(now):
     round_engine.update(now)
     from drivers import failover_engine
     failover_engine.update(now)
+    from drivers import selftest_engine
+    try:
+        selftest_engine.update(now)      # Setup page SELF TEST (2026-11-23)
+    except Exception as exc:
+        print(f"[SELFTEST] update failed: {exc!r}")
 
     if _pending_deck_stop[0] and now >= _pending_deck_stop[0]:
         _pending_deck_stop[0] = 0.0

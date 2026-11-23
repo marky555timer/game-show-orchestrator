@@ -3122,3 +3122,16 @@ if PRACTICE_RIG:
     BLACKOUT_BUTTON_ENABLED = False
     RECOVERY_BUTTON_ENABLED = False
     SECONDARY_CANVAS_ENABLED = False
+
+
+# Self test (2026-11-23, Setup page SELF TEST; drivers/selftest_engine.py): plays every show back to back
+# with no host at 0/20/40/60/80/100% linger and logs how long each run took.
+SELFTEST_FILE = "selftest.json"
+SELFTEST_INTRO_PAUSE_SECONDS = 10.0     # at the intro's pause (theme looping for the host), then on
+SELFTEST_GAP_SECONDS = 4.0              # between closing one run and loading the next
+SELFTEST_RESUME_DELAY_SECONDS = 25.0    # after an app restart mid-test, before the run starts again
+SELFTEST_BOT_TEAMS = 10                 # tools/phone_bots.py teams on 127.0.0.1
+SELFTEST_BOT_SKILL = 0.6                # "medium IQ"
+SELFTEST_STALL_SECONDS = 720.0          # nothing moved this long = a hang (100% linger songs play out)
+SELFTEST_SOLO_WAIT_SECONDS = 20.0       # a solo round waiting for the host is ended after this
+SELFTEST_MAX_RUN_SECONDS = 4 * 3600.0
