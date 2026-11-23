@@ -22,6 +22,7 @@ class State:
         self.active_deck = 1  # 1 or 2
         self.now_playing_duration = 0.0  # exact length (sec) of the active deck's track
         self.now_playing_path = ""       # audio file path of the active deck's track
+        self.now_playing_start_offset = 0.0  # seconds in the active deck's song started (Cliffhanger chorus start)
         self.now_playing_started_at = 0.0  # wall time the active deck's audio was at 0s (re-aligned on every seek)
 
         # True once a deck's (title, artist) came from an exact rekordbox

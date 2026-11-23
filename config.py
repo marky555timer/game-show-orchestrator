@@ -1937,6 +1937,10 @@ CLIFF_QUESTION_WIPE_SECONDS = 0.8
 CLIFF_QUESTION_LED_SECONDS = 8.0
 CLIFF_TV_BOARD_SECONDS = 4.0               # the TV shows the board (the question) this long...
 CLIFF_TV_FADE_SECONDS = 1.2                # ...then fades smoothly to the mountain
+# 2026-11-23: each Cliffhanger song starts at its chorus -- the song's saved medley clip, else the
+# analysed hook (medley_analysis.json); a song with neither starts this far through.
+CLIFF_CHORUS_FALLBACK_FRACTION = 0.40
+CLIFF_CHORUS_MIN_LEFT_SECONDS = 30.0       # a chorus closer than this to the end isn't used (fallback instead)
 SPEED_POINTS_MAX = 100
 SPEED_POINTS_MIN = 25
 IDENTIFY_POINTS_MULT = 2

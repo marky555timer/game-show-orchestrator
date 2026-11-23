@@ -149,6 +149,8 @@ def _start_timer(track_key, title, keep_quiz=False):
     _transition_cycle += 1  # single-trigger guard: opens a fresh transition window
     state.auto_dj_track_key = track_key
     state.auto_dj_track_started_at = time.time()
+    if state.now_playing_start_offset:   # started part-way in (Cliffhanger chorus start): keep the cue-out right
+        state.auto_dj_track_started_at = state.now_playing_started_at
     state.auto_dj_track_duration = _lookup_duration(title)
     state.auto_dj_announcement_played = False
     state.auto_dj_transition_at = 0.0

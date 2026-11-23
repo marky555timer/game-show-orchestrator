@@ -89,9 +89,41 @@ def _deck():
     return "deck1" if state.active_deck == 1 else "deck2"
 
 
+def _chorus_start(track):
+    """Seconds into the song where its chorus starts: the saved (hand-approved) medley clip, else the
+    analysed best hook, else config.CLIFF_CHORUS_FALLBACK_FRACTION of the way through."""
+    import os
+    name = os.path.basename(track["path"])
+    dur = float(track.get("duration") or 0.0)
+    start = None
+    try:
+        from drivers import track_record
+        clip = track_record.clips().get(name)
+        if clip and clip.get("in") is not None:
+            start, src = float(clip["in"]), "saved clip"
+    except Exception:
+        pass
+    if start is None:
+        try:
+            from drivers import medley_engine
+            a = medley_engine._load(medley_engine._analysis, config.MEDLEY_ANALYSIS_FILE).get(name) or {}
+            if a.get("hooks"):
+                start, src = float(a["hooks"][0]["start"]), "analysed hook"
+            dur = dur or float(a.get("duration") or 0.0)
+        except Exception:
+            pass
+    if start is not None and dur and not (0.0 < start < dur - config.CLIFF_CHORUS_MIN_LEFT_SECONDS):
+        start = None
+    if start is None:
+        start, src = dur * config.CLIFF_CHORUS_FALLBACK_FRACTION, f"{config.CLIFF_CHORUS_FALLBACK_FRACTION:.0%} (no chorus found)"
+    print(f"[CLIFFHANGER] Starts at {start:.1f}s ({src}).")
+    return start
+
+
 def _cue(track):
     from drivers import deck_orchestrator, auto_dj_engine
     deck_orchestrator.set_cued_track(track["path"])
+    deck_orchestrator.set_start_offset(track["path"], _chorus_start(track))
     deck_orchestrator.trigger_plain_move()      # no sweeper, no announcement during Cliffhanger
     auto_dj_engine.notify_manual_track_move()
 

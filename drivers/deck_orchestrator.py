@@ -122,6 +122,17 @@ _history_index = -1  # index of the currently-active entry in _history
 # Always the same list object -- plain item assignment throughout, no
 # `global` needed anywhere that mutates it.
 _cued_track_paths = [None, None]
+# path -> seconds: where a cued song starts instead of 0s (2026-11-23: Cliffhanger starts each song at
+# its chorus). Applied when the song lands, while it is still silent under the crossfade.
+_start_offsets = {}
+
+
+def set_start_offset(path, seconds):
+    """The next time `path` lands on a deck it starts `seconds` in (0 / None = from the top)."""
+    if path and seconds and seconds > 0:
+        _start_offsets[path] = float(seconds)
+    else:
+        _start_offsets.pop(path, None)
 
 
 def _pick_next_track():
@@ -659,6 +670,9 @@ def update(now):
         outgoing_name, incoming_name = _DECK_NAMES[outgoing_deck], _DECK_NAMES[target_deck]
 
         dj_engine.play_deck(incoming_name, _pending["sound"], volume=0.0)
+        start_offset = _start_offsets.pop(track["path"], 0.0)
+        if start_offset and not dj_engine.seek_deck(incoming_name, start_offset):
+            start_offset = 0.0
 
         fade_duration = CROSSFADE_SECONDS
         played_announcement = False
@@ -796,7 +810,10 @@ def update(now):
         state.active_deck = target_deck
         state.now_playing_duration = track["duration"]
         state.now_playing_path = track["path"]
-        state.now_playing_started_at = time.time()  # play_deck() above started it at 0s
+        state.now_playing_started_at = time.time() - start_offset  # play_deck() above started it at 0s
+        state.now_playing_start_offset = start_offset    # (or seek_deck() moved it on to start_offset)
+        if start_offset:
+            print(f"[DECKS] {track['title']!r} starts {start_offset:.1f}s in.")
         try:
             from drivers import track_record
             track_record.touch_played(track["path"])

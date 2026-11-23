@@ -123,6 +123,8 @@ def catalog():
         "wheel_decades": sorted(config.MUSIC_DECADES),          # any decade can be landed on
         "wheel_window": config.SHOW_INTRO_WHEEL_DECADES,       # the default four on the panels
         "bed": bed,
+        # the web designer's round editor (2026-11-22): same defaults the Pi's /api/shows sends
+        "rounds": _round_defaults(),
         "sim": {
             "intro_file": os.path.basename(config.SHOW_INTRO_MUSIC_PATH),
             "wheel_file": os.path.basename(config.SHOW_WHEEL_THEME_PATH),
@@ -209,6 +211,22 @@ def questions():
 def bed_path(name):
     """Pi's own preview player: a show-bed sound by file name (or None)."""
     return _bed_files().get(os.path.basename(name or ""))
+
+
+def _round_defaults():
+    """Round types + the defaults the designer shows for blank goal / song fields (mirrors the
+    extra keys of web/remote_server.py's /api/shows, so the web copy offers the same round editor)."""
+    from drivers import show_library
+    try:
+        from drivers import medley_engine
+        clips = int(medley_engine.options().get("songs") or config.MEDLEY_DEFAULT_SONGS)
+    except Exception:
+        clips = config.MEDLEY_DEFAULT_SONGS
+    return {"round_types": list(show_library.ROUND_TYPES), "default_goal": int(state.game_win_score),
+            "round_points_per_song": config.ROUND_POINTS_PER_SONG_ESTIMATE,
+            "round_safety_songs": config.ROUND_SAFETY_SONGS,
+            "round_price_questions": config.ROUND_PRICE_QUESTIONS_DEFAULT,
+            "round_medley_clips": clips}
 
 
 def _catalog_hash(cat):
