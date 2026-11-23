@@ -31,6 +31,27 @@ NAMES = ["Quizzly Bears", "Disco Biscuits", "Vinyl Vikings", "Beat Bandits", "Gr
 EMOJIS = ["🐻", "🍪", "⚔️", "🎸", "👹", "🎻", "🎤", "📼", "🦸", "👾", "🦞", "🧘", "🎹", "🦎", "👑"]
 
 _print_lock = threading.Lock()
+_timeline = {"key": None, "since": 0.0, "lock": threading.Lock()}
+
+
+def note_phase(d):
+    """Round timing for beta tests: logs each change of round / intermission / end of night with how
+    long the previous stretch lasted (every bot reports; only real changes are printed)."""
+    if d.get("show_final"):
+        key = ("night over",)
+    elif d.get("intermission_active"):
+        key = ("intermission", d.get("round_number"))
+    else:
+        key = ("round", d.get("round_number"), d.get("round_name") or "")
+    with _timeline["lock"]:
+        if key == _timeline["key"]:
+            return
+        now = time.time()
+        if _timeline["key"] is not None:
+            mins = (now - _timeline["since"]) / 60
+            log(f"[TIMING] {' '.join(str(x) for x in _timeline['key'])} lasted {mins:.1f} min")
+        log(f"[TIMING] now: {' '.join(str(x) for x in key)}")
+        _timeline.update(key=key, since=now)
 
 
 def log(msg):
@@ -167,6 +188,7 @@ class Bot(threading.Thread):
             self.stop.wait(max(0.2, wait - (time.time() - t0)))
 
     def handle(self, d):
+        note_phase(d)
         if d.get("score", 0) != self.last_score:
             self.last_score = d.get("score", 0)
         rid = d.get("round_id")
