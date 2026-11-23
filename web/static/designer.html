@@ -91,6 +91,16 @@
   .song .len { color: #888; font-size: .72rem; font-variant-numeric: tabular-nums; }
   .song.undated .ttl { color: #666; }
   .song.undated .ttl small { color: #555; }
+  .fgrid { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 6px; margin: 8px 0 4px; }
+  .fgrid label { display: flex; flex-direction: column; gap: 2px; font-size: .68rem; color: #888; text-transform: uppercase; letter-spacing: .04em; }
+  .fgrid select { background: #111; color: #f2f2f2; border: 1px solid #333; border-radius: 6px; padding: 5px 6px; font-size: .8rem; text-transform: none; letter-spacing: 0; }
+  .fgrid select.on { border-color: #ff3b30; }
+  .egroup { display: flex; gap: 4px; align-items: center; margin: 6px 0 2px; font-size: .68rem; color: #888; text-transform: uppercase; letter-spacing: .04em; }
+  .egroup .chip.on { background: #ff3b30; border-color: #ff3b30; color: #fff; }
+  .egroup .chip { font-size: .75rem; padding: 3px 9px; }
+  .tags { grid-column: 1 / -1; margin-top: -2px; }
+  .tag { display: inline-block; font-size: .62rem; padding: 1px 5px; border-radius: 4px; margin-right: 4px; border: 1px solid #444; color: #aaa; }
+  .tag.warn { border-color: #b8860b; color: #e6b422; }
   .chips { grid-column: 1 / -1; display: flex; gap: 3px; flex-wrap: wrap; }
   .chip { font-size: .66rem; padding: 2px 6px; border-radius: 4px; border: 1px solid #444; background: #151518; color: #bbb; cursor: pointer; }
   .chip:hover { border-color: #ff3b30; color: #fff; }
@@ -149,9 +159,17 @@
           <label title="YES plays the show-end theme, applause and champion banner. NO fades straight to blackout with the mellow music.">Outro <span class="seg" id="seg-outro"><button data-v="1">YES</button><button data-v="0">NO</button></span></label>
           <label>Questions <span class="seg" id="seg-questions"><button data-v="1">YES</button><button data-v="0">NO</button></span></label>
           <label title="Shows the &quot;Listen to the show&quot; checkbox on players' phones. Each listening phone streams about 58 MB an hour.">Phone listen <span class="seg" id="seg-listen"><button data-v="1">YES</button><button data-v="0">NO</button></span></label>
-          <label>Decades <select id="low-sel"></select> to <select id="high-sel"></select></label>
         </div>
-        <div class="muted" style="margin-top:6px">The decade range only matters while a show without songs is being recorded (songs are then picked from it).</div>
+        <div class="muted" style="margin-top:6px" id="legacy-range"></div>
+
+        <!-- Rounds (2026-11-19, docs/rounds_design.md): the night as an ordered list of rounds. -->
+        <h2 style="margin-top:18px">Rounds</h2>
+        <div class="muted" style="margin-bottom:6px">A trivia round ends when a team reaches its goal, or when its songs run out (then the leader on points wins). "Wait, how much?" asks price questions back to back (the playlist plays on underneath) until its question count or a team reaches its goal; Fastest Finger is one medley with its true/false game (most points wins); Tipsy Simon and Cliffhanger are solo challenges: one team, all or nothing (Cliffhanger opens straight into its title and the host's pregame screen). Every round is followed by an intermission. No rounds listed = standard trivia rounds, one after another, until STOP GAME. Blank goal / songs = the defaults shown. Each trivia / "Wait, how much?" round can have its own decade: its songs come from it and its wheel spin lands on it.</div>
+        <div id="rounds-list"></div>
+        <div class="insert-bar">
+          <button class="btn" onclick="addRound()">+ ADD ROUND</button>
+          <span class="muted" id="rounds-cover"></span>
+        </div>
 
         <h2 style="margin-top:18px">Playlist</h2>
         <div class="totals">
@@ -167,10 +185,10 @@
         <!-- Throw dice (2026-10-27): a random playlist from the show's decades,
              with a wheel spin every N songs. Both numbers are editable. -->
         <div class="dice-bar">
-          <button class="btn primary" onclick="throwDice()" title="Replace the playlist with random songs from the show's decades">&#127922; THROW DICE</button>
+          <button class="btn primary" onclick="throwDice()" title="Replace the playlist with random songs: round by round from each round's decade (with rounds listed), else from the show's old range">&#127922; THROW DICE</button>
           <input type="number" id="dice-songs" min="1" max="200" value="20"> songs, a wheel spin every
           <input type="number" id="dice-every" min="0" max="50" value="5"> songs
-          <span class="muted">(0 = no spins)</span>
+          <span class="muted">(0 = no spins; with rounds listed, each round gets its own song count and decade instead)</span>
         </div>
       </div>
     </section>
@@ -178,8 +196,38 @@
     <section class="picker">
       <h2>Songs</h2>
       <input class="search" id="search" placeholder="Search title or artist" oninput="renderSongs()">
+      <div class="egroup">Energy <span id="f-energy"></span></div>
+      <div class="fgrid">
+        <label>Sort by
+          <select id="f-sort" onchange="songFilterChanged()">
+            <option value="artist">Artist A-Z</option>
+            <option value="title">Title A-Z</option>
+            <option value="energy-d">Energy, high to low</option>
+            <option value="energy-a">Energy, low to high</option>
+            <option value="decade-a">Decade, oldest first</option>
+            <option value="decade-d">Decade, newest first</option>
+            <option value="added">Recently added</option>
+            <option value="length">Length, longest first</option>
+          </select></label>
+        <label>Genre <select id="f-genre" onchange="songFilterChanged()"></select></label>
+        <label>Decade <select id="f-decade" onchange="songFilterChanged()"></select></label>
+        <label>Lyrics
+          <select id="f-lyrics" onchange="songFilterChanged()">
+            <option value="">Any</option><option value="clean">Clean only</option><option value="explicit">Explicit only</option>
+          </select></label>
+        <label>Tempo
+          <select id="f-slow" onchange="songFilterChanged()">
+            <option value="">Any</option><option value="slow">Slow dances only</option><option value="notslow">No slow dances</option>
+          </select></label>
+        <label>Chart history
+          <select id="f-deep" onchange="songFilterChanged()">
+            <option value="">Any</option><option value="deep">Never charted (deep cuts)</option><option value="charted">Charted</option>
+          </select></label>
+      </div>
       <div class="filters">
-        <label><input type="checkbox" id="only-range" onchange="renderSongs()"> only the show's decades</label>
+        <label><input type="checkbox" id="only-range" onchange="renderSongs()"> only the rounds' decades</label>
+        <button class="btn small" onclick="clearSongFilters()">Clear filters</button>
+        <button class="btn small primary" id="add-all" onclick="addAllShown()" disabled>ADD ALL SHOWN</button>
         <span id="song-count"></span>
       </div>
       <div class="songs" id="songs"></div>
@@ -295,7 +343,7 @@ function renderShowList() {
                    (s.name === _meta.selected ? '<span class="badge">NEXT</span>' : '');
     return `<div class="show-item ${_show && _show.name === s.name ? 'active' : ''}" onclick="openByName(${_shows.indexOf(s)})">
       <div class="nm">${esc(s.name)}${badges}</div>
-      <div class="meta">${songs ? songs + ' songs' : 'not recorded yet'} · ${decLabel(s.low)}–${decLabel(s.high)}${s.last_played ? ' · played ' + esc(s.last_played.slice(0, 16)) : ''}</div>
+      <div class="meta">${songs ? songs + ' songs' : 'not recorded yet'} · ${esc(showDecadeText(s))}${s.last_played ? ' · played ' + esc(s.last_played.slice(0, 16)) : ''}</div>
     </div>`;
   }).join('');
 }
@@ -313,10 +361,95 @@ function openShow(sh) {
   document.getElementById('name-input').value = _show.name;
   document.getElementById('name-input').classList.remove('bad');
   setSeg('seg-intro', _show.intro); setSeg('seg-outro', _show.outro !== false); setSeg('seg-questions', _show.questions); setSeg('seg-listen', _show.listen);
-  fillDecadeSelect('low-sel', _show.low); fillDecadeSelect('high-sel', _show.high);
   document.getElementById('save-state').textContent = 'Saved';
-  renderShowList(); renderPlaylist(); renderSongs();
+  renderShowList(); renderRounds(); renderPlaylist(); renderSongs();
 }
+
+// ------------------------------------------------------------- rounds
+const ROUND_TYPE_LABELS = [
+  ['trivia', 'Standard trivia'], ['wait_how_much', 'Wait, how much?'],
+  ['fastest_finger', 'Fastest Finger (medley)'],
+  ['simon', 'Tipsy Simon (solo)'], ['cliffhanger', 'Cliffhanger (solo)'],
+];
+// Solo rounds (2026-11-22: Simon and Cliffhanger split out). 'solo_challenge' = an older saved show's
+// "host picks the game" round; it still runs, it just isn't offered for new rounds.
+const SOLO_TYPES = ['solo_challenge', 'simon', 'cliffhanger'];
+function isSolo(t) { return SOLO_TYPES.includes(t); }
+function roundTypeOptions(r) {
+  const list = ROUND_TYPE_LABELS.slice();
+  if (r.type === 'solo_challenge') list.push(['solo_challenge', 'Solo challenge (host picks)']);
+  return list;
+}
+function roundDefaults() {
+  return { goal: _meta.default_goal || 1000, pps: _meta.round_points_per_song || 150, spare: _meta.round_safety_songs ?? 4 };
+}
+// Non-trivia rounds: "songs" is their question / clip count, and there is no goal.
+const ROUND_COUNT_UNIT = { wait_how_much: 'questions', fastest_finger: 'clips' };
+function roundCountDefault(r) {
+  if (r.type === 'wait_how_much') return _meta.round_price_questions || 10;
+  if (r.type === 'fastest_finger') return _meta.round_medley_clips || 10;
+  return roundSongLimit({ goal: r.goal });
+}
+function roundSongLimit(r) {
+  const d = roundDefaults();
+  if (r.type === 'fastest_finger') return 1;   // medley clips come from the medley pool, not the playlist
+  if (isSolo(r.type)) return 1;   // the song playing under the challenge
+  if (r.type === 'wait_how_much') return Math.max(1, Math.ceil((r.songs > 0 ? r.songs : (_meta.round_price_questions || 10)) / 5));   // the playlist plays on under the questions (~5 per song)
+  return r.songs > 0 ? r.songs : Math.ceil((r.goal > 0 ? r.goal : d.goal) / d.pps) + d.spare;
+}
+function renderRounds() {
+  const el = document.getElementById('rounds-list');
+  const rounds = _show.rounds || [];
+  const d = roundDefaults();
+  const can = _meta.round_types || ['trivia'];
+  el.innerHTML = rounds.length ? rounds.map((r, i) => `
+    <div class="row" style="display:flex; gap:8px; align-items:center; flex-wrap:wrap">
+      <span class="num">${i + 1}</span>
+      <input style="width:120px" maxlength="24" placeholder="Round ${i + 1}" value="${esc(r.name || '')}" onchange="setRound(${i}, 'name', this.value)">
+      <select onchange="setRound(${i}, 'type', this.value)">${roundTypeOptions(r).map(([v, l]) =>
+        `<option value="${v}" ${r.type === v ? 'selected' : ''} ${can.includes(v) ? '' : 'disabled'}>${l}</option>`).join('')}</select>
+      ${r.type === 'cliffhanger' ? '<span class="muted">one team, all or nothing &plusmn;1500 &mdash; opens straight into the Cliffhanger title + the host's pregame screen</span>' : isSolo(r.type) ? '<span class="muted">one team, all or nothing &plusmn;1500 &mdash; the host picks the team on the admin page</span>' : r.type === 'fastest_finger' ? '<span class="muted">most points wins</span>' : `<label>first to <input type="number" style="width:76px" min="100" step="100" placeholder="${d.goal}" value="${r.goal || ''}" onchange="setRound(${i}, 'goal', this.value)"></label>`}
+      <label style="${isSolo(r.type) ? 'display:none' : ''}">${ROUND_COUNT_UNIT[r.type] || 'songs'} <input type="number" style="width:60px" min="1" placeholder="${roundCountDefault(r)}" value="${r.songs || ''}" onchange="setRound(${i}, 'songs', this.value)"></label>
+      ${roundUsesDecade(r) ? `<label title="The round's songs come from this decade, and its wheel spin lands on it">decade <select onchange="setRound(${i}, 'decade', this.value)"><option value="">any</option>${(_meta.decades || []).map((dd) => `<option value="${dd}" ${r.decade === dd ? 'selected' : ''}>${decLabel(dd)}</option>`).join('')}</select></label>` : ''}
+      ${ROUND_COUNT_UNIT[r.type] || isSolo(r.type) ? '' : `<label title="Spin the decade wheel before this round's first song${r.decade ? ' (it lands on ' + decLabel(r.decade) + ')' : ''}"><input type="checkbox" ${r.wheel ? 'checked' : ''} onchange="setRound(${i}, 'wheel', this.checked)"> opens with a wheel spin</label>`}
+      <span class="ops">
+        <button class="btn small" ${i === 0 ? 'disabled' : ''} onclick="moveRound(${i},-1)" title="Up">&#9650;</button>
+        <button class="btn small" ${i === rounds.length - 1 ? 'disabled' : ''} onclick="moveRound(${i},1)" title="Down">&#9660;</button>
+        <button class="btn small danger" onclick="removeRound(${i})" title="Remove">&#10005;</button></span>
+    </div>`).join('') : '<div class="empty">No rounds listed &mdash; standard trivia rounds until STOP GAME.</div>';
+  renderRoundCover();
+  renderLegacyRange();
+}
+function renderRoundCover() {
+  const el = document.getElementById('rounds-cover');
+  const rounds = _show.rounds || [];
+  if (!rounds.length) { el.textContent = ''; return; }
+  const need = rounds.reduce((a, r) => a + roundSongLimit(r), 0);
+  const have = (_show.items || []).filter((i) => i.type === 'song').length;
+  if (!have) { el.textContent = `Up to ${need} songs across the rounds (empty playlist: songs are picked live).`; return; }
+  el.innerHTML = have >= need
+    ? `Up to ${need} songs across the rounds; the playlist has ${have}.`
+    : `<span class="warn">The rounds may need up to ${need} songs but the playlist has ${have} &mdash; add ${need - have} more or the show can end early.</span>`;
+}
+function addRound() {
+  if (!_show) return;
+  _show.rounds = _show.rounds || [];
+  _show.rounds.push({ type: 'trivia', name: '', goal: 0, songs: 0, wheel: _show.rounds.length === 0, decade: '' });
+  renderRounds(); scheduleSave();
+}
+function setRound(i, key, v) {
+  const r = _show.rounds[i];
+  if (key === 'goal' || key === 'songs') r[key] = Math.max(0, parseInt(v, 10) || 0);
+  else if (key === 'wheel') r[key] = !!v;
+  else r[key] = v;
+  renderRounds(); scheduleSave(); renderShowList(); renderPlaylist();
+}
+function moveRound(i, d) {
+  const r = _show.rounds; const j = i + d;
+  if (j < 0 || j >= r.length) return;
+  [r[i], r[j]] = [r[j], r[i]]; renderRounds(); scheduleSave();
+}
+function removeRound(i) { _show.rounds.splice(i, 1); renderRounds(); scheduleSave(); }
 
 // ---------------------------------------------------------- settings
 function setSeg(id, on) {
@@ -329,23 +462,31 @@ function setSeg(id, on) {
     _show[key] = b.dataset.v === '1'; setSeg(id, _show[key]); scheduleSave();
   });
 });
-function fillDecadeSelect(id, value) {
-  const sel = document.getElementById(id);
-  sel.innerHTML = (_meta.decades || []).map((d) => `<option value="${d}">${decLabel(d)}</option>`).join('');
-  sel.value = value;
-}
-function onDecadeChange(which) {
-  if (!_show) return;
+// Decades are declared per round (2026-11-21), not per show. A show with no rounds keeps its old
+// LOW / HIGH range (set on the panel's Show Maker) -- shown read-only below the settings.
+function roundUsesDecade(r) { return r.type === 'trivia' || r.type === 'wait_how_much'; }
+function showDecadeSet(sh) {
+  // The decades this show's songs can come from: null = any.
   const decs = _meta.decades || [];
-  _show[which] = document.getElementById(which + '-sel').value;
-  if (decs.indexOf(_show.low) > decs.indexOf(_show.high)) {   // LOW and HIGH push each other
-    if (which === 'low') _show.high = _show.low; else _show.low = _show.high;
-    fillDecadeSelect('low-sel', _show.low); fillDecadeSelect('high-sel', _show.high);
+  const rounds = (sh && sh.rounds) || [];
+  if (!rounds.length) {
+    const lo = decs.indexOf(sh.low), hi = decs.indexOf(sh.high);
+    return lo < 0 || hi < 0 ? null : decs.slice(Math.min(lo, hi), Math.max(lo, hi) + 1);
   }
-  scheduleSave(); renderSongs();
+  const used = rounds.filter(roundUsesDecade);
+  if (!used.length || used.some((r) => !r.decade)) return null;
+  return [...new Set(used.map((r) => r.decade))];
 }
-document.getElementById('low-sel').addEventListener('change', () => onDecadeChange('low'));
-document.getElementById('high-sel').addEventListener('change', () => onDecadeChange('high'));
+function showDecadeText(sh) {
+  const set = showDecadeSet(sh);
+  return set ? set.map(decLabel).join(', ') : 'any decade';
+}
+function renderLegacyRange() {
+  const el = document.getElementById('legacy-range');
+  if (!el || !_show) return;
+  el.textContent = (_show.rounds || []).length ? 'Each round sets its own decade below.'
+    : `No rounds listed, so this show uses its old decade range (${decLabel(_show.low)}–${decLabel(_show.high)}). Add rounds to give each one its own decade.`;
+}
 
 // ------------------------------------------------------------ autosave
 function scheduleSave() {
@@ -361,7 +502,7 @@ async function flushSave() {
   document.getElementById('save-state').textContent = 'Saving…';
   const r = await post('/api/shows/save', {
     name: _show.name, intro: _show.intro, outro: _show.outro !== false, questions: _show.questions, listen: !!_show.listen,
-    low: _show.low, high: _show.high, items: _show.items,
+    low: _show.low, high: _show.high, items: _show.items, rounds: _show.rounds || [],
   });
   _saving = false;
   if (r && r.ok) {
@@ -467,7 +608,7 @@ function renderPlaylist() {
           const dec = info ? info.decade : '';
           if (!dec) land = '<span class="warn">next song has no decade — skipped</span>';
           else if (!(_meta.wheel_decades || []).includes(dec)) land = `<span class="warn">the wheel has no ${decLabel(dec)} slot yet — skipped</span>`;
-          else land = `lands on <b>${decLabel(dec)}</b> (the next song's decade)`;
+          else land = `lands on <b>${decLabel(dec)}</b> (the next song's decade; in a round with a decade, that decade)`;
         }
         return `<div class="row spin" draggable="true" data-i="${i}" onclick="pickRow(event,${i})"${sel}>
           <span class="num">&#8597;</span>
@@ -511,6 +652,7 @@ function renderTotals() {
     `${songs} song${songs === 1 ? '' : 's'}, ${spins} spin${spins === 1 ? '' : 's'}` +
     (_show.intro ? ' · plus the intro (host-paced)' : '') +
     (quiz ? ` · * ${quiz} "after quiz" song${quiz === 1 ? '' : 's'} counted at full length (may end sooner)` : '');
+  renderRoundCover();
 }
 function pickRow(e, i) {
   if (e.target.closest('button, select, input')) return;
@@ -521,6 +663,12 @@ function insertItem(item) {
   if (!_show.items) _show.items = [];
   if (_insertAt === null) _show.items.push(item);
   else { _show.items.splice(_insertAt, 0, item); _insertAt++; }
+  renderPlaylist(); scheduleSave();
+}
+function insertItems(items) {   // several at once (ADD ALL SHOWN): one render, one save
+  if (!_show.items) _show.items = [];
+  if (_insertAt === null) _show.items.push(...items);
+  else { _show.items.splice(_insertAt, 0, ...items); _insertAt += items.length; }
   renderPlaylist(); scheduleSave();
 }
 function insertSpin() { if (_show) insertItem({ type: 'spin' }); }
@@ -547,8 +695,32 @@ function _diceNum(id, lo, hi, dflt) {
     if (d) { document.getElementById('dice-songs').value = d.songs; document.getElementById('dice-every').value = d.every; }
   } catch (e) {}
 })();
+function throwDiceRounds() {
+  // One block per round (2026-11-21): its song count, from its decade (any decade if blank), opening
+  // with a wheel spin when the round has one. Fastest Finger / solo rounds take one song.
+  const shuffle = (a) => { for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+  if ((_show.items || []).length && !confirm('Replace the current playlist with a random one, round by round?')) return;
+  const used = new Set();
+  const song = (s) => ({ type: 'song', file: s.file, title: s.title, artist: s.artist, ending: 'full' });
+  const items = [];
+  let count = 0, short = [];
+  _show.rounds.forEach((r, i) => {
+    const n = roundSongLimit(r);
+    const dec = roundUsesDecade(r) ? r.decade : '';
+    const pool = shuffle(_songs.filter((s) => s.decade && !used.has(s.file) && (!dec || s.decade === dec)));
+    if (r.wheel && r.type === 'trivia') items.push({ type: 'spin' });
+    const take = pool.slice(0, n);
+    take.forEach((s) => { used.add(s.file); items.push(song(s)); count++; });
+    if (take.length < n) short.push(`${r.name || 'Round ' + (i + 1)} (${take.length}/${n}${dec ? ' ' + decLabel(dec) : ''})`);
+  });
+  _show.items = items; _insertAt = null;
+  renderPlaylist(); scheduleSave();
+  showToast(`Rolled ${count} song${count === 1 ? '' : 's'} for ${_show.rounds.length} round${_show.rounds.length === 1 ? '' : 's'}` +
+            (short.length ? ` -- not enough songs for ${short.join(', ')}` : ''));
+}
 function throwDice() {
   if (!_show) return;
+  if ((_show.rounds || []).length) { throwDiceRounds(); return; }
   const want = _diceNum('dice-songs', 1, 200, 20), every = _diceNum('dice-every', 0, 50, 5);
   try { localStorage.setItem('tc_dice', JSON.stringify({ songs: want, every })); } catch (e) {}
   const decs = _meta.decades || [];
@@ -638,24 +810,143 @@ async function loadSongs() {
   _songs = d.songs || [];
   _byFile = {}; _songs.forEach((s) => { _byFile[s.file] = s; });
   _spinSeconds = d.spin_seconds || 12; _spinFade = d.spin_fade_seconds || 1.5;
+  buildSongFilters();
   renderSongs();
   if (_show) renderPlaylist();
 }
-function renderSongs() {
+
+// ---- song filters + sorting (2026-11-16): narrow the list by energy, genre,
+// decade, clean/explicit lyrics, slow dances and chart history; pick a sort order.
+// Choices are remembered in this browser. A song whose tag is missing (None)
+// never matches a positive filter ("clean only" means tagged clean).
+const _SF = { energy: [], sort: 'artist', genre: '', decade: '', lyrics: '', slow: '', deep: '' };
+try { Object.assign(_SF, JSON.parse(localStorage.getItem('tc_songfilters') || '{}')); } catch (e) {}
+if (!Array.isArray(_SF.energy)) _SF.energy = [];
+function saveSongFilters() { try { localStorage.setItem('tc_songfilters', JSON.stringify(_SF)); } catch (e) {} }
+function _countBy(fn) { const m = {}; _songs.forEach((s) => { const k = fn(s); if (k) m[k] = (m[k] || 0) + 1; }); return m; }
+function _fillSelect(id, anyLabel, entries, value) {
+  const el = document.getElementById(id);
+  el.innerHTML = `<option value="">${anyLabel}</option>` + entries.map(([v, label]) => `<option value="${esc(v)}">${esc(label)}</option>`).join('');
+  el.value = entries.some(([v]) => v === value) ? value : '';
+}
+function buildSongFilters() {
+  const genres = _countBy((s) => s.genre), decades = _countBy((s) => s.decade);
+  _fillSelect('f-genre', 'Any genre', Object.keys(genres).sort().map((g) => [g, `${g} (${genres[g]})`]), _SF.genre);
+  _fillSelect('f-decade', 'Any decade', Object.keys(decades).sort().map((d) => [d, `${decLabel(d)} (${decades[d]})`]), _SF.decade);
+  _SF.genre = document.getElementById('f-genre').value; _SF.decade = document.getElementById('f-decade').value;
+  document.getElementById('f-sort').value = _SF.sort;
+  document.getElementById('f-lyrics').value = _SF.lyrics;
+  document.getElementById('f-slow').value = _SF.slow;
+  document.getElementById('f-deep').value = _SF.deep;
+  const counts = _countBy((s) => s.energy);
+  document.getElementById('f-energy').innerHTML = [1, 2, 3, 4, 5].map((n) =>
+    `<span class="chip ${_SF.energy.includes(n) ? 'on' : ''}" onclick="toggleEnergy(${n})" title="Energy ${n} of 5 (${counts[n] || 0} songs). 1 = mellowest, 5 = biggest.">${n}</span>`).join('');
+  paintFilterState();
+}
+function paintFilterState() {
+  ['f-genre', 'f-decade', 'f-lyrics', 'f-slow', 'f-deep'].forEach((id) => {
+    document.getElementById(id).classList.toggle('on', !!document.getElementById(id).value);
+  });
+}
+function toggleEnergy(n) {
+  const i = _SF.energy.indexOf(n);
+  if (i >= 0) _SF.energy.splice(i, 1); else _SF.energy.push(n);
+  saveSongFilters(); buildSongFilters(); renderSongs();
+}
+function songFilterChanged() {
+  _SF.sort = document.getElementById('f-sort').value;
+  _SF.genre = document.getElementById('f-genre').value;
+  _SF.decade = document.getElementById('f-decade').value;
+  _SF.lyrics = document.getElementById('f-lyrics').value;
+  _SF.slow = document.getElementById('f-slow').value;
+  _SF.deep = document.getElementById('f-deep').value;
+  saveSongFilters(); paintFilterState(); renderSongs();
+}
+function clearSongFilters() {
+  Object.assign(_SF, { energy: [], genre: '', decade: '', lyrics: '', slow: '', deep: '' });
+  document.getElementById('search').value = '';
+  saveSongFilters(); buildSongFilters(); renderSongs();
+}
+function songPassesFilters(s) {
+  if (_SF.energy.length && !_SF.energy.includes(s.energy)) return false;
+  if (_SF.genre && s.genre !== _SF.genre) return false;
+  if (_SF.decade && s.decade !== _SF.decade) return false;
+  if (_SF.lyrics === 'clean' && s.explicit !== false) return false;
+  if (_SF.lyrics === 'explicit' && s.explicit !== true) return false;
+  if (_SF.slow === 'slow' && s.slow !== true) return false;
+  if (_SF.slow === 'notslow' && s.slow === true) return false;
+  if (_SF.deep === 'deep' && s.deep !== true) return false;
+  if (_SF.deep === 'charted' && s.deep === true) return false;
+  return true;
+}
+function _decNum(s) { const n = parseInt(s.decade, 10); return Number.isFinite(n) ? n : 0; }
+function _byText(a, b) { return a.artist.toLowerCase().localeCompare(b.artist.toLowerCase()) || a.title.toLowerCase().localeCompare(b.title.toLowerCase()); }
+function songSortFn() {
+  switch (_SF.sort) {
+    case 'title': return (a, b) => a.title.toLowerCase().localeCompare(b.title.toLowerCase()) || _byText(a, b);
+    case 'energy-d': return (a, b) => (b.energy || 0) - (a.energy || 0) || _byText(a, b);
+    case 'energy-a': return (a, b) => (a.energy || 99) - (b.energy || 99) || _byText(a, b);
+    case 'decade-a': return (a, b) => (_decNum(a) || 9999) - (_decNum(b) || 9999) || _byText(a, b);
+    case 'decade-d': return (a, b) => _decNum(b) - _decNum(a) || _byText(a, b);
+    case 'added': return (a, b) => (b.added || '').localeCompare(a.added || '') || _byText(a, b);
+    case 'length': return (a, b) => (b.cue_out || b.duration || 0) - (a.cue_out || a.duration || 0) || _byText(a, b);
+    default: return _byText;
+  }
+}
+// every song the search box + filters + "only the show's decades" currently let through, in sort order
+function filteredSongs() {
   const q = document.getElementById('search').value.trim().toLowerCase();
   const onlyRange = document.getElementById('only-range').checked && _show;
-  const decs = _meta.decades || [];
-  let lo = 0, hi = decs.length - 1;
-  if (onlyRange) { lo = decs.indexOf(_show.low); hi = decs.indexOf(_show.high); }
-  const list = _songs.filter((s) => {
+  const allowed = onlyRange ? showDecadeSet(_show) : null;
+  return _songs.filter((s) => {
     if (q && !(s.title.toLowerCase().includes(q) || s.artist.toLowerCase().includes(q))) return false;
     // Undated songs never play in a show, so the decade filter hides them too (2026-10-27).
-    if (onlyRange) { const k = decs.indexOf(s.decade); if (!s.decade || k < lo || k > hi) return false; }
-    return true;
-  });
+    if (onlyRange && (!s.decade || (allowed && !allowed.includes(s.decade)))) return false;
+    return songPassesFilters(s);
+  }).sort(songSortFn());
+}
+// ADD ALL SHOWN: the whole filtered list, in the current sort order, at the playlist's
+// insert point. Songs already in the show and songs with no decade (they never play in a
+// show) are skipped. Two clicks: the first arms the button, so a stray tap can't add hundreds.
+const ADD_ALL_MAX = 300;
+let _addAllArmedFor = 0, _addAllTimer = null;
+function _addAllCandidates() {
+  const have = new Set(((_show && _show.items) || []).filter((i) => i.type === 'song').map((i) => i.file));
+  return filteredSongs().filter((s) => s.decade && !have.has(s.file));
+}
+function paintAddAll() {
+  const b = document.getElementById('add-all');
+  if (!b) return;
+  const n = _show ? Math.min(_addAllCandidates().length, ADD_ALL_MAX) : 0;
+  if (_addAllArmedFor && _addAllArmedFor !== n) disarmAddAll();
+  b.disabled = !_show || !n;
+  b.textContent = _addAllArmedFor ? `CLICK AGAIN: ADD ${n}` : (n ? `ADD ALL SHOWN (${n})` : 'ADD ALL SHOWN');
+  b.title = _show ? 'Adds every song in the list below that isn\'t already in the show, in this order (max ' + ADD_ALL_MAX + ')' : 'Open a show first';
+}
+function disarmAddAll() { _addAllArmedFor = 0; clearTimeout(_addAllTimer); }
+function addAllShown() {
+  if (!_show) return;
+  const all = _addAllCandidates();
+  const items = all.slice(0, ADD_ALL_MAX);
+  if (!items.length) { showToast('Nothing new to add: those songs are already in the show.'); return; }
+  if (_addAllArmedFor !== items.length) {
+    _addAllArmedFor = items.length;
+    clearTimeout(_addAllTimer); _addAllTimer = setTimeout(() => { disarmAddAll(); paintAddAll(); }, 4000);
+    paintAddAll(); return;
+  }
+  disarmAddAll();
+  insertItems(items.map((s) => ({ type: 'song', file: s.file, title: s.title, artist: s.artist, ending: 'full' })));
+  showToast(`Added ${items.length} song${items.length === 1 ? '' : 's'}` + (all.length > items.length ? ` (the first ${ADD_ALL_MAX}; ${all.length - items.length} more match)` : ''));
+  paintAddAll();
+}
+function renderSongs() {
+  const list = filteredSongs();
   const shown = list.slice(0, 400);
+  paintAddAll();
+  const narrowed = list.length !== _songs.length;
   document.getElementById('song-count').textContent =
-    `${list.length} song${list.length === 1 ? '' : 's'}` + (list.length > shown.length ? ` (first ${shown.length} shown — search to narrow)` : '') +
+    `${narrowed ? list.length + ' of ' + _songs.length : list.length} song${list.length === 1 ? '' : 's'}` +
+    (list.length > shown.length ? ` (first ${shown.length} shown — narrow it down)` : '') +
     ` · ${_songs.filter((s) => !s.decade).length} without a decade`;
   document.getElementById('songs').innerHTML = shown.map((s) => {
     const len = fmt(s.cue_out || s.duration);
@@ -667,8 +958,19 @@ function renderSongs() {
     return `<div class="song">
       <span class="ttl">${esc(s.title)} <small>— ${esc(s.artist)}</small><span class="dec">${decLabel(s.decade)}</span></span>
       <span class="len">${len}</span>${listenBtn(s)}
-      <button class="btn small" ${_show ? '' : 'disabled'} onclick="addSong(${_songs.indexOf(s)})">ADD</button></div>`;
+      <button class="btn small" ${_show ? '' : 'disabled'} onclick="addSong(${_songs.indexOf(s)})">ADD</button>
+      ${songTags(s)}</div>`;
   }).join('');
+}
+// small badges on a picker row: energy, genre, and the cautions (explicit, slow dance, deep cut)
+function songTags(s) {
+  let h = '';
+  if (s.energy) h += `<span class="tag" title="Energy ${s.energy} of 5">E${s.energy}</span>`;
+  if (s.genre) h += `<span class="tag">${esc(s.genre)}</span>`;
+  if (s.explicit === true) h += '<span class="tag warn" title="Explicit lyrics">explicit</span>';
+  if (s.slow === true) h += '<span class="tag" title="Slow dance">slow</span>';
+  if (s.deep === true) h += '<span class="tag" title="Never charted">deep cut</span>';
+  return h ? `<div class="tags">${h}</div>` : '';
 }
 // listen to a song in the picker (the web copy plays a low-bitrate preview)
 const _listen = new Audio();

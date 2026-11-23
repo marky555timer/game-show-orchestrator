@@ -4,6 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Game Show Remote &mdash; Show Setup</title>
+<link rel="icon" type="image/png" href="/art/icon-48.png">
+<link rel="apple-touch-icon" href="/art/icon-180.png">
 <style>
   :root { color-scheme: dark; }
   * { box-sizing: border-box; }
@@ -104,7 +106,7 @@
     <h2>Game Settings</h2>
     <div class="field-row">
       <label>Points per round</label>
-      <input type="number" id="win-score-input" min="1" step="1" value="15">
+      <input type="number" id="win-score-input" min="1" step="50" value="1000">
     </div>
     <div class="field-row">
       <label>Intermission (min)</label>
@@ -353,7 +355,7 @@ function selectedGenres() {
 // ------------------------------------------
 function buildSetupPayload() {
   return {
-    win_score: parseInt(document.getElementById('win-score-input').value, 10) || 15,
+    win_score: parseInt(document.getElementById('win-score-input').value, 10) || 1000,
     intermission_minutes: parseInt(document.getElementById('intermission-minutes-input').value, 10) || 5,
     exclude_explicit: document.getElementById('exclude-explicit').checked,
     exclude_slow_dance: document.getElementById('exclude-slowdance').checked,
@@ -401,7 +403,7 @@ async function loadStatus() {
   document.getElementById('avg-round-minutes').textContent = _avgRoundMinutes;
 
   buildGenreGrid(d.music_genres || []);
-  document.getElementById('win-score-input').value = d.game_win_score || 15;
+  document.getElementById('win-score-input').value = d.game_win_score || 1000;
   document.getElementById('intermission-minutes-input').value = d.intermission_minutes || 5;
   document.getElementById('exclude-explicit').checked = !!d.exclude_explicit;
   document.getElementById('exclude-slowdance').checked = !!d.exclude_slow_dance;

@@ -13,6 +13,12 @@ started it. Two modes, picked by whether the show has songs yet:
              songs are picked live from its decade range and appended to the
              save as they play, each with how it ended.
 
+Round decades (2026-11-21): a round may declare a decade (state.round_decade,
+drivers/round_engine.py). Its wheel spin lands on that decade -- never on
+whatever the next song happens to be -- and its songs come from it: the next
+playlist song of that decade is played (other-decade songs in between are
+skipped), or a song from the library when the playlist has none left.
+
 Hooks: deck_orchestrator._begin_move() asks intercept_next() before any
 "next" move (that is where spins and the end of the playlist happen),
 auto_dj_engine reports why it is moving on (note_ending), and update(now) is
@@ -129,6 +135,52 @@ def _spin_before(index):
     return index is not None and index > 0 and _items[index - 1]["type"] == "spin"
 
 
+def _live():
+    return state.show_phase == "live" and not state.show_background
+
+
+def _round_song(after):
+    """The next song for the running round: (index or None, path). With a round decade, the next
+    playlist song from that decade (None, library pick) when there is none; else the next song."""
+    dec = state.round_decade
+    nxt = _next_song_index(after)
+    if not dec:
+        return nxt, (_items[nxt]["path"] if nxt is not None else None)
+    i = nxt
+    while i is not None:
+        if track_decade(_items[i]["track"]) == dec:
+            return i, _items[i]["path"]
+        i = _next_song_index(i)
+    return None, _pick_from_decade(dec)
+
+
+def next_round_song():
+    """drivers/round_engine.py ("Wait, how much?" intro): a song from the round's decade to open the
+    round on -- the playlist's next one from that decade when a saved show is playing, else a library
+    pick (None when the round has no decade / nothing fits)."""
+    dec = state.round_decade
+    if not dec:
+        return None
+    if _mode == "play":
+        return _round_song(_pos)[1]
+    return _pick_from_decade(dec)
+
+
+def round_changed():
+    """drivers/round_engine.py: a new round (maybe a new decade) -- re-cue the song after this one."""
+    if not _live() or not state.round_decade:
+        return
+    if _mode == "play":
+        idx, path = _round_song(_pos)
+    elif _mode == "record":
+        path = _pick_from_decade(state.round_decade)
+    else:
+        return
+    if path:
+        from drivers import deck_orchestrator
+        deck_orchestrator.set_cued_track(path)
+
+
 # ----------------------------------------------------------- show opening
 def opening():
     """What the show opens with, after the intro theme: (decade, path).
@@ -137,12 +189,30 @@ def opening():
         first = _next_song_index(-1)
         if first is None:
             return "", None
-        song = _items[first]
-        decade = track_decade(song["track"]) if _spin_before(first) else ""
+        spin = _spin_before(first) or state.round_wheel_pending   # round 1 may open with a wheel spin
+        state.round_wheel_pending = False
+        if state.round_decade:
+            idx, path = _round_song(-1)
+            if not path:
+                print(f"[SHOW] No {state.round_decade} song to open with -- playing the playlist's first.")
+                idx, path = first, _items[first]["path"]
+            decade = state.round_decade if spin else ""
+        else:
+            path = _items[first]["path"]
+            decade = track_decade(_items[first]["track"]) if spin else ""
         if decade and not wheel_can_land(decade):
             print(f"[SHOW] Opening spin skipped -- the wheel has no {decade} slot yet.")
             decade = ""
-        return decade, song["path"]
+        return decade, path
+    if _mode == "record" and state.round_decade:
+        path = _pick_from_decade(state.round_decade)
+        spin = state.round_wheel_pending or (_show and _show.get("intro"))
+        state.round_wheel_pending = False
+        if path:
+            if spin and wheel_can_land(state.round_decade):
+                show_library.append_item(_show["name"], {"type": "spin"})
+                return state.round_decade, path
+            return "", path
     if _mode == "record" and _show and _show.get("intro"):
         decades = [d for d in show_library.decades_between(_show["low"], _show["high"]) if wheel_can_land(d)]
         if not decades:
@@ -184,6 +254,19 @@ def intercept_next():
     ("spin", decade, path) to run the wheel first, "stop" to end the show
     instead (the playlist is done), or None to move normally."""
     global _pending_ending
+    if _mode == "record" and _live() and state.round_wheel_pending:
+        from drivers import round_engine
+        if not round_engine.price_round_live():
+            state.round_wheel_pending = False
+            dec = state.round_decade or random.choice(
+                [d for d in (state.show_allowed_decades or show_library.DECADES) if wheel_can_land(d)] or [""])
+            path = _pick_from_decade(dec) if dec else None
+            if path and wheel_can_land(dec):
+                show_library.append_item(_show["name"], {"type": "spin"})
+                print(f"[SHOW] {state.round_name} opens with a wheel spin ({dec}).")
+                return ("spin", dec, path)
+            print(f"[SHOW] Round-opening spin skipped -- no {dec or 'dated'} song / wheel slot.")
+        return None
     if _mode != "play" or state.show_phase != "live":
         return None
     automatic = bool(_pending_ending)
@@ -192,9 +275,29 @@ def intercept_next():
         # Any "next" off the last scripted song ends the show -- not only an
         # auto-DJ one (when the track wasn't identified, auto-DJ never fires,
         # and the deck used to roll on into random songs).
-        if _on_script:
+        if _on_script and not state.round_decade:
             _pending_ending = ""
             return "stop"
+        return None
+    from drivers import round_engine
+    if round_engine.price_round_live():
+        return None     # "Wait, how much?" round: no wheel spins
+    if state.round_wheel_pending:
+        # A new round set to open with a wheel spin (drivers/round_engine.py): spin before its first
+        # song. With a round decade the wheel lands on it (not on whatever the next song is).
+        state.round_wheel_pending = False
+        if state.round_decade or not _spin_before(nxt):
+            idx, path = _round_song(_pos)
+            decade = state.round_decade or track_decade(_items[nxt]["track"])
+            if path and wheel_can_land(decade):
+                print(f"[SHOW] {state.round_name} opens with a wheel spin ({decade}).")
+                return ("spin", decade, path)
+            print(f"[SHOW] Round-opening spin skipped -- no {decade or 'undated'} song / wheel slot.")
+    if state.round_decade:
+        # A playlist spin inside a decade round lands on the round's decade too.
+        idx, path = _round_song(_pos)
+        if idx is not None and _spin_before(idx) and _on_script and wheel_can_land(state.round_decade):
+            return ("spin", state.round_decade, path)
         return None
     if _spin_before(nxt) and _on_script:
         song = _items[nxt]
@@ -250,8 +353,13 @@ def _on_song_change(path):
         else:
             _on_script = False   # off-script: plays live, the script resumes after it
             print(f"[SHOW] Off-script song {os.path.basename(path)!r} -- playing it live.")
-    upcoming = _next_song_index(_pos)
     from drivers import deck_orchestrator
+    if state.round_decade:
+        _idx, path = _round_song(_pos)      # skips playlist songs from other decades
+        if path:
+            deck_orchestrator.set_cued_track(path)
+        return
+    upcoming = _next_song_index(_pos)
     if upcoming is not None:
         deck_orchestrator.set_cued_track(_items[upcoming]["path"])
 

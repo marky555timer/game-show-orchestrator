@@ -1,0 +1,182 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Cliffhanger Host</title>
+<link rel="icon" type="image/png" href="/art/icon-48.png">
+<!-- Simple Cliffhanger host screen (drivers/cliffhanger_engine.py). Opened by the admin page's START
+     CHALLENGE. Only the year box, SUBMIT and BACK: it never shows the song or its year.
+     2026-11-22: a Cliffhanger ROUND opens this page on its PREGAME panel first -- FADE MUSIC / RAISE
+     VOLUME, the team (lowest night score first) and BEGIN GAME -- which then turns into the guess screen. -->
+<style>
+  :root { color-scheme: dark; }
+  * { box-sizing: border-box; }
+  body { margin: 0; padding: 16px; background: #0b0b0d; color: #f2f2f2;
+         font-family: -apple-system, Segoe UI, Roboto, sans-serif; }
+  .wrap { max-width: 480px; margin: 0 auto; display: flex; flex-direction: column; gap: 16px; }
+  h1 { font-size: 1.2rem; letter-spacing: .1em; color: #ffd228; margin: 0; text-align: center; }
+  #status { text-align: center; font-size: 1.05rem; color: #ccc; min-height: 2.6em; }
+  #year { width: 100%; font-size: 3rem; text-align: center; padding: 14px; border-radius: 14px;
+          border: 2px solid #444; background: #16161a; color: #fff; }
+  #year:disabled { opacity: .35; }
+  button { width: 100%; font-size: 1.4rem; font-weight: 700; padding: 18px; border-radius: 14px;
+           border: none; cursor: pointer; }
+  #submit { background: #1f8f3a; color: #fff; }
+  #submit:disabled { background: #2a2a2e; color: #777; cursor: default; }
+  #back { background: #2a2a2e; color: #ddd; font-size: 1.1rem; padding: 14px; }
+  #song { text-align: center; font-size: 1.15rem; color: #8cdcff; min-height: 1.4em; }
+  #song .artist { color: #aaa; }
+  #msg { text-align: center; color: #ff8a80; min-height: 1.3em; }
+  .hidden { display: none !important; }
+  #pre { display: flex; flex-direction: column; gap: 14px; }
+  #pre-sub { text-align: center; color: #ccc; }
+  #fade { background: #2d4f8a; color: #fff; }
+  #fade.faded { background: #8a5a12; }
+  #vol { text-align: center; color: #aaa; font-size: .95rem; min-height: 1.2em; }
+  #team { width: 100%; font-size: 1.25rem; padding: 14px; border-radius: 14px; border: 2px solid #444;
+          background: #16161a; color: #fff; }
+  #begin { background: #1f8f3a; color: #fff; font-size: 1.6rem; padding: 22px; }
+  #begin:disabled { background: #2a2a2e; color: #777; cursor: default; }
+  label.small { color: #aaa; font-size: .9rem; margin-bottom: -8px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>CLIFFHANGER</h1>
+  <!-- Pregame control panel (a Cliffhanger round, before BEGIN GAME) -->
+  <div id="pre" class="hidden">
+    <div id="pre-sub">Pregame</div>
+    <button id="fade" onclick="toggleFade()">FADE MUSIC</button>
+    <div id="vol"></div>
+    <label class="small" for="team">Team (lowest score first)</label>
+    <select id="team"></select>
+    <button id="begin" onclick="beginGame()">BEGIN GAME</button>
+  </div>
+  <!-- Operate mode: the guess screen -->
+  <div id="op">
+    <div id="status">Loading…</div>
+    <div id="song"></div>
+    <input id="year" type="number" inputmode="numeric" min="1900" max="2100" placeholder="Year" autocomplete="off">
+    <button id="submit" onclick="submitGuess()">SUBMIT</button>
+  </div>
+  <div id="msg"></div>
+  <button id="back" onclick="location.href='/'">BACK</button>
+</div>
+<script>
+let lastKey = '', sending = false;
+const PHASE = {
+  buzz: 'Wrong!',
+  climb: 'He is climbing…',
+  between: 'Next song coming up…',
+  fall: 'Over the edge!',
+};
+let preId = '', teamsKey = '', preBusy = false, lastPre = null;
+function post(url, body) {
+  return fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify(body || {}) }).then(r => r.json());
+}
+function renderPregame(p) {
+  lastPre = p;
+  document.getElementById('pre-sub').textContent = (p.round ? p.round + ' · ' : '') + 'Pregame';
+  const fade = document.getElementById('fade');
+  fade.textContent = p.faded ? 'RAISE VOLUME' : 'FADE MUSIC';
+  fade.classList.toggle('faded', !!p.faded);
+  fade.disabled = preBusy;
+  document.getElementById('vol').textContent = p.faded
+    ? `Music at ${p.volume}% (was ${p.volume_before}%)` : `Music at ${p.volume}%`;
+  const sel = document.getElementById('team');
+  const key = p.id + '|' + JSON.stringify(p.teams.map(t => [t.player_id, t.name, t.night]));
+  if (key !== teamsKey && document.activeElement !== sel) {
+    const keep = p.id === preId ? sel.value : '';     // a new pregame: back to the lowest score
+    teamsKey = key;
+    sel.textContent = '';
+    p.teams.forEach(t => {
+      const o = document.createElement('option');
+      o.value = t.player_id; o.textContent = `${t.name} — ${t.night} pts`;
+      sel.append(o);
+    });
+    if (!p.teams.length) {
+      const o = document.createElement('option'); o.value = ''; o.textContent = 'No teams have joined';
+      sel.append(o);
+    }
+    sel.value = p.teams.some(t => t.player_id === keep) ? keep : (p.teams[0] ? p.teams[0].player_id : '');
+  }
+  preId = p.id;
+  document.getElementById('begin').disabled = preBusy || !p.teams.length;
+}
+async function toggleFade() {
+  if (!lastPre || preBusy) return;
+  preBusy = true;
+  try {
+    const r = await post(lastPre.faded ? '/api/solo/cliff/pregame/raise' : '/api/solo/cliff/pregame/fade');
+    document.getElementById('msg').textContent = r.ok ? '' : (r.message || 'Could not change the volume.');
+  } catch (e) { document.getElementById('msg').textContent = 'Could not reach the show.'; }
+  preBusy = false;
+  refresh();
+}
+async function beginGame() {
+  const pid = document.getElementById('team').value;
+  if (!pid || preBusy) return;
+  preBusy = true; document.getElementById('begin').disabled = true;
+  try {
+    const r = await post('/api/solo/cliff/pregame/begin', { player_id: pid });
+    document.getElementById('msg').textContent = r.ok ? '' : (r.message || 'Could not begin the game.');
+  } catch (e) { document.getElementById('msg').textContent = 'Could not reach the show.'; }
+  preBusy = false;
+  refresh();
+}
+async function refresh() {
+  let d;
+  try { d = await (await fetch('/api/solo/cliff/host', { cache: 'no-store' })).json(); } catch (e) { return; }
+  const pre = d && !d.cliff && d.pregame;
+  document.getElementById('pre').classList.toggle('hidden', !pre);
+  document.getElementById('op').classList.toggle('hidden', !!pre);
+  if (pre) { renderPregame(pre); return; }
+  const c = d && d.cliff, st = document.getElementById('status');
+  const yr = document.getElementById('year'), sb = document.getElementById('submit');
+  if (!c) {
+    st.textContent = 'No Cliffhanger running.';
+    document.getElementById('song').textContent = '';
+    yr.disabled = sb.disabled = true;
+    return;
+  }
+  const head = `${d.team ? d.team + ' · ' : ''}Song ${c.song} of ${c.songs} · ${c.total} of ${c.spaces} spaces`;
+  let line = PHASE[c.phase] || '';
+  if (c.phase === 'listen') line = 'Type their guess.';
+  if (c.phase === 'result') line = c.result === 'win' ? 'SAFE! They win.' : 'He fell. They lose.';
+  st.innerHTML = head + '<br>' + line;
+  // For the host only (this page is admin-only): which song is playing. Never its year.
+  const sg = document.getElementById('song');
+  sg.textContent = '';
+  if (c.title) {
+    const t = document.createElement('div'); t.textContent = `“${c.title}”`;
+    const ar = document.createElement('div'); ar.className = 'artist'; ar.textContent = c.artist || '';
+    sg.append(t, ar);
+  }
+  const listening = c.phase === 'listen';
+  yr.disabled = !listening;
+  sb.disabled = !listening || sending;
+  const key = c.song + c.phase;
+  if (listening && key !== lastKey) { yr.value = ''; document.getElementById('msg').textContent = ''; yr.focus(); }
+  lastKey = key;
+}
+async function submitGuess() {
+  const year = parseInt(document.getElementById('year').value, 10);
+  const msg = document.getElementById('msg');
+  if (!(year >= 1900 && year <= 2100)) { msg.textContent = 'Enter a year, e.g. 1984.'; return; }
+  sending = true; document.getElementById('submit').disabled = true;
+  try {
+    const r = await (await fetch('/api/solo/cliff/guess', { method: 'POST', headers: { 'Content-Type': 'application/json' },
+                                                           body: JSON.stringify({ year }) })).json();
+    msg.textContent = r.ok ? '' : (r.message || 'Could not submit.');   // r.message would say the years off: not shown
+  } catch (e) { msg.textContent = 'Could not reach the show.'; }
+  sending = false;
+  refresh();
+}
+document.getElementById('year').addEventListener('keydown', e => { if (e.key === 'Enter') submitGuess(); });
+setInterval(refresh, 1000);
+refresh();
+</script>
+</body>
+</html>

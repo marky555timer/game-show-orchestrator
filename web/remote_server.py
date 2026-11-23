@@ -54,6 +54,9 @@ from drivers import accent_engine
 from drivers import light_prefs_engine
 from drivers import relay_engine
 from drivers import medley_game
+from drivers import player_profile
+from drivers import results_archive
+from drivers import category_round_engine
 from drivers import track_record
 from drivers import wled_fx_meta
 from graphics.animations import deal_panel_animations
@@ -92,7 +95,8 @@ _JOYASSIGN_HTML_PATH = os.path.join(_STATIC_DIR, "joyassign.html")
 _DESIGNER_HTML_PATH = os.path.join(_STATIC_DIR, "designer.html")
 _SIM_HTML_PATH = os.path.join(_STATIC_DIR, "show_sim.html")
 _BUTTONS_HTML_PATH = os.path.join(_STATIC_DIR, "buttons.html")
-_ADMIN_PAGES = {"/", "/setup", "/designer", "/library", "/questions", "/medley-edit", "/joyassign", "/countdown", "/buttons"}
+_CLIFF_HTML_PATH = os.path.join(_STATIC_DIR, "cliff.html")
+_ADMIN_PAGES = {"/", "/setup", "/designer", "/library", "/questions", "/medley-edit", "/joyassign", "/countdown", "/buttons", "/cliff"}
 
 app = FastAPI(title="Game Show Orchestrator Remote") if FastAPI else None
 
@@ -143,6 +147,12 @@ if app is not None:
 # docstring. 8192 bytes matches classic Shoutcast's own default interval,
 # the value the widest range of players/car stereos are tested against.
 _ICY_METAINT = 8192
+
+
+def _night_final():
+    """Phones show Final Scores + the shareable results link from the outro on, and keep showing them
+    through the after-show background music (2026-11-22) -- until an encore or the next show."""
+    return state.show_phase == "outro" or bool(state.show_phase == "live" and state.show_background)
 
 
 def _phone_text(q):
@@ -316,16 +326,20 @@ if app is not None:
         direction: int  # -1 left, 0 stop, 1 right
 
     class PlayerJoin(BaseModel):
-        initials: str
+        initials: str | None = None      # older phones; the team name now
+        name: str | None = None
+        emoji: str | None = None
         avatar_color: str | None = None
 
     class PlayerRename(BaseModel):
         player_id: str
-        initials: str
+        initials: str | None = None
+        name: str | None = None
 
     class PlayerAvatarSet(BaseModel):
         player_id: str
-        avatar_color: str
+        avatar_color: str | None = None
+        emoji: str | None = None
 
     class PlayerSelect(BaseModel):
         player_id: str
@@ -395,6 +409,26 @@ if app is not None:
     def failover_js():
         return FileResponse(os.path.join(_STATIC_DIR, "failover.js"), media_type="text/javascript")
 
+    # Artwork (2026-11-12): logo, app icon and the mascot avatar sprite strips in
+    # web/static/art. Open to guests (web/remote_auth.py) -- /play draws with them.
+    @app.get("/art/{name}")
+    def art_file(name: str):
+        ok = (name.rsplit(".", 1)[-1] in ("webp", "png", "svg")
+              and all(ch.isalnum() or ch in "._-" for ch in name) and ".." not in name)
+        path = os.path.join(_STATIC_DIR, "art", name)
+        if not ok or not os.path.isfile(path):
+            return JSONResponse({"ok": False}, status_code=404)
+        return FileResponse(path, headers={"Cache-Control": "public, max-age=3600"})
+
+    # The round winner's phone plays bigWin.wav (2026-11-21, play.html::playWinSound). Under
+    # /api/player/ so guests can fetch it (web/remote_auth.py).
+    @app.get("/api/player/sfx/bigwin")
+    def player_sfx_bigwin():
+        path = config.resource_path("audio", "sound_effects", "bigWin.wav")
+        if not os.path.isfile(path):
+            return JSONResponse({"ok": False}, status_code=404)
+        return FileResponse(path, media_type="audio/wav", headers={"Cache-Control": "public, max-age=86400"})
+
     @app.get("/setup")
     def setup_page():
         # Trivia Night show flow (2026-08-13): pre-show configuration --
@@ -446,15 +480,21 @@ if app is not None:
 
     @app.post("/api/player/join")
     def player_join(body: PlayerJoin):
-        initials = (body.initials or "").strip().upper()[:3] or "???"
-        avatar_color = body.avatar_color if body.avatar_color in state.AVATAR_COLORS else state.AVATAR_COLORS[0]
+        name, initials = player_profile.make_names(body.name if body.name is not None else body.initials)
+        # The ring colour is handed out round-robin; the emoji is the player's own pick.
+        avatar_color = (body.avatar_color if body.avatar_color in state.AVATAR_COLORS
+                        else state.AVATAR_COLORS[len(state.quiz_players) % len(state.AVATAR_COLORS)])
+        emoji = player_profile.clean_emoji(body.emoji)
         player_id = uuid.uuid4().hex
         state.quiz_players[player_id] = {
-            "initials": initials, "selected_index": -1, "locked": False, "score": 0,
-            "avatar_color": avatar_color,
+            "name": name, "initials": initials, "emoji": emoji,
+            "selected_index": -1, "locked": False, "score": 0,
+            "avatar_color": avatar_color, "streak": 0, "best_streak": 0,
+            "correct": 0, "asked": 0, "last_points": 0, "last_seen": time.time(),
         }
-        print(f"[MULTIPLAYER QUIZ] '{initials}' joined ({len(state.quiz_players)} players signed up).")
-        return {"ok": True, "player_id": player_id, "initials": initials, "avatar_color": avatar_color}
+        print(f"[MULTIPLAYER QUIZ] '{name}' {emoji} joined ({len(state.quiz_players)} teams signed up).")
+        return {"ok": True, "player_id": player_id, "name": name, "initials": initials,
+                "emoji": emoji, "avatar_color": avatar_color}
 
     @app.get("/api/audio/stream")
     async def audio_stream(request: Request):
@@ -547,8 +587,91 @@ if app is not None:
             return {"ok": False}
         return {
             "ok": True, "initials": player["initials"], "score": player["score"],
+            "name": player.get("name") or player["initials"],
+            "emoji": player.get("emoji") or player_profile.DEFAULT_EMOJI,
             "avatar_color": player.get("avatar_color", state.AVATAR_COLORS[0]),
         }
+
+    # --- Reclaim a team + host merge (2026-11-18) -------------------------------
+    # A phone that lost its saved identity (the tunnel address changed, a tab was
+    # closed) sees the teams nobody is using and can take one back. The id never
+    # changes, so score, streak and history stay intact. Scores are not listed.
+    def _away_seconds(p, now):
+        ls = p.get("last_seen")
+        return (now - ls) if ls else 1e9    # never seen since a restart/restore
+
+    @app.get("/api/player/unclaimed")
+    def player_unclaimed():
+        now = time.time()
+        teams = [{"player_id": pid, "name": p.get("name") or p.get("initials", "Team"),
+                  "emoji": p.get("emoji") or player_profile.DEFAULT_EMOJI,
+                  "avatar_color": p.get("avatar_color", state.AVATAR_COLORS[0])}
+                 for pid, p in state.quiz_players.items()
+                 if _away_seconds(p, now) >= config.RECLAIM_AWAY_SECONDS]
+        teams.sort(key=lambda t: t["name"].lower())
+        return {"ok": True, "teams": teams[:40]}
+
+    class PlayerClaim(BaseModel):
+        player_id: str
+
+    @app.post("/api/player/claim")
+    def player_claim(body: PlayerClaim):
+        p = state.quiz_players.get(body.player_id)
+        if p is None:
+            return {"ok": False, "reason": "gone"}
+        now = time.time()
+        if _away_seconds(p, now) < config.RECLAIM_AWAY_SECONDS:
+            return {"ok": False, "reason": "in use"}
+        p["last_seen"] = now
+        p["away"] = False
+        print(f"[MULTIPLAYER QUIZ] '{p.get('name')}' reclaimed by a phone.")
+        return {"ok": True, "player_id": body.player_id, "name": p.get("name") or p.get("initials"),
+                "initials": p.get("initials", ""), "emoji": p.get("emoji") or player_profile.DEFAULT_EMOJI,
+                "avatar_color": p.get("avatar_color", state.AVATAR_COLORS[0]), "score": p.get("score", 0)}
+
+    @app.get("/api/teams")
+    def teams_list():
+        now = time.time()
+        rows = []
+        for pid, p in state.quiz_players.items():
+            ls = p.get("last_seen")
+            rows.append({"player_id": pid, "name": p.get("name") or p.get("initials", "Team"),
+                         "emoji": p.get("emoji") or player_profile.DEFAULT_EMOJI,
+                         "score": int(p.get("score", 0) or 0),
+                         "tonight": int(state.show_cumulative_scores.get(pid, 0) or 0),
+                         "away_seconds": (round(now - ls) if ls else None)})
+        rows.sort(key=lambda r: -(r["score"] + r["tonight"]))
+        return {"ok": True, "teams": rows}
+
+    class TeamMerge(BaseModel):
+        from_id: str
+        into_id: str
+
+    @app.post("/api/teams/merge")
+    def teams_merge(body: TeamMerge):
+        a, b = state.quiz_players.get(body.from_id), state.quiz_players.get(body.into_id)
+        if a is None or b is None or body.from_id == body.into_id:
+            return {"ok": False, "reason": "pick two different teams"}
+        for k in ("score", "correct", "asked"):
+            b[k] = int(b.get(k, 0) or 0) + int(a.get(k, 0) or 0)
+        b["best_streak"] = max(int(b.get("best_streak", 0) or 0), int(a.get("best_streak", 0) or 0))
+        b["streak"] = max(int(b.get("streak", 0) or 0), int(a.get("streak", 0) or 0))
+        cs = state.show_cumulative_scores
+        if body.from_id in cs:
+            cs[body.into_id] = int(cs.get(body.into_id, 0) or 0) + int(cs.pop(body.from_id) or 0)
+        name_a, name_b = a.get("name"), b.get("name")
+        state.quiz_players.pop(body.from_id, None)
+        print(f"[MULTIPLAYER QUIZ] Host merged '{name_a}' into '{name_b}'.")
+        return {"ok": True, "into": name_b, "score": b["score"]}
+
+    class TeamRemove(BaseModel):
+        player_id: str
+
+    @app.post("/api/teams/remove")
+    def teams_remove(body: TeamRemove):
+        p = state.quiz_players.pop(body.player_id, None)
+        state.show_cumulative_scores.pop(body.player_id, None)
+        return {"ok": p is not None}
 
     @app.post("/api/player/rename")
     def player_rename(body: PlayerRename):
@@ -558,18 +681,22 @@ if app is not None:
         player = state.quiz_players.get(body.player_id)
         if player is None:
             return {"ok": False}
-        player["initials"] = (body.initials or "").strip().upper()[:3] or "???"
-        return {"ok": True, "initials": player["initials"]}
+        player["name"], player["initials"] = player_profile.make_names(
+            body.name if body.name is not None else body.initials)
+        return {"ok": True, "name": player["name"], "initials": player["initials"]}
 
     @app.post("/api/player/set-avatar")
     def player_set_avatar(body: PlayerAvatarSet):
         player = state.quiz_players.get(body.player_id)
         if player is None:
             return {"ok": False}
-        if body.avatar_color not in state.AVATAR_COLORS:
-            return {"ok": False, "reason": "bad avatar_color"}
-        player["avatar_color"] = body.avatar_color
-        return {"ok": True, "avatar_color": player["avatar_color"]}
+        if body.emoji is not None:
+            player["emoji"] = player_profile.clean_emoji(body.emoji, player.get("emoji") or player_profile.DEFAULT_EMOJI)
+        if body.avatar_color is not None:
+            if body.avatar_color not in state.AVATAR_COLORS:
+                return {"ok": False, "reason": "bad avatar_color"}
+            player["avatar_color"] = body.avatar_color
+        return {"ok": True, "avatar_color": player.get("avatar_color"), "emoji": player.get("emoji")}
 
     def _build_round_roster():
         """Per-player LIVE status for the round-roster UI shown on both
@@ -623,8 +750,11 @@ if app is not None:
                 status = "no_answer"
             roster.append({
                 "player_id": player_id, "initials": player["initials"],
+                "name": player.get("name") or player["initials"],
+                "emoji": player.get("emoji") or player_profile.DEFAULT_EMOJI,
                 "avatar_color": player.get("avatar_color", state.AVATAR_COLORS[0]),
                 "score": player["score"], "status": status,
+                "streak": player.get("streak", 0),
             })
         return roster
 
@@ -684,6 +814,7 @@ if app is not None:
         win_message = ""
         winner_initials = ""
         winner_avatar_color = ""
+        winner_emoji = ""
         if state.win_sequence_active:
             # Pulled out as their own fields (2026-08-16, QUIZCADE avatar
             # feature) so play.html's win-screen celebration avatar doesn't
@@ -691,8 +822,9 @@ if app is not None:
             # during the win sequence, not just the winner's own, since the
             # celebration avatar shows for the whole room.
             winner = state.quiz_players.get(state.game_winner_player_id)
-            winner_initials = winner["initials"] if winner else "???"
+            winner_initials = (winner.get("name") or winner["initials"]) if winner else "???"
             winner_avatar_color = winner.get("avatar_color", state.AVATAR_COLORS[0]) if winner else ""
+            winner_emoji = (winner.get("emoji") or player_profile.DEFAULT_EMOJI) if winner else ""
             if player_id == state.game_winner_player_id:
                 win_message = "STAND UP! YOU WIN!"
             else:
@@ -700,7 +832,7 @@ if app is not None:
 
         # First-correct-answer bonus (mystery question only) -- shown once
         # graded, only to whoever earned it.
-        bonus_message = ("FIRST ONE RIGHT! BONUS POINT!"
+        bonus_message = (f"FIRST ONE RIGHT! +{config.FIRST_CORRECT_BONUS_POINTS} BONUS!"
                           if state.quiz_locked and player_id == state.round_bonus_player_id else "")
 
         # Post-win intermission (2026-08-11): overrides the normal waiting/
@@ -736,12 +868,23 @@ if app is not None:
         # top scorers, ranked descending, ties broken by join order.
         # player_id included so the client can bold its own row (item 28).
         # avatar_color (2026-08-16) lets the leaderboard show a swatch per row.
-        leaderboard = sorted(
+        ranked = sorted(
             ({"player_id": pid, "initials": p["initials"], "score": p["score"],
+              "name": p.get("name") or p["initials"],
+              "emoji": p.get("emoji") or player_profile.DEFAULT_EMOJI,
+              "streak": p.get("streak", 0),
               "avatar_color": p.get("avatar_color", state.AVATAR_COLORS[0])}
              for pid, p in state.quiz_players.items()),
             key=lambda p: p["score"], reverse=True,
-        )[:8]
+        )
+        # My rank is by tonight's total (finished games + this one), like the recap.
+        _totals = sorted(state.quiz_players, reverse=True,
+                         key=lambda pid: state.show_cumulative_scores.get(pid, 0) + state.quiz_players[pid]["score"])
+        my_rank = (_totals.index(player_id) + 1) if player_id in _totals else 0
+        leaderboard = ranked[:8]
+        _my_pos = next((i + 1 for i, p in enumerate(ranked) if p["player_id"] == player_id), 0)
+        if _my_pos > 8:
+            leaderboard = leaderboard[:7] + [dict(ranked[_my_pos - 1], rank=_my_pos)]  # always show me
 
         # "Waiting for the next song..." (mode DJ, no active round): give the
         # waiting screen something to do besides sit on the leaderboard --
@@ -774,7 +917,7 @@ if app is not None:
         if not active and state.mode != state.MODE_GAME and not _in_medley:
             title, artist = deck_orchestrator.get_now_playing()
             artist_key = str(artist).strip().lower()
-            mystery_pending = bool(artist_key) and artist_key not in state.asked_artists
+            mystery_pending = bool(artist_key) and state.factoid_track_key not in state.mystery_asked_songs
             if not mystery_pending and factoid_engine._looks_like_real_track(title, artist):
                 now_playing_title, now_playing_artist = title, artist
                 unasked = {q.get("question") for q in state.track_question_queue}
@@ -816,13 +959,42 @@ if app is not None:
             "correct_index": correct_index,
             "correction": correction,
             "win_message": win_message,
+            # this phone's team won the round: play bigWin.wav once (key = which round)
+            "you_won": bool(win_message) and player_id == state.game_winner_player_id,
+            "win_key": f"{state.show_session_id}-{len(state.round_results)}" if win_message else "",
             "winner_initials": winner_initials,
             "winner_avatar_color": winner_avatar_color,
+            "winner_emoji": winner_emoji,
             "bonus_message": bonus_message,
             "avatar_color": player.get("avatar_color", state.AVATAR_COLORS[0]),
+            "name": player.get("name") or player["initials"],
+            "emoji": player.get("emoji") or player_profile.DEFAULT_EMOJI,
+            "streak": player.get("streak", 0),
+            "streak_lost": player.get("streak_lost", 0) if state.quiz_locked else 0,
+            "my_points": player.get("last_points", 0) if state.quiz_locked else 0,
+            "points_min": player_profile.points_range(player_profile.round_multiplier())[0],
+            "points_max": player_profile.points_range(player_profile.round_multiplier())[1],
+            "first_bonus": config.FIRST_CORRECT_BONUS_POINTS,
+            "category": category_round_engine.public_view(),
+            "lobby_poll": _lobby_poll_view(player_id),
+            "social_handle": config.SOCIAL_HANDLE,
+            "my_rank": my_rank, "team_count": len(state.quiz_players),
+            "questions_asked": len(state.quiz_history),
+            "show_final": _night_final(),
+            "session_id": state.show_session_id,
+            "my_correct": player.get("correct", 0), "my_asked": player.get("asked", 0),
             "round_roster": _build_round_roster(),
             "intermission_active": state.intermission_active,
             "intermission_remaining_seconds": intermission_remaining,
+            "intermission_finishing": bool(state.intermission_active and state.intermission_finishing),
+            "last_round_board": (state.last_round_board[:10] if state.intermission_active else []),
+            "night_board": (_night_board() if state.intermission_active else []),
+            "last_round_number": state.last_round_number,
+            "last_round_reason": state.last_round_reason,
+            "solo": _solo_view(),
+            "price_round": _price_round_card(),
+            "round_name": state.round_name,
+            "round_number": state.round_index + 1,
             "score": player["score"],
             "remaining_seconds": remaining_seconds,
             "timeout_seconds": timeout_seconds,
@@ -833,6 +1005,118 @@ if app is not None:
             "now_playing_artist": now_playing_artist,
             "song_trivia": song_trivia,
         }
+
+    @app.get("/api/player/recap")
+    def player_recap(player_id: str):
+        """The night so far for one team: its tally, its rank, and every graded
+        question with what it picked and what was right ("View answers")."""
+        player = state.quiz_players.get(player_id)
+        if player is None:
+            return {"ok": False}
+        # Tonight's total = every finished game round plus the one in progress
+        # (the live score resets after each win; show_cumulative_scores keeps them).
+        def _total(pid, p):
+            return state.show_cumulative_scores.get(pid, 0) + p["score"]
+        ranked = sorted(state.quiz_players.items(), key=lambda kv: _total(*kv), reverse=True)
+        rank = next((i + 1 for i, (pid, _) in enumerate(ranked) if pid == player_id), 0)
+        answers = []
+        for h in state.quiz_history:
+            pick = h["picks"].get(player_id)
+            choices = h["choices"]
+            ci = h["correct_index"]
+            answers.append({
+                "n": h["n"], "question": h["question"], "category": h.get("category", ""),
+                "correct": choices[ci] if 0 <= ci < len(choices) else "",
+                "info": h.get("info", ""),
+                "yours": (choices[pick] if pick is not None and 0 <= pick < len(choices) else None),
+                "right": pick is not None and pick == ci,
+            })
+        asked = len(state.quiz_history)
+        right = sum(1 for a in answers if a["right"])
+        return {
+            "ok": True, "score": _total(player_id, player), "rank": rank, "teams": len(ranked),
+            "asked": asked, "correct": right,
+            "percent": round(100.0 * right / asked) if asked else 0,
+            "best_streak": player.get("best_streak", 0), "streak": player.get("streak", 0),
+            "final": _night_final(),
+            # permanent triviacade.com copy of tonight's results, once it's uploaded
+            "link": results_archive.site_link(state.show_session_id) if _night_final() else "",
+            "my_link": results_archive.site_link(state.show_session_id, player_id) if _night_final() else "",
+            "board": [{"rank": i + 1, "name": p.get("name") or p["initials"],
+                       "emoji": p.get("emoji") or player_profile.DEFAULT_EMOJI,
+                       "score": _total(pid, p), "me": pid == player_id}
+                      for i, (pid, p) in enumerate(ranked[:20])],
+            "answers": answers,
+        }
+
+    @app.get("/api/results/{session_id}")
+    def results_for_session(session_id: str, player_id: str = ""):
+        """A finished night's frozen results (drivers/results_archive.py): the
+        public board for anyone with the link, plus the caller's own answers."""
+        from drivers import results_archive
+        view = results_archive.public_view(session_id, player_id)
+        if view is None:
+            return {"ok": False}
+        return view
+
+    # --- Lobby poll (2026-11-17): stateless rotation, votes kept in memory ---
+    _poll_votes = {}   # bucket -> {player_id: option index}
+    _poll_t0 = time.time()
+
+    def _poll_entry(b):
+        """The poll for slot b: every poll once in list order, then only the
+        ones not marked "once" (a third tuple item of True) keep rotating."""
+        polls = config.LOBBY_POLLS
+        if b < len(polls):
+            e = polls[b]
+        else:
+            rest = [p for p in polls if not (len(p) > 2 and p[2])]
+            if not rest:
+                return None
+            e = rest[(b - len(polls)) % len(rest)]
+        return e[0], e[1]
+
+    def _poll_bucket():
+        n = len(config.LOBBY_POLLS)
+        if not n:
+            return None
+        b = int((time.time() - _poll_t0) // (config.LOBBY_POLL_MINUTES * 60))
+        for old in [k for k in _poll_votes if k < b - 2]:
+            _poll_votes.pop(old, None)
+        return b
+
+    def _lobby_poll_view(pid):
+        b = _poll_bucket()
+        if b is None:
+            return None
+        e = _poll_entry(b)
+        if e is None:
+            return None
+        q, opts = e
+        votes = _poll_votes.get(b, {})
+        counts = [0] * len(opts)
+        for v in votes.values():
+            if 0 <= v < len(opts):
+                counts[v] += 1
+        return {"id": b, "question": q, "options": opts, "counts": counts, "mine": votes.get(pid, -1)}
+
+    class PollVote(BaseModel):
+        player_id: str
+        poll_id: int
+        index: int
+
+    @app.post("/api/player/poll-vote")
+    def player_poll_vote(body: PollVote):
+        if body.player_id not in state.quiz_players or body.poll_id != _poll_bucket():
+            return {"ok": False}
+        e = _poll_entry(body.poll_id)
+        if e is None:
+            return {"ok": False}
+        q, opts = e
+        if not (0 <= body.index < len(opts)):
+            return {"ok": False}
+        _poll_votes.setdefault(body.poll_id, {})[body.player_id] = body.index
+        return {"ok": True}
 
     @app.post("/api/player/select")
     def player_select(body: PlayerSelect):
@@ -896,7 +1180,8 @@ if app is not None:
         # First right answer: final the moment it arrives (nothing arriving
         # later can beat it), so the winner's phone hears now and can show
         # the bonus right at the reveal.
-        if (state.factoid_category == "identify_band" and not state.round_first_correct_pid
+        from drivers import round_engine
+        if (round_engine.first_bonus_on(state.factoid_category) and not state.round_first_correct_pid
                 and player["selected_index"] == state.factoid_correct_index):
             state.round_first_correct_pid = body.player_id
         return {"ok": True, "first": player_id_is_first(body.player_id)}
@@ -1955,6 +2240,13 @@ if app is not None:
         from drivers import failover_engine
         return failover_engine.request_take()
 
+    @app.post("/api/failover/resume-last")
+    def failover_resume_last():
+        # Setup page RESUME LAST SHOW: this machine picks its own last,
+        # unfinished show back up on the next song (after a restart/power cut).
+        from drivers import failover_engine
+        return failover_engine.request_resume_last()
+
     @app.post("/api/autoadvance/linger")
     def autoadvance_linger(body: LingerSet):
         # Remote slider: how long to stay on a song after its quiz is done
@@ -1973,6 +2265,10 @@ if app is not None:
     @app.post("/api/transport/next")
     def transport_next():
         # Mirrors the physical gamepad's X- axis (DJ mode "Next Track").
+        from drivers import round_engine
+        if round_engine.ff_intro_active():
+            round_engine.ff_intro_skip("NEXT TRACK (admin)")   # Fastest Finger intro: start the medley
+            return {"ok": True}
         deck_orchestrator.trigger_track_move("next")
         auto_dj_engine.notify_manual_track_move()
         return {"ok": True}
@@ -2413,6 +2709,18 @@ if app is not None:
     def blackout_status():
         return {"active": state.blackout_active}
 
+    @app.get("/api/pause")
+    def pause_status():
+        return {"paused": state.show_paused}
+
+    @app.post("/api/pause/toggle")
+    def pause_toggle():
+        # Admin pause/resume: music + show clock held, lights stay on.
+        from drivers import blackout_engine
+        paused = blackout_engine.toggle_pause()
+        print(f"[WEB REMOTE] Show {'PAUSED' if paused else 'RESUMED'}.")
+        return {"paused": paused}
+
     @app.post("/api/blackout/toggle")
     def blackout_toggle():
         # Admin instant blackout/mute -- see drivers/blackout_engine.py.
@@ -2812,6 +3120,34 @@ if app is not None:
         handle_quiz_gate_button()
         return {"ok": True}
 
+    @app.get("/api/category/list")
+    def category_list():
+        return {"ok": True, "categories": category_round_engine.available_categories(),
+                "active": state.category_round, "auto": state.category_auto,
+                "default_songs": config.CATEGORY_ROUND_SONGS}
+
+    class CategoryStart(BaseModel):
+        key: str
+        songs: int | None = None
+
+    @app.post("/api/category/start")
+    def category_start(body: CategoryStart):
+        ok, message = category_round_engine.start(body.key, body.songs)
+        return {"ok": ok, "message": message, "active": state.category_round}
+
+    @app.post("/api/category/stop")
+    def category_stop():
+        category_round_engine.stop("stopped by the operator")
+        return {"ok": True, "active": None}
+
+    class CategoryAuto(BaseModel):
+        on: bool
+
+    @app.post("/api/category/auto")
+    def category_auto_set(body: CategoryAuto):
+        state.category_auto = bool(body.on)
+        return {"ok": True, "auto": state.category_auto}
+
     @app.post("/api/game/win-score")
     def game_win_score_set(body: WinScoreSet):
         state.game_win_score = max(1, int(body.score))
@@ -2964,6 +3300,144 @@ if app is not None:
         show_engine.back_to_menu()
         return {"ok": True}
 
+    def _price_round_card():
+        try:
+            from drivers import round_engine
+            return round_engine.price_round_card()
+        except Exception:
+            return None
+
+
+    def _night_board():
+        """Every team's NIGHT total (all rounds + solo challenges), for the phones' intermission."""
+        from drivers import player_profile
+        rows = sorted(((pid, p, state.show_cumulative_scores.get(pid, 0) + p.get("score", 0))
+                       for pid, p in state.quiz_players.items()), key=lambda r: r[2], reverse=True)
+        return [{"player_id": pid, "rank": i + 1, "score": night,
+                 "name": p.get("name") or p.get("initials", "???"),
+                 "emoji": p.get("emoji") or player_profile.DEFAULT_EMOJI,
+                 "avatar_color": p.get("avatar_color", state.AVATAR_COLORS[0])}
+                for i, (pid, p, night) in enumerate(rows[:12]) if night > 0]
+
+    def _solo_view():
+        try:
+            from drivers import solo_challenge
+            return solo_challenge.public_view()
+        except Exception:
+            return None
+
+    def _medley_default_clips():
+        try:
+            from drivers import medley_engine
+            return int(medley_engine.options().get("songs") or config.MEDLEY_DEFAULT_SONGS)
+        except Exception:
+            return config.MEDLEY_DEFAULT_SONGS
+
+    class SoloStart(BaseModel):
+        player_id: str
+        challenge: str = "simon"
+
+    @app.get("/api/solo/status")
+    def solo_status():
+        from drivers import solo_challenge
+        return solo_challenge.status()
+
+    @app.post("/api/solo/start")
+    def solo_start(body: SoloStart):
+        # Solo challenge (drivers/solo_challenge.py): the host picks the team; all or nothing +/-1500.
+        from drivers import solo_challenge
+        ok, msg = solo_challenge.start(body.challenge, body.player_id)
+        return {"ok": ok, "message": msg}
+
+    class CliffGuess(BaseModel):
+        year: int
+        actual: Optional[int] = None
+
+    @app.post("/api/solo/cliff/guess")
+    def solo_cliff_guess(body: CliffGuess):
+        from drivers import cliffhanger_engine
+        ok, msg = cliffhanger_engine.guess(body.year, body.actual)
+        return {"ok": ok, "message": msg}
+
+    @app.get("/cliff")
+    def cliff_page():
+        # Simple Cliffhanger host page: the year box, SUBMIT, BACK. Never shows the answer.
+        return FileResponse(_CLIFF_HTML_PATH)
+
+    @app.get("/api/solo/cliff/host")
+    def solo_cliff_host():
+        from drivers import cliffhanger_engine, solo_challenge
+        v = solo_challenge.public_view()
+        return {"ok": True, "cliff": cliffhanger_engine.host_view(), "team": (v or {}).get("team", ""),
+                "pregame": cliffhanger_engine.pregame_view()}
+
+    # Cliffhanger round pregame (2026-11-22): /cliff's pregame control panel.
+    @app.post("/api/solo/cliff/pregame/fade")
+    def solo_cliff_pregame_fade():
+        from drivers import cliffhanger_engine
+        ok, msg = cliffhanger_engine.pregame_fade()
+        return {"ok": ok, "message": msg}
+
+    @app.post("/api/solo/cliff/pregame/raise")
+    def solo_cliff_pregame_raise():
+        from drivers import cliffhanger_engine
+        ok, msg = cliffhanger_engine.pregame_raise()
+        return {"ok": ok, "message": msg}
+
+    class CliffBegin(BaseModel):
+        player_id: str = ""
+
+    @app.post("/api/solo/cliff/pregame/begin")
+    def solo_cliff_pregame_begin(body: CliffBegin):
+        from drivers import cliffhanger_engine
+        ok, msg = cliffhanger_engine.pregame_begin(body.player_id)
+        return {"ok": ok, "message": msg}
+
+    @app.post("/api/solo/cliff/next")
+    def solo_cliff_next():
+        from drivers import cliffhanger_engine
+        ok, msg = cliffhanger_engine.next_song()
+        return {"ok": ok, "message": msg}
+
+    @app.post("/api/solo/cliff/reroll")
+    def solo_cliff_reroll():
+        from drivers import cliffhanger_engine
+        return {"ok": cliffhanger_engine.reroll()}
+
+    @app.post("/api/solo/cancel")
+    def solo_cancel():
+        from drivers import solo_challenge
+        return {"ok": solo_challenge.cancel()}
+
+    @app.get("/api/rounds/status")
+    def rounds_status():
+        from drivers import round_engine
+        return {"ok": True, **round_engine.status()}
+
+    @app.post("/api/rounds/end")
+    def rounds_end():
+        # END ROUND: the leader on raw points wins it; celebration, then the intermission.
+        from drivers import round_engine
+        if state.show_phase != "live":
+            return {"ok": False, "reason": "No show is live."}
+        ok = round_engine.end_round("operator")
+        return {"ok": ok, "reason": None if ok else "A round is already ending / in intermission."}
+
+    @app.post("/api/rounds/next")
+    def rounds_next():
+        # START NEXT ROUND: ends the intermission now.
+        if not state.intermission_active:
+            return {"ok": False, "reason": "Not in an intermission."}
+        from drivers import win_sequence_engine
+        win_sequence_engine._end_intermission("operator")
+        return {"ok": True}
+
+    @app.post("/api/show/new-game")
+    def show_new_game():
+        # Admin START NEW GAME: stop everything, fade the music, blank panels, back to Setup.
+        show_engine.new_game_setup()
+        return {"ok": True}
+
     # ------------------------------------------
     # SHOW DESIGNER (2026-10-17): saved shows = playlists. Desktop page
     # web/static/designer.html; storage drivers/show_library.py.
@@ -2988,6 +3462,7 @@ if app is not None:
         low: Optional[str] = None
         high: Optional[str] = None
         items: Optional[list[dict]] = None
+        rounds: Optional[list[dict]] = None
 
     class DecadeTag(BaseModel):
         filename: str
@@ -2999,7 +3474,13 @@ if app is not None:
         return {"ok": True, "shows": show_library.all_shows("created"),
                 "selected": state.show_selected, "last_played": last["name"] if last else "",
                 "running": show_runner.running_name(), "decades": show_library.DECADES,
-                "wheel_decades": sorted(config.MUSIC_DECADES), "name_max": show_library.NAME_MAX}
+                "wheel_decades": sorted(config.MUSIC_DECADES), "name_max": show_library.NAME_MAX,
+                # round list (docs/rounds_design.md): defaults the designer shows for blank fields
+                "round_types": list(show_library.ROUND_TYPES), "default_goal": state.game_win_score,
+                "round_points_per_song": config.ROUND_POINTS_PER_SONG_ESTIMATE,
+                "round_safety_songs": config.ROUND_SAFETY_SONGS,
+                "round_price_questions": config.ROUND_PRICE_QUESTIONS_DEFAULT,
+                "round_medley_clips": _medley_default_clips()}
 
     @app.get("/api/shows/get")
     def shows_get(name: str):

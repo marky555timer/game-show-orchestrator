@@ -76,7 +76,7 @@ def play(path, *, block=False):
     whatever's calling it. Returns the subprocess.Popen (or None if aplay
     isn't available), mainly so callers/tests can check .poll()/.returncode."""
     global _current_proc
-    if _APLAY is None or state.blackout_active:
+    if _APLAY is None or state.blackout_active or state.show_paused:
         return None
     proc = subprocess.Popen(
         [_APLAY, "-q", "-D", _DEVICE, path],
@@ -207,7 +207,7 @@ def play_replacing(path, *, loop=False, then=()):
     if _APLAY is None:
         return False
     stop_current()
-    if state.blackout_active:
+    if state.blackout_active or state.show_paused:
         return True
     _max_volume_once()
     path = _left_only(path)

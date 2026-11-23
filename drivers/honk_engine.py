@@ -110,7 +110,7 @@ def honk(reason="", super_blast=False):
     global _running
     if not config.HONK_ENABLED:
         return False, "honk is turned off (config.HONK_ENABLED)"
-    if state.blackout_active or not state.sfx_enabled:
+    if state.blackout_active or state.show_paused or not state.sfx_enabled:
         return False, "muted"
     if not relay_engine.available():
         return False, "relay board not connected"

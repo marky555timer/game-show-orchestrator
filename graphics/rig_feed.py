@@ -22,6 +22,7 @@ import numpy as np
 import pygame
 
 import config
+from state import state
 from drivers import accent_engine, simon_hardware, wled_engine
 from graphics import rig_view
 
@@ -64,6 +65,45 @@ def _stop_viewer():
 atexit.register(_stop_viewer)
 
 
+def _question_up():
+    """A question (or its answer reveal) is on screen: the TV board must not
+    twinkle (config.RIG_FLARES_*), since a twinkle can read as a hint."""
+    if state.mode != state.MODE_DJ or state.price_game_active or state.mystery_active:
+        return True
+    return bool(state.factoid_choices and (not state.quiz_locked
+                or time.time() - state.quiz_graded_at < config.QUIZ_TF_CORRECTION_HOLD_SECONDS))
+
+
+def _edge_mode(now):
+    """Which marquee edge effect is running, for the TV board's flares
+    (config.RIG_FLARES_*): "wipe" (the get-ready band, the song-change wipes),
+    "chase" (the correct-answer chase), "sheen" (a question is open and the lit
+    answer panels shimmer), else "" -- and with "" the board draws no flares."""
+    try:
+        # Show open: star flares on the moving bulbs of the outer-ring chase (before "Let's Play" cuts in).
+        if (state.show_phase == "intro" and not state.show_wheel_started_at
+                and now - state.show_phase_started_at < config.SHOW_INTRO_LETS_PLAY_AT_SECONDS):
+            return "intro"
+        # The white line that zooms across as the GET READY banner arrives (only its first
+        # moments: the banner's own dancing title strip afterwards must not flare).
+        if state.announcement_banner_from <= now < state.announcement_banner_from + 1.2 \
+                and state.announcement_banner_text_override == "GET READY":
+            return "wipe"
+        start = state.marquee_transition_start
+        if start:
+            end = max(state.marquee_reveal_at, start + config.MARQUEE_TRANSITION_SECONDS) \
+                + config.TRANSITION_REVEAL_SECONDS * 2.0
+            if start - 0.2 <= now < end:
+                return "wipe"
+        if wled_engine._graded_round_celebration():
+            return "chase"
+        if state.factoid_choices and not state.quiz_locked:
+            return "sheen"
+    except Exception:
+        pass
+    return ""
+
+
 def send(matrix_surface):
     global _last_send
     mono = time.monotonic()
@@ -75,7 +115,9 @@ def send(matrix_surface):
     lit = np.asarray(red) > 0
     del red
     try:
-        _sock.sendto(rig_view.pack(lit, wled_engine._pixels, accent_engine.view_state(),
+        from drivers import cliffhanger_engine
+        _sock.sendto(rig_view.pack(lit, wled_engine._pixels, dict(accent_engine.view_state(), question=_question_up(), edge=_edge_mode(time.time()),
+                                                                   cliff=cliffhanger_engine.view()),
                                    simon_hardware.led_states()), _addr)
     except OSError:
         pass   # window not up yet / buffer full: the next frame replaces this one

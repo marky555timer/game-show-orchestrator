@@ -483,8 +483,9 @@ def td_terrain(surface, rect, t, seed=0.0):
         pygame.draw.lines(surface, ON, False, pts)
 
 
+# RETIRED 2026-11-18 (operator: twinkling stars on the answer panels can hint at an answer): td_starfield is still defined, just no longer dealt.
 ANIMATIONS = [
-    td_plasma, td_xor_rings, td_metaballs, td_starfield, td_cube, td_tunnel,
+    td_plasma, td_xor_rings, td_metaballs, td_cube, td_tunnel,
     td_rotozoom, td_life, td_fire, td_gauges, td_needles, td_scope, td_radar,
     td_helix, td_raster, td_terrain,
 ]

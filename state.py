@@ -93,7 +93,22 @@ class State:
         # scorecard) falls back to the original single-shared-answer
         # behavior in that case, so the game works identically whether zero
         # or fifty phones are connected.
+        # 2026-11-15: players are TEAMS. "name" is the team name as typed (shown
+        # on phones), "initials" the LED-safe ASCII/uppercase form of it (what
+        # the panels draw), "emoji" the avatar picked from the phone's own
+        # emoji keyboard, "streak"/"best_streak" the consecutive right answers
+        # (a miss or no answer resets it), "correct"/"asked" the night's tally,
+        # "last_points" what the last graded question paid them.
         self.quiz_players = {}
+        # One record per graded question, for the end-of-night recap:
+        # {"n", "question", "choices", "correct_index", "category", "picks": {pid: index}}
+        self.quiz_history = []
+        # Id of tonight's show (drivers/results_archive.py); phones keep it so a
+        # finished night's results stay viewable. "" outside a show.
+        self.show_session_id = ""
+        # Category round in progress (drivers/category_round_engine.py), or None.
+        self.category_round = None
+        self.category_auto = False   # start a category round every few songs on its own
         AVATAR_COLORS = ["red", "amber", "cyan", "green", "violet"]
         self.AVATAR_COLORS = AVATAR_COLORS
         # Bumped every time a NEW question becomes the active one
@@ -173,6 +188,7 @@ class State:
         self.marquee_off = False          # whole marquee dark while dancing to this song
         self.look_borrowed_from = ""  # track key this song's look was borrowed from (drivers/look_matcher.py)
         self.marquee_locate_until = 0.0   # admin "Show bounce centers" overlay
+        self.show_paused = False  # admin pause: music + show clock held, lights stay on (blackout_engine.pause)
         self.blackout_active = False  # admin instant blackout/mute (drivers/blackout_engine.py)
         self.marquee_transition_start = 0.0  # track-change wipe (wled_engine._apply_transition)
         self.marquee_reveal_at = 0.0  # when the new look sweeps in (= matrix board-wipe hold end)
@@ -299,6 +315,9 @@ class State:
         # this session -- drivers/factoid_engine.py._apply_active_question()
         # populates this every time a question actually gets served.
         self.asked_artists = set()
+        # 2026-11-14: songs that have had their "Who is this?" this show. Every
+        # song gets the teaser (artists may repeat); only a replayed SONG skips it.
+        self.mystery_asked_songs = set()
         self.asked_question_texts = set()  # every question served this session (ASK QUESTIONS asks unasked ones first)
 
         self.mystery_active = False        # teaser or reveal-blink in progress
@@ -449,6 +468,34 @@ class State:
         self.intermission_minutes = config.INTERMISSION_MINUTES_DEFAULT  # operator-editable
         self.intermission_active = False
         self.intermission_ends_at = 0.0
+        # Intermission stats page + song-finish hold (2026-11-14). The round
+        # winner is remembered here because every score is reset the moment
+        # intermission starts; "tonight's leader" reads show_cumulative_scores.
+        self.last_round_winner_initials = ""
+        self.last_round_number = 0
+        # Rounds (drivers/round_engine.py)
+        self.rounds = []                # the running show's round list; [] = endless standard trivia rounds
+        self.round_index = 0            # 0-based index of the round running now (the NEXT one during an intermission)
+        self.round_type = "trivia"
+        self.round_solo_game = ""       # a solo_challenge round's game: "simon" | "cliffhanger" | "" (host picks; older shows)
+        self.round_name = "Round 1"
+        self.round_goal = 0
+        self.round_song_limit = 0       # songs the round may use before it is called on points (0 = no limit)
+        self.round_start_transition = 0  # transition_count when the round began
+        self.round_results = []         # finished rounds this night
+        self.round_wheel_pending = False  # the round opens with a wheel spin before its first song (show_runner)
+        self.round_decade = ""            # the round's declared decade ("1980s"; "" = any): its spin lands there, its songs come from it
+        self.round_special_count = 0      # price questions asked / medley clips played in a non-trivia round
+        self.ff_intro_started_at = 0.0    # Fastest Finger / "Wait, how much?" intro running since (0 = not running)
+        self.ff_intro_kind = "ff"         # which intro: "ff" (Fastest Finger) | "whm" ("Wait, how much?")
+        self.last_round_reason = ""     # why the last round ended: "goal" | "songs" | "operator"
+        # Final standings of the round that just ended (frozen before scores
+        # reset) so phones can show them during intermission (2026-11-16).
+        self.last_round_board = []
+        # True once the countdown hits zero while a song is still playing:
+        # intermission (and its question hold) carries on until that song ends.
+        self.intermission_finishing = False
+        self.intermission_finish_transition = 0
         # Web remote Pause/"set remaining time" controls (2026-08-12), for
         # the "crowd's taking too long to get ready" case. While paused, the
         # countdown freezes at intermission_paused_remaining instead of
@@ -565,6 +612,8 @@ class State:
         # scripted open -> live show -> scripted close. Sits ABOVE self.mode
         # (DJ/GAME/SPACE_INVADERS), which keeps working unmodified during
         # "live" -- this only owns the bookends. See drivers/show_engine.py.
+        self.reveal_sweeper_at = 0.0  # time.time() when a song-change wipe clears the banner and reveals the question: play a sweeper then
+        self.setup_blank = False   # admin START NEW GAME: panels/HDMI stay blank in "setup" until the show starts or a panel button is pressed
         self.show_phase = "setup"  # "setup" | "countdown" | "dark" | "intro" | "live" | "outro"
         self.show_phase_started_at = 0.0
         # Decade wheel of the scripted open (drivers/show_engine.py): the
@@ -660,6 +709,7 @@ class State:
         self.show_exclude_never_charted = False
         self.show_allowed_genres = []  # empty = no genre restriction
         self.show_allowed_decades = []  # empty = no decade restriction
+        self.show_base_decades = []     # the show's own range (rounds narrow it to their decade, round_engine.begin_round)
 
         # --- Auto Final Round: the round number, if any, whose win ends the
         # night (outro) instead of starting the normal intermission. Set

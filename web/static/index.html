@@ -4,6 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Game Show Remote</title>
+<link rel="icon" type="image/png" href="/art/icon-48.png">
+<link rel="apple-touch-icon" href="/art/icon-180.png">
 <style>
   :root { color-scheme: dark; }
   * { box-sizing: border-box; }
@@ -218,6 +220,7 @@
       <a href="#" onclick="fetch('/auth/logout',{method:'POST'}).then(()=>location.reload());return false">Log out</a>
     </div>
   </div>
+  <img src="/art/logo.webp" alt="Triviacade" width="1106" height="270" style="display:block;height:54px;width:auto;margin:4px auto 2px" onerror="this.remove()">
   <h1>Game Show Orchestrator &mdash; Remote</h1>
 
   <!-- Connection health (2026-10-18, drivers/net_health_engine.py): amber =
@@ -419,19 +422,44 @@
         <span id="quiz-player-count" style="color:#999; font-size:.85rem;">0 players signed up</span>
       </div>
       <div id="net-phones" style="display:none; margin-bottom:12px; font-size:.82rem;"></div>
+      <details id="teams-panel" style="margin-bottom:12px; padding:8px 10px; border:1px solid #333; border-radius:8px; background:#18181b;">
+        <summary style="cursor:pointer; font-weight:700; font-size:.85rem">Teams (merge / remove)</summary>
+        <div id="teams-list" style="margin-top:8px; font-size:.85rem"></div>
+        <div class="row" style="align-items:center;gap:6px;flex-wrap:wrap;margin-top:8px">
+          <select id="team-from" style="min-width:120px"></select>
+          <span style="font-size:.8rem;color:#999">into</span>
+          <select id="team-into" style="min-width:120px"></select>
+          <button class="btn" onclick="teamsMerge()">Merge</button>
+          <button class="btn" onclick="teamsRemove()" title="Remove the left team">Remove left</button>
+        </div>
+        <div id="teams-msg" style="margin-top:6px;font-size:.8rem;color:#ffb21e"></div>
+        <div style="margin-top:6px;font-size:.75rem;color:#777">Merge adds the left team's score and streak to the right team and deletes the left one. Use it when someone signed up again after losing their phone's link.</div>
+      </details>
       <div id="roster-section" style="display:none; margin-bottom:12px;">
         <div style="font-size:.75rem; text-transform:uppercase; letter-spacing:.05em; color:#777; margin-bottom:6px;">Round Roster</div>
         <div id="roster-grid"></div>
       </div>
       <div class="row" style="align-items:center;gap:8px">
         <label style="font-weight:700;font-size:.85rem">Win Score:</label>
-        <input type="number" id="win-score-input" min="1" step="1" style="width:80px">
+        <input type="number" id="win-score-input" min="1" step="50" style="width:90px">
         <button class="btn" onclick="winScoreSave()">Save</button>
       </div>
       <div class="row" style="align-items:center;gap:8px;margin-top:8px">
         <label style="font-weight:700;font-size:.85rem">Intermission (min):</label>
         <input type="number" id="intermission-minutes-input" min="1" step="1" style="width:80px">
         <button class="btn" onclick="intermissionMinutesSave()">Save</button>
+      </div>
+      <div id="category-panel" style="margin-top:12px; padding:10px; border:1px solid #333; border-radius:8px; background:#18181b;">
+        <div style="font-size:.75rem; text-transform:uppercase; letter-spacing:.05em; color:#777; margin-bottom:6px;">Category round</div>
+        <div class="row" style="align-items:center;gap:8px;flex-wrap:wrap">
+          <select id="cat-select" style="min-width:150px"></select>
+          <input type="number" id="cat-songs" min="1" max="12" step="1" value="4" style="width:60px" title="songs in the round">
+          <span style="font-size:.8rem;color:#999">songs</span>
+          <button class="btn" onclick="categoryStart()">Start</button>
+          <button class="btn" onclick="categoryStop()">End</button>
+        </div>
+        <label style="display:block;margin-top:8px;font-size:.85rem"><input type="checkbox" id="cat-auto" onchange="categoryAuto()"> Start one automatically every few songs</label>
+        <div id="cat-status" style="margin-top:6px;font-size:.85rem;color:#ffb21e"></div>
       </div>
       <div id="intermission-live-controls" style="display:none; margin-top:12px; padding:10px; border:1px solid #333; border-radius:8px; background:#18181b;">
         <div class="row" style="align-items:center;gap:8px">
@@ -444,6 +472,7 @@
           <input type="number" id="intermission-set-remaining-input" min="0" step="0.5" style="width:80px">
           <button class="btn" onclick="intermissionSetRemaining()">Set</button>
         </div>
+        <button class="btn primary" style="width:100%;margin-top:10px" onclick="intermissionEndNow()">END INTERMISSION &rarr; START NEXT ROUND</button>
       </div>
       <div style="margin-top:12px; text-align:center;">
         <img src="/api/quiz/qr" style="width:200px; height:200px; border-radius:8px; background:#fff; padding:6px;">
@@ -462,9 +491,41 @@
       </div>
     </section>
 
-    <section>
-      <h2>Game Modes</h2>
-      <button class="btn primary big" onclick="startPriceGame()">PLAY PRICE GAME</button>
+    <!-- 2026-11-22: the PLAY PRICE GAME button is gone (price questions run inside "Wait, how much?"
+         rounds now). -->
+
+    <section id="rounds-section">
+      <h2>Rounds</h2>
+      <div id="rounds-status" style="font-size:.9rem; margin-bottom:8px">&hellip;</div>
+      <div id="rounds-night" style="font-size:.78rem; color:#aaa; margin-bottom:8px"></div>
+      <div class="row">
+        <button class="btn" style="flex:1" onclick="roundsEnd()">END ROUND (leader wins)</button>
+        <button class="btn" style="flex:1" id="rounds-next-btn" onclick="roundsNext()">START NEXT ROUND</button>
+      </div>
+      <!-- Solo challenge (drivers/solo_challenge.py): one team, all or nothing. -->
+      <div style="margin-top:12px; font-size:.9rem"><b>Solo challenge</b> <span id="solo-stakes" style="color:#aaa"></span></div>
+      <div id="solo-status" style="font-size:.85rem; color:#ccc; margin:4px 0 6px"></div>
+      <!-- Cliffhanger host controls (drivers/cliffhanger_engine.py) -->
+      <div id="cliff-box" style="display:none; border:1px solid #444; border-radius:8px; padding:8px; margin-bottom:8px">
+        <a class="btn primary" href="/cliff" style="display:block; text-align:center; margin-bottom:6px; text-decoration:none">OPEN CLIFFHANGER HOST SCREEN</a>
+        <div id="cliff-song" style="font-size:.9rem; margin-bottom:6px"></div>
+        <div class="row" id="cliff-guess-row" style="align-items:center; gap:6px">
+          <label style="font-size:.85rem">Guess <input type="number" id="cliff-guess" style="width:84px" min="1900" max="2100" placeholder="1984"></label>
+          <label style="font-size:.85rem">Real year <input type="number" id="cliff-actual" style="width:84px" min="1900" max="2100"></label>
+          <button class="btn primary" onclick="cliffGuess()">SUBMIT GUESS</button>
+          <button class="btn" onclick="cliffReroll()" title="Swap this song for another before the guess">DIFFERENT SONG</button>
+        </div>
+        <button class="btn primary" id="cliff-next-btn" style="width:100%; margin-top:6px; display:none" onclick="cliffNext()">NEXT SONG</button>
+        <div id="cliff-history" style="font-size:.8rem; color:#aaa; margin-top:6px"></div>
+      </div>
+      <div class="row">
+        <select id="solo-team" style="flex:2"></select>
+        <select id="solo-game" style="flex:1"></select>
+      </div>
+      <div class="row">
+        <button class="btn" style="flex:1" id="solo-start-btn" onclick="soloStart()">START CHALLENGE</button>
+        <button class="btn" style="flex:1" id="solo-cancel-btn" onclick="soloCancel()">CANCEL (no points)</button>
+      </div>
     </section>
 
     <section id="show-controls-section">
@@ -740,6 +801,7 @@
       <h2>Application</h2>
       <!-- Instant blackout/mute (2026-10-06): no confirm -- it has to be
            instant, and a second press puts everything back. -->
+      <button class="btn big" id="pause-btn" style="margin-bottom:12px" onclick="togglePause()">PAUSE SHOW</button>
       <button class="btn danger big" id="blackout-btn" style="margin-bottom:12px" onclick="toggleBlackout()">BLACKOUT + MUTE</button>
       <button class="btn" id="mono-btn" onclick="toggleMono()">MUSIC: STEREO</button>
 
@@ -1665,16 +1727,6 @@ function advancedOnToggle() {
   }
 }
 
-async function startPriceGame() {
-  const d = await api('/api/game/price-game', { method: 'POST' });
-  if (d && d.ok) {
-    showToast('Price Game!');
-  } else {
-    showToast(d && d.reason ? d.reason : 'Price Game request failed.');
-  }
-  refreshHostPreview();
-}
-
 let _toastTimer = null;
 async function accentImport() {
   const btn = document.getElementById('accent-import-btn'), out = document.getElementById('accent-import-out');
@@ -1800,7 +1852,145 @@ function confirmStopShow() {
   closeStopModal();
   api('/api/show/stop', { method: 'POST' }).then(refreshGamepadStatus);
 }
-function startNewGame() {
+async function roundsRefresh() {
+  const d = await api('/api/rounds/status');
+  if (!d || !d.ok) return;
+  const el = document.getElementById('rounds-status');
+  const planned = d.planned && d.planned.length ? ' of ' + d.planned.length : '';
+  if (!d.goal) { el.textContent = 'No round yet -- start a show.'; document.getElementById('rounds-night').textContent = ''; document.getElementById('rounds-next-btn').disabled = true; return; }
+  el.innerHTML = d.in_intermission
+    ? `<b>Intermission</b> &mdash; next: ${d.name} (${d.type})${d.goal ? ', first to ' + d.goal : ''}`
+    : d.type === 'solo_challenge' && d.solo_game === 'cliffhanger'
+      ? `<b>${d.name}${planned}</b> (Cliffhanger) &mdash; <a href="/cliff" style="color:#ffd228">open the pregame screen</a>`
+    : d.type === 'solo_challenge'
+      ? `<b>${d.name}${planned}</b> (${d.solo_game === 'simon' ? 'Tipsy Simon' : 'solo challenge'}) &mdash; pick the team below and press START CHALLENGE`
+      : `<b>${d.name}${planned}</b> (${d.type}) &mdash; ${d.goal ? 'first to ' + d.goal + 'p' : 'most points wins'} &middot; ${d.unit || 'song'} ${Math.min(d.songs_played, d.song_limit)} of ${d.song_limit}`;
+  document.getElementById('rounds-next-btn').disabled = !d.in_intermission;
+  document.getElementById('rounds-night').textContent = d.night.length
+    ? 'Night: ' + d.night.map(n => `${n.name} ${n.night}`).join(' · ') : '';
+}
+let _soloTeamsKey = '', _soloRoundGame = '';
+async function soloRefresh() {
+  const d = await api('/api/solo/status');
+  if (!d || !d.ok) return;
+  document.getElementById('solo-stakes').textContent = `(win +${d.stakes} / lose -${d.stakes} night points)`;
+  const teamSel = document.getElementById('solo-team');
+  const key = JSON.stringify(d.teams.map(t => [t.player_id, t.name, t.night]));
+  if (key !== _soloTeamsKey && document.activeElement !== teamSel) {
+    _soloTeamsKey = key;
+    const keep = teamSel.value;
+    teamSel.innerHTML = '<option value="">-- pick the team --</option>' + d.teams.map(t =>
+      `<option value="${t.player_id}">${t.name.replace(/</g, '&lt;')} (${t.night})</option>`).join('');
+    teamSel.value = d.teams.some(t => t.player_id === keep) ? keep : '';
+  }
+  const gameSel = document.getElementById('solo-game');
+  if (!gameSel.options.length) {
+    gameSel.innerHTML = d.challenges.map(c =>
+      `<option value="${c.key}" ${c.available ? '' : 'disabled'}>${c.name}${c.available ? '' : ' (coming)'}</option>`).join('');
+  }
+  // A Simon / Cliffhanger round fixes its game (2026-11-22).
+  if (d.round_game && d.round_game !== _soloRoundGame) { gameSel.value = d.round_game; }
+  _soloRoundGame = d.round_game || '';
+  // A Cliffhanger round's pregame just came up: go to its control panel (once per pregame, so BACK sticks).
+  if (d.pregame && d.pregame.id && sessionStorage.getItem('cliffPregame') !== d.pregame.id) {
+    sessionStorage.setItem('cliffPregame', d.pregame.id);
+    location.href = '/cliff';
+    return;
+  }
+  const v = d.view;
+  const st = document.getElementById('solo-status');
+  if (v && v.phase === 'playing') st.textContent = `${v.team} is playing ${v.challenge}` + (v.round != null ? ` -- ${v.round} cleared` : '');
+  else if (v && v.phase === 'result') st.textContent = `${v.team} ${v.result === 'win' ? 'WON' : 'lost'} (${v.delta >= 0 ? '+' : ''}${v.delta}) -- ${v.detail}`;
+  else st.textContent = d.can_start ? (d.solo_round ? 'This round is a solo challenge -- ready.' : 'Ready.') : (d.why_not || '');
+  if (v && v.progress && v.phase === 'playing') st.textContent += ' -- ' + v.progress;
+  cliffRender(d.cliff);
+  document.getElementById('solo-start-btn').disabled = !d.can_start;
+  document.getElementById('solo-cancel-btn').disabled = !(v && v.phase === 'playing');
+}
+let _cliffSongKey = '';
+function cliffRender(c) {
+  const box = document.getElementById('cliff-box');
+  if (!c) { box.style.display = 'none'; _cliffSongKey = ''; return; }
+  box.style.display = '';
+  const listening = c.phase === 'listen';
+  document.getElementById('cliff-song').innerHTML = `<b>Song ${c.song} of ${c.songs}</b>: ${String(c.title).replace(/</g, '&lt;')} &mdash; ${String(c.artist).replace(/</g, '&lt;')} <span style="color:#aaa">(${c.song_year})</span> &middot; total <b>${c.total}/${c.spaces}</b>` +
+    (c.phase === 'climb' ? ' &middot; climbing&hellip;' : c.phase === 'fall' ? ' &middot; HE FELL' : '');
+  document.getElementById('cliff-guess-row').style.display = listening ? '' : 'none';
+  document.getElementById('cliff-next-btn').style.display = c.phase === 'between' ? '' : 'none';
+  const key = c.song + '|' + c.title;
+  if (listening && key !== _cliffSongKey) {      // a new song: fresh guess box, real year pre-filled
+    _cliffSongKey = key;
+    document.getElementById('cliff-guess').value = '';
+    document.getElementById('cliff-actual').value = c.song_year || '';
+  }
+  document.getElementById('cliff-history').innerHTML = (c.history || []).map(h =>
+    `Song ${h.song}: guessed ${h.guess}, it was ${h.year} &rarr; ${h.off} off`).join('<br>');
+}
+async function cliffGuess() {
+  const year = parseInt(document.getElementById('cliff-guess').value, 10);
+  const actual = parseInt(document.getElementById('cliff-actual').value, 10);
+  if (!year) { alert('Type the player\'s guess (a year).'); return; }
+  const r = await api('/api/solo/cliff/guess', { method: 'POST', headers: { 'Content-Type': 'application/json' },
+                                                body: JSON.stringify({ year, actual: actual || null }) });
+  if (r && !r.ok) alert(r.message || 'Could not submit the guess.');
+  soloRefresh();
+}
+async function cliffNext() {
+  const r = await api('/api/solo/cliff/next', { method: 'POST' });
+  if (r && !r.ok) alert(r.message || 'Could not cue the next song.');
+  soloRefresh();
+}
+async function cliffReroll() {
+  await api('/api/solo/cliff/reroll', { method: 'POST' });
+  soloRefresh();
+}
+async function soloStart() {
+  const pid = document.getElementById('solo-team').value;
+  const game = document.getElementById('solo-game').value;
+  if (!pid) { alert('Pick the team the player is representing.'); return; }
+  const sel = document.getElementById('solo-team');
+  const team = sel.options[sel.selectedIndex].text;
+  if (!confirm(`${team} plays ${document.getElementById('solo-game').selectedOptions[0].text} -- win +1500, lose -1500. Start?`)) return;
+  const r = await api('/api/solo/start', { method: 'POST', headers: { 'Content-Type': 'application/json' },
+                                          body: JSON.stringify({ player_id: pid, challenge: game }) });
+  if (r && !r.ok) alert(r.message || 'Could not start the challenge.');
+  else if (game === 'cliffhanger') { location.href = '/cliff'; return; }   // the simple host page
+  soloRefresh();
+}
+async function soloCancel() {
+  if (!confirm('Cancel the challenge? No points change.')) return;
+  await api('/api/solo/cancel', { method: 'POST' });
+  soloRefresh();
+}
+setInterval(soloRefresh, 2000);
+soloRefresh();
+
+async function roundsEnd() {
+  if (!confirm('End this round now? The leader on points wins it.')) return;
+  const r = await api('/api/rounds/end', { method: 'POST' });
+  if (r && !r.ok) alert(r.reason || 'Could not end the round.');
+  roundsRefresh();
+}
+async function intermissionEndNow() {
+  if (!confirm('End the intermission now and start the next round?')) return;
+  await roundsNext();
+  refreshGamepadStatus();
+}
+async function roundsNext() {
+  await api('/api/rounds/next', { method: 'POST' });
+  roundsRefresh();
+}
+setInterval(roundsRefresh, 3000);
+roundsRefresh();
+
+async function startNewGame() {
+  // Already at the menu / setup: just open Setup. Otherwise stop the current game (music fades,
+  // panels go blank) and then open Setup -- Setup bounces back here while a show is live.
+  const st = await api('/api/show/status');
+  if (st && st.show_phase && st.show_phase !== 'setup') {
+    if (!confirm('End the current game and go to Setup? The music fades out and the panels go blank.')) return;
+    await api('/api/show/new-game', { method: 'POST' });
+  }
   window.location = '/setup';
 }
 
@@ -1809,6 +1999,42 @@ function backToMenu() {
   if (!confirm('Stop everything and go back to the show menu on the panels?')) return;
   api('/api/show/back-to-menu', { method: 'POST' }).then(refreshGamepadStatus);
 }
+
+// ---- category rounds (2026-11-15) ----
+let _catBusyUntil = 0;
+async function categoryRefresh() {
+  const d = await api('/api/category/list');
+  if (!d || !d.ok) return;
+  const sel = document.getElementById('cat-select');
+  if (Date.now() > _catBusyUntil && sel.dataset.n !== String(d.categories.length)) {
+    sel.innerHTML = d.categories.map(c => `<option value="${c.key}">${c.label} (${c.count})</option>`).join('');
+    sel.dataset.n = String(d.categories.length);
+    document.getElementById('cat-songs').value = d.default_songs;
+  }
+  const a = d.active;
+  document.getElementById('cat-status').textContent = a
+    ? (a.number > 0 ? `${a.label}: song ${Math.min(a.number, a.songs_total)} of ${a.songs_total}` : `${a.label}: starts with the next song`)
+    : 'No category round running.';
+  if (document.activeElement !== document.getElementById('cat-auto')) document.getElementById('cat-auto').checked = !!d.auto;
+}
+async function categoryStart() {
+  _catBusyUntil = Date.now() + 3000;
+  const key = document.getElementById('cat-select').value;
+  const songs = parseInt(document.getElementById('cat-songs').value, 10) || 4;
+  const d = await api('/api/category/start', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({key, songs}) });
+  showToast(d && d.message ? d.message : 'Could not start the category round.');
+  categoryRefresh();
+}
+async function categoryStop() {
+  await api('/api/category/stop', { method: 'POST' });
+  showToast('Category round ended.');
+  categoryRefresh();
+}
+async function categoryAuto() {
+  await api('/api/category/auto', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({on: document.getElementById('cat-auto').checked}) });
+}
+categoryRefresh();
+setInterval(categoryRefresh, 4000);
 
 let _winScoreLoaded = false;
 function winScoreSave() {
@@ -1994,6 +2220,24 @@ function renderBlackout(active) {
   b.style.color = active ? '#000' : '';
 }
 
+function renderPause(paused) {
+  const b = document.getElementById('pause-btn');
+  if (!b) return;
+  b.textContent = paused ? 'PAUSED — PRESS TO RESUME' : 'PAUSE SHOW';
+  b.style.background = paused ? '#fc0' : '';
+  b.style.color = paused ? '#000' : '';
+}
+
+async function togglePause() {
+  const d = await api('/api/pause/toggle', {method: 'POST'});
+  if (d) renderPause(d.paused);
+}
+
+async function refreshPause() {
+  const d = await api('/api/pause');
+  if (d) renderPause(d.paused);
+}
+
 async function toggleBlackout() {
   const d = await api('/api/blackout/toggle', {method: 'POST'});
   if (d) renderBlackout(d.active);
@@ -2057,6 +2301,7 @@ async function autoThemeSet(on) {
 
 function refreshAll() {
   refreshBlackout();
+  refreshPause();
   refreshMono();
   refreshSongTheme();
   refreshNowPlaying();
@@ -2068,6 +2313,44 @@ function refreshAll() {
 }
 refreshAll();
 djLookLoadOptions();
+// ---- teams: merge a stranded team into a player's new one (2026-11-18) ----
+function _teamEsc(v) { return String(v == null ? '' : v).replace(/&/g, '&amp;').replace(/</g, '&lt;'); }
+function _teamLabel(t) {
+  const away = t.away_seconds == null ? 'not seen' : (t.away_seconds < 90 ? 'online' : Math.round(t.away_seconds / 60) + ' min away');
+  return `${t.emoji} ${t.name} - ${t.score}p (${away})`;
+}
+async function teamsRefresh() {
+  const panel = document.getElementById('teams-panel');
+  if (!panel || !panel.open) return;
+  const d = await api('/api/teams');
+  if (!d || !d.ok) return;
+  const list = document.getElementById('teams-list');
+  list.innerHTML = d.teams.length ? d.teams.map(t => `<div>${_teamEsc(_teamLabel(t))}${t.tonight ? ' &middot; night total ' + t.tonight : ''}</div>`).join('') : '<div style="color:#999">No teams yet.</div>';
+  for (const id of ['team-from', 'team-into']) {
+    const sel = document.getElementById(id);
+    if (document.activeElement === sel) continue;
+    const keep = sel.value;
+    sel.innerHTML = d.teams.map(t => `<option value="${t.player_id}">${_teamEsc(_teamLabel(t))}</option>`).join('');
+    if (keep) sel.value = keep;
+  }
+}
+async function teamsMerge() {
+  const from_id = document.getElementById('team-from').value, into_id = document.getElementById('team-into').value;
+  if (!from_id || !into_id || from_id === into_id) { document.getElementById('teams-msg').textContent = 'Pick two different teams.'; return; }
+  if (!confirm('Merge the left team into the right team? The left team is deleted.')) return;
+  const d = await api('/api/teams/merge', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({from_id, into_id})});
+  document.getElementById('teams-msg').textContent = d && d.ok ? `Merged. ${d.into} now has ${d.score}p.` : 'Merge failed: ' + ((d && d.reason) || 'no answer');
+  teamsRefresh();
+}
+async function teamsRemove() {
+  const player_id = document.getElementById('team-from').value;
+  if (!player_id || !confirm('Remove the left team and its score?')) return;
+  const d = await api('/api/teams/remove', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({player_id})});
+  document.getElementById('teams-msg').textContent = d && d.ok ? 'Removed.' : 'Remove failed.';
+  teamsRefresh();
+}
+setInterval(teamsRefresh, 5000);
+document.getElementById('teams-panel').addEventListener('toggle', teamsRefresh);
 setInterval(refreshAll, 1500);
 </script>
 </body>

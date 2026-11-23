@@ -1,5 +1,897 @@
-track_key,explicit,slow_dance,never_charted,decade,genre,energy_rank,tagged_at
-artist b - explicit rap song,true,false,false,,Hip-Hop/Rap,4,
-artist c - slow ballad,false,true,false,,Adult Top 40,1,
-artist d - deep cut,false,false,true,,Country,3,
-band a - clean rock song,false,false,false,,Rock,4,
+track_key,explicit,slow_dance,never_charted,decade,genre,energy_rank,tagged_at,date_added
+'til tuesday - voices carry,false,false,false,1980s,Adult Top 40,4,2026-11-14 07:53:40,2025-09-21
+*nsync - bye bye bye,false,false,false,2000s,Adult Top 40,5,2026-11-14 07:53:38,2026-10-13
+*nsync - it's gonna be me,false,false,false,2000s,Adult Top 40,4,2026-11-14 07:53:39,2026-10-13
+*nsync - tearin' up my heart - radio edit,false,false,false,1990s,Adult Top 40,4,2026-11-14 07:53:38,2026-10-13
+311 - amber,false,false,false,1990s,Rock,3,2026-11-14 07:53:40,2025-09-21
+50 cent - in da club,false,false,false,2000s,Hip-Hop/Rap,4,2026-11-14 07:53:40,2026-10-13
+"50 cent, olivia - candy shop",false,false,false,2000s,Hip-Hop/Rap,4,2026-11-14 07:53:40,2026-10-13
+a taste of honey - boogie oogie oogie,false,false,false,1970s,Dance/Electronic,5,2026-11-14 07:53:41,2026-10-13
+a tribe called quest - can i kick it?,false,false,false,1990s,Hip-Hop/Rap,4,2026-11-14 07:53:41,2026-10-13
+a tribe called quest - rap promoter,false,false,false,1990s,Hip-Hop/Rap,3,2026-11-14 07:53:40,2026-10-13
+a-ha - take on me,false,false,false,1980s,Adult Top 40,5,2026-11-14 07:53:38,2025-09-21
+aaliyah - back & forth,false,false,false,1990s,R&B/Soul,4,2026-11-14 07:53:39,2025-09-21
+abba - dancing queen,false,false,false,1970s,Dance/Electronic,5,2026-11-12 10:41:17,2026-10-23
+abba - mamma mia,false,false,false,1970s,Dance/Electronic,5,2026-11-14 07:53:38,2025-09-22
+abba - take a chance on me,false,false,false,1970s,Adult Top 40,4,2026-11-12 10:41:17,2026-10-23
+abba - waterloo,false,false,false,1970s,Adult Top 40,4,2026-11-12 10:41:17,2026-10-23
+abbamammamia(hardfestivalremix)regmike,false,false,true,2020s,Dance/Electronic,5,2026-11-14 07:53:41,2026-10-13
+ac/dc - are you ready,false,false,false,1990s,Rock,5,2026-11-14 07:53:40,2026-10-13
+ac/dc - back in black,false,false,false,1980s,Rock,4,2026-11-14 07:53:40,2026-10-13
+ac/dc - hells bells,false,false,false,1980s,Rock,4,2026-11-14 07:53:38,2026-10-13
+ac/dc - highway to hell,false,false,false,1970s,Rock,5,2026-11-12 10:41:17,2026-10-23
+ac/dc - thunderstruck,false,false,false,1990s,Rock,5,2026-11-14 07:53:38,2026-10-13
+ac/dc - you shook me all night long,false,false,false,1980s,Rock,5,2026-11-14 07:53:41,2026-10-13
+adam & the ants - stand and deliver,false,false,false,1980s,Adult Top 40,5,2026-11-14 07:53:40,2026-10-13
+aerosmith - crazy,false,false,false,1990s,Rock,2,2026-11-12 10:41:17,2026-10-23
+aerosmith - cryin',false,false,false,1990s,Rock,3,2026-11-12 10:41:17,2026-10-23
+aerosmith - dream on,false,false,false,1970s,Rock,2,2026-11-12 10:41:17,2026-10-23
+aerosmith - dude (looks like a lady),false,false,false,1980s,Rock,5,2026-11-12 10:41:17,2026-10-23
+aerosmith - i don't want to miss a thing,false,true,false,1990s,Rock,2,2026-11-12 10:41:17,2026-10-23
+aerosmith - livin' on the edge,false,false,false,1990s,Rock,3,2026-11-12 10:41:17,2026-10-23
+aerosmith - love in an elevator,false,false,false,1980s,Rock,5,2026-11-12 10:41:17,2026-10-23
+aerosmith - sweet emotion,false,false,false,1970s,Rock,4,2026-11-14 07:53:40,2026-10-13
+air supply - all out of love,false,true,false,1980s,Adult Top 40,2,2026-11-14 07:53:39,2026-10-13
+air supply - lost in love,false,true,false,1970s,Adult Top 40,2,2026-11-14 07:53:38,2026-10-13
+air supply - making love out of nothing at all,false,true,false,1980s,Adult Top 40,2,2026-11-12 10:41:17,2026-10-23
+al green - let's stay together,false,true,false,1970s,R&B/Soul,2,2026-11-14 07:53:41,2026-10-13
+alabama - dixieland delight,false,false,false,1980s,Country,4,2026-11-14 07:53:40,2026-10-13
+alice cooper - poison,false,false,false,1980s,Rock,3,2026-11-14 07:53:38,2026-10-13
+alice cooper - school's out,false,false,false,1970s,Rock,5,2026-11-12 10:41:17,2026-10-23
+alice in chains - bleed the freak,false,false,false,1990s,Rock,3,2026-11-14 07:53:40,2025-09-21
+alice in chains - man in the box,false,false,false,1990s,Rock,3,2026-11-14 07:53:39,2025-09-21
+alice in chains - would?,false,false,false,1990s,Rock,3,2026-11-14 07:53:41,2026-10-13
+"andrew gold - spooky, scary skeletons (undead tombstone remix) (official lyric video) - craft recordings (128k)",false,false,true,1990s,Oldies/Classic,4,2026-11-14 07:53:41,2026-10-13
+anita ward - ring my bell,false,false,false,1970s,Dance/Electronic,5,2026-11-14 07:53:41,2026-10-13
+annie lennox - walking on broken glass,false,false,false,1990s,Adult Top 40,3,2026-11-14 07:53:39,2026-10-13
+aretha franklin - respect,false,false,false,1960s,R&B/Soul,5,2026-11-14 07:53:41,2026-10-13
+artist b - explicit rap song,true,false,false,,Hip-Hop/Rap,4,,
+artist c - slow ballad,false,true,false,,Adult Top 40,1,,
+artist d - deep cut,false,false,true,,Country,3,,
+avril lavigne - complicated,false,false,false,2000s,Adult Top 40,4,2026-11-14 07:53:39,2026-10-13
+avril lavigne - sk8er boi,false,false,false,2000s,Rock,5,2026-11-14 07:53:40,2026-10-13
+"axwell /\ ingrosso, axwell, sebastian ingrosso - dreamer",false,false,false,2010s,Dance/Electronic,5,2026-11-14 07:53:41,2026-10-13
+b*witched - c'est la vie,false,false,false,1990s,Dance/Electronic,5,2026-11-14 07:53:38,2026-10-13
+"b.o.b, bruno mars - nothin' on you (feat. bruno mars)",false,false,false,2010s,Hip-Hop/Rap,4,2026-11-14 07:53:39,2026-10-13
+"baby bash, frankie j - suga suga",false,false,false,2000s,Hip-Hop/Rap,4,2026-11-14 07:53:38,2026-10-13
+bachman-turner overdrive - takin' care of business,false,false,false,1970s,Rock,4,2026-11-12 10:41:17,2026-10-23
+bachman-turner overdrive - you ain't seen nothing yet,false,false,false,1970s,Rock,4,2026-11-12 10:41:17,2026-10-23
+backstreet boys - as long as you love me,false,false,false,1990s,Adult Top 40,3,2026-11-12 10:41:17,2026-10-23
+backstreet boys - everybody (backstreet's back),false,false,false,1990s,Adult Top 40,5,2026-11-12 10:41:17,2026-10-23
+backstreet boys - i want it that way,false,false,false,1990s,Adult Top 40,3,2026-11-14 07:53:38,2026-10-13
+backstreet boys - larger than life,false,false,false,1990s,Adult Top 40,5,2026-11-12 10:41:17,2026-10-23
+bad company - can't get enough,false,false,false,1970s,Rock,4,2026-11-12 10:41:17,2026-10-23
+bananarama - venus,false,false,false,1980s,Dance/Electronic,5,2026-11-14 07:53:40,2026-10-13
+band a - clean rock song,false,false,false,,Rock,4,,
+barenaked ladies - one week,false,false,false,1990s,Adult Top 40,4,2026-11-12 10:41:17,2026-10-23
+barry manilow - copacabana (at the copa),false,false,false,1970s,Adult Top 40,4,2026-11-14 07:53:38,2025-09-21
+"barry white - can't get enough of your love, babe",false,false,false,1970s,R&B/Soul,3,2026-11-12 10:41:17,2026-10-23
+beastie boys - (you gotta) fight for your right (to party!),false,false,false,1980s,Hip-Hop/Rap,5,2026-11-12 10:41:17,2026-10-23
+beck-whereit'sat,false,false,false,1990s,Rock,4,2026-11-14 07:53:41,2026-10-13
+bee gees - how deep is your love,false,true,false,1970s,Adult Top 40,2,2026-11-12 10:41:17,2026-10-23
+bee gees - jive talkin',false,false,false,1970s,Dance/Electronic,4,2026-11-12 10:41:17,2026-10-23
+bee gees - more than a woman,false,false,false,1970s,Dance/Electronic,3,2026-11-12 10:41:17,2026-10-23
+bee gees - night fever,false,false,false,1970s,Dance/Electronic,5,2026-11-14 07:53:41,2026-10-13
+bee gees - stayin' alive,false,false,false,1970s,Dance/Electronic,5,2026-11-12 10:41:17,2026-10-23
+"bee gees - stayin' alive - from ""saturday night fever"" soundtrack",false,false,false,1970s,Dance/Electronic,5,2026-11-14 07:53:40,2026-10-13
+bee gees - you should be dancing,false,false,false,1970s,Dance/Electronic,5,2026-11-14 07:53:41,2026-10-13
+ben e. king - stand by me,false,true,false,1960s,Oldies/Classic,2,2026-11-14 07:53:41,2026-10-13
+"berlin - take my breath away - love theme from ""top gun""",false,true,false,1980s,Adult Top 40,2,2026-11-14 07:53:40,2026-10-13
+beyoncé - halo,false,true,false,2000s,R&B/Soul,2,2026-11-14 07:53:39,2026-10-13
+beyoncé - single ladies (put a ring on it),false,false,false,2000s,R&B/Soul,5,2026-11-14 07:53:38,2026-10-13
+"beyoncé, jay-z - crazy in love (feat. jay-z)",false,false,false,2000s,R&B/Soul,5,2026-11-14 07:53:38,2025-09-21
+"big pun, joe - still not a player (feat. joe)",false,false,false,1990s,Hip-Hop/Rap,3,2026-11-14 07:53:41,2025-09-21
+bill haley & his comets - (we're gonna) rock around the clock - single version,false,false,false,1950s,Oldies/Classic,5,2026-11-14 07:53:38,2026-10-13
+"bill medley, jennifer warnes - (i've had) the time of my life - from ""dirty dancing"" soundtrack",false,true,false,1980s,Adult Top 40,3,2026-11-14 07:53:38,2026-10-13
+bill withers - ain't no sunshine,false,false,false,1970s,R&B/Soul,2,2026-11-14 07:53:41,2026-10-13
+bill withers - lean on me,false,false,false,1970s,R&B/Soul,3,2026-11-14 07:53:41,2026-10-13
+billy joel - it's still rock and roll to me,false,false,false,1980s,Adult Top 40,5,2026-11-14 07:53:40,2025-09-21
+billy joel - piano man,false,false,false,1970s,Oldies/Classic,2,2026-11-14 07:53:39,2025-09-22
+billy joel - uptown girl,false,false,false,1980s,Adult Top 40,5,2026-11-14 07:53:40,2026-10-13
+billy joel - we didn't start the fire,false,false,false,1980s,Adult Top 40,4,2026-11-14 07:53:39,2026-10-13
+billy ocean - caribbean queen (no more love on the run),false,false,false,1980s,Adult Top 40,5,2026-11-14 07:53:40,2026-10-13
+black eyed peas - i gotta feeling,false,false,false,2000s,Dance/Electronic,5,2026-11-14 07:53:40,2026-10-13
+blink-182 - all the small things,false,false,false,1990s,Rock,5,2026-11-14 07:53:41,2026-10-13
+blink-182 - what's my age again?,false,false,false,1990s,Rock,5,2026-11-14 07:53:40,2026-10-13
+blondie - heart of glass,false,false,false,1970s,Dance/Electronic,4,2026-11-12 10:41:17,2026-10-23
+"blue swede, björn skifs - hooked on a feeling",false,false,false,1970s,Adult Top 40,4,2026-11-14 07:53:38,2026-10-13
+bob dylan - blowin' in the wind,false,false,false,1960s,Oldies/Classic,2,2026-11-14 07:53:38,2026-10-13
+bob marley & the wailers - could you be loved,false,false,false,1980s,R&B/Soul,4,2026-11-14 07:53:41,2025-09-21
+bob marley & the wailers - i shot the sheriff,false,false,false,1970s,Oldies/Classic,3,2026-11-14 07:53:39,2025-09-22
+bob seger - old time rock & roll,false,false,false,1970s,Rock,5,2026-11-14 07:53:39,2026-10-13
+bobby darin - dream lover,false,false,false,1950s,Oldies/Classic,4,2026-11-14 07:53:40,2026-10-13
+bobby darin - splish splash,false,false,false,1950s,Oldies/Classic,5,2026-11-14 07:53:41,2026-10-13
+bobby day - rockin' robin,false,false,false,1950s,Oldies/Classic,5,2026-11-14 07:53:38,2026-10-13
+bobby womack - across 110th street,false,false,true,1970s,R&B/Soul,3,2026-11-14 07:53:41,2026-10-13
+bon jovi - livin' on a prayer,false,false,false,1980s,Rock,5,2026-11-14 07:53:39,2026-10-13
+bon jovi - wanted dead or alive,false,false,false,1980s,Rock,3,2026-11-12 10:41:17,2026-10-23
+bon jovi - you give love a bad name,false,false,false,1980s,Rock,5,2026-11-14 07:53:39,2026-10-13
+bonnie tyler - total eclipse of the heart,false,false,false,1980s,Adult Top 40,3,2026-11-14 07:53:41,2026-10-13
+boston - more than a feeling,false,false,false,1970s,Rock,4,2026-11-12 10:41:17,2026-10-23
+britney spears - (you drive me) crazy,false,false,false,1990s,Adult Top 40,4,2026-11-14 07:53:39,2026-10-13
+britney spears - ...baby one more time,false,false,false,1990s,Adult Top 40,4,2026-11-14 07:53:38,2026-10-13
+britney spears - gimme more,false,false,false,2000s,Dance/Electronic,5,2026-11-14 07:53:38,2026-10-13
+britney spears - oops!...i did it again,false,false,false,2000s,Adult Top 40,5,2026-11-14 07:53:38,2026-10-13
+britney spears - toxic,false,false,false,2000s,Dance/Electronic,5,2026-11-14 07:53:39,2026-10-13
+britney spears - womanizer,false,false,false,2000s,R&B/Soul,5,2026-11-14 07:53:39,2026-10-13
+bronski beat - smalltown boy,false,false,false,1980s,Dance/Electronic,3,2026-11-14 07:53:40,2026-10-13
+brooks & dunn - boot scootin' boogie,false,false,false,1990s,Country,5,2026-11-12 10:41:17,2026-10-23
+brooks & dunn - neon moon,false,true,false,1990s,Country,2,2026-11-14 07:53:40,2026-10-13
+bruce hornsby and the range - the way it is,false,false,false,1980s,Adult Top 40,3,2026-11-14 07:53:40,2026-10-13
+bruce springsteen - born in the u.s.a.,false,false,false,1980s,Rock,5,2026-11-12 10:41:17,2026-10-23
+bruce springsteen - born to run,false,false,false,1970s,Rock,4,2026-11-12 10:41:17,2026-10-23
+bruce springsteen - dancing in the dark,false,false,false,1980s,Rock,5,2026-11-14 07:53:41,2026-10-13
+bruce springsteen - glory days,false,false,false,1980s,Rock,4,2026-11-14 07:53:41,2026-10-13
+bruce springsteen - hungry heart,false,false,false,1980s,Rock,4,2026-11-14 07:53:40,2025-09-21
+bruce springsteen - streets of philadelphia - single edit,false,false,false,1990s,Oldies/Classic,2,2026-11-14 07:53:41,2025-09-21
+bruno mars - just the way you are,false,false,false,2010s,Adult Top 40,3,2026-11-14 07:53:39,2026-10-13
+bryan adams - (everything i do) i do it for you,false,true,false,1990s,Adult Top 40,2,2026-11-12 10:41:17,2026-10-23
+bryan adams - heaven,false,true,false,1980s,Adult Top 40,2,2026-11-12 10:41:17,2026-10-23
+bryan adams - run to you,false,false,false,1980s,Rock,4,2026-11-12 10:41:17,2026-10-23
+bryan adams - summer of '69,false,false,false,1980s,Rock,4,2026-11-14 07:53:40,2026-10-13
+buddy holly - peggy sue,false,false,false,1950s,Oldies/Classic,4,2026-11-14 07:53:41,2026-10-13
+buddy holly - that'll be the day,false,false,false,1950s,Oldies/Classic,5,2026-11-14 07:53:41,2025-09-22
+buster poindexter - hot hot hot,false,false,false,1980s,Dance/Electronic,5,2026-11-12 10:41:17,2026-10-23
+cake - never there,false,false,false,1990s,Rock,3,2026-11-14 07:53:39,2025-09-21
+cake - the distance,false,false,false,1990s,Rock,4,2026-11-14 07:53:39,2025-09-21
+cameo - word up!,false,false,false,1980s,R&B/Soul,5,2026-11-12 10:41:17,2026-10-23
+candi staton - young hearts run free,false,false,false,1970s,Dance/Electronic,5,2026-11-14 07:53:41,2026-10-13
+carl douglas - kung fu fighting,false,false,false,1970s,Dance/Electronic,4,2026-11-12 10:41:17,2026-10-23
+cheap trick - i want you to want me,false,false,false,1970s,Rock,4,2026-11-12 10:41:17,2026-10-23
+cheap trick - the flame,false,true,false,1980s,Rock,2,2026-11-14 07:53:40,2026-10-13
+cher - believe,false,false,false,1990s,Dance/Electronic,5,2026-11-12 10:41:17,2026-10-23
+chic - good times,false,false,false,1970s,Dance/Electronic,5,2026-11-14 07:53:41,2026-10-13
+chic - le freak,false,false,false,1970s,Dance/Electronic,5,2026-11-14 07:53:41,2026-10-13
+chicago - 25 or 6 to 4,false,false,false,1970s,Rock,4,2026-11-12 10:41:17,2026-10-23
+chiquitita _ abba (dance techno cover),false,false,true,2020s,Dance/Electronic,5,2026-11-14 07:53:41,2026-10-13
+chris brown - forever,false,false,false,2000s,R&B/Soul,4,2026-11-14 07:53:38,2026-10-13
+chris grey - wrong,false,false,true,2010s,Dance/Electronic,4,2026-11-14 07:53:39,2026-10-13
+christina aguilera - come on over baby (all i want is you) - radio version,false,false,false,1990s,Adult Top 40,4,2026-11-14 07:53:40,2026-10-13
+christina aguilera - genie in a bottle,false,false,false,1990s,Adult Top 40,4,2026-11-14 07:53:38,2026-10-13
+christina aguilera - what a girl wants,false,false,false,1990s,Adult Top 40,4,2026-11-14 07:53:39,2026-10-13
+chubby checker - the twist,false,false,false,1960s,Oldies/Classic,5,2026-11-14 07:53:39,2025-09-22
+chuck berry - johnny b. goode,false,false,false,1950s,Oldies/Classic,5,2026-11-14 07:53:42,2026-10-13
+chuck berry - roll over beethoven - single version,false,false,false,1950s,Oldies/Classic,5,2026-11-14 07:53:41,2026-10-13
+"ciara, missy elliott - 1, 2 step (feat. missy elliott)",false,false,false,2000s,R&B/Soul,4,2026-11-14 07:53:39,2025-09-21
+coldplay - yellow,false,false,false,2000s,Rock,3,2026-11-14 07:53:40,2026-10-13
+commodores - brick house,false,false,false,1970s,R&B/Soul,4,2026-11-14 07:53:42,2026-10-13
+conki - oh my love,false,false,true,2010s,Dance/Electronic,4,2026-11-14 07:53:38,2026-10-13
+connie francis - stupid cupid,false,false,false,1950s,Oldies/Classic,4,2026-11-14 07:53:39,2026-10-13
+"coolio, l.v. - gangsta's paradise",false,false,false,1990s,Hip-Hop/Rap,3,2026-11-14 07:53:39,2026-10-13
+counting crows - mr. jones,false,false,false,1990s,Rock,4,2026-11-14 07:53:39,2026-10-13
+cowboy junkies - sweet jane,false,false,false,1980s,Rock,3,2026-11-14 07:53:41,2026-10-13
+crazy town - butterfly,false,false,false,2000s,Rock,4,2026-11-14 07:53:40,2026-10-13
+cream - sunshine of your love,false,false,false,1960s,Rock,3,2026-11-12 10:41:17,2026-10-23
+creedence clearwater revival - bad moon rising,false,false,false,1960s,Rock,5,2026-11-14 07:53:42,2026-10-13
+creedence clearwater revival - down on the corner,false,false,false,1960s,Rock,4,2026-11-12 10:41:17,2026-10-23
+creedence clearwater revival - fortunate son,false,false,false,1960s,Rock,5,2026-11-12 10:41:17,2026-10-23
+creedence clearwater revival - have you ever seen the rain?,false,false,false,1970s,Rock,3,2026-11-14 07:53:40,2025-09-22
+creedence clearwater revival - proud mary,false,false,false,1960s,Rock,4,2026-11-12 10:41:17,2026-10-23
+creedence clearwater revival - up around the bend,false,false,false,1970s,Rock,4,2026-11-12 10:41:17,2026-10-23
+"crosby, stills, nash & young - our house",false,false,false,1970s,Oldies/Classic,3,2026-11-14 07:53:41,2026-10-13
+curtis mayfield - superfly,false,false,false,1970s,R&B/Soul,4,2026-11-14 07:53:42,2026-10-13
+cymande - bra,false,false,true,1970s,R&B/Soul,4,2026-11-14 07:53:42,2026-10-13
+cyndi lauper - girls just want to have fun,false,false,false,1980s,Adult Top 40,5,2026-11-14 07:53:39,2026-10-13
+cyndi lauper - time after time,false,true,false,1980s,Adult Top 40,2,2026-11-14 07:53:40,2025-09-21
+cyndi lauper - true colors,false,true,false,1980s,Adult Top 40,2,2026-11-14 07:53:40,2026-10-13
+cypress hill - hits from the bong,false,false,false,1990s,Hip-Hop/Rap,3,2026-11-14 07:53:41,2026-10-13
+cypress hill - insane in the brain,false,false,false,1990s,Hip-Hop/Rap,4,2026-11-14 07:53:39,2026-10-13
+céline dion - all by myself,false,true,false,1990s,Adult Top 40,2,2026-11-14 07:53:41,2026-10-13
+"céline dion - because you loved me (theme from ""up close and personal"")",false,true,false,1990s,Adult Top 40,2,2026-11-14 07:53:39,2026-10-13
+"céline dion - my heart will go on - love theme from ""titanic""",false,true,false,1990s,Adult Top 40,2,2026-11-14 07:53:41,2026-10-13
+daddy yankee - gasolina,false,false,false,2000s,Hip-Hop/Rap,5,2026-11-14 07:53:40,2026-10-13
+dan hartman - vertigo / relight my fire,false,false,false,1970s,Dance/Electronic,5,2026-11-14 07:53:42,2026-10-13
+danny & the juniors - at the hop,false,false,false,1950s,Oldies/Classic,5,2026-11-14 07:53:40,2026-10-13
+daryl braithwaite - one summer,false,false,false,1980s,Adult Top 40,4,2026-11-14 07:53:41,2026-10-13
+daryl braithwaite - the horses,false,false,false,1990s,Adult Top 40,4,2026-11-14 07:53:41,2026-10-13
+daryl hall & john oates - maneater,false,false,false,1980s,Adult Top 40,4,2026-11-14 07:53:38,2026-10-13
+daryl hall & john oates - private eyes,false,false,false,1980s,Adult Top 40,4,2026-11-14 07:53:38,2025-09-21
+daryl hall & john oates - rich girl,false,false,false,1970s,Adult Top 40,3,2026-11-12 10:41:18,2026-10-23
+daryl hall & john oates - sara smile,false,true,false,1970s,R&B/Soul,2,2026-11-12 10:41:18,2026-10-23
+daryl hall & john oates - you make my dreams,false,false,false,1980s,Adult Top 40,5,2026-11-12 10:41:18,2026-10-23
+daryl hall & john oates - you make my dreams (come true),false,false,false,1970s,Adult Top 40,4,2026-11-14 07:53:41,2026-10-13
+david bowie - let's dance,false,false,false,1980s,Dance/Electronic,5,2026-11-14 07:53:39,2026-10-13
+david bowie - space oddity,false,false,false,1960s,Rock,2,2026-11-14 07:53:38,2026-10-13
+dead or alive - you spin me round (like a record),false,false,false,1980s,Dance/Electronic,5,2026-11-14 07:53:39,2026-10-13
+dean martin - that's amore - 1996 digital remaster,false,false,false,1950s,Oldies/Classic,3,2026-11-14 07:53:41,2026-10-13
+deep purple - smoke on the water,false,false,false,1970s,Rock,4,2026-11-12 10:41:17,2026-10-23
+def leppard - hysteria,false,false,false,1980s,Rock,3,2026-11-12 10:41:17,2026-10-23
+def leppard - photograph,false,false,false,1980s,Rock,4,2026-11-12 10:41:17,2026-10-23
+def leppard - pour some sugar on me,false,false,false,1980s,Rock,5,2026-11-12 10:41:17,2026-10-23
+def leppard - rock of ages,false,false,false,1980s,Rock,5,2026-11-12 10:41:17,2026-10-23
+"deniece williams - let's hear it for the boy - from ""footloose"" original soundtrack",false,false,false,1980s,Adult Top 40,4,2026-11-14 07:53:38,2025-09-21
+depeche mode - depeche mode - enjoy the silence (live in berlin),false,false,true,1990s,Dance/Electronic,3,2026-11-14 07:53:42,2026-10-13
+depeche mode - just can't get enough,false,false,false,1980s,Dance/Electronic,5,2026-11-14 07:53:41,2026-10-13
+depeche mode - never let me down again,false,false,false,1990s,Rock,4,2026-11-14 07:53:38,2026-10-13
+depeche mode - people are people,false,false,false,1980s,Dance/Electronic,4,2026-11-14 07:53:40,2025-09-21
+depeche mode - personal jesus,false,false,false,1980s,Rock,4,2026-11-14 07:53:40,2025-09-21
+depeche mode - policy of truth,false,false,false,1990s,Dance/Electronic,3,2026-11-14 07:53:41,2025-09-21
+depeche mode - strangelove,false,false,false,1980s,Dance/Electronic,4,2026-11-14 07:53:40,2025-09-21
+derek and the dominos - layla,false,false,false,1970s,Rock,4,2026-11-12 10:41:18,2026-10-23
+"destiny's child - bills, bills, bills",false,false,false,1990s,R&B/Soul,3,2026-11-14 07:53:39,2026-10-13
+"destiny's child - independent women, pt. 1",false,false,false,2000s,R&B/Soul,4,2026-11-14 07:53:38,2026-10-13
+"destiny's child - jumpin', jumpin'",false,false,false,2000s,R&B/Soul,4,2026-11-14 07:53:41,2026-10-13
+destiny's child - say my name,false,false,false,1990s,R&B/Soul,3,2026-11-14 07:53:41,2026-10-13
+destiny's child - survivor,false,false,false,2000s,R&B/Soul,5,2026-11-14 07:53:39,2026-10-13
+diana ross & lionel richie - endless love,false,true,false,1980s,R&B/Soul,1,2026-11-12 10:41:17,2026-10-23
+dido - thank you,false,false,false,1990s,Adult Top 40,2,2026-11-14 07:53:40,2025-09-21
+dion - runaround sue,false,false,false,1960s,Oldies/Classic,5,2026-11-14 07:53:40,2026-10-13
+dixie chicks-goodbye earl lyrics,false,false,false,2000s,Country,4,2026-11-14 07:53:42,2026-08-29
+dolly parton - 9 to 5,false,false,false,1980s,Country,4,2026-11-14 07:53:38,2025-09-21
+dolly parton - jolene,false,false,false,1970s,Country,3,2026-11-12 10:41:17,2026-10-23
+don henley - all she wants to do is dance,false,false,false,1980s,Rock,4,2026-11-12 10:41:17,2026-10-23
+don mclean - american pie,false,false,false,1970s,Oldies/Classic,3,2026-11-14 07:53:38,2026-10-13
+donna summer - hot stuff,false,false,false,1970s,Dance/Electronic,5,2026-11-14 07:53:42,2026-10-13
+donna summer - i feel love,false,false,false,1970s,Dance/Electronic,5,2026-11-14 07:53:42,2026-10-13
+donovan - mellow yellow,false,false,false,1960s,Oldies/Classic,3,2026-11-14 07:53:39,2026-10-13
+"doris day, frank devol & his orchestra - whatever will be, will be (que sera, sera) (with frank devol & his orchestra) - single version",false,true,false,1950s,Oldies/Classic,2,2026-11-14 07:53:41,2026-10-13
+double exposure - ten percent,false,false,true,1970s,Dance/Electronic,4,2026-11-14 07:53:42,2026-10-13
+"dr. dre, snoop dogg - still d.r.e.",false,false,false,1990s,Hip-Hop/Rap,3,2026-11-14 07:53:40,2026-10-13
+"dr. dre, snoop dogg - the next episode",false,false,false,2000s,Hip-Hop/Rap,4,2026-11-14 07:53:41,2026-10-13
+duran duran - hungry like the wolf,false,false,false,1980s,Adult Top 40,5,2026-11-14 07:53:40,2025-09-21
+duran duran - rio,false,false,false,1980s,Adult Top 40,4,2026-11-12 10:41:17,2026-10-23
+dusty springfield - son of a preacher man,false,false,false,1960s,R&B/Soul,3,2026-11-14 07:53:40,2026-10-13
+eagles - desperado,false,false,true,1970s,Rock,1,2026-11-12 10:41:17,2026-10-23
+eagles - heartache tonight,false,false,false,1970s,Rock,4,2026-11-12 10:41:17,2026-10-23
+eagles - hotel california,false,false,false,1970s,Rock,3,2026-11-12 10:41:17,2026-10-23
+eagles - life in the fast lane,false,false,false,1970s,Rock,4,2026-11-12 10:41:17,2026-10-23
+eagles - lyin' eyes,false,false,false,1970s,Rock,2,2026-11-12 10:41:17,2026-10-23
+eagles - peaceful easy feeling,false,false,false,1970s,Rock,2,2026-11-12 10:41:17,2026-10-23
+eagles - take it easy,false,false,false,1970s,Rock,4,2026-11-14 07:53:38,2025-09-22
+eagles - take it to the limit,false,true,false,1970s,Rock,2,2026-11-12 10:41:17,2026-10-23
+"earth, wind & fire - let's groove",false,false,false,1970s,R&B/Soul,5,2026-11-14 07:53:38,2026-10-13
+"earth, wind & fire - september",false,false,false,1970s,R&B/Soul,5,2026-11-14 07:53:41,2025-09-22
+"earth, wind & fire - shining star",false,false,false,1970s,R&B/Soul,4,2026-11-12 10:41:17,2026-10-23
+"earth, wind & fire, the emotions - boogie wonderland",false,false,false,1970s,Dance/Electronic,5,2026-11-14 07:53:42,2026-10-13
+eddie cochran - summertime blues,false,false,false,1950s,Oldies/Classic,5,2026-11-14 07:53:42,2026-10-13
+eddie money - take me home tonight,false,false,false,1980s,Rock,5,2026-11-14 07:53:38,2026-10-13
+edwin starr - war,false,false,false,1970s,R&B/Soul,4,2026-11-12 10:41:17,2026-10-23
+eiffel 65 - blue (da ba dee),false,false,false,1990s,Dance/Electronic,5,2026-11-12 10:41:17,2026-10-23
+electric light orchestra - mr. blue sky,false,false,false,1970s,Rock,4,2026-11-12 10:41:17,2026-10-23
+elton john - bennie and the jets,false,false,false,1970s,Adult Top 40,4,2026-11-14 07:53:39,2025-09-22
+elton john - crocodile rock,false,false,false,1970s,Adult Top 40,5,2026-11-12 10:41:17,2026-10-23
+elton john - goodbye yellow brick road,false,false,false,1970s,Adult Top 40,2,2026-11-12 10:41:17,2026-10-23
+elton john - i'm still standing,false,false,false,1980s,Adult Top 40,5,2026-11-12 10:41:17,2026-10-23
+"elton john - rocket man (i think it's going to be a long, long time)",false,false,false,1970s,Adult Top 40,2,2026-11-12 10:41:17,2026-10-23
+elton john - saturday night's alright for fighting,false,false,false,1970s,Rock,5,2026-11-12 10:41:18,2026-10-23
+elton john - tiny dancer,false,false,false,1970s,Adult Top 40,2,2026-11-12 10:41:18,2026-10-23
+elton john - your song,false,true,false,1970s,Adult Top 40,1,2026-11-12 10:41:18,2026-10-23
+elvin bishop - fooled around and fell in love,false,true,false,1970s,Rock,2,2026-11-12 10:41:18,2026-10-23
+elvis presley - all shook up,false,false,false,1950s,Oldies/Classic,4,2026-11-12 10:41:18,2026-10-23
+elvis presley - blue suede shoes,false,false,false,1950s,Oldies/Classic,5,2026-11-14 07:53:38,2026-10-13
+elvis presley - burning love,false,false,false,1970s,Oldies/Classic,5,2026-11-12 10:41:18,2026-10-23
+elvis presley - can't help falling in love,false,true,false,1960s,Oldies/Classic,1,2026-11-12 10:41:18,2026-10-23
+elvis presley - don't be cruel,false,false,false,1950s,Oldies/Classic,4,2026-11-12 10:41:18,2026-10-23
+elvis presley - heartbreak hotel,false,false,false,1950s,Oldies/Classic,3,2026-11-12 10:41:18,2026-10-23
+elvis presley - hound dog,false,false,false,1950s,Oldies/Classic,5,2026-11-14 07:53:42,2026-10-13
+elvis presley - jailhouse rock,false,false,false,1950s,Oldies/Classic,5,2026-11-14 07:53:42,2026-10-13
+elvis presley - return to sender,false,false,false,1960s,Oldies/Classic,4,2026-11-12 10:41:18,2026-10-23
+elvis presley - suspicious minds,false,false,false,1960s,Oldies/Classic,3,2026-11-14 07:53:42,2026-10-13
+eminem - lose yourself,false,false,false,2000s,Hip-Hop/Rap,4,2026-11-14 07:53:39,2026-10-13
+eminem - the real slim shady,false,false,false,2000s,Hip-Hop/Rap,5,2026-11-14 07:53:41,2026-10-13
+eminem - without me,false,false,false,2000s,Hip-Hop/Rap,5,2026-11-14 07:53:41,2026-10-13
+"eminem, nate dogg - till i collapse",false,false,false,2000s,Hip-Hop/Rap,5,2026-11-14 07:53:41,2026-10-13
+"eric carmen - hungry eyes - from ""dirty dancing"" soundtrack",false,true,false,1980s,Adult Top 40,2,2026-11-14 07:53:41,2026-10-13
+eric carmen - make me lose control,false,false,false,1980s,Adult Top 40,4,2026-11-14 07:53:41,2026-10-13
+eric clapton - lay down sally,false,false,false,1970s,Rock,3,2026-11-12 10:41:18,2026-10-23
+eric clapton - wonderful tonight,false,true,false,1970s,Rock,1,2026-11-12 10:41:18,2026-10-23
+europe - the final countdown,false,false,false,1980s,Rock,5,2026-11-14 07:53:38,2025-09-21
+"eurythmics, annie lennox, dave stewart - sweet dreams (are made of this)",false,false,false,1980s,Dance/Electronic,4,2026-11-14 07:53:40,2025-09-21
+eve 6 - inside out,false,false,false,1990s,Rock,4,2026-11-14 07:53:39,2026-10-13
+extreme - more than words,false,true,false,1990s,Rock,1,2026-11-12 10:41:18,2026-10-23
+"fall out boy - sugar, we're goin down",false,false,false,2000s,Rock,4,2026-11-14 07:53:40,2026-10-13
+"far east movement, the cataracs, dev - like a g6",false,false,false,2010s,Dance/Electronic,5,2026-11-14 07:53:39,2026-10-13
+fats domino - blueberry hill,false,true,false,1950s,Oldies/Classic,2,2026-11-14 07:53:42,2026-10-13
+fiona apple - criminal,false,false,false,1990s,Adult Top 40,3,2026-11-14 07:53:40,2025-09-21
+first choice - let no man put asunder,false,false,true,1970s,Dance/Electronic,4,2026-11-14 07:53:42,2026-10-13
+fleetwood mac - don't stop,false,false,false,1970s,Rock,4,2026-11-12 10:41:18,2026-10-23
+fleetwood mac - dreams,false,false,false,1970s,Rock,3,2026-11-14 07:53:39,2025-09-22
+fleetwood mac - everywhere,false,false,false,1980s,Adult Top 40,3,2026-11-14 07:53:39,2026-10-13
+fleetwood mac - go your own way,false,false,false,1970s,Rock,4,2026-11-12 10:41:18,2026-10-23
+fleetwood mac - landslide,false,false,true,1970s,Rock,1,2026-11-12 10:41:18,2026-10-23
+fleetwood mac - little lies,false,false,false,1980s,Adult Top 40,3,2026-11-12 10:41:18,2026-10-23
+fleetwood mac - rhiannon,false,false,false,1970s,Rock,3,2026-11-12 10:41:18,2026-10-23
+"flo rida, t-pain - low (feat. t-pain)",false,false,false,2000s,Hip-Hop/Rap,5,2026-11-14 07:53:40,2026-10-13
+foo fighters - everlong,false,false,false,1990s,Rock,4,2026-11-14 07:53:41,2026-10-13
+foo fighters - learn to fly,false,false,false,1990s,Rock,4,2026-11-14 07:53:39,2026-10-13
+foreigner - cold as ice,false,false,false,1970s,Rock,4,2026-11-12 10:41:18,2026-10-23
+foreigner - hot blooded,false,false,false,1970s,Rock,5,2026-11-12 10:41:18,2026-10-23
+foreigner - i want to know what love is,false,true,false,1980s,Adult Top 40,2,2026-11-14 07:53:39,2025-09-21
+foreigner - juke box hero,false,false,false,1980s,Rock,4,2026-11-12 10:41:18,2026-10-23
+foreigner - urgent,false,false,false,1980s,Rock,4,2026-11-12 10:41:18,2026-10-23
+foreigner - waiting for a girl like you,false,true,false,1980s,Rock,2,2026-11-12 10:41:18,2026-10-23
+foster the people - pumped up kicks,false,false,false,2010s,Adult Top 40,4,2026-11-14 07:53:39,2026-10-13
+"four tops - i can't help myself (sugar pie, honey bunch)",false,false,false,1960s,R&B/Soul,5,2026-11-14 07:53:41,2026-10-13
+four tops - reach out i'll be there,false,false,false,1960s,R&B/Soul,4,2026-11-12 10:41:18,2026-10-23
+frank sinatra - come fly with me,false,false,false,1950s,Oldies/Classic,3,2026-11-14 07:53:41,2026-10-13
+frankie lymon & the teenagers - why do fools fall in love,false,true,false,1950s,Oldies/Classic,3,2026-11-14 07:53:39,2026-10-13
+fuel - shimmer,false,false,false,2000s,Rock,3,2026-11-14 07:53:40,2026-10-13
+"fugees, ms. lauryn hill - killing me softly with his song",false,true,false,1990s,R&B/Soul,2,2026-11-14 07:53:41,2026-10-13
+"fugees, ms. lauryn hill, wyclef jean, pras - fu-gee-la",false,false,false,1990s,Hip-Hop/Rap,4,2026-11-14 07:53:40,2026-10-13
+"fugees, ms. lauryn hill, wyclef jean, pras - ready or not",false,false,false,1990s,Hip-Hop/Rap,4,2026-11-14 07:53:40,2026-10-13
+garth brooks - friends in low places,false,false,false,1990s,Country,4,2026-11-12 10:41:18,2026-10-23
+gene vincent & his blue caps - be-bop-a-lula,false,false,false,1950s,Oldies/Classic,5,2026-11-14 07:53:42,2026-10-13
+george clinton - atomic dog,false,false,false,1980s,R&B/Soul,4,2026-11-12 10:41:18,2026-10-23
+george michael - careless whisper,false,true,false,1980s,Adult Top 40,2,2026-11-14 07:53:39,2026-10-13
+george michael - faith,false,false,false,1980s,Adult Top 40,4,2026-11-14 07:53:38,2026-10-13
+george michael - father figure,false,true,false,1980s,Adult Top 40,2,2026-11-14 07:53:39,2026-10-13
+george michael - freedom! '90 - edit,false,false,false,1990s,Adult Top 40,5,2026-11-14 07:53:40,2025-09-21
+george thorogood & the destroyers - bad to the bone,false,false,false,1980s,Rock,3,2026-11-12 10:41:18,2026-10-23
+ghost town djs - my boo - hitman's club mix,false,false,true,2000s,R&B/Soul,4,2026-11-14 07:53:38,2026-10-13
+"gil scott-heron, brian jackson - the bottle",false,false,true,1970s,R&B/Soul,3,2026-11-14 07:53:42,2026-10-13
+ginuwine - differences,false,true,false,1990s,R&B/Soul,2,2026-11-14 07:53:40,2026-10-13
+ginuwine - pony,false,false,false,1990s,R&B/Soul,4,2026-11-14 07:53:41,2026-10-13
+ginuwine - so anxious,false,true,false,1990s,R&B/Soul,2,2026-11-14 07:53:40,2026-10-13
+gladys knight & the pips - midnight train to georgia,false,true,false,1970s,R&B/Soul,2,2026-11-14 07:53:42,2026-10-13
+gloria gaynor - i will survive,false,false,false,1970s,Dance/Electronic,5,2026-11-14 07:53:42,2026-10-13
+"gnarls barkley, ceelo green, danger mouse - crazy",false,false,false,2000s,R&B/Soul,4,2026-11-14 07:53:39,2026-10-13
+grand funk railroad - we're an american band,false,false,false,1970s,Rock,5,2026-11-12 10:41:18,2026-10-23
+green day - basket case,false,false,false,1990s,Rock,5,2026-11-14 07:53:40,2026-10-13
+grungemusic4u - social distortion - cold feelings,false,false,true,1990s,Rock,4,2026-11-14 07:53:42,2026-10-13
+guns n' roses - knockin' on heaven's door,false,false,false,1990s,Rock,2,2026-11-14 07:53:40,2025-09-21
+guns n' roses - november rain,false,false,false,1990s,Rock,2,2026-11-14 07:53:41,2025-09-21
+guns n' roses - paradise city,false,false,false,1980s,Rock,5,2026-11-14 07:53:40,2026-10-13
+guns n' roses - sweet child o' mine,false,false,false,1980s,Rock,5,2026-11-14 07:53:41,2026-10-13
+guns n' roses - welcome to the jungle,false,false,false,1980s,Rock,5,2026-11-14 07:53:39,2026-10-13
+gwen stefani - hollaback girl,false,false,false,2000s,R&B/Soul,5,2026-11-14 07:53:39,2026-10-13
+"hank williams - hey, good lookin'",false,false,false,1950s,Country,4,2026-11-14 07:53:39,2026-10-13
+heart - alone,false,false,false,1980s,Rock,2,2026-11-12 10:41:18,2026-10-23
+heatwave - boogie nights,false,false,false,1970s,Dance/Electronic,5,2026-11-14 07:53:42,2026-10-13
+hootie & the blowfish - hold my hand,false,false,false,1990s,Rock,3,2026-11-12 10:41:18,2026-10-23
+hootie & the blowfish - only wanna be with you,false,false,false,1990s,Rock,4,2026-11-12 10:41:18,2026-10-23
+incubus - drive,false,false,false,1990s,Rock,3,2026-11-14 07:53:41,2026-10-13
+indigo girls - closer to fine,false,false,false,1980s,Adult Top 40,3,2026-11-14 07:53:38,2026-10-13
+ini kamoze - here comes the hotstepper,false,false,false,1990s,Hip-Hop/Rap,4,2026-11-12 10:41:18,2026-10-23
+inxs - devil inside,false,false,false,1980s,Rock,4,2026-11-12 10:41:18,2026-10-23
+inxs - need you tonight,false,false,false,1980s,Rock,4,2026-11-12 10:41:18,2026-10-23
+iron butterfly in- a-gadda-da-vida in hd best full version,false,false,false,1960s,Rock,3,2026-11-14 07:53:42,2026-10-13
+isaac hayes - theme from shaft,false,false,false,1970s,R&B/Soul,4,2026-11-14 07:53:42,2026-10-13
+iyaz - replay,false,false,false,2000s,Adult Top 40,4,2026-11-14 07:53:38,2026-10-13
+jackie wilson - (your love keeps lifting me) higher & higher,false,false,false,1960s,R&B/Soul,5,2026-11-14 07:53:38,2026-10-13
+james brown - i got you (i feel good),false,false,false,1960s,R&B/Soul,5,2026-11-14 07:53:42,2026-10-13
+james gang - walk away,false,false,false,1970s,Rock,4,2026-11-12 10:41:18,2026-10-23
+jamiroquai - virtual insanity,false,false,false,1990s,R&B/Soul,4,2026-11-14 07:53:40,2026-10-13
+janis joplin - me and bobby mcgee,false,false,false,1970s,Oldies/Classic,3,2026-11-14 07:53:41,2026-10-13
+"jeff buckley - lover, you should've come over",false,false,false,1990s,Rock,2,2026-11-14 07:53:41,2026-10-13
+jefferson airplane - somebody to love,false,false,false,1960s,Rock,4,2026-11-14 07:53:39,2025-09-22
+jennifer lopez - if you had my love,false,false,false,1990s,Adult Top 40,4,2026-11-14 07:53:38,2025-09-21
+jennifer lopez - let's get loud,false,false,false,1990s,Adult Top 40,5,2026-11-14 07:53:40,2026-10-13
+jennifer lopez - waiting for tonight,false,false,false,1990s,Dance/Electronic,4,2026-11-14 07:53:41,2026-10-13
+jerry lee lewis - great balls of fire,false,false,false,1950s,Oldies/Classic,5,2026-11-14 07:53:41,2025-09-22
+jerry lee lewis - whole lotta shakin' goin' on,false,false,false,1950s,Oldies/Classic,5,2026-11-14 07:53:42,2026-10-13
+jimi hendrix - all along the watchtower,false,false,false,1960s,Rock,4,2026-11-14 07:53:41,2026-10-13
+jimmy buffett - cheeseburger in paradise,false,false,false,1970s,Country,3,2026-11-12 10:41:18,2026-10-23
+jimmy buffett - margaritaville,false,false,false,1970s,Country,2,2026-11-12 10:41:18,2026-10-23
+joan jett & the blackhearts - i hate myself for loving you,false,false,false,1980s,Rock,4,2026-11-14 07:53:38,2026-10-13
+joan jett & the blackhearts - i love rock 'n roll,false,false,false,1980s,Rock,5,2026-11-14 07:53:38,2026-10-13
+"john denver - take me home, country roads - rerecorded",false,false,false,1970s,Country,3,2026-11-14 07:53:38,2026-10-13
+johnny cash - folsom prison blues,false,false,false,1950s,Country,3,2026-11-12 10:41:18,2026-10-23
+johnny cash - i walk the line - single version,false,false,false,1950s,Country,4,2026-11-14 07:53:40,2025-09-22
+journey - any way you want it,false,false,false,1980s,Rock,4,2026-11-14 07:53:40,2026-10-13
+journey - don't stop believin',false,false,false,1980s,Rock,4,2026-11-14 07:53:39,2025-09-21
+journey - faithfully,false,true,false,1980s,Rock,2,2026-11-12 10:41:18,2026-10-23
+journey - open arms,false,true,false,1980s,Rock,2,2026-11-14 07:53:41,2025-09-21
+journey - separate ways (worlds apart),false,false,false,1980s,Rock,5,2026-11-14 07:53:41,2026-10-13
+judas priest - you've got another thing coming,false,false,false,1980s,Rock,5,2026-11-14 07:53:41,2026-10-13
+"justin bieber, ludacris - baby",false,false,false,2010s,Hip-Hop/Rap,4,2026-11-14 07:53:38,2026-10-13
+justin timberlake - cry me a river,false,false,false,2000s,R&B/Soul,3,2026-11-14 07:53:40,2026-10-13
+justin timberlake - rock your body,false,false,false,2000s,R&B/Soul,4,2026-11-14 07:53:40,2026-10-13
+"justin timberlake, timbaland - sexyback (feat. timbaland)",false,false,false,2000s,R&B/Soul,5,2026-11-14 07:53:39,2026-10-13
+kansas - carry on wayward son,false,false,false,1970s,Rock,4,2026-11-12 10:41:18,2026-10-23
+kansas - dust in the wind,false,false,false,1970s,Rock,1,2026-11-12 10:41:18,2026-10-23
+kanye west - stronger,false,false,false,2000s,Hip-Hop/Rap,5,2026-11-14 07:53:40,2026-10-13
+"kanye west, jamie foxx - gold digger",false,false,false,2000s,R&B/Soul,4,2026-11-14 07:53:40,2026-10-13
+kate bush - running up that hill (a deal with god),false,false,false,1980s,Adult Top 40,4,2026-11-14 07:53:38,2026-10-13
+katrina & the waves - walking on sunshine,false,false,false,1980s,Adult Top 40,5,2026-11-14 07:53:40,2026-10-13
+katy perry - hot n cold,false,false,false,2000s,Adult Top 40,5,2026-11-14 07:53:40,2026-10-13
+katy perry - i kissed a girl,false,false,false,2000s,Adult Top 40,4,2026-11-14 07:53:39,2026-10-13
+kc & the sunshine band - boogie shoes,false,false,false,1970s,Dance/Electronic,5,2026-11-12 10:41:18,2026-10-23
+kc & the sunshine band - get down tonight,false,false,false,1970s,Dance/Electronic,5,2026-11-14 07:53:42,2026-10-13
+kc & the sunshine band - that's the way (i like it),false,false,false,1970s,Dance/Electronic,5,2026-11-14 07:53:42,2026-10-13
+kelly clarkson - because of you,false,false,false,2000s,Adult Top 40,3,2026-11-14 07:53:40,2026-10-13
+kelly clarkson - since u been gone,false,false,false,2000s,Adult Top 40,5,2026-11-14 07:53:38,2026-10-13
+kenny loggins - danger zone,false,false,false,1980s,Rock,5,2026-11-12 10:41:18,2026-10-23
+"kenny loggins - danger zone - from ""top gun"" original soundtrack",false,false,false,1980s,Rock,5,2026-11-14 07:53:40,2026-10-13
+kenny loggins - footloose,false,false,false,1980s,Adult Top 40,5,2026-11-14 07:53:39,2025-09-21
+kenny rogers & dolly parton - islands in the stream,false,false,false,1980s,Country,3,2026-11-12 10:41:17,2026-10-23
+kesha - tik tok,false,false,false,2000s,Dance/Electronic,5,2026-11-14 07:53:39,2026-10-13
+kiss - beth,false,false,false,1970s,Rock,1,2026-11-12 10:41:18,2026-10-23
+kiss - detroit rock city,false,false,false,1970s,Rock,5,2026-11-12 10:41:18,2026-10-23
+kiss - i was made for lovin' you,false,false,false,1970s,Dance/Electronic,5,2026-11-12 10:41:18,2026-10-23
+kiss - rock and roll all nite,false,false,false,1970s,Rock,5,2026-11-12 10:41:18,2026-10-23
+kool & the gang - celebration,false,false,false,1980s,Dance/Electronic,5,2026-11-12 10:41:18,2026-10-23
+kool & the gang - jungle boogie,false,false,false,1970s,Dance/Electronic,5,2026-11-14 07:53:42,2026-10-13
+kool & the gang - ladies' night,false,false,false,1970s,Dance/Electronic,4,2026-11-12 10:41:18,2026-10-23
+korn - freak on a leash,false,false,false,1990s,Rock,4,2026-11-14 07:53:39,2026-10-13
+kris kross - jump,false,false,false,1990s,Hip-Hop/Rap,5,2026-11-14 07:53:39,2026-10-13
+la bouche - be my lover,false,false,false,1990s,Dance/Electronic,5,2026-11-14 07:53:39,2026-10-13
+labelle - lady marmalade,false,false,false,1970s,R&B/Soul,4,2026-11-12 10:41:18,2026-10-23
+lady gaga - bad romance,false,false,false,2000s,Dance/Electronic,5,2026-11-14 07:53:38,2026-10-13
+lady gaga - poker face,false,false,false,2000s,Dance/Electronic,5,2026-11-14 07:53:40,2026-10-13
+"lady gaga, colby o'donis - just dance",false,false,false,2000s,Dance/Electronic,5,2026-11-14 07:53:38,2026-10-13
+led zeppelin - black dog,false,false,false,1970s,Rock,4,2026-11-12 10:41:18,2026-10-23
+led zeppelin - immigrant song,false,false,false,1970s,Rock,5,2026-11-12 10:41:18,2026-10-23
+led zeppelin - rock and roll,false,false,false,1970s,Rock,5,2026-11-12 10:41:18,2026-10-23
+led zeppelin - whole lotta love,false,false,false,1960s,Rock,5,2026-11-14 07:53:39,2026-10-13
+len - steal my sunshine - single version,false,false,false,2000s,Dance/Electronic,4,2026-11-14 07:53:38,2026-10-13
+leona lewis - bleeding love,false,true,false,2000s,Adult Top 40,2,2026-11-14 07:53:38,2026-10-13
+lesley gore - it's my party,false,false,false,1960s,Oldies/Classic,3,2026-11-12 10:41:18,2026-10-23
+limahl – the never ending story 2k26 remix (dj monster cover edit),false,false,true,2020s,Dance/Electronic,4,2026-11-14 07:53:42,2026-10-13
+lipps inc. - funkytown,false,false,false,1980s,Dance/Electronic,5,2026-11-12 10:41:18,2026-10-23
+lit - my own worst enemy,false,false,false,1990s,Rock,5,2026-11-14 07:53:39,2026-10-13
+little richard - long tall sally,false,false,false,1950s,Oldies/Classic,5,2026-11-14 07:53:42,2026-10-13
+little richard - tutti frutti,false,false,false,1950s,Oldies/Classic,5,2026-11-14 07:53:38,2026-10-13
+living colour - cult of personality,false,false,false,1980s,Rock,4,2026-11-14 07:53:38,2026-10-13
+"loafers, badjack, maxim schunk, benny goran bror andersson, bjoern k. ulvaeus, loafers, calle hellberg, maxim schunk - lay all your love on me",false,false,true,2020s,Dance/Electronic,5,2026-11-14 07:53:42,2026-10-13
+loleatta holloway - hit and run,false,false,true,1970s,Dance/Electronic,5,2026-11-14 07:53:42,2026-10-13
+los del río - macarena,false,false,false,1990s,Dance/Electronic,5,2026-11-12 10:41:19,2026-10-23
+lou bega - mambo no. 5 (a little bit of...),false,false,false,1990s,Adult Top 40,5,2026-11-14 07:53:38,2026-10-13
+louis armstrong - what a wonderful world,false,true,false,1960s,Oldies/Classic,1,2026-11-14 07:53:39,2026-10-13
+love affair - everlasting love,false,true,false,1960s,Oldies/Classic,3,2026-11-14 07:53:40,2026-10-13
+loverboy - turn me loose,false,false,false,1980s,Rock,4,2026-11-14 07:53:39,2025-09-21
+loverboy - working for the weekend,false,false,false,1980s,Rock,4,2026-11-14 07:53:39,2026-10-13
+luther vandross - never too much,false,false,false,1980s,R&B/Soul,4,2026-11-14 07:53:38,2026-10-13
+lynyrd skynyrd - free bird,false,false,false,1970s,Rock,3,2026-11-14 07:53:41,2025-09-22
+lynyrd skynyrd - gimme three steps,false,false,false,1970s,Rock,4,2026-11-12 10:41:18,2026-10-23
+lynyrd skynyrd - sweet home alabama,false,false,false,1970s,Rock,5,2026-11-12 10:41:18,2026-10-23
+m.i.a. - paper planes,false,false,false,2000s,Hip-Hop/Rap,4,2026-11-14 07:53:41,2026-10-13
+macy gray - i try,false,true,false,1990s,R&B/Soul,2,2026-11-14 07:53:40,2026-10-13
+madonna - express yourself,false,false,false,1980s,Dance/Electronic,5,2026-11-12 10:41:18,2026-10-23
+madonna - holiday,false,false,false,1980s,Dance/Electronic,5,2026-11-12 10:41:18,2026-10-23
+madonna - like a prayer,false,false,false,1980s,Adult Top 40,5,2026-11-14 07:53:41,2026-10-13
+madonna - material girl,false,false,false,1980s,Adult Top 40,4,2026-11-12 10:41:18,2026-10-23
+madonna - vogue,false,false,false,1990s,Dance/Electronic,5,2026-11-12 10:41:18,2026-10-23
+"madonna, justin timberlake, timbaland - 4 minutes (feat. justin timberlake & timbaland)",false,false,false,2000s,Dance/Electronic,5,2026-11-14 07:53:40,2026-10-13
+manfred mann - do wah diddy diddy,false,false,false,1960s,Oldies/Classic,5,2026-11-14 07:53:41,2025-09-22
+mariah carey - always be my baby,false,false,false,1990s,R&B/Soul,3,2026-11-14 07:53:40,2025-09-21
+mariah carey - fantasy,false,false,false,1990s,R&B/Soul,4,2026-11-14 07:53:38,2025-09-21
+mariah carey - hero,false,true,false,1990s,Adult Top 40,2,2026-11-14 07:53:39,2026-10-13
+mariah carey - my all,false,true,false,1990s,Adult Top 40,2,2026-11-14 07:53:39,2025-09-21
+"mariah carey, ol' dirty bastard - fantasy (feat. o.d.b.)",false,false,false,1990s,R&B/Soul,4,2026-11-14 07:53:38,2026-10-13
+mark morrison - return of the mack,false,false,false,1990s,R&B/Soul,4,2026-11-12 10:41:19,2026-10-23
+"mark ronson, bruno mars - uptown funk (feat. bruno mars)",false,false,false,2010s,R&B/Soul,5,2026-11-14 07:53:40,2025-09-22
+maroon 5 - this love,false,false,false,2000s,Adult Top 40,4,2026-11-14 07:53:39,2026-10-13
+martha reeves & the vandellas - dancing in the street,false,false,false,1960s,R&B/Soul,5,2026-11-14 07:53:42,2026-10-13
+martina mcbride - independence day,false,false,false,1990s,Country,3,2026-11-14 07:53:40,2026-10-13
+marvin gaye - i heard it through the grapevine,false,false,false,1960s,R&B/Soul,4,2026-11-14 07:53:42,2026-10-13
+marvin gaye - let's get it on,false,false,false,1970s,R&B/Soul,3,2026-11-14 07:53:42,2026-10-13
+marvin gaye - sexual healing,false,false,false,1980s,R&B/Soul,3,2026-11-14 07:53:39,2026-10-13
+marvin gaye - what's going on,false,false,false,1970s,R&B/Soul,3,2026-11-14 07:53:42,2026-10-13
+"marvin gaye, tammi terrell - ain't no mountain high enough - mono",false,false,false,1960s,R&B/Soul,4,2026-11-14 07:53:41,2025-09-22
+mary wells - my guy,false,false,false,1960s,R&B/Soul,3,2026-11-12 10:41:18,2026-10-23
+matthew wilder - break my stride,false,false,false,1980s,Adult Top 40,5,2026-11-14 07:53:38,2026-10-13
+mazzy star - fade into you,false,true,false,1990s,Adult Top 40,1,2026-11-14 07:53:38,2026-10-13
+meat loaf - paradise by the dashboard light,false,false,false,1970s,Rock,4,2026-11-14 07:53:40,2025-09-22
+men at work - down under,false,false,false,1980s,Adult Top 40,4,2026-11-14 07:53:39,2026-10-13
+men at work - who can it be now?,false,false,false,1980s,Rock,4,2026-11-14 07:53:39,2026-10-13
+metallica - enter sandman,false,false,false,1990s,Rock,4,2026-11-12 10:41:18,2026-10-23
+michael jackson - bad,false,false,false,1980s,Adult Top 40,5,2026-11-12 10:41:18,2026-10-23
+michael jackson - beat it,false,false,false,1980s,R&B/Soul,5,2026-11-14 07:53:40,2026-10-13
+michael jackson - billie jean,false,false,false,1980s,R&B/Soul,4,2026-11-14 07:53:40,2026-10-13
+michael jackson - black or white - single version,false,false,false,1990s,R&B/Soul,5,2026-11-14 07:53:41,2026-10-13
+michael jackson - dirty diana,false,false,false,1990s,R&B/Soul,4,2026-11-14 07:53:41,2026-10-13
+michael jackson - don't stop 'til you get enough,false,false,false,1970s,R&B/Soul,5,2026-11-14 07:53:38,2026-10-13
+michael jackson - remember the time,false,false,false,1990s,R&B/Soul,4,2026-11-14 07:53:40,2026-10-13
+michael jackson - rock with you - single version,false,false,false,1970s,R&B/Soul,4,2026-11-14 07:53:39,2026-10-13
+michael jackson - smooth criminal,false,false,false,1980s,Adult Top 40,5,2026-11-12 10:41:18,2026-10-23
+michael jackson - the way you make me feel,false,false,false,1980s,Adult Top 40,5,2026-11-12 10:41:18,2026-10-23
+michael jackson - they don't care about us,false,false,false,1990s,R&B/Soul,4,2026-11-14 07:53:39,2026-10-13
+michael jackson - thriller,false,false,false,1980s,Adult Top 40,5,2026-11-12 10:41:18,2026-10-23
+michael jackson - wanna be startin' somethin',false,false,false,1980s,Adult Top 40,5,2026-11-12 10:41:18,2026-10-23
+midnight oil - beds are burning,false,false,false,1980s,Rock,4,2026-11-14 07:53:38,2026-10-13
+miley cyrus - party in the u.s.a.,false,false,false,2000s,Adult Top 40,5,2026-11-14 07:53:39,2026-10-13
+miley cyrus - we can't stop,false,false,false,2010s,Adult Top 40,4,2026-11-14 07:53:39,2026-10-13
+milli vanilli - blame it on the rain,false,false,false,1990s,Adult Top 40,3,2026-11-14 07:53:39,2026-10-13
+milli vanilli - girl you know it's true,false,false,false,1980s,Adult Top 40,4,2026-11-14 07:53:38,2026-10-13
+milli vanilli - i'm gonna miss you,false,true,false,1980s,Adult Top 40,2,2026-11-14 07:53:40,2026-10-13
+millie small - my boy lollipop,false,false,false,1960s,Oldies/Classic,4,2026-11-14 07:53:39,2026-10-13
+minnie riperton - les fleurs,false,true,true,1970s,R&B/Soul,2,2026-11-14 07:53:42,2026-10-13
+misfits - last caress,false,false,true,1970s,Rock,4,2026-11-14 07:53:42,2026-10-13
+mkto - classic,false,false,false,2010s,Adult Top 40,4,2026-11-14 07:53:39,2026-10-13
+"modern talking, eric singleton - brother louie mix '98 (feat. eric singleton) - radio edit",false,false,false,1990s,Dance/Electronic,5,2026-11-14 07:53:41,2026-10-13
+molly hatchet - flirtin' with disaster,false,false,false,1970s,Rock,4,2026-11-12 10:41:18,2026-10-23
+monica - why i love you so much,false,true,true,1990s,R&B/Soul,3,2026-11-14 07:53:41,2026-10-13
+ms. lauryn hill - doo wop (that thing),false,false,false,1990s,R&B/Soul,4,2026-11-14 07:53:40,2025-09-21
+ms. lauryn hill - ex-factor,false,false,false,1990s,R&B/Soul,3,2026-11-14 07:53:39,2025-09-21
+"myles lloyd, bunt. - crazy",false,false,true,2010s,Dance/Electronic,4,2026-11-14 07:53:38,2026-10-13
+m|a|r|r|s - pump up the volume,false,false,false,1980s,Dance/Electronic,5,2026-11-12 10:41:19,2026-10-23
+mötley crüe - dr. feelgood,false,false,false,1980s,Rock,4,2026-11-12 10:41:18,2026-10-23
+mötley crüe - home sweet home,false,false,false,1980s,Rock,2,2026-11-12 10:41:18,2026-10-23
+mötley crüe - kickstart my heart,false,false,false,1980s,Rock,5,2026-11-12 10:41:18,2026-10-23
+naeleck - threnody (bombs away remix),false,false,true,2010s,Dance/Electronic,5,2026-11-14 07:53:39,2026-10-13
+"naeleck, sarah rebecca - all my heroes - radio edit",false,false,true,2010s,Dance/Electronic,4,2026-11-14 07:53:39,2026-10-13
+nancy sinatra - these boots are made for walkin',false,false,false,1960s,Oldies/Classic,4,2026-11-14 07:53:42,2026-10-13
+"nas, ginuwine - you owe me (feat. ginuwine)",false,false,true,1990s,R&B/Soul,3,2026-11-14 07:53:41,2026-10-13
+"nas, ms. lauryn hill - if i ruled the world (imagine that) (feat. lauryn hill)",false,false,false,1990s,Hip-Hop/Rap,4,2026-11-14 07:53:41,2025-09-21
+natalie imbruglia - torn,false,false,false,1990s,Adult Top 40,4,2026-11-14 07:53:38,2026-10-13
+neil diamond - sweet caroline,false,false,false,1960s,Oldies/Classic,5,2026-11-14 07:53:41,2026-10-13
+neil young - heart of gold,false,false,false,1970s,Oldies/Classic,2,2026-11-14 07:53:40,2026-10-13
+nelly furtado - maneater,false,false,false,2000s,Dance/Electronic,5,2026-11-14 07:53:39,2026-10-13
+"nelly furtado, timbaland - promiscuous",false,false,false,2000s,R&B/Soul,4,2026-11-14 07:53:41,2026-10-13
+new order - blue monday,false,false,false,1980s,Dance/Electronic,5,2026-11-14 07:53:40,2026-10-13
+new radicals - you get what you give,false,false,false,1990s,Adult Top 40,4,2026-11-12 10:41:18,2026-10-23
+nirvana - smells like teen spirit,false,false,false,1990s,Rock,4,2026-11-14 07:53:38,2026-10-13
+norman greenbaum - spirit in the sky,false,false,false,1960s,Rock,4,2026-11-12 10:41:18,2026-10-23
+ohio players - fire,false,false,false,1970s,R&B/Soul,5,2026-11-12 10:41:18,2026-10-23
+ohio players - love rollercoaster,false,false,false,1970s,Dance/Electronic,5,2026-11-14 07:53:42,2026-10-13
+one direction - what makes you beautiful,false,false,false,2010s,Adult Top 40,4,2026-11-14 07:53:39,2026-10-13
+otis redding - (sittin' on) the dock of the bay,false,true,false,1960s,R&B/Soul,2,2026-11-14 07:53:42,2026-10-13
+outkast - hey ya!,false,false,false,2000s,R&B/Soul,5,2026-11-14 07:53:41,2026-10-13
+outkast - ms. jackson,false,false,false,2000s,Hip-Hop/Rap,4,2026-11-14 07:53:40,2025-09-21
+ozzy osbourne - crazy train,false,false,false,1970s,Rock,4,2026-11-14 07:53:39,2026-10-13
+"ozzy osbourne - mama, i'm coming home",false,false,false,1990s,Rock,2,2026-11-12 10:41:18,2026-10-23
+p!nk - so what,false,false,false,2000s,Adult Top 40,5,2026-11-14 07:53:38,2026-10-13
+"p!nk, nate ruess - just give me a reason (feat. nate ruess)",false,false,false,2010s,Adult Top 40,3,2026-11-14 07:53:40,2025-09-22
+parliament - give up the funk (tear the roof off the sucker),false,false,false,1970s,R&B/Soul,5,2026-11-14 07:53:42,2026-10-13
+pat benatar - hit me with your best shot,false,false,false,1980s,Rock,5,2026-11-12 10:41:18,2026-10-23
+pat benatar - love is a battlefield,false,false,false,1980s,Rock,4,2026-11-12 10:41:18,2026-10-23
+patty smyth - the warrior,false,false,false,1980s,Rock,4,2026-11-14 07:53:38,2026-10-13
+"paul mccartney, wings - band on the run",false,false,false,1970s,Rock,4,2026-11-14 07:53:38,2026-10-13
+paul simon - you can call me al,false,false,false,1980s,Adult Top 40,4,2026-11-14 07:53:40,2025-09-21
+peaches & herb - reunited,false,true,false,1970s,R&B/Soul,2,2026-11-12 10:41:18,2026-10-23
+peaches & herb - shake your groove thing,false,false,false,1970s,Dance/Electronic,5,2026-11-14 07:53:42,2026-10-13
+pearl jam - daughter,false,false,false,1990s,Rock,2,2026-11-14 07:53:39,2025-09-21
+pearl jam - even flow,false,false,false,1990s,Rock,4,2026-11-14 07:53:39,2026-10-13
+pearl jam - last kiss,false,false,false,1990s,Rock,3,2026-11-14 07:53:38,2026-10-13
+percy sledge - when a man loves a woman,false,true,false,1960s,R&B/Soul,2,2026-11-14 07:53:42,2026-10-13
+pet shop boys - west end girls,false,false,false,1980s,Dance/Electronic,4,2026-11-14 07:53:40,2025-09-21
+peter frampton - show me the way,false,false,false,1970s,Rock,3,2026-11-12 10:41:18,2026-10-23
+"philip bailey, phil collins - easy lover",false,false,false,1980s,Adult Top 40,4,2026-11-14 07:53:40,2026-10-13
+"pink floyd - another brick in the wall, pt. 2",false,false,false,1970s,Rock,4,2026-11-12 10:41:18,2026-10-23
+pink floyd - learning to fly,false,false,false,1980s,Rock,3,2026-11-14 07:53:39,2026-10-13
+pink floyd - money,false,false,false,1970s,Rock,3,2026-11-12 10:41:18,2026-10-23
+pink floyd - time,false,false,false,1970s,Rock,2,2026-11-14 07:53:40,2026-10-13
+"pitbull, afrojack, ne-yo, nayer - give me everything (feat. nayer)",false,false,false,2010s,Dance/Electronic,5,2026-11-14 07:53:39,2026-10-13
+"pitbull, kesha - timber",false,false,false,2010s,Dance/Electronic,5,2026-11-14 07:53:41,2026-10-13
+"pras, ol' dirty bastard, mýa - ghetto supastar (that is what you are) (feat. ol' dirty bastard & mýa)",false,false,false,1990s,Hip-Hop/Rap,4,2026-11-14 07:53:39,2025-09-21
+prince - 1999,false,false,false,1980s,Dance/Electronic,5,2026-11-12 10:41:18,2026-10-23
+prince - kiss,false,false,false,1980s,R&B/Soul,5,2026-11-12 10:41:18,2026-10-23
+prince - let's go crazy,false,false,false,1980s,Rock,5,2026-11-12 10:41:18,2026-10-23
+prince - little red corvette,false,false,false,1980s,Adult Top 40,4,2026-11-12 10:41:18,2026-10-23
+prince - raspberry beret,false,false,false,1980s,R&B/Soul,4,2026-11-14 07:53:40,2026-10-13
+prince - the most beautiful girl in the world,false,false,false,1990s,R&B/Soul,3,2026-11-14 07:53:41,2026-10-13
+queen - a kind of magic,false,false,false,1980s,Rock,4,2026-11-14 07:53:39,2026-10-13
+queen - another one bites the dust,false,false,false,1980s,Dance/Electronic,5,2026-11-14 07:53:39,2026-10-13
+queen - crazy little thing called love,false,false,false,1970s,Rock,4,2026-11-14 07:53:40,2026-10-13
+queen - don't stop me now,false,false,false,1970s,Rock,5,2026-11-12 10:41:18,2026-10-23
+queen - fat bottomed girls,false,false,false,1970s,Rock,4,2026-11-12 10:41:18,2026-10-23
+queen - i want to break free,false,false,false,1980s,Rock,4,2026-11-14 07:53:39,2025-09-21
+queen - killer queen,false,false,false,1970s,Rock,3,2026-11-12 10:41:18,2026-10-23
+queen - radio ga ga,false,false,false,1980s,Rock,4,2026-11-14 07:53:38,2025-09-21
+queen - somebody to love,false,false,false,1970s,Rock,3,2026-11-12 10:41:18,2026-10-23
+queen - we are the champions,false,false,false,1970s,Rock,3,2026-11-12 10:41:19,2026-10-23
+queen - we will rock you,false,false,false,1970s,Rock,5,2026-11-12 10:41:19,2026-10-23
+"queen, david bowie - under pressure",false,false,false,1980s,Rock,4,2026-11-14 07:53:41,2026-10-13
+quiet riot - cum on feel the noize,false,false,false,1980s,Rock,5,2026-11-14 07:53:39,2026-10-13
+r. kelly - ignition - remix,false,false,false,2000s,R&B/Soul,5,2026-11-14 07:53:40,2026-10-13
+r.e.m. - losing my religion,false,false,false,1990s,Rock,3,2026-11-14 07:53:39,2026-10-13
+radiohead - creep,false,false,false,1990s,Rock,3,2026-11-14 07:53:39,2026-10-13
+ramones - blitzkrieg bop,false,false,false,1970s,Rock,5,2026-11-14 07:53:38,2025-09-22
+randykatana-you&i(originalmix),false,false,true,2010s,Dance/Electronic,4,2026-11-14 07:53:42,2026-10-13
+ratt - round and round,false,false,false,1980s,Rock,4,2026-11-12 10:41:19,2026-10-23
+ray charles - i've got a woman,false,false,false,1950s,R&B/Soul,4,2026-11-14 07:53:41,2026-10-13
+red hot chili peppers - californication,false,false,false,1990s,Rock,3,2026-11-14 07:53:40,2026-10-13
+red hot chili peppers - scar tissue,false,false,false,1990s,Rock,3,2026-11-14 07:53:40,2026-10-13
+red hot chili peppers - under the bridge,false,false,false,1990s,Rock,2,2026-11-14 07:53:41,2026-10-13
+reo speedwagon - can't fight this feeling,false,true,false,1980s,Rock,2,2026-11-14 07:53:40,2026-10-13
+reo speedwagon - keep on loving you,false,true,false,1980s,Rock,2,2026-11-14 07:53:39,2026-10-13
+reo speedwagon - take it on the run,false,false,false,1980s,Rock,3,2026-11-12 10:41:19,2026-10-23
+rick astley - never gonna give you up,false,false,false,1980s,Adult Top 40,5,2026-11-14 07:53:38,2026-10-13
+rick springfield - jessie's girl,false,false,false,1980s,Rock,5,2026-11-14 07:53:39,2026-10-13
+ricky martin - livin' la vida loca,false,false,false,1990s,Adult Top 40,5,2026-11-14 07:53:38,2026-10-13
+rihanna - don't stop the music,false,false,false,2000s,Dance/Electronic,5,2026-11-14 07:53:39,2026-10-13
+rihanna - pon de replay,false,false,false,2000s,R&B/Soul,5,2026-11-14 07:53:38,2026-10-13
+"rihanna, jay-z - umbrella",false,false,false,2000s,R&B/Soul,4,2026-11-14 07:53:39,2026-10-13
+rise (local heroes remix),false,false,true,2010s,Dance/Electronic,4,2026-11-14 07:53:42,2026-10-13
+ritchie valens - la bamba,false,false,false,1950s,Oldies/Classic,5,2026-11-14 07:53:42,2026-10-13
+robert palmer - addicted to love,false,false,false,1980s,Rock,4,2026-11-12 10:41:19,2026-10-23
+roberta flack - killing me softly with his song,false,true,false,1970s,R&B/Soul,2,2026-11-14 07:53:42,2026-10-13
+rod stewart - da ya think i'm sexy?,false,false,false,1970s,Dance/Electronic,4,2026-11-12 10:41:19,2026-10-23
+rod stewart - do ya think i'm sexy,false,false,false,1970s,Rock,4,2026-11-14 07:53:38,2026-10-13
+rod stewart - maggie may,false,false,false,1970s,Rock,3,2026-11-12 10:41:19,2026-10-23
+rose royce - car wash,false,false,false,1970s,Dance/Electronic,5,2026-11-14 07:53:42,2026-10-13
+"roxette - it must have been love - from the film ""pretty woman""",false,true,false,1990s,Adult Top 40,2,2026-11-14 07:53:38,2025-09-21
+roy ayers ubiquity - everybody loves the sunshine,false,false,false,1970s,R&B/Soul,3,2026-11-14 07:53:42,2026-10-13
+"roy orbison - oh, pretty woman",false,false,false,1960s,Oldies/Classic,4,2026-11-14 07:53:42,2026-10-13
+roy orbison - you got it,false,true,false,1980s,Oldies/Classic,3,2026-11-14 07:53:39,2026-10-13
+"rufus, chaka khan - tell me something good",false,false,false,1970s,R&B/Soul,4,2026-11-14 07:53:42,2026-10-13
+run–d.m.c. - it's tricky,false,false,false,1980s,Hip-Hop/Rap,4,2026-11-14 07:53:39,2025-09-21
+"run–d.m.c., aerosmith - walk this way (feat. aerosmith)",false,false,false,1980s,Hip-Hop/Rap,5,2026-11-14 07:53:40,2025-09-21
+rush - tom sawyer,false,false,false,1980s,Rock,4,2026-11-12 10:41:19,2026-10-23
+sade - kiss of life,false,false,false,1990s,R&B/Soul,3,2026-11-14 07:53:41,2026-10-13
+sade - paradise,false,false,false,1980s,R&B/Soul,3,2026-11-14 07:53:41,2025-09-21
+sade - smooth operator - single version,false,false,false,1980s,R&B/Soul,3,2026-11-14 07:53:40,2025-09-21
+sam & dave - soul man,false,false,false,1960s,R&B/Soul,5,2026-11-14 07:53:42,2026-10-13
+sam cooke - chain gang,false,false,false,1960s,R&B/Soul,4,2026-11-14 07:53:41,2026-10-13
+santana - black magic woman,false,false,false,1970s,Rock,3,2026-11-12 10:41:19,2026-10-23
+santana - oye como va,false,false,false,1970s,Rock,4,2026-11-12 10:41:19,2026-10-23
+"santana, rob thomas - smooth (feat. rob thomas)",false,false,false,1990s,Rock,4,2026-11-14 07:53:40,2026-10-13
+"santana, the product g&b - maria maria (feat. the product g&b)",false,false,false,1990s,R&B/Soul,3,2026-11-14 07:53:41,2025-09-21
+sarah mclachlan - building a mystery,false,false,false,1990s,Adult Top 40,2,2026-11-14 07:53:38,2025-09-21
+savage garden - i knew i loved you,false,true,false,1990s,Adult Top 40,2,2026-11-12 10:41:19,2026-10-23
+savage garden - truly madly deeply,false,true,false,1990s,Adult Top 40,2,2026-11-14 07:53:40,2025-09-21
+seals and crofts - summer breeze,false,false,false,1970s,Oldies/Classic,2,2026-11-14 07:53:40,2026-10-13
+sean kingston - beautiful girls,false,false,false,2000s,Adult Top 40,4,2026-11-14 07:53:38,2026-10-13
+sean paul - temperature,false,false,false,2000s,R&B/Soul,4,2026-11-14 07:53:41,2026-10-13
+semisonic - closing time,false,false,false,1990s,Rock,3,2026-11-12 10:41:19,2026-10-23
+"shaggy, rik rok - it wasn't me",false,false,false,2000s,R&B/Soul,4,2026-11-14 07:53:39,2026-10-13
+"shakira, wyclef jean - hips don't lie (feat. wyclef jean)",false,false,false,2000s,Adult Top 40,5,2026-11-14 07:53:39,2026-10-13
+shania twain - man! i feel like a woman!,false,false,false,1990s,Country,5,2026-11-12 10:41:19,2026-10-23
+shania twain - that don't impress me much,false,false,false,1990s,Country,4,2026-11-12 10:41:19,2026-10-23
+shania twain - you're still the one,false,true,false,1990s,Country,2,2026-11-12 10:41:19,2026-10-23
+shawn colvin - sunny came home,false,false,false,1990s,Adult Top 40,2,2026-11-14 07:53:38,2026-10-13
+"sickick, vikkstar, aloe blacc - lonely together",false,false,false,2010s,Dance/Electronic,4,2026-11-14 07:53:38,2026-10-13
+silverchair - pure massacre,false,false,true,1990s,Rock,5,2026-11-14 07:53:40,2026-10-13
+silverchair - suicidal dream,false,false,true,1990s,Rock,4,2026-11-14 07:53:41,2026-10-13
+silverchair - tomorrow,false,false,false,1990s,Rock,4,2026-11-14 07:53:39,2026-10-13
+simon & garfunkel - mrs. robinson,false,false,false,1960s,Oldies/Classic,3,2026-11-12 10:41:19,2026-10-23
+"simon & garfunkel - mrs. robinson - from ""the graduate"" soundtrack",false,false,false,1960s,Oldies/Classic,3,2026-11-14 07:53:41,2026-10-13
+sister sledge - we are family,false,false,false,1970s,Dance/Electronic,5,2026-11-14 07:53:42,2026-10-13
+sixpence none the richer - kiss me,false,false,false,1990s,Adult Top 40,3,2026-11-14 07:53:40,2025-09-21
+sly & the family stone - dance to the music,false,false,false,1960s,R&B/Soul,5,2026-11-12 10:41:19,2026-10-23
+smash mouth - all star,false,false,false,1990s,Rock,5,2026-11-14 07:53:40,2026-10-13
+smash mouth - walkin' on the sun,false,false,false,1990s,Rock,4,2026-11-12 10:41:19,2026-10-23
+smokey robinson & the miracles - the tracks of my tears,false,true,false,1960s,R&B/Soul,3,2026-11-14 07:53:42,2026-10-13
+snap! - the power,false,false,false,1990s,Dance/Electronic,5,2026-11-12 10:41:19,2026-10-23
+"snoop dogg, pharrell williams - drop it like it's hot",false,false,false,2000s,Hip-Hop/Rap,4,2026-11-14 07:53:39,2026-10-13
+something outside,false,false,true,2010s,Dance/Electronic,4,2026-11-14 07:53:42,2026-10-13
+sonny & cher - i got you babe,false,false,false,1960s,Oldies/Classic,3,2026-11-14 07:53:40,2026-10-13
+soul asylum - runaway train,false,false,false,1990s,Rock,2,2026-11-14 07:53:40,2026-10-13
+soulja boy - crank that (soulja boy),false,false,false,2000s,Hip-Hop/Rap,5,2026-11-14 07:53:39,2026-10-13
+spandau ballet - true,false,true,false,1980s,Adult Top 40,2,2026-11-14 07:53:41,2026-10-13
+spice girls - wannabe,false,false,false,1990s,Adult Top 40,5,2026-11-14 07:53:39,2026-10-13
+spin doctors - little miss can't be wrong,false,false,false,1990s,Rock,4,2026-11-14 07:53:39,2026-10-13
+spin doctors - two princes,false,false,false,1990s,Rock,4,2026-11-14 07:53:41,2026-10-13
+stealers wheel - stuck in the middle with you,false,false,false,1970s,Oldies/Classic,4,2026-11-14 07:53:41,2026-10-13
+steely dan - peg,false,false,false,1970s,Rock,3,2026-11-12 10:41:19,2026-10-23
+steely dan - reelin' in the years,false,false,false,1970s,Rock,4,2026-11-14 07:53:40,2026-10-13
+steppenwolf - born to be wild,false,false,false,1960s,Rock,5,2026-11-14 07:53:42,2026-10-13
+steve miller band - fly like an eagle,false,false,false,1970s,Rock,3,2026-11-12 10:41:19,2026-10-23
+steve miller band - rock'n me,false,false,false,1970s,Rock,4,2026-11-12 10:41:19,2026-10-23
+steve miller band - the joker,false,false,false,1970s,Rock,3,2026-11-12 10:41:19,2026-10-23
+steve perry - oh sherrie,false,false,false,1980s,Rock,3,2026-11-14 07:53:38,2026-10-13
+stevie wonder - for once in my life,false,false,false,1960s,R&B/Soul,4,2026-11-12 10:41:19,2026-10-23
+stevie wonder - higher ground,false,false,false,1970s,R&B/Soul,4,2026-11-12 10:41:19,2026-10-23
+stevie wonder - i wish,false,false,false,1970s,R&B/Soul,5,2026-11-12 10:41:19,2026-10-23
+"stevie wonder - signed, sealed, delivered i'm yours",false,false,false,1970s,R&B/Soul,5,2026-11-12 10:41:19,2026-10-23
+stevie wonder - sir duke,false,false,false,1970s,R&B/Soul,5,2026-11-12 10:41:19,2026-10-23
+stevie wonder - superstition,false,false,false,1970s,R&B/Soul,5,2026-11-14 07:53:42,2026-10-13
+stevie wonder - uptight (everything's alright),false,false,false,1960s,R&B/Soul,5,2026-11-14 07:53:42,2026-10-13
+styx - come sail away,false,false,false,1970s,Rock,3,2026-11-14 07:53:40,2026-10-13
+styx - mr. roboto,false,false,false,1980s,Rock,4,2026-11-12 10:41:19,2026-10-23
+styx - renegade,false,false,false,1970s,Rock,4,2026-11-12 10:41:19,2026-10-23
+styx - too much time on my hands,false,false,false,1980s,Rock,4,2026-11-12 10:41:19,2026-10-23
+sublime - santeria,false,false,false,1990s,Rock,3,2026-11-14 07:53:40,2026-10-13
+sugar ray - every morning,false,false,false,1990s,Adult Top 40,3,2026-11-12 10:41:19,2026-10-23
+sugarloaf - green-eyed lady,false,false,false,1970s,Rock,3,2026-11-12 10:41:19,2026-10-23
+"survivor - burning heart - from ""rocky iv"" soundtrack",false,false,false,1980s,Rock,5,2026-11-14 07:53:38,2025-09-21
+survivor - eye of the tiger,false,false,false,1980s,Rock,5,2026-11-14 07:53:38,2026-10-13
+swedish house mafia - save the world,false,false,false,2010s,Dance/Electronic,5,2026-11-14 07:53:38,2026-10-13
+"swedish house mafia, john martin - don't you worry child - radio edit",false,false,false,2010s,Dance/Electronic,5,2026-11-14 07:53:38,2026-10-13
+swv - weak,false,false,false,1990s,R&B/Soul,3,2026-11-14 07:53:40,2026-10-13
+"t-pain, yung joc - buy u a drank (shawty snappin') (feat. yung joc)",false,false,false,2000s,Hip-Hop/Rap,4,2026-11-14 07:53:41,2026-10-13
+tag team - whoomp! (there it is),false,false,false,1990s,Hip-Hop/Rap,5,2026-11-12 10:41:19,2026-10-23
+taio cruz - dynamite,false,false,false,2010s,Dance/Electronic,5,2026-11-14 07:53:38,2026-10-13
+take that - back for good - radio mix,false,true,false,1990s,Adult Top 40,2,2026-11-14 07:53:39,2026-10-13
+tal bachman - she's so high,false,false,false,1990s,Adult Top 40,4,2026-11-14 07:53:39,2026-10-13
+tears for fears - everybody wants to rule the world,false,false,false,1980s,Adult Top 40,3,2026-11-14 07:53:39,2026-10-13
+ted nugent - cat scratch fever,false,false,false,1970s,Rock,4,2026-11-12 10:41:19,2026-10-23
+teddy pendergrass - love t.k.o.,false,true,false,1980s,R&B/Soul,2,2026-11-14 07:53:41,2026-10-13
+the alan parsons project - eye in the sky,false,false,false,1970s,Rock,2,2026-11-14 07:53:39,2026-10-13
+the alan parsons project - sirius,false,false,false,1970s,Rock,2,2026-11-14 07:53:38,2026-10-13
+the allman brothers band - ramblin' man,false,false,false,1970s,Rock,4,2026-11-12 10:41:17,2026-10-23
+the animals - house of the rising sun,false,false,false,1960s,Oldies/Classic,3,2026-11-14 07:53:38,2026-10-13
+the autistic dj - alannah myles - black velvet,false,false,false,1990s,Rock,3,2026-11-14 07:53:41,2026-10-13
+the b-52's - love shack,false,false,false,1980s,Rock,5,2026-11-14 07:53:40,2025-09-21
+"the bangles, susanna hoffs - eternal flame",false,true,false,1980s,Adult Top 40,2,2026-11-14 07:53:40,2026-10-13
+the beach boys - barbara ann,false,false,false,1960s,Oldies/Classic,4,2026-11-12 10:41:17,2026-10-23
+the beach boys - california girls,false,false,false,1960s,Oldies/Classic,4,2026-11-12 10:41:17,2026-10-23
+"the beach boys - fun, fun, fun",false,false,false,1960s,Oldies/Classic,4,2026-11-12 10:41:17,2026-10-23
+the beach boys - good vibrations,false,false,false,1960s,Oldies/Classic,4,2026-11-12 10:41:17,2026-10-23
+the beach boys - good vibrations - 2001,false,false,false,1960s,Oldies/Classic,3,2026-11-14 07:53:38,2025-09-22
+the beach boys - i get around,false,false,false,1960s,Oldies/Classic,4,2026-11-12 10:41:17,2026-10-23
+the beach boys - surfin' u.s.a.,false,false,false,1960s,Oldies/Classic,5,2026-11-12 10:41:17,2026-10-23
+the beach boys - wouldn't it be nice,false,false,false,1960s,Oldies/Classic,4,2026-11-14 07:53:42,2026-10-13
+the beatles - a hard day's night,false,false,false,1960s,Oldies/Classic,4,2026-11-12 10:41:17,2026-10-23
+the beatles - all you need is love,false,false,false,1960s,Oldies/Classic,3,2026-11-12 10:41:17,2026-10-23
+the beatles - can't buy me love,false,false,false,1960s,Oldies/Classic,4,2026-11-12 10:41:17,2026-10-23
+the beatles - come together,false,false,false,1960s,Rock,3,2026-11-12 10:41:17,2026-10-23
+the beatles - get back,false,false,false,1960s,Rock,4,2026-11-12 10:41:17,2026-10-23
+"the beatles - hello, goodbye",false,false,false,1960s,Oldies/Classic,4,2026-11-12 10:41:17,2026-10-23
+the beatles - help!,false,false,false,1960s,Oldies/Classic,4,2026-11-12 10:41:17,2026-10-23
+the beatles - here comes the sun,false,false,true,1960s,Oldies/Classic,3,2026-11-12 10:41:17,2026-10-23
+the beatles - hey jude,false,false,false,1960s,Oldies/Classic,3,2026-11-14 07:53:42,2026-10-13
+the beatles - i want to hold your hand,false,false,false,1960s,Oldies/Classic,4,2026-11-12 10:41:17,2026-10-23
+the beatles - let it be,false,false,false,1970s,Oldies/Classic,2,2026-11-14 07:53:40,2025-09-22
+the beatles - love me do,false,false,false,1960s,Oldies/Classic,3,2026-11-12 10:41:17,2026-10-23
+"the beatles - ob-la-di, ob-la-da",false,false,false,1960s,Oldies/Classic,4,2026-11-12 10:41:17,2026-10-23
+the beatles - penny lane,false,false,false,1960s,Oldies/Classic,3,2026-11-12 10:41:17,2026-10-23
+the beatles - she loves you,false,false,false,1960s,Oldies/Classic,4,2026-11-12 10:41:17,2026-10-23
+the beatles - ticket to ride,false,false,false,1960s,Oldies/Classic,3,2026-11-12 10:41:17,2026-10-23
+the beatles - twist and shout,false,false,false,1960s,Oldies/Classic,5,2026-11-12 10:41:17,2026-10-23
+the beatles - yellow submarine,false,false,false,1960s,Oldies/Classic,3,2026-11-12 10:41:17,2026-10-23
+the beatles - yesterday,false,false,false,1960s,Oldies/Classic,1,2026-11-12 10:41:17,2026-10-23
+the big bopper - chantilly lace,false,false,false,1950s,Oldies/Classic,5,2026-11-14 07:53:42,2026-10-13
+the blackbyrds - rock creek park,false,false,true,1970s,R&B/Soul,4,2026-11-14 07:53:42,2026-10-13
+the box tops - the letter,false,false,false,1960s,Oldies/Classic,4,2026-11-14 07:53:42,2026-10-13
+the cars - just what i needed,false,false,false,1970s,Rock,4,2026-11-12 10:41:17,2026-10-23
+the cars - my best friend's girl,false,false,false,1970s,Rock,4,2026-11-12 10:41:17,2026-10-23
+the champs - tequila,false,false,false,1950s,Oldies/Classic,5,2026-11-12 10:41:17,2026-10-23
+the charlie daniels band - the devil went down to georgia,false,false,false,1970s,Country,5,2026-11-12 10:41:17,2026-10-23
+the chicks - there's your trouble,false,false,false,1990s,Country,3,2026-11-14 07:53:40,2026-10-13
+the chordettes - mr. sandman,false,true,false,1950s,Oldies/Classic,2,2026-11-14 07:53:39,2025-09-22
+the chords - sh-boom,false,true,false,1950s,Oldies/Classic,3,2026-11-14 07:53:40,2025-09-22
+the clash - rock the casbah,false,false,false,1980s,Rock,5,2026-11-14 07:53:40,2025-09-21
+the clash - should i stay or should i go,false,false,false,1980s,Rock,5,2026-11-14 07:53:40,2025-09-21
+the clovers - love potion no. 9 - remastered / single version,false,false,false,1950s,Oldies/Classic,3,2026-11-14 07:53:38,2026-10-13
+the coasters - yakety yak,false,false,false,1950s,Oldies/Classic,4,2026-11-14 07:53:42,2026-10-13
+the cranberries - zombie,false,false,false,1990s,Rock,4,2026-11-14 07:53:40,2026-10-13
+the cure - just like heaven,false,false,false,1980s,Rock,4,2026-11-14 07:53:41,2026-10-13
+the doobie brothers - listen to the music,false,false,false,1970s,Rock,4,2026-11-12 10:41:17,2026-10-23
+the doobie brothers - long train runnin',false,false,false,1970s,Rock,4,2026-11-12 10:41:17,2026-10-23
+the doors - break on through (to the other side),false,false,true,1960s,Rock,4,2026-11-12 10:41:17,2026-10-23
+"the doors - hello, i love you",false,false,false,1960s,Rock,4,2026-11-12 10:41:17,2026-10-23
+the doors - light my fire,false,false,false,1960s,Rock,3,2026-11-12 10:41:17,2026-10-23
+the doors - light my fire - new stereo mix advanced resolution,false,false,false,1960s,Rock,4,2026-11-14 07:53:40,2026-10-13
+the doors - people are strange,false,false,false,1960s,Rock,3,2026-11-12 10:41:17,2026-10-23
+the doors - roadhouse blues,false,false,true,1970s,Rock,4,2026-11-12 10:41:17,2026-10-23
+the drifters - under the boardwalk,false,true,false,1960s,Oldies/Classic,2,2026-11-14 07:53:41,2025-09-22
+the emotions - best of my love,false,false,false,1970s,R&B/Soul,3,2026-11-14 07:53:38,2025-09-22
+"the escape club - wild, wild west",false,false,false,1980s,Adult Top 40,4,2026-11-12 10:41:18,2026-10-23
+the everly brothers - all i have to do is dream,false,true,false,1950s,Oldies/Classic,2,2026-11-14 07:53:42,2026-10-13
+the everly brothers - wake up little susie,false,false,false,1950s,Oldies/Classic,4,2026-11-14 07:53:42,2026-10-13
+the flamingos - i only have eyes for you,false,true,false,1950s,Oldies/Classic,2,2026-11-14 07:53:42,2026-10-13
+the foundations - build me up buttercup,false,false,false,1960s,Oldies/Classic,4,2026-11-14 07:53:38,2026-10-13
+the four seasons - big girls don't cry,false,false,false,1960s,Oldies/Classic,3,2026-11-12 10:41:18,2026-10-23
+"the four seasons - december, 1963 (oh what a night!)",false,false,false,1970s,Oldies/Classic,5,2026-11-14 07:53:40,2026-10-13
+the four seasons - sherry,false,false,false,1960s,Oldies/Classic,4,2026-11-12 10:41:18,2026-10-23
+the gap band - early in the morning,false,false,false,1980s,R&B/Soul,4,2026-11-12 10:41:18,2026-10-23
+the gap band - you dropped a bomb on me,false,false,false,1980s,R&B/Soul,5,2026-11-12 10:41:19,2026-10-23
+the guess who - american woman,false,false,false,1970s,Rock,4,2026-11-12 10:41:18,2026-10-23
+the hollies - long cool woman in a black dress,false,false,false,1970s,Rock,4,2026-11-12 10:41:18,2026-10-23
+the hues corporation - rock the boat,false,false,false,1970s,Dance/Electronic,3,2026-11-12 10:41:18,2026-10-23
+the human league - don't you want me,false,false,false,1980s,Dance/Electronic,5,2026-11-14 07:53:41,2025-09-21
+the isley brothers - shout,false,false,false,1950s,R&B/Soul,5,2026-11-14 07:53:42,2026-10-13
+the isley brothers - that lady,false,false,false,1970s,R&B/Soul,4,2026-11-14 07:53:42,2026-10-13
+the isley brothers - this old heart of mine (is weak for you),false,false,false,1960s,R&B/Soul,4,2026-11-14 07:53:42,2026-10-13
+the jackson 5 - abc,false,false,false,1970s,R&B/Soul,5,2026-11-14 07:53:39,2025-09-22
+the jackson 5 - i want you back,false,false,false,1960s,R&B/Soul,5,2026-11-14 07:53:42,2026-10-13
+the jackson 5 - the love you save,false,false,false,1970s,R&B/Soul,5,2026-11-12 10:41:18,2026-10-23
+the killers - mr. brightside,false,false,false,2000s,Rock,5,2026-11-14 07:53:39,2026-10-13
+the kingsmen - louie louie,false,false,false,1960s,Rock,5,2026-11-14 07:53:42,2026-10-13
+the kinks - you really got me,false,false,false,1960s,Rock,5,2026-11-14 07:53:41,2026-10-13
+the lovin' spoonful - do you believe in magic?,false,false,false,1960s,Oldies/Classic,4,2026-11-14 07:53:38,2025-09-22
+the mamas & the papas - california dreamin' - single version,false,false,false,1960s,Oldies/Classic,3,2026-11-14 07:53:40,2025-09-22
+the monkees - daydream believer,false,false,false,1960s,Oldies/Classic,3,2026-11-12 10:41:18,2026-10-23
+the monkees - i'm a believer,false,false,false,1960s,Oldies/Classic,5,2026-11-14 07:53:40,2026-10-13
+the monkees - last train to clarksville,false,false,false,1960s,Oldies/Classic,4,2026-11-12 10:41:18,2026-10-23
+the neighbourhood - sweater weather,false,false,false,2010s,Adult Top 40,3,2026-11-14 07:53:40,2026-10-13
+the o'jays - i love music,false,false,false,1970s,Dance/Electronic,5,2026-11-12 10:41:18,2026-10-23
+the o'jays - love train,false,false,false,1970s,R&B/Soul,4,2026-11-14 07:53:42,2026-10-13
+the outfield - your love,false,false,false,1980s,Rock,4,2026-11-14 07:53:39,2026-10-13
+the penguins - earth angel (will you be mine),false,true,false,1950s,Oldies/Classic,2,2026-11-14 07:53:42,2026-10-13
+the platters - only you (and you alone),false,true,false,1950s,Oldies/Classic,2,2026-11-14 07:53:42,2026-10-13
+the platters - the great pretender,false,true,false,1950s,Oldies/Classic,2,2026-11-14 07:53:42,2026-10-13
+the pointer sisters - i'm so excited,false,false,false,1980s,Dance/Electronic,5,2026-11-14 07:53:38,2026-10-13
+the pointer sisters - jump (for my love),false,false,false,1980s,Dance/Electronic,5,2026-11-12 10:41:18,2026-10-23
+the police - every breath you take,false,false,false,1980s,Adult Top 40,2,2026-11-12 10:41:18,2026-10-23
+the police - roxanne,false,false,false,1970s,Rock,4,2026-11-12 10:41:18,2026-10-23
+the righteous brothers - unchained melody,false,true,false,1960s,Oldies/Classic,2,2026-11-14 07:53:42,2026-10-13
+the righteous brothers - you've lost that lovin' feelin',false,true,false,1960s,Oldies/Classic,2,2026-11-12 10:41:19,2026-10-23
+the rolling stones - (i can't get no) satisfaction,false,false,false,1960s,Rock,4,2026-11-14 07:53:40,2026-10-13
+the rolling stones - beast of burden,false,false,false,1970s,Rock,3,2026-11-12 10:41:19,2026-10-23
+the rolling stones - brown sugar,false,false,false,1970s,Rock,5,2026-11-12 10:41:19,2026-10-23
+the rolling stones - honky tonk women,false,false,false,1960s,Rock,4,2026-11-12 10:41:19,2026-10-23
+the rolling stones - jumpin' jack flash,false,false,false,1960s,Rock,5,2026-11-12 10:41:19,2026-10-23
+the rolling stones - miss you,false,false,false,1970s,Dance/Electronic,4,2026-11-12 10:41:19,2026-10-23
+the rolling stones - paint it black,false,false,false,1960s,Rock,4,2026-11-12 10:41:19,2026-10-23
+the rolling stones - start me up,false,false,false,1980s,Rock,5,2026-11-12 10:41:19,2026-10-23
+the rolling stones - you can't always get what you want,false,false,false,1960s,Rock,3,2026-11-12 10:41:19,2026-10-23
+the romantics - talking in your sleep,false,false,false,1980s,Rock,4,2026-11-14 07:53:40,2026-10-13
+the ronettes - be my baby,false,true,false,1960s,Oldies/Classic,4,2026-11-14 07:53:39,2025-09-22
+the shangri-las - leader of the pack,false,false,false,1960s,Oldies/Classic,3,2026-11-14 07:53:39,2026-10-13
+"the smiths - please, please, please let me get what i want (official lyric video) - the smiths (128k)",false,false,false,1980s,Rock,3,2026-11-14 07:53:42,2026-10-13
+the smiths - there is a light that never goes out,false,false,false,1980s,Rock,3,2026-11-14 07:53:41,2026-10-13
+the spinners - i'll be around,false,false,false,1970s,R&B/Soul,3,2026-11-14 07:53:42,2026-10-13
+the spinners - the rubberband man,false,false,false,1970s,R&B/Soul,4,2026-11-12 10:41:19,2026-10-23
+the staple singers - i'll take you there,false,false,false,1970s,R&B/Soul,4,2026-11-14 07:53:43,2026-10-13
+the strokes - last nite,false,false,false,2000s,Rock,5,2026-11-14 07:53:40,2026-10-13
+the supremes - baby love,false,false,false,1960s,R&B/Soul,4,2026-11-14 07:53:43,2026-10-13
+the supremes - come see about me,false,false,false,1960s,R&B/Soul,4,2026-11-12 10:41:19,2026-10-23
+the supremes - stop! in the name of love,false,false,false,1960s,R&B/Soul,4,2026-11-12 10:41:19,2026-10-23
+the supremes - you can't hurry love,false,false,false,1960s,R&B/Soul,5,2026-11-14 07:53:41,2025-09-22
+the temptations - just my imagination (running away with me),false,true,false,1970s,R&B/Soul,2,2026-11-12 10:41:19,2026-10-23
+the temptations - my girl,false,false,false,1960s,R&B/Soul,4,2026-11-14 07:53:39,2026-10-13
+the temptations - papa was a rollin' stone,false,false,false,1970s,R&B/Soul,4,2026-11-14 07:53:43,2026-10-13
+the the - this is the day,false,false,true,1980s,Adult Top 40,3,2026-11-14 07:53:39,2026-10-13
+the tokens - the lion sleeps tonight (re-recorded),false,false,false,1960s,Oldies/Classic,4,2026-11-14 07:53:41,2026-10-13
+the trammps - disco inferno,false,false,false,1970s,Dance/Electronic,5,2026-11-14 07:53:43,2026-10-13
+the trashmen - surfin' bird - original recording,false,false,false,1960s,Oldies/Classic,5,2026-11-14 07:53:40,2025-09-22
+the turtles - happy together,false,false,false,1960s,Oldies/Classic,3,2026-11-14 07:53:40,2025-09-22
+the undisputed truth - smiling faces sometimes,false,false,true,1970s,R&B/Soul,4,2026-11-14 07:53:43,2026-10-13
+the verve - bitter sweet symphony,false,false,false,1990s,Rock,3,2026-11-14 07:53:38,2026-10-13
+the white stripes - seven nation army,false,false,false,2000s,Rock,5,2026-11-14 07:53:38,2026-10-13
+the who - baba o'riley,false,false,true,1970s,Rock,4,2026-11-12 10:41:19,2026-10-23
+the who - my generation,false,false,false,1960s,Rock,4,2026-11-12 10:41:19,2026-10-23
+the who - pinball wizard,false,false,false,1960s,Rock,4,2026-11-12 10:41:19,2026-10-23
+the who - pinball wizard - original album version,false,false,false,1960s,Rock,4,2026-11-14 07:53:41,2025-09-22
+the who - squeeze box,false,false,false,1970s,Rock,4,2026-11-12 10:41:19,2026-10-23
+the who - who are you,false,false,false,1970s,Rock,4,2026-11-12 10:41:19,2026-10-23
+"the yardbirds, eric clapton - for your love",false,false,false,1960s,Rock,3,2026-11-14 07:53:38,2026-10-13
+the zombies - time of the season - mono version,false,false,false,1960s,Oldies/Classic,3,2026-11-14 07:53:41,2026-10-13
+thelma houston - don't leave me this way,false,false,false,1970s,Dance/Electronic,4,2026-11-14 07:53:43,2026-10-13
+thin lizzy - the boys are back in town,false,false,false,1970s,Rock,4,2026-11-12 10:41:19,2026-10-23
+third eye blind - semi-charmed life,false,false,false,1990s,Rock,4,2026-11-12 10:41:19,2026-10-23
+three dog night - joy to the world,false,false,false,1970s,Rock,4,2026-11-12 10:41:19,2026-10-23
+tiesto - urban train (cosmic gate remix),false,false,true,2000s,Dance/Electronic,5,2026-11-14 07:53:43,2026-10-13
+"timbaland, keri hilson, d.o.e. - the way i are",false,false,false,2000s,R&B/Soul,4,2026-11-14 07:53:40,2026-10-13
+tlc - creep,false,false,false,1990s,R&B/Soul,3,2026-11-14 07:53:39,2025-09-21
+tlc - no scrubs,false,false,false,1990s,R&B/Soul,4,2026-11-14 07:53:40,2026-10-13
+tlc - waterfalls,false,false,false,1990s,R&B/Soul,3,2026-11-14 07:53:41,2025-09-21
+toby keith - should've been a cowboy,false,false,false,1990s,Country,3,2026-11-12 10:41:19,2026-10-23
+tom jones - it's not unusual,false,false,false,1960s,Oldies/Classic,5,2026-11-14 07:53:39,2026-10-13
+tom petty - free fallin',false,false,false,1980s,Rock,3,2026-11-12 10:41:19,2026-10-23
+tom petty and the heartbreakers - don't do me like that,false,false,false,1970s,Rock,4,2026-11-12 10:41:19,2026-10-23
+tom petty and the heartbreakers - refugee,false,false,false,1980s,Rock,4,2026-11-12 10:41:19,2026-10-23
+tommy james & the shondells - mony mony,false,false,false,1960s,Oldies/Classic,5,2026-11-14 07:53:43,2026-10-13
+tone loc - wild thing,false,false,false,1980s,Hip-Hop/Rap,4,2026-11-12 10:41:19,2026-10-23
+toni braxton - he wasn't man enough,false,false,false,2000s,R&B/Soul,3,2026-11-14 07:53:38,2026-10-13
+toni braxton - un-break my heart,false,true,false,2000s,Adult Top 40,2,2026-11-14 07:53:40,2025-09-21
+toto - africa,false,false,false,1980s,Adult Top 40,4,2026-11-14 07:53:41,2026-10-13
+toto - rosanna,false,false,false,1980s,Rock,4,2026-11-14 07:53:38,2026-10-13
+"train - hey, soul sister",false,false,false,2000s,Adult Top 40,4,2026-11-14 07:53:40,2026-10-13
+train - meet virginia,false,false,false,1990s,Adult Top 40,3,2026-11-14 07:53:38,2026-10-13
+twist and shout (remastered 2009) - the beatles (128k),false,false,false,1960s,Oldies/Classic,5,2026-11-14 07:53:43,2026-08-29
+u2 - beautiful day,false,false,false,2000s,Rock,4,2026-11-14 07:53:38,2026-10-13
+u2 - i still haven't found what i'm looking for,false,false,false,1980s,Rock,3,2026-11-12 10:41:19,2026-10-23
+u2 - with or without you,false,false,false,1980s,Rock,3,2026-11-14 07:53:40,2026-10-13
+usher - you make me wanna...,false,false,false,2000s,R&B/Soul,4,2026-11-14 07:53:39,2025-09-21
+"usher, alicia keys - my boo",false,false,false,2000s,R&B/Soul,3,2026-11-14 07:53:41,2025-09-21
+"usher, lil jon, ludacris - yeah! (feat. lil jon & ludacris)",false,false,false,2000s,R&B/Soul,5,2026-11-14 07:53:39,2026-10-13
+"usher, pitbull - dj got us fallin' in love (feat. pitbull)",false,false,false,2010s,Dance/Electronic,5,2026-11-14 07:53:41,2026-10-13
+van halen - dance the night away,false,false,false,1970s,Rock,4,2026-11-12 10:41:19,2026-10-23
+van halen - jump,false,false,false,1980s,Rock,5,2026-11-12 10:41:19,2026-10-23
+van halen - panama,false,false,false,1980s,Rock,5,2026-11-12 10:41:19,2026-10-23
+van halen - runnin' with the devil,false,false,false,1970s,Rock,4,2026-11-12 10:41:19,2026-10-23
+van halen - why can't this be love,false,false,false,1980s,Rock,4,2026-11-12 10:41:19,2026-10-23
+van mccoy - the hustle,false,false,false,1970s,Dance/Electronic,5,2026-11-14 07:53:43,2026-10-13
+van morrison - brown eyed girl,false,false,false,1960s,Oldies/Classic,4,2026-11-14 07:53:38,2026-10-13
+vance joy - riptide,false,false,false,2010s,Adult Top 40,4,2026-11-14 07:53:40,2026-10-13
+vertical horizon - everything you want,false,false,false,1990s,Rock,3,2026-11-12 10:41:19,2026-10-23
+village people - y.m.c.a.,false,false,false,1970s,Dance/Electronic,5,2026-11-14 07:53:43,2026-10-13
+war - low rider,false,false,false,1970s,R&B/Soul,4,2026-11-14 07:53:43,2026-10-13
+war - the cisco kid,false,false,false,1970s,R&B/Soul,4,2026-11-12 10:41:19,2026-10-23
+war - why can't we be friends?,false,false,false,1970s,R&B/Soul,3,2026-11-12 10:41:19,2026-10-23
+warrant - cherry pie,false,false,false,1980s,Rock,5,2026-11-14 07:53:38,2026-10-13
+westlife - if i let you go - radio edit,false,true,false,1990s,Adult Top 40,2,2026-11-14 07:53:39,2026-10-13
+wet willie - keep on smilin',false,false,false,1970s,Rock,3,2026-11-12 10:41:19,2026-10-23
+wham! - club tropicana,false,false,false,1980s,Dance/Electronic,5,2026-11-14 07:53:40,2025-09-21
+wham! - everything she wants,false,false,false,1980s,Adult Top 40,4,2026-11-14 07:53:39,2026-10-13
+wham! - wake me up before you go-go,false,false,false,1980s,Adult Top 40,5,2026-11-14 07:53:39,2026-10-13
+whitesnake - here i go again,false,false,false,1980s,Rock,4,2026-11-12 10:41:19,2026-10-23
+whitesnake - is this love,false,false,false,1980s,Rock,2,2026-11-12 10:41:19,2026-10-23
+whitney houston - how will i know,false,false,false,1980s,Adult Top 40,5,2026-11-14 07:53:40,2026-10-13
+whitney houston - i have nothing,false,true,false,1990s,Adult Top 40,1,2026-11-14 07:53:39,2026-10-13
+whitney houston - i wanna dance with somebody (who loves me),false,false,false,1980s,Adult Top 40,5,2026-11-14 07:53:38,2026-10-13
+whitney houston - i will always love you,false,true,false,1990s,Adult Top 40,1,2026-11-14 07:53:38,2026-10-13
+whitney houston - it's not right but it's okay,false,false,false,1990s,R&B/Soul,3,2026-11-14 07:53:38,2026-10-13
+whitney houston - my love is your love,false,false,false,1990s,R&B/Soul,3,2026-11-14 07:53:39,2026-10-13
+whitney houston - saving all my love for you,false,true,false,1980s,Adult Top 40,2,2026-11-14 07:53:40,2026-10-13
+wild cherry - play that funky music,false,false,false,1970s,Dance/Electronic,5,2026-11-14 07:53:43,2026-10-13
+will smith - gettin' jiggy wit it,false,false,false,1990s,Hip-Hop/Rap,5,2026-11-14 07:53:39,2026-10-13
+"will smith - men in black - from ""men in black"" soundtrack",false,false,false,1990s,Hip-Hop/Rap,4,2026-11-14 07:53:41,2026-10-13
+will smith - miami,false,false,false,2000s,Hip-Hop/Rap,5,2026-11-14 07:53:41,2025-09-21
+"will.i.am, britney spears - scream & shout",false,false,false,2010s,Dance/Electronic,5,2026-11-14 07:53:40,2026-10-13
+william devaughn - be thankful for what you got,false,false,false,1970s,R&B/Soul,3,2026-11-14 07:53:43,2026-10-13
+willie nelson - on the road again,false,false,false,1980s,Country,4,2026-11-12 10:41:19,2026-10-23
+wilson pickett - in the midnight hour,false,false,false,1960s,R&B/Soul,4,2026-11-14 07:53:43,2026-10-13
+wilson pickett - land of 1000 dances,false,false,false,1960s,R&B/Soul,5,2026-11-12 10:41:19,2026-10-23
+wilson pickett - mustang sally,false,false,false,1960s,R&B/Soul,4,2026-11-12 10:41:19,2026-10-23
+wiz khalifa - black and yellow,false,false,false,2010s,Hip-Hop/Rap,4,2026-11-14 07:53:39,2026-10-13
+"wyclef jean, new york philharmonic - gone till november (feat. the new york philharmonic orchestra)",false,false,false,2000s,Hip-Hop/Rap,2,2026-11-14 07:53:41,2026-10-13
+yvonne elliman - if i can't have you,false,false,false,1970s,Dance/Electronic,3,2026-11-14 07:53:43,2026-10-13
+zz top - gimme all your lovin',false,false,false,1980s,Rock,5,2026-11-12 10:41:19,2026-10-23
+zz top - la grange,false,false,false,1970s,Rock,4,2026-11-12 10:41:19,2026-10-23
+zz top - legs,false,false,false,1980s,Rock,5,2026-11-12 10:41:19,2026-10-23
+zz top - sharp dressed man,false,false,false,1980s,Rock,5,2026-11-12 10:41:19,2026-10-23
+zz top - tush,false,false,false,1970s,Rock,4,2026-11-12 10:41:19,2026-10-23

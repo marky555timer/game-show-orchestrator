@@ -17,10 +17,23 @@ _GENERIC_DECOY_POOL = ["Unknown Artist", "N/A", "Not Sure", "None Of These"]
 # waiting on state.mystery_defer_until (the announcement VO finishing) --
 # see _start_mystery()'s docstring for the history of this mechanism.
 _pending_mystery = None
+# Song by an already-asked artist waiting for its own questions to start
+# ({"key": track key, "at": time}); see _update_repeat_artist().
+_pending_repeat = None
+_REPEAT_SETTLE_SECONDS = 4.0
 
 
 def _normalize_artist(artist):
     return str(artist).strip().lower()
+
+
+def question_on_screen():
+    """A regular quiz question is up on the panels (Game Mode with choices loaded).
+    The Mystery Band teaser, and the song title it reveals, must never cut in
+    front of it (Mark, 2026-11-17: a song title appeared over a live question).
+    The identify-band question itself doesn't count: it IS the teaser."""
+    return (state.mode == state.MODE_GAME and bool(state.factoid_choices)
+            and state.factoid_category != "identify_band")
 
 
 def check_new_track(title, artist, confident):
@@ -51,8 +64,13 @@ def check_new_track(title, artist, confident):
         return
     if state.questions_suppressed or state.medley_active:
         return  # jukebox mode (auto-start / Setup box) or a running Dance Medley: no questions
+    from drivers import round_engine
+    if not round_engine.song_questions_on():
+        return  # a "Wait, how much?" / Fastest Finger round asks its own questions
     if not confident or not artist:
         return
+    if question_on_screen():
+        return  # wait for the question to finish; re-checked every frame (track not marked yet)
     if net_health_engine.holding():
         return  # phones can't reach the game: try again once it recovers (re-checked every frame)
 
@@ -63,8 +81,18 @@ def check_new_track(title, artist, confident):
     state.mystery_track_key = track_key
     artist_key = _normalize_artist(artist)
 
-    if artist_key in state.asked_artists:
-        return  # not a mystery -- this artist has already been asked about
+    if track_key in state.mystery_asked_songs:
+        # Not a mystery -- this SONG already had its teaser this show (2026-11-14:
+        # was per-artist, which skipped e.g. a second Rolling Stones song).
+        # (Old note: with no
+        # teaser nothing used to start this song's quiz, so a show's second
+        # song by an artist played through with no questions at all
+        # (2026-11-12, "Maggie May" two songs after "Da Ya Think I'm Sexy").
+        # update() asks the song's own questions once it has settled in.
+        global _pending_repeat
+        _pending_repeat = {"key": track_key, "at": time.time()}
+        return
+    _pending_repeat = None
 
     # Lighting sting starts the moment the teaser is committed to -- flash
     # white, fade to black, then hold the room dark for however long the
@@ -110,6 +138,8 @@ def _start_mystery(artist_key, artist_display):
         state.quiz_selected_index = -1
         state.active_option = None
 
+    if state.factoid_track_key:
+        state.mystery_asked_songs.add(state.factoid_track_key)
     state.mystery_active = True
     state.mystery_resolved = False
     state.mystery_started_at = time.time()
@@ -168,16 +198,50 @@ def _build_identify_question(correct_artist):
     choices = [correct_artist] + decoys
     random.shuffle(choices)
 
+    from drivers.factoid_engine import clip_choices
+    _short, _long = clip_choices(choices, "Who is this?")
     return {
+        **_long,
         "headline": "mystery band",
         "full": "",
         "question": "Who is this?",
-        "choices": [c[:24] for c in choices],
+        "choices": _short,
         "correct_index": choices.index(correct_artist),
         "release_year": None,
         "category": "identify_band",
         "ts": time.time(),
     }
+
+
+def _round_song_questions_on():
+    from drivers import round_engine
+    return round_engine.song_questions_on()
+
+
+def _update_repeat_artist(now):
+    """A live show's song by an artist already asked about: no "Who is
+    this?" teaser, so start the song's own questions once the announcement
+    is over and the song has been heard for a moment. Only questions not yet
+    asked this show count, so going back with PREVIOUS TRACK asks nothing."""
+    global _pending_repeat
+    p = _pending_repeat
+    if (p["key"] != state.factoid_track_key or now - p["at"] > 90.0
+            or state.questions_suppressed or state.medley_active or state.intermission_active
+            or state.show_phase != "live" or state.mode != state.MODE_DJ
+            or state.game_winner_player_id or not _round_song_questions_on()):
+        _pending_repeat = None
+        return
+    if state.mystery_active or now < max(state.mystery_defer_until, p["at"]) + _REPEAT_SETTLE_SECONDS:
+        return
+    _pending_repeat = None
+    from drivers import ask_questions
+    fresh = [q for q in (state.track_question_queue or ask_questions._song_questions(p["key"]))
+             if q.get("question") not in state.asked_question_texts]
+    if not fresh:
+        return
+    print(f"[MYSTERY BAND] Song already had its teaser this show -- no teaser; "
+          f"starting this song's {len(fresh)} unasked question(s).")
+    ask_questions._ask_now()
 
 
 def update(now):
@@ -186,11 +250,14 @@ def update(now):
     waiting on state.mystery_defer_until (the announcement VO finishing --
     see check_new_track()'s docstring), then advances the 10s teaser
     window into the reveal-blink, then back to standard DJ mode display."""
-    global _pending_mystery
-    if _pending_mystery is not None and now >= state.mystery_defer_until:
+    global _pending_mystery, _pending_repeat
+    if _pending_mystery is not None and now >= state.mystery_defer_until and not question_on_screen():
         artist_key, artist_display = _pending_mystery
         _pending_mystery = None
         _start_mystery(artist_key, artist_display)
+
+    if _pending_repeat is not None:
+        _update_repeat_artist(now)
 
     if not state.mystery_active:
         return

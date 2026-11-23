@@ -165,6 +165,13 @@ def _pick_next_track():
     return random.choice(candidates)
 
 
+def drop_preload():
+    """Forget the speculatively preloaded next song so the next pick is made fresh
+    (a category round just changed what may be picked). update() preloads again."""
+    global _preloaded_track
+    _preloaded_track = None
+
+
 def _apply_show_filters(candidates):
     """Trivia Night show flow (2026-08-13): the Setup page's crowd-matching
     checkboxes, wiring drivers/music_metadata_engine.py's tags (previously
@@ -173,6 +180,9 @@ def _apply_show_filters(candidates):
     through unfiltered on a per-field basis -- only ~90% of the library is
     tagged, and treating "unknown" as "exclude" would silently starve the
     rotation for a partially-tagged library."""
+    from drivers import category_round_engine
+    if category_round_engine.filtering():
+        candidates = category_round_engine.filter_tracks(candidates)
     if not (state.show_exclude_explicit or state.show_exclude_slow_dance
             or state.show_exclude_never_charted or state.show_allowed_genres
             or state.show_allowed_decades or state.show_require_decade
@@ -587,6 +597,13 @@ def trigger_track_move(direction):
     VO; VO only -> the VO with no whoosh; SFX only -> sweeper over the
     crossfade; neither -> plain crossfade. update() re-checks state.sweepers_enabled
     when the move actually fires."""
+    from drivers import round_engine
+    if round_engine.price_round_live():
+        # "Wait, how much?" round (2026-11-22): the host skipping a song mid-round gets the same
+        # seamless crossfade as a song ending -- no GET READY / VO / sweeper, no board, marquee or
+        # light transition over the price questions.
+        _begin_seamless_move(direction)
+        return
     announced = state.auto_announce_enabled
     _begin_move(direction, announced=announced, sweeper_only=not announced)
 
@@ -602,6 +619,21 @@ def trigger_dovetail_move():
     stab (or straight after the intro) -- no sweeper, no VO, a short fade-in.
     Bypasses the saved-show intercept (the show engine already decided)."""
     _begin_move("next", announced=False, sweeper_only=False, dovetail=True, bypass=True)
+
+
+def trigger_quiet_move():
+    """Next song in the show's playlist with a plain crossfade: no sweeper, no VO ("Wait, how
+    much?" round, drivers/auto_dj_engine.py). Goes past the saved show (its end still ends the show;
+    show_runner skips wheel spins during that round). Seamless: no board wipe / GET READY banner /
+    marquee or DMX song-change transition either (2026-11-22)."""
+    _begin_seamless_move("next")
+
+
+def _begin_seamless_move(direction, bypass=False):
+    had = _pending is not None
+    _begin_move(direction, announced=False, sweeper_only=False, bypass=bypass)
+    if not had and _pending is not None:
+        _pending["seamless"] = True
 
 
 def trigger_plain_move():
@@ -711,16 +743,19 @@ def update(now):
         # uses), so the twinkles fade up as it ends rather than over the
         # top of it. A plain crossfade passes None and gets the standard
         # short blackout.
-        lighting_engine.trigger_song_transition(
-            fade_duration if (played_announcement or played_sweeper_only) else None
-        )
+        seamless = bool(_pending.get("seamless"))
+        if not seamless:
+            lighting_engine.trigger_song_transition(
+                fade_duration if (played_announcement or played_sweeper_only) else None
+            )
 
         # Lazy import: graphics.matrix_canvas imports get_now_playing from
         # this module at its own module scope, so importing it back at THIS
         # module's top level would be circular.
         from graphics import matrix_canvas
         wipe_hold = fade_duration + 2.0
-        matrix_canvas.trigger_board_wipe(wipe_hold)
+        if not seamless:
+            matrix_canvas.trigger_board_wipe(wipe_hold)
 
         # Announcement tag-phrase banner (top 2 panels): fills the dark
         # board-wipe space immediately, starting the instant the transition
@@ -730,21 +765,24 @@ def update(now):
         # actually played this transition (not a plain crossfade). Held for
         # at least the wipe's own duration so it doesn't vanish before the
         # screen even comes back.
-        if state.intermission_active:
+        if state.intermission_active or seamless:
             # Intermission (2026-10-15): the MC is switching songs between
             # games -- no "GET READY"/announcement caption on the panels.
             # Clear any banner window already open so none lingers.
             state.announcement_banner_text_override = ""
             state.announcement_banner_from = 0.0
             state.announcement_banner_until = 0.0
+            state.reveal_sweeper_at = 0.0
         elif played_announcement:
             state.announcement_banner_text_override = ""  # clear any stale sweeper-only override
             state.announcement_banner_from = now
             state.announcement_banner_until = now + max(config.ANNOUNCEMENT_BANNER_HOLD_SECONDS, wipe_hold)
+            state.reveal_sweeper_at = now + wipe_hold   # the banner clears here: magic sweeper (show_engine)
 
         state.blank_lower_marquees = True  # default for every new song; a saved exception is re-applied once it is identified
-        state.marquee_transition_start = time.time()  # marquee wipe on every song change
-        state.marquee_reveal_at = state.marquee_transition_start + wipe_hold  # in step with the matrix reveal
+        if not seamless:
+            state.marquee_transition_start = time.time()  # marquee wipe on every song change
+            state.marquee_reveal_at = state.marquee_transition_start + wipe_hold  # in step with the matrix reveal
         state.transition_style = _transition_style_for(played_sweeper_path)
         state.transition_count += 1
         from drivers import light_prefs_engine

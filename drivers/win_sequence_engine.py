@@ -17,10 +17,22 @@ from drivers import midi_driver, deck_orchestrator, auto_dj_engine, show_engine
 from audio.audio_engine import play_processed_sound, pick_random_applause
 
 
-def start(player_id):
+def start(player_id, reason="goal"):
     """Called from inputs/gamepad.py::_grade_multiplayer_round() the
-    instant a player's score crosses config.GAME_WIN_SCORE."""
+    instant a player's score crosses config.GAME_WIN_SCORE (reason "goal"), and by
+    drivers/round_engine.py when a round's songs run out or the operator ends it
+    (reason "songs" / "operator": the leader on raw points wins; player_id None = nobody
+    scored, so no celebration -- straight to the intermission)."""
     if state.win_sequence_active:
+        return
+    from drivers import round_engine
+    round_engine.note_round_end(reason, player_id)
+    if player_id is None:
+        show_engine.accumulate_round_scores()
+        state.last_round_winner_initials = ""
+        state.last_round_number = state.game_round_number
+        print(f"[WIN SEQUENCE] Round ended ({reason}) with no scores -- straight to the intermission.")
+        _finish_round(time.time())
         return
     # Trivia Night show flow (2026-08-13): fold this round's final scores
     # into the night-long cumulative tally BEFORE anything below resets
@@ -29,11 +41,14 @@ def start(player_id):
     # unused).
     show_engine.accumulate_round_scores()
     state.game_winner_player_id = player_id
+    winner = state.quiz_players.get(player_id) or {}
+    state.last_round_winner_initials = (winner.get("initials") or "").strip() or "???"
+    state.last_round_number = state.game_round_number
     state.win_sequence_active = True
     state.win_sequence_phase = "duck"
     state.win_sequence_started_at = time.time()
     midi_driver.tween_channel_faders_to(config.WIN_DUCK_LEVEL_PCT, config.WIN_DUCK_TWEEN_SECONDS)
-    print(f"[WIN SEQUENCE] Player {player_id!r} reached {state.game_win_score} -- ducking for applause.")
+    print(f"[WIN SEQUENCE] Player {player_id!r} won the round ({reason}) -- ducking for applause.")
 
 
 def update(now):
@@ -65,18 +80,22 @@ def update(now):
             state.win_sequence_active = False
             state.win_sequence_phase = ""
             print("[WIN SEQUENCE] Complete -- deck restored to full.")
-            # Trivia Night show flow (2026-08-13): if this round was
-            # tonight's Auto Final Round, the night ends here instead of
-            # starting a normal intermission -- see
-            # drivers/show_engine.py::start_outro()/state.show_final_round_number
-            # (set once, at Start Game time, only when the Setup page's
-            # "Auto Final Round" checkbox was on; otherwise None, and only
-            # the manual STOP GAME button ends the night).
-            if (state.show_phase == "live" and state.show_final_round_number
-                    and state.game_round_number >= state.show_final_round_number):
-                show_engine.start_outro()
-            else:
-                _start_intermission(now)
+            _finish_round(now)
+
+
+def _finish_round(now):
+    """Trivia Night show flow (2026-08-13): if this round was tonight's Auto Final Round -- or the last
+    one in the show's round list -- the night ends here instead of starting a normal intermission (see
+    drivers/show_engine.py::start_outro()/state.show_final_round_number, set once at Start Game time,
+    only when the Setup page's "Auto Final Round" checkbox was on; otherwise only the manual STOP GAME
+    button ends the night)."""
+    from drivers import round_engine
+    if state.show_phase == "live" and (
+            (state.show_final_round_number and state.game_round_number >= state.show_final_round_number)
+            or round_engine.rounds_exhausted()):
+        show_engine.start_outro()
+    else:
+        _start_intermission(now)
 
 
 def _update_intermission(now):
@@ -86,13 +105,39 @@ def _update_intermission(now):
         # about suspending the "never leave the room in silence" safety net.
         _watchdog_auto_next(now)
         return
+    if state.intermission_finishing:
+        # Timer is up but a song is still playing: let it finish before any
+        # question is asked (a song change ends the hold). The dead-air
+        # watchdog stays live so a missed hand-off can't hold the show forever.
+        if state.transition_count != state.intermission_finish_transition:
+            _end_intermission("song finished")
+        else:
+            _watchdog_auto_next(now)
+        return
     if now >= state.intermission_ends_at:
-        state.intermission_active = False
-        state.intermission_ends_at = 0.0
-        state.game_round_number += 1  # matrix idle GOAL PAGE's "ROUND N"
-        print("[WIN SEQUENCE] Intermission over -- next game can begin.")
+        if _song_is_playing():
+            state.intermission_finishing = True
+            state.intermission_finish_transition = state.transition_count
+            state.intermission_ends_at = now
+            print("[WIN SEQUENCE] Intermission timer up -- letting the current song finish first.")
+            return
+        _end_intermission("timer")
         return
     _watchdog_auto_next(now)
+
+
+def _song_is_playing():
+    return bool(state.now_playing_path) and state.active_deck in (1, 2)
+
+
+def _end_intermission(why):
+    state.intermission_active = False
+    state.intermission_finishing = False
+    state.intermission_ends_at = 0.0
+    state.game_round_number += 1  # matrix idle GOAL PAGE's "ROUND N"
+    from drivers import round_engine
+    round_engine.begin_round()
+    print(f"[WIN SEQUENCE] Intermission over ({why}) -- next game can begin.")
 
 
 def get_intermission_remaining_seconds(now):
@@ -111,7 +156,7 @@ def get_intermission_remaining_seconds(now):
 def pause_intermission():
     """Web remote Pause button. No-op (returns False) if there's no active
     intermission to pause, or it's already paused."""
-    if not state.intermission_active or state.intermission_paused:
+    if not state.intermission_active or state.intermission_paused or state.intermission_finishing:
         return False
     state.intermission_paused_remaining = max(0.0, state.intermission_ends_at - time.time())
     state.intermission_paused = True
@@ -141,6 +186,8 @@ def set_intermission_remaining_seconds(seconds):
     if not state.intermission_active:
         return False
     seconds = max(0.0, float(seconds))
+    if seconds > 0:
+        state.intermission_finishing = False  # extended: the countdown is live again
     if state.intermission_paused:
         state.intermission_paused_remaining = seconds
     else:
@@ -180,12 +227,26 @@ def _start_intermission(now):
     pulled, and hold there for state.intermission_minutes. Music keeps
     playing normally through this -- only the mystery "Who is this?"
     teaser is suppressed (drivers/mystery_band_engine.py::check_new_track())."""
+    # Freeze this round's standings for the phones' intermission screen.
+    try:
+        from drivers import player_profile
+        rows = sorted(state.quiz_players.items(), key=lambda kv: kv[1].get("score", 0), reverse=True)
+        state.last_round_board = [{
+            "player_id": pid, "rank": i + 1, "score": p.get("score", 0),
+            "name": p.get("name") or p.get("initials", "???"),
+            "emoji": p.get("emoji") or player_profile.DEFAULT_EMOJI,
+            "avatar_color": p.get("avatar_color", state.AVATAR_COLORS[0]),
+        } for i, (pid, p) in enumerate(rows) if p.get("score", 0) > 0]
+    except Exception as exc:
+        print(f"[WIN SEQUENCE] Could not freeze the round board: {exc}")
+        state.last_round_board = []
     for player in state.quiz_players.values():
         player["score"] = 0
     state.game_winner_player_id = ""
     state.game_active = False  # era-trivia scheduling: next real game starts fresh
     state.mode = state.MODE_DJ
     state.intermission_active = True
+    state.intermission_finishing = False
     state.intermission_ends_at = now + state.intermission_minutes * 60.0
     print(f"[WIN SEQUENCE] Intermission started -- {state.intermission_minutes} minute(s), "
           f"all scores reset.")

@@ -275,8 +275,9 @@ def _pick_game_music():
     point (config.py's own GAME_MUSIC_DIR comment) -- simon.wav is the
     one deliberate, name-identifiable exception to that."""
     global _game_music_deck, _last_game_music_played
+    # 2026-11-20: the round jingles (Fastest Finger intro, Cliffhanger climb, yodel) live here too.
     paths = [p for p in glob.glob(os.path.join(config.GAME_MUSIC_DIR, "*.wav"))
-             if "simon" not in os.path.basename(p).lower()]
+             if not any(k in os.path.basename(p).lower() for k in ("simon", "fastestfinger", "cliffhanger", "yodel", "waithowmuch"))]
     if not paths:
         return None
 
@@ -297,7 +298,7 @@ def _pick_game_music():
     return choice
 
 
-def play_random_game_music():
+def play_random_game_music(path=None, loop=False):
     """Price Game Mode entry (drivers/price_game_engine.py): deals the next
     card from the game-music deck (see _pick_game_music()) and plays it
     exactly once (loops=0) -- it does NOT loop, full stop. A missing/empty
@@ -313,7 +314,10 @@ def play_random_game_music():
     drivers/price_game_engine.py's _update_price_game_audio() notices via
     is_game_music_playing() and restores the deck to normal volume right
     away instead of leaving it ducked to silence -- so the bed never loops,
-    and the room is never left in true dead air either."""
+    and the room is never left in true dead air either.
+
+    `loop=True` is the one exception (2026-11-20, operator request): Cliffhanger's climb
+    music loops so it covers a climb longer than the 15 s clip; the climb's end fades it out."""
     global _game_music_active, _game_music_kill_timer
     with _game_music_lock:
         if _game_music_active:
@@ -337,7 +341,7 @@ def play_random_game_music():
             except Exception:
                 pass
 
-        path = _pick_game_music()
+        path = path or _pick_game_music()   # `path`: a specific jingle (Fastest Finger intro)
         if path is None:
             print(f"[AUDIO ERROR] No .wav files found in {config.GAME_MUSIC_DIR} -- "
                   f"Price Game music skipped")
@@ -356,9 +360,9 @@ def play_random_game_music():
             # so a volume nudge mid-round is felt immediately, same as every
             # other channel in the show.
             pygame.mixer.music.set_volume(state.music_volume / 100.0)
-            pygame.mixer.music.play(loops=0)
+            pygame.mixer.music.play(loops=-1 if loop else 0)
             _game_music_active = True
-            print(f"[AUDIO] Price Game background music -> {path} (plays once, no loop, "
+            print(f"[AUDIO] Price Game background music -> {path} ({'looping' if loop else 'plays once, no loop'}, "
                   f"volume={state.music_volume}%)")
         except Exception as e:
             print(f"[AUDIO ERROR] Failed to play Price Game music {path}: {e}")

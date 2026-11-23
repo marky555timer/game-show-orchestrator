@@ -819,6 +819,135 @@ def anim_qmark_bounce(surface, rect, t, seed=0.0):
     _draw_qmark(surface, cx, cy, r, RED_FULL, thickness=1)
 
 
+# ------------------------------------------------------------------
+# Living question marks (2026-11-12). The operator called the plain "?"
+# floating up the panel dumb and asked for organic ones "like the jellyfish
+# or the other algorithmic types". All four build an on/off mask the way
+# anim_jellyfish does.
+# ------------------------------------------------------------------
+_QMARK = sprite(
+    "..#####..",
+    ".#######.",
+    "###...###",
+    "##.....##",
+    ".......##",
+    "......###",
+    ".....###.",
+    "....###..",
+    "...###...",
+    "...##....",
+    "...##....",
+    ".........",
+    "...##....",
+    "...##....",
+)
+_QMARK_PTS = np.argwhere(_QMARK).astype(np.float32)          # (row, col) of every lit pixel
+_QMARK_RNG = np.random.RandomState(11)
+_QMARK_PHASE = _QMARK_RNG.uniform(0, 2 * math.pi, len(_QMARK_PTS)).astype(np.float32)
+_QMARK_ORBIT = _QMARK_RNG.uniform(0.55, 1.0, len(_QMARK_PTS)).astype(np.float32)
+_QMARK_SPIN = _QMARK_RNG.choice((-1.0, 1.0), len(_QMARK_PTS)).astype(np.float32)
+
+
+def anim_qmark_drift(surface, rect, t, seed=0.0):
+    """A question mark that swims like the jellyfish: the hook is its bell,
+    squeezing and relaxing, the stem trails behind as a rippling tentacle
+    and the dot follows as a bubble that swells on each squeeze."""
+    x0, y0, w, h = rect
+    m = np.zeros((h, w), bool)
+    tt = t + seed
+    pulse = math.sin(tt * 3.0)
+    cx = w / 2 - 0.5 + 9 * math.sin(tt * 0.29)
+    cy = 4.8 + 0.9 * math.sin(tt * 0.43) - 0.5 * pulse
+    rx, ry = 4.3 - 0.7 * pulse, 3.5 + 0.5 * pulse
+    a = np.linspace(math.pi * 1.12, -math.pi * 0.5, 30)     # lower left, over the top, round to bottom centre
+    for d in (0.0, 1.0):                                     # two strokes thick
+        plot(m, cx + (rx - d) * np.cos(a), cy - (ry - d) * np.sin(a))
+    k = np.arange(0, 3.6, 0.5)
+    sway = 0.28 * k * np.sin(k * 0.9 - tt * 4.0)
+    for d in (0.0, 1.0):
+        plot(m, cx - 0.5 + d + sway, cy + ry + k)
+    bx = cx + 0.28 * 5.5 * math.sin(5.5 * 0.9 - tt * 4.0)
+    by = min(h - 1.5, cy + ry + 6.2 + 0.4 * math.sin(tt * 1.7))
+    for dx, dy in ((0, 0), (1, 0), (0, 1), (1, 1)):
+        plot(m, [bx - 0.5 + dx], [by - 0.5 + dy])
+    if pulse > 0.6:                                          # the bubble swells on the squeeze
+        plot(m, [bx - 1.5, bx + 1.5, bx, bx], [by, by, by - 1.5, by + 1.5])
+    blit_mask(surface, x0, y0, m)
+
+
+def anim_qmark_ripples(surface, rect, t, seed=0.0):
+    """A solid question mark gliding side to side; its dot is a stone in a
+    pond, sending rings out across the whole panel."""
+    x0, y0, w, h = rect
+    yy, xx = _grid(h, w)
+    tt = t + seed
+    gx = int(round(w / 2 - 4.5 + 7.5 * math.sin(tt * 0.33)))
+    g = np.zeros((h, w), bool)
+    _stamp(g, _QMARK, gx, 1)
+    halo = g.copy()
+    for dy in (-2, -1, 0, 1, 2):
+        for dx in (-2, -1, 0, 1, 2):
+            halo |= np.roll(g, (dy, dx), (0, 1))
+    d = np.hypot(xx - (gx + 3.5), (yy - 13.5) * 1.2)
+    rings = np.sin(d * 0.8 - tt * 4.0) > 0.72 + d * 0.012    # fine rings, thinning as they travel
+    blit_mask(surface, x0, y0, g | (rings & ~halo))
+
+
+def anim_qmark_fireflies(surface, rect, t, seed=0.0):
+    """Fireflies wheel around the panel, gather into a question mark, hold
+    it shimmering for a moment, then scatter again."""
+    x0, y0, w, h = rect
+    m = np.zeros((h, w), bool)
+    tt = t + seed
+    c = (tt % 9.0) / 9.0                                     # roam, gather, hold, scatter
+    if c < 0.22:
+        k = 0.0
+    elif c < 0.42:
+        k = (c - 0.22) / 0.20
+    elif c < 0.80:
+        k = 1.0
+    else:
+        k = 1.0 - (c - 0.80) / 0.20
+    k = k * k * (3 - 2 * k)                                  # ease in and out
+    ph = _QMARK_PHASE
+    fx = w / 2 - 0.5 + (w / 2 - 1) * _QMARK_ORBIT * np.cos(tt * 0.9 * _QMARK_SPIN + ph)
+    fy = h / 2 - 0.5 + (h / 2 - 1) * _QMARK_ORBIT * np.sin(tt * 1.3 + ph * 1.7)
+    gx = w / 2 - 4.5 + _QMARK_PTS[:, 1] + 0.3 * np.sin(tt * 6.0 + ph)        # held shape shimmers
+    gy = 1.0 + _QMARK_PTS[:, 0] + 0.3 * np.cos(tt * 5.0 + ph * 1.3)
+    plot(m, fx + (gx - fx) * k, fy + (gy - fy) * k)
+    blit_mask(surface, x0, y0, m)
+
+
+def anim_qmark_fern(surface, rect, t, seed=0.0):
+    """A fiddlehead: a tightly coiled fern frond that unfurls into a
+    question mark, sways, and curls back up. Its dot is the seed below."""
+    x0, y0, w, h = rect
+    m = np.zeros((h, w), bool)
+    tt = t + seed
+    coil = max(0.0, math.cos(tt * 0.7)) ** 1.5              # 1 = coiled tight, 0 = open "?" (half the time)
+    sway = 1.6 * math.sin(tt * 1.1) * (1 - 0.6 * coil)
+    cx = w / 2 - 0.5 + 6 * math.sin(tt * 0.21)
+    radius = 4.2
+    top = 5.0                                                # centre of the curl
+    u = np.linspace(0.0, 1.0, 70)
+    turn = math.pi * 1.62 + coil * math.pi * 2.4
+    a = -math.pi / 2 + u * turn
+    r = radius * (1 - 0.8 * coil * u)
+    hx = cx + r * np.cos(a)
+    hy = top - r * np.sin(a)
+    sy = np.arange(top + radius, 12.01, 0.5)                 # the stalk under the curl
+    xs = np.concatenate([hx, np.full(len(sy), cx)])
+    ys = np.concatenate([hy, sy])
+    xs = xs + sway * (12.0 - ys) / 10.0                      # the tip sways furthest
+    plot(m, xs, ys)
+    outer = np.concatenate([u * turn <= math.pi * 1.62, np.ones(len(sy), bool)])
+    plot(m, xs[outer] + 1, ys[outer])                        # stalk and outer hook two strokes thick
+    seed_r = 1.0 + (0.5 if math.sin(tt * 3.0) > 0.5 else 0.0)
+    yy, xx = _grid(h, w)
+    m |= ((xx - (cx + 0.5)) ** 2 + (yy - 14.2) ** 2) <= seed_r ** 2
+    blit_mask(surface, x0, y0, m)
+
+
 # ==========================================
 # IDLE ANIMATION DEAL (panels 3-6)
 # ==========================================
@@ -833,6 +962,8 @@ def anim_qmark_bounce(surface, rect, t, seed=0.0):
 # on a line), dancing_pixelman (blocky), qmark_scatter/_bounce/_pulse_grow
 # (drift/bounce/plain growing), bat_swarm + witch_flyby (cross the panel on
 # a rail), party_hat (stiff wobble). Add one back to its list to revive it.
+# RETIRED 2026-11-12 (operator: "really dumb"): qmark_float_up, the plain "?"
+# rising up the panel -- replaced by qmark_drift/_ripples/_fireflies/_fern.
 GENERAL_IDLE_ANIMATIONS = [
     anim_jellyfish,
     anim_equalizer,
@@ -860,7 +991,10 @@ IDLE_THEMES = {
         anim_party_popper,
     ],
     "Question Marks": [
-        anim_qmark_float_up,
+        anim_qmark_drift,
+        anim_qmark_ripples,
+        anim_qmark_fireflies,
+        anim_qmark_fern,
     ],
     # Demoscene effects + the four-panel demo (graphics/technical_dreams.py).
     "Technical Dreams": technical_dreams.ANIMATIONS,

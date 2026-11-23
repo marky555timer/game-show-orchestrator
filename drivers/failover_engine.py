@@ -24,6 +24,7 @@ No internet = no change: a Pi only stands down on a definite answer from
 the site that another live Pi owns the show.
 """
 import json
+import os
 import queue
 import socket
 import sys
@@ -58,6 +59,13 @@ _claim_wanted = False        # primary running a show with nobody in charge
 _stood_down_epoch = -1       # epoch we last stood down for (once per takeover)
 _last_message = ""           # last takeover/stand-down result, for the remote
 _last_message_at = 0.0
+# RESUME LAST SHOW (2026-11-12): {"saved_at": epoch, "snapshot": {...}} -- this
+# machine's own last report made while a show was really running. Kept in
+# config.LAST_SHOW_PATH so it survives a restart or a power cut; cleared when
+# the show reaches its outro.
+_last_show = None
+_last_show_written_at = 0.0
+_last_show_song = ""
 
 
 # ------------------------------------------------------------- identity
@@ -153,6 +161,9 @@ def _build_snapshot():
     title, artist = deck_orchestrator.get_now_playing()
     elapsed = time.time() - state.now_playing_started_at if state.now_playing_started_at else 0.0
     players = {pid: {"initials": p.get("initials", ""), "score": p.get("score", 0),
+                     "name": p.get("name", ""), "emoji": p.get("emoji", ""),
+                     "streak": p.get("streak", 0), "best_streak": p.get("best_streak", 0),
+                     "correct": p.get("correct", 0), "asked": p.get("asked", 0),
                      "avatar_color": p.get("avatar_color", "")}
                for pid, p in list(state.quiz_players.items())}
     return {
@@ -169,12 +180,95 @@ def _build_snapshot():
         "players": players,
         "cumulative": dict(state.show_cumulative_scores),
         "asked_artists": sorted(state.asked_artists),
+        "mystery_asked_songs": sorted(state.mystery_asked_songs),
         "asked_questions": sorted(state.asked_question_texts),
         "settings": {k: bool(getattr(state, k, False)) for k in (
             "questions_suppressed", "listen_enabled", "show_outro_enabled", "auto_advance_after_quiz",
             "auto_dj_enabled", "auto_announce_enabled", "sweepers_enabled", "sfx_enabled")},
         "linger_pct": state.autoadv_linger_pct,
     }
+
+
+# ------------------------------------------------------- resume last show
+def _load_last_show():
+    global _last_show
+    try:
+        with open(config.LAST_SHOW_PATH, encoding="utf-8") as f:
+            d = json.load(f)
+        if isinstance(d.get("snapshot"), dict) and (d["snapshot"].get("show") or {}).get("name"):
+            _last_show = d
+            print(f"[FAILOVER] Last show on file: '{d['snapshot']['show']['name']}' (RESUME LAST SHOW on the Setup page).")
+    except FileNotFoundError:
+        pass
+    except Exception as e:
+        print(f"[FAILOVER] Couldn't read {config.LAST_SHOW_PATH}: {e}")
+
+
+def _remember_last_show(snap, now):
+    """Main thread, each time the report is rebuilt (every 2s)."""
+    global _last_show, _last_show_written_at, _last_show_song
+    phase = snap.get("phase")
+    show = snap.get("show") or {}
+    if phase == "outro" or (snap.get("background") and _last_show):
+        if _last_show is not None:          # the show finished: nothing left to resume
+            _last_show = None
+            try:
+                os.remove(config.LAST_SHOW_PATH)
+            except OSError:
+                pass
+        return
+    if phase not in ("dark", "intro", "live") or snap.get("background") or not show.get("name"):
+        return                              # at the menu: keep what we have
+    _last_show = {"saved_at": time.time(), "snapshot": snap}
+    song = (snap.get("song") or {}).get("file", "")
+    if song == _last_show_song and now - _last_show_written_at < 10.0:
+        return
+    _last_show_song, _last_show_written_at = song, now
+    try:
+        tmp = config.LAST_SHOW_PATH + ".tmp"
+        with open(tmp, "w", encoding="utf-8") as f:
+            json.dump(_last_show, f)
+        os.replace(tmp, config.LAST_SHOW_PATH)
+    except Exception as e:
+        print(f"[FAILOVER] Couldn't save {config.LAST_SHOW_PATH}: {e}")
+
+
+def _last_show_status():
+    d = _last_show
+    if not d or _show_running():
+        return None
+    snap = d["snapshot"]
+    show = snap.get("show") or {}
+    song = snap.get("song") or {}
+    return {
+        "age": max(0.0, time.time() - d.get("saved_at", 0)),
+        "show": show.get("name", ""),
+        "phase": snap.get("phase"),
+        "song_number": show.get("song_number", 0),
+        "song_count": show.get("song_count", 0),
+        "mode": show.get("mode", ""),
+        "title": song.get("title", ""),
+        "artist": song.get("artist", ""),
+        "next_title": show.get("next_title", ""),
+        "next_artist": show.get("next_artist", ""),
+        "players": len(snap.get("players") or {}),
+        "round": snap.get("round", 1),
+        "leader": _leader(snap),
+    }
+
+
+def request_resume_last():
+    """Setup page RESUME LAST SHOW: pick this machine's last show back up."""
+    if not _enabled:
+        return {"ok": False, "message": "Failover isn't running on this machine."}
+    if not _last_show:
+        return {"ok": False, "message": "There is no unfinished show to resume."}
+    if _show_running():
+        return {"ok": False, "message": "A show is already running."}
+    if other_owns():
+        return {"ok": False, "message": "The other Pi has the show -- use TAKE CONTROL instead."}
+    _actions.put(("resume_last", _last_show["snapshot"]))
+    return {"ok": True, "message": "Resuming the last show..."}
 
 
 # ------------------------------------------------------- remote button
@@ -225,6 +319,7 @@ def status():
         "taking": _take_requested,
         "message": _last_message if time.time() - _last_message_at < 120 else "",
         "backup_admin_url": config.FAILOVER_BACKUP_ADMIN_URL,
+        "last_show": _last_show_status(),
         "position": None if not snap else {
             "age": v.get("snapshot_age"),
             "phase": snap.get("phase"),
@@ -347,6 +442,7 @@ def start():
         print("[FAILOVER] Not on the Pi -- failover off.")
         return
     _load_role()
+    _load_last_show()
     _device = _device_id()
     _enabled = True
     threading.Thread(target=_loop, daemon=True, name="failover").start()
@@ -369,6 +465,7 @@ def update(now):
         _snapshot_built_at = now
         try:
             _snapshot = _build_snapshot()
+            _remember_last_show(_snapshot, now)
         except Exception as e:
             print(f"[FAILOVER] Snapshot failed: {e}")
 
@@ -381,6 +478,15 @@ def _run_action(action):
         if _show_running() or state.show_background:
             show_engine.back_to_menu()
         _note(f"{who} took over the show -- this Pi stood down (TAKE CONTROL to run it here again).")
+    elif kind == "resume_last":
+        try:
+            msg = show_engine.resume_from(action[1], own=True)
+        except Exception as e:
+            import traceback
+            traceback.print_exc()
+            msg = f"Resuming the last show failed: {e}"
+        _note(msg)
+        _wake.set()
     elif kind == "takeover":
         snap = action[1] or {}
         try:

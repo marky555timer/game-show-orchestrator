@@ -36,7 +36,7 @@ _BASE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 _SESSIONS_FILE = os.path.join(_BASE, "admin_sessions.json")
 COOKIE = "tc_admin"
 
-_OPEN_PREFIXES = ("/api/player/", "/auth/")
+_OPEN_PREFIXES = ("/api/player/", "/api/results/", "/auth/", "/art/")
 _OPEN_PATHS = {"/play", "/api/audio/stream", "/api/quiz/qr", "/favicon.ico"}
 
 _lock = threading.Lock()

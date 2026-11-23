@@ -73,7 +73,7 @@ def pointer(elapsed):
     after config.SHOW_INTRO_WHEEL_TURNS extra revolutions, over
     state.show_wheel_spin_seconds (one pass of wheelTheme.wav)."""
     p = max(0.0, min(1.0, elapsed / max(0.1, state.show_wheel_spin_seconds)))
-    eased = 1.0 - (1.0 - p) ** 3
+    eased = 1.0 - (1.0 - p) ** config.SHOW_WHEEL_EASE_POWER   # higher power = stronger start
     angle = eased * (config.SHOW_INTRO_WHEEL_TURNS * 360.0 + _land_angle())
     return angle, panel_at(angle), p >= 1.0
 

@@ -50,7 +50,7 @@ def available():
     return (
         sys.platform.startswith("linux")
         and shutil.which("ffmpeg") is not None
-        and shutil.which("wpctl") is not None
+        and (shutil.which("wpctl") is not None or shutil.which("pactl") is not None)
     )
 
 
@@ -58,15 +58,29 @@ def _monitor_source():
     """Pulse-compatible monitor source name for the current default sink --
     i.e. "everything currently being played" -- or None if it can't be
     determined (wpctl missing/failing, no default sink configured)."""
-    try:
-        out = subprocess.run(
-            ["wpctl", "status"],
-            capture_output=True, text=True, timeout=3.0,
-        ).stdout
-    except Exception:
-        return None
-    match = _DEFAULT_SINK_RE.search(out)
-    return f"{match.group(1)}.monitor" if match else None
+    if shutil.which("wpctl") is not None:
+        try:
+            out = subprocess.run(
+                ["wpctl", "status"],
+                capture_output=True, text=True, timeout=3.0,
+            ).stdout
+            match = _DEFAULT_SINK_RE.search(out)
+            if match:
+                return f"{match.group(1)}.monitor"
+        except Exception:
+            pass
+    # Plain PulseAudio (the Lenovo practice box has no PipeWire/wpctl).
+    if shutil.which("pactl") is not None:
+        try:
+            name = subprocess.run(
+                ["pactl", "get-default-sink"],
+                capture_output=True, text=True, timeout=3.0,
+            ).stdout.strip()
+            if name:
+                return f"{name}.monitor"
+        except Exception:
+            pass
+    return None
 
 
 def _reader_loop(proc):

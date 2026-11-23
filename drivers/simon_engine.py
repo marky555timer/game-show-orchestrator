@@ -375,6 +375,9 @@ def press(pad, hold=False):
         # -- see release() below) THEN starts the break.
         state.simon_playback_step_started_at = now
         print(f"[SIMON] Round cleared -- {config.SIMON_ROUND_BREAK_SECONDS}s break, then round {state.simon_round}")
+        from drivers import solo_challenge
+        if solo_challenge.simon_round_cleared(state.simon_round - 1):
+            return      # a solo challenge was just won: Simon is closed
 
 
 def release(color):
@@ -702,6 +705,13 @@ def poll_hardware(now):
         release(color)
 
     if not pressed_colors:
+        return
+
+    from drivers import round_engine
+    if round_engine.ff_intro_active():
+        # Fastest Finger intro screen: red starts the medley; nothing else does anything.
+        if "red" in pressed_colors:
+            round_engine.ff_intro_skip("red panel button")
         return
 
     if state.trivia_confirm_active:

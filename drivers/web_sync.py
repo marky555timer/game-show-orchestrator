@@ -101,6 +101,12 @@ def catalog():
             "cue_out": round(auto_dj_engine.planned_length(t["path"], t["duration"] or 0.0), 1),
             "decade": meta.get("decade") or "",
             "energy": meta.get("energy_rank"),
+            # for the designer's filters/sorting (2026-11-16); None = not tagged yet
+            "genre": meta.get("genre") or "",
+            "explicit": meta.get("explicit"),
+            "slow": meta.get("slow_dance"),
+            "deep": meta.get("never_charted"),
+            "added": meta.get("date_added") or "",
         })
     songs.sort(key=lambda x: (x["artist"].lower(), x["title"].lower()))
     stab = 6.0

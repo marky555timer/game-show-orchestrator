@@ -10,9 +10,9 @@ board attached, so a show can be rehearsed without the rig:
     (config.MARQUEE_LAYOUT), from the same pixel buffer drivers/wled_engine.py
     sends to the marquee board,
   - the outline strip as a band around the board. The real strip runs WLED's
-    own effects on its board, which this cannot reproduce: solid, blink and
-    rainbow are drawn as such, every other effect as the song's colour moving
-    over its background colour, and the effect's name is printed underneath,
+    own effects on its board, which this does not reproduce: the band is
+    held at one steady colour (the look's main colour and brightness), never
+    blinking or moving, and the effect's name is printed underneath,
   - the four arcade button lights (drivers/simon_hardware.led_states()).
 
 
@@ -64,13 +64,18 @@ _btn_r = 0
 _label_pos = (0, 0)
 _font = None
 
-_strip_at = 0.0
+_prev_view_label = "off"
 _prev_lit = None
 _prev_bulbs = None
 _prev_strip = None
 _prev_buttons = None
 _prev_label = None
 _first = True
+_sign = None       # the name-in-lights sign beside the board (scaled), or None
+_sign_pos = (0, 0)
+_join = None       # "JOIN: triviacade.com/play" strip, bottom right (2026-11-17)
+_join_pos = (0, 0)
+_base = None       # the clean board; the real screen = this + flares
 _stat_n = 0
 _stat_sum = 0.0
 _stat_max = 0.0
@@ -102,9 +107,17 @@ def _init(screen):
     pad = 85.0                      # photo units from the outermost bulbs to the outline strip
     label_h = max(18, H // 40)
     btn_col = int(W * 0.13)
-    k = min((H - label_h - 12) / (maxy - miny + 2 * pad), (W - btn_col - 12) / (maxx - minx + 2 * pad))
+    _btn_r = max(10, int(min(btn_col * 0.30, H * 0.075)))
+    # Layout (2026-11-13): the board is centred on the screen; the name sign
+    # and the button lights are each centred in their own black side band.
+    global _sign, _sign_pos
+    _sign = None
+    side = int(btn_col)                                  # space kept clear on each side while sizing the board
+    left, right = side, W - side
+
+    k = min((H - label_h - 12) / (maxy - miny + 2 * pad), (right - left - 12) / (maxx - minx + 2 * pad))
     board_w, board_h = (maxx - minx + 2 * pad) * k, (maxy - miny + 2 * pad) * k
-    ox = (W - btn_col - board_w) / 2 + pad * k
+    ox = left + (right - left - board_w) / 2 + pad * k
     oy = (H - label_h - board_h) / 2 + pad * k
 
     def to_screen(p):
@@ -148,6 +161,9 @@ def _init(screen):
         _cell_y[sx:sx + sw, sy:sy + sh] = (py0 + np.arange(sh) * _cell)[None, :]
         _areas.append(((sx, sy, sw, sh), pygame.Rect(px0, py0, pw, ph)))
         seg = config.MARQUEE_SEGMENTS[name]
+        if name == "title":
+            global _title_range
+            _title_range = (seg["start"], seg["count"])
         m = _bulb_r + 4
         _bulb_boxes.append((seg["start"], seg["count"],
                             pygame.Rect(x0 - m, y0 - m, x1 - x0 + 2 * m, y1 - y0 + 2 * m)))
@@ -176,9 +192,27 @@ def _init(screen):
                        pygame.Rect(rx0 - e, ry0 - e, 2 * e, ry1 - ry0 + 2 * e),
                        pygame.Rect(rx1 - e, ry0 - e, 2 * e, ry1 - ry0 + 2 * e)]
 
-    # Arcade button lights: a column to the right of the board.
-    _btn_r = max(10, int(min(btn_col * 0.30, H * 0.075)))
-    bx = int(W - btn_col / 2)
+    band_l = rx0 - t // 2                                # black band left of the outline strip
+    band_r_x = rx1 + t // 2 + 1                          # where the right band starts
+
+    # "TRIVIACADE" name-in-lights blade sign (2026-11-12): still picture,
+    # drawn once, centred in the left band; skipped if the band is too narrow.
+    try:
+        img = pygame.image.load(os.path.join(os.path.dirname(os.path.abspath(__file__)), "art", "practice_sign.png"))
+        sh = int(H * 0.94)
+        sw = int(img.get_width() * sh / img.get_height())
+        cap = min(int(W * 0.11), band_l - 12)
+        if sw > cap:
+            sw = cap
+            sh = int(img.get_height() * sw / img.get_width())
+        if sw >= 60:
+            _sign = pygame.transform.smoothscale(img.convert(), (sw, sh))
+            _sign_pos = ((band_l - sw) // 2, (H - sh) // 2)
+    except Exception as ex:
+        print(f"[RIG VIEW] No name sign: {ex}")
+
+    # Arcade button lights: a column centred in the right band.
+    bx = (band_r_x + W) // 2
     names = list(config.SIMON_HW_COLOR_ORDER)
     gap = _btn_r * 3
     top = H // 2 - gap * (len(names) - 1) // 2
@@ -187,54 +221,363 @@ def _init(screen):
     pygame.font.init()
     _font = pygame.font.Font(None, label_h + 4)
     _label_pos = (rx0, H - label_h - 4)
+    # Join strip (2026-11-17, from a competitor's always-visible join code):
+    # the stable redirector address, bottom right of the board, drawn once.
+    global _join, _join_pos
+    try:
+        jf = pygame.font.Font(None, label_h + 14)
+        url = config.TUNNEL_REDIRECT_PLAY_URL.replace("https://", "").rstrip("/")
+        _join = jf.render("JOIN: " + url, True, (235, 205, 80), _BG)
+        _join_pos = (rx1 - _join.get_width(), H - _join.get_height() - 2)
+    except Exception as ex:
+        print(f"[RIG VIEW] No join strip: {ex}")
+    global _base
+    _base = pygame.Surface((W, H)).convert()
+    _build_flares()
     _ready = True
     print(f"[RIG VIEW] Practice board on a {W}x{H} screen: {_cell}px per panel LED, "
           f"{len(_bulbs)} marquee bulbs, {len(_strip)} outline cells.")
+
+
+# ------------------------------------------------------------ star flares
+# (2026-11-18) A cross-screen "star filter" look: a soft bloom plus four thin
+# spikes, over the marquee bulbs only. Everything is drawn to _base (the clean
+# board); each frame the changed areas are copied to the real screen and the
+# flares are added on top, so a flare is erased just by not being drawn again.
+#   Flares appear ONLY on the moving edge of the get-ready / song-change wipes, the
+#   answer-panel sheen and the correct-answer chase (the show app says which is
+#   running, view["edge"]); never otherwise. They turn slightly as they fade.
+_FLARE_STEPS = 8
+_flare_sprites = []   # grey sprites, small -> full size, all the same square size
+_flare_cache = {}     # (step, tint, angle) -> tinted / rotated sprite
+_flare_big = []       # the same, bigger: wipe flares
+_eflares = []         # edge flares: {"i": bulb index, "born", "life"}
+_title_range = (0, 0)  # (first LED, count) of the top title strip's bulbs
+_last_edge_mode = None
+_flare_prev = []      # rects the flares covered last frame
+
+
+def _make_sprites(length_in_radii):
+    r = _bulb_r
+    length = max(16, int(r * length_in_radii))
+    half = length + 2
+    ys, xs = np.mgrid[-half:half + 1, -half:half + 1].astype(np.float32)
+    ax, ay = np.abs(xs), np.abs(ys)
+    w = max(1.2, r * 0.16)
+    out = []
+    for k in range(_FLARE_STEPS):
+        f = (k + 1) / _FLARE_STEPS
+        lk = length * f
+        h = np.exp(-(ay / w) ** 2) * np.clip(1 - ax / lk, 0, 1) ** 1.15
+        v = np.exp(-(ax / w) ** 2) * np.clip(1 - ay / lk, 0, 1) ** 1.15
+        glow = np.exp(-(xs * xs + ys * ys) / (2 * (r * (0.9 + 0.7 * f)) ** 2)) * 1.0
+        a = (np.clip(np.maximum(h, v) * 1.25 + glow, 0, 1) * (f ** 0.45) * 255).astype(np.uint8)
+        out.append(pygame.surfarray.make_surface(np.stack([a, a, a], axis=2).transpose(1, 0, 2)))
+    return out
+
+
+def _build_flares():
+    _flare_sprites.clear()
+    _flare_cache.clear()
+    _flare_sprites.extend(_make_sprites(config.RIG_FLARES_LENGTH))
+    _flare_big.clear()
+    _flare_big.extend(_make_sprites(config.RIG_FLARES_WIPE_LENGTH))
+
+
+def _flare_sprite(step, color, angle, big=False):
+    """The sprite for a step, tinted toward `color` (mixed with white) and turned `angle` degrees."""
+    tint = tuple(min(255, ((int(v * 0.45 + 255 * 0.55)) // 16) * 16 + 15) for v in color)
+    a = int(round(angle / 4.0)) * 4 % 360
+    key = (step, tint, a, big)
+    spr = _flare_cache.get(key)
+    if spr is None:
+        if len(_flare_cache) > 600:
+            _flare_cache.clear()
+        base = _flare_cache.get((step, tint, 0, big))
+        if base is None:
+            base = (_flare_big if big else _flare_sprites)[step].copy()
+            base.fill(tint, special_flags=pygame.BLEND_RGB_MULT)
+            _flare_cache[(step, tint, 0, big)] = base
+        spr = pygame.transform.rotate(base, a) if a else base
+        _flare_cache[key] = spr
+    return spr
+
+
+def _note_edge(old, px, now, view):
+    """Edge flares: bulbs that just got much brighter (or whiter) while the app
+    says a wipe, the sheen or the correct-answer chase is running. A wipe is
+    the strongest moment ("next song!"): every bulb that changed to a bright
+    colour is in the band, and up to config.RIG_FLARES_WIPE_DENSITY of them
+    flare, even when the whole board changes at once (a flash-style wipe)."""
+    global _last_edge_mode
+    mode = view.get("edge")
+    if mode != _last_edge_mode:
+        _last_edge_mode = mode
+        print(f"[RIG VIEW] flare edge mode: {mode or 'none'}")
+    if not mode or old is None or not config.RIG_FLARES_ENABLED or not _flare_sprites:
+        return
+    new = np.frombuffer(px, dtype=np.uint8).reshape(-1, 3).astype(np.int16)
+    prev = np.frombuffer(old, dtype=np.uint8).reshape(-1, 3).astype(np.int16)
+    if mode == "wipe":
+        up = (np.abs(new - prev).max(axis=1) >= 24) & (new.max(axis=1) >= config.RIG_FLARES_MIN_BRIGHT)
+        cap, per_frame, reach = config.RIG_FLARES_WIPE_MAX, config.RIG_FLARES_WIPE_MAX, _bulb_r * 1.4
+    else:
+        up = (new.max(axis=1) - prev.max(axis=1) >= config.RIG_FLARES_EDGE_JUMP) | \
+             (new.min(axis=1) - prev.min(axis=1) >= config.RIG_FLARES_EDGE_WHITE_JUMP)
+        cap, per_frame, reach = config.RIG_FLARES_EDGE_MAX, 2, _bulb_r * 3.5
+        if mode == "intro":                     # show-open ring chase: stars on the moving bulbs
+            cap, per_frame, reach = config.RIG_FLARES_INTRO_MAX, 3, _bulb_r * 2.5
+    if mode == "chase":                         # answer area only, never the top strip
+        t0, tn = _title_range
+        up[t0:t0 + tn] = False
+    rising = np.nonzero(up)[0]
+    if len(rising) == 0:
+        return
+    if mode != "wipe" and len(rising) > max(2, len(up) * 0.3):
+        return                                  # a whole-board flash is not an edge (wipes handle it above)
+    if mode == "wipe":
+        rising = np.random.permutation(rising)[:max(1, int(round(len(rising) * config.RIG_FLARES_WIPE_DENSITY)))]
+    live = [f for f in _eflares if now - f["born"] < f["life"]]
+    added = 0
+    for i in np.random.permutation(rising):
+        if len(live) >= cap or added >= per_frame:
+            break
+        i = int(i)
+        x, y = _bulbs[i]
+        if all(abs(x - _bulbs[f["i"]][0]) + abs(y - _bulbs[f["i"]][1]) > reach for f in live):
+            if mode == "wipe":
+                f = {"i": i, "born": now, "wipe": True,
+                     "life": float(np.random.uniform(*config.RIG_FLARES_WIPE_LIFE_SECONDS))}
+            else:
+                f = {"i": i, "born": now, "life": float(np.random.uniform(0.5, 0.75))}
+            live.append(f)
+            _eflares.append(f)
+            added += 1
+
+
+def _bulb_flare(f, now, px, out):
+    o = f["i"] * 3
+    c = (px[o], px[o + 1], px[o + 2])
+    if max(c) < config.RIG_FLARES_MIN_BRIGHT // 3:
+        return                              # the bulb went dark (the edge has moved on): let its flare go
+    p = (now - f["born"]) / f["life"]
+    top = len(_flare_sprites) - 1
+    if f.get("wipe"):
+        # Born at full strength right on the edge, shrinking away as the edge moves on.
+        step = int(max(0.0, 1.0 - p) ** 0.6 * top + 0.5)
+        spr = _flare_sprite(step, c, config.RIG_FLARES_WIPE_ANGLE * p, big=True)
+        rect = spr.get_rect(center=_bulbs[f["i"]])
+        out += [(spr, rect), (spr, rect)]
+        return
+    s = math.sin(math.pi * p)
+    if s < 0.04:
+        return
+    s = s ** 0.5                            # strong: reach full size quickly, hold it
+    spr = _flare_sprite(int(s * top + 0.5), c, config.RIG_FLARES_WIPE_ANGLE * p)
+    rect = spr.get_rect(center=_bulbs[f["i"]])
+    out += [(spr, rect), (spr, rect)]       # drawn twice: fully on
+
+
+def _flare_frame(now, px):
+    """Retire old edge flares; returns [(sprite, rect)] to add on top this frame."""
+    if not config.RIG_FLARES_ENABLED or not _flare_sprites:
+        return []
+    out = []
+    _eflares[:] = [f for f in _eflares if now - f["born"] < f["life"]]
+    for f in _eflares:
+        _bulb_flare(f, now, px, out)
+    return out
 
 
 def _scale(rgb, f):
     return (int(rgb[0] * f), int(rgb[1] * f), int(rgb[2] * f))
 
 
-def _strip_colors(view, now):
-    """One colour for the whole strip, or a list with one per cell (gamma applied)."""
-    kind = view["kind"]
-    if kind == "off":
+def _strip_colors(view):
+    """The strip's one steady colour (gamma applied). Every look is held
+    solid in its main colour at its brightness: no blink, chase, rainbow or
+    sound pulse (2026-11-12 -- the animated stand-ins flashed too hard on a
+    TV, and WLED's real patterns are not being reproduced anyway)."""
+    if view["kind"] == "off":
         return _STRIP_OFF
-    bri = view["bri"] / 255.0
-    c1, c2 = _scale(view["c1"], bri), _scale(view["c2"], bri)
-    rate = 0.25 + view["speed"] / 255.0 * 1.5          # cycles per second
-    if kind == "solid":
-        c = c1
-    elif kind == "blink":
-        c = c1 if (now * rate * 2) % 1.0 < 0.5 else c2
-    elif kind == "audio":
-        c = _scale(c1, max(0.15, 0.55 + 0.45 * math.sin(now * 9.0) * math.sin(now * 2.3)))
-    elif kind == "rainbow":
-        h = (_strip_phase * 2 - now * rate * 0.3) % 1.0 * 6.0
-        rgb = np.stack([np.clip(np.abs(h - 3.0) - 1.0, 0, 1), np.clip(2.0 - np.abs(h - 2.0), 0, 1),
-                        np.clip(2.0 - np.abs(h - 4.0), 0, 1)], axis=1) * (255.0 * bri)
-        return [tuple(v) for v in _gamma_np[rgb.astype(np.uint8)].tolist()]
-    else:                                               # "motion": bands of c1 travelling over c2
-        f = 0.5 + 0.5 * np.sin((_strip_phase * 8 - now * rate * 0.5) * (2 * math.pi))
-        f = (f * f)[:, None]
-        a, b = np.array(c2, dtype=np.float32), np.array(c1, dtype=np.float32)
-        return [tuple(v) for v in _gamma_np[(a + (b - a) * f).astype(np.uint8)].tolist()]
+    c = _scale(view["c1"], view["bri"] / 255.0)
     return (_GAMMA[c[0]], _GAMMA[c[1]], _GAMMA[c[2]]) if any(c) else _STRIP_OFF
+
+
+# ------------------------------------------------------------------ Cliffhanger (drivers/cliffhanger_engine.py)
+_cliff = {"art": None, "was_up": False, "snap": None}
+
+
+def _cliff_assets(screen):
+    """The art scaled to fit the screen (letterboxed), the climber at the same scale, fonts."""
+    W, H = screen.get_size()
+    if _cliff["art"] is not None and _cliff["size"] == (W, H):
+        return _cliff
+    bg = _cliff_headroom(pygame.image.load(config.CLIFF_ART_BG).convert())
+    spr = pygame.image.load(config.CLIFF_ART_CLIMBER).convert_alpha()
+    k = min(W / bg.get_width(), H / bg.get_height())
+    _cliff.update(size=(W, H), k=k, ox=(W - bg.get_width() * k) / 2, oy=(H - bg.get_height() * k) / 2,
+                  art=pygame.transform.smoothscale(bg, (int(bg.get_width() * k), int(bg.get_height() * k))),
+                  climber=pygame.transform.smoothscale(spr, (int(spr.get_width() * k), int(spr.get_height() * k))),
+                  font=pygame.font.Font(None, max(18, int(44 * k))), big=pygame.font.Font(None, max(30, int(110 * k))),
+                  small=pygame.font.Font(None, max(14, int(26 * k))))
+    return _cliff
+
+
+def _cliff_headroom(bg):
+    """The art's top edge is a grey storm-cloud band; the ruler's top marks sit so close to it that
+    the climber's head would leave the screen. Extend that band upward by config.CLIFF_HEADROOM px:
+    the top row, smoothed sideways, fading to a darker grey."""
+    pad = int(config.CLIFF_HEADROOM)
+    if pad <= 0:
+        return bg
+    w, h = bg.get_size()
+    row = [bg.get_at((x, 0))[:3] for x in range(w)]
+    r = 40
+    smooth = []
+    for x in range(w):
+        seg = row[max(0, x - r):x + r + 1]
+        smooth.append(tuple(sum(c[i] for c in seg) // len(seg) for i in range(3)))
+    out = pygame.Surface((w, h + pad)).convert()
+    dark = (70, 72, 80)
+    for y in range(pad):
+        t = (pad - y) / pad           # 1 at the very top, 0 at the art's edge
+        t = t * t
+        for x in range(w):
+            c = smooth[x]
+            out.set_at((x, y), tuple(int(c[i] + (dark[i] - c[i]) * t) for i in range(3)))
+    # blend the first few art rows into the smoothed band so there is no hard seam
+    out.blit(bg, (0, pad))
+    for y in range(6):
+        a = 1 - y / 6
+        for x in range(w):
+            c, s = out.get_at((x, pad + y))[:3], smooth[x]
+            out.set_at((x, pad + y), tuple(int(c[i] + (s[i] - c[i]) * a * 0.6) for i in range(3)))
+    return out
+
+
+def _cliff_pt(a, mark):
+    """Screen point of ruler mark `mark` (0-25 on the art)."""
+    x = config.CLIFF_RULER_ZERO[0] + config.CLIFF_RULER_STEP[0] * mark
+    y = config.CLIFF_RULER_ZERO[1] + config.CLIFF_RULER_STEP[1] * mark + config.CLIFF_HEADROOM
+    return a["ox"] + x * a["k"], a["oy"] + y * a["k"]
+
+
+def _cliff_text(screen, font, text, pos, color, center=False):
+    img = font.render(text, True, color)
+    sh = font.render(text, True, (0, 0, 0))
+    x, y = pos
+    if center:
+        x -= img.get_width() / 2
+    for dx, dy in ((-2, 0), (2, 0), (0, -2), (0, 2), (2, 2)):
+        screen.blit(sh, (x + dx, y + dy))
+    screen.blit(img, (x, y))
+    return img.get_height()
+
+
+def _draw_cliff(screen, c):
+    """The mountain: the climber slides up the ruler in one smooth, steady glide, one space per year
+    off; over the limit he walks off the edge and tumbles."""
+    a = _cliff_assets(screen)
+    now = time.time()
+    k = a["k"]
+    screen.fill((0, 0, 0))
+    screen.blit(a["art"], (a["ox"], a["oy"]))
+    mps = config.CLIFF_MARKS_PER_SPACE
+    # where he is
+    hop = 0.0
+    if c["phase"] == "climb":
+        # One smooth slide up the ruler at a steady pace (2026-11-21: no per-space steps or hops).
+        span = c["to"] - c["from"]
+        s = c["from"] + min(span, max(0.0, (now - c["t0"]) / max(0.1, c["sps"])))
+    elif c["phase"] in ("fall", "result") and c["result"] != "win" and c["fall_at"]:
+        s = c["to"]
+    else:
+        s = c["shown"] if c["phase"] != "climb" else c["to"]
+    if c["phase"] == "between" or (c["phase"] == "result" and c["result"] == "win"):
+        s = min(c["total"], c["spaces"])
+    x, y = _cliff_pt(a, s * mps)
+    cx = x + config.CLIFF_CLIMBER_OFFSET[0] * k
+    cy = y + config.CLIFF_CLIMBER_OFFSET[1] * k - hop
+    spr = a["climber"]
+    if c["fall_at"] and now >= c["fall_at"]:
+        t = now - c["fall_at"]
+        cx += 45 * k * t                                 # off the edge and down the cliff face
+        cy += 0.5 * 800 * k * t * t - 110 * k * t        # a little hop, then gravity
+        spr = pygame.transform.rotate(spr, -300 * t)
+    screen.blit(spr, (cx, cy))
+    # the scoreboard, top left over the sky
+    y0 = a["oy"] + 14 * k
+    x0 = a["ox"] + 18 * k
+    h = _cliff_text(screen, a["font"], "CLIFFHANGER", (x0, y0), (255, 210, 40))
+    y0 += h * 1.05
+    h = _cliff_text(screen, a["font"], f"Song {c['song']} of {c['songs']}", (x0, y0), (255, 255, 255))
+    y0 += h * 1.05
+    if c["guess"] is not None:
+        if c.get("title"):
+            song = f"“{c['title']}”" + (f"  —  {c['artist']}" if c.get("artist") else "")
+            h = _cliff_text(screen, a["font"], song, (x0, y0), (140, 220, 255))
+            y0 += h * 1.05
+        h = _cliff_text(screen, a["font"], f"Guess {c['guess']}  ·  It was {c['year']}", (x0, y0), (255, 255, 255))
+        y0 += h * 1.05
+        h = _cliff_text(screen, a["font"], f"{c['off']} year{'s' if c['off'] != 1 else ''} off", (x0, y0), (255, 120, 120) if c["off"] else (120, 255, 140))
+        y0 += h * 1.05
+    _cliff_text(screen, a["font"], f"Total {c['total']} / {c['spaces']}", (x0, y0), (255, 210, 40))
+    W, H = screen.get_size()
+    if c["phase"] == "result" or (c["phase"] == "fall" and now - c["fall_at"] > 1.6):
+        won = c["result"] == "win"
+        _cliff_text(screen, a["big"], "SAFE!  +1500" if won else "HE FELL!  -1500", (W / 2, H * 0.40),
+                    (90, 240, 120) if won else (255, 70, 70), center=True)
 
 
 def draw(screen, lit, px, view, leds):
     """One frame. lit: bool array [x, y] of the LED matrix; px: the marquee's
     RGB bytes; view: accent_engine.view_state(); leds: color -> lit."""
     global _prev_lit, _prev_bulbs, _prev_strip, _prev_buttons, _prev_label, _first
-    global _stat_n, _stat_sum, _stat_max, _stat_at, _strip_at
+    global _stat_n, _stat_sum, _stat_max, _stat_at, _prev_view_label
     if not _ready:
         _init(screen)
+    c = view.get("cliff")
+    if c:
+        # BEGIN GAME from a Cliffhanger round's pregame (2026-11-22): the board (with "What year did
+        # this song debut?" on its panels) stays up for q_tv seconds, then fades into the mountain.
+        el = time.time() - (c.get("q_t0") or 0.0)
+        hold = c.get("q_tv") or 0.0
+        if c.get("q_t0") and el < hold:
+            _cliff["snap"] = None
+            _cliff_assets(screen)       # load + scale the art now, so the fade starts without a hitch
+        else:
+            # Cliffhanger takes the whole TV; the board comes back fully redrawn afterwards.
+            fade = c.get("q_fade") or 0.0
+            fading = bool(c.get("q_t0")) and fade > 0 and el < hold + fade
+            if fading and _cliff.get("snap") is None and not _cliff["was_up"]:
+                _cliff["snap"] = screen.copy()          # the board as it was last shown
+            _draw_cliff(screen, c)
+            snap = _cliff.get("snap")
+            if fading and snap is not None:
+                t = (el - hold) / fade
+                snap.set_alpha(int(255 * (1.0 - t * t * (3 - 2 * t))))   # smoothstep
+                screen.blit(snap, (0, 0))
+            elif snap is not None:
+                _cliff["snap"] = None
+            pygame.display.flip()
+            _cliff["was_up"] = True
+            return
+    if _cliff["was_up"]:
+        _cliff["was_up"] = False
+        _first = True
+        _prev_lit = _prev_bulbs = _prev_strip = _prev_buttons = _prev_label = None
+    real = screen
+    screen = _base        # everything below draws the clean board
     mono = time.monotonic()
     now = time.time()
     dirty = []
     if _first:
         screen.fill(_BG)
+        if _sign is not None:
+            screen.blit(_sign, _sign_pos)
+        if _join is not None:
+            screen.blit(_join, _join_pos)
 
     # 1. LED panels: only the LEDs that changed since the last draw
     diff = (_cell_x >= 0) if _prev_lit is None else (lit != _prev_lit) & (_cell_x >= 0)
@@ -253,6 +596,7 @@ def draw(screen, lit, px, view, leds):
     if px != _prev_bulbs:
         old = _prev_bulbs
         _prev_bulbs = px
+        _note_edge(old, px, now, view)
         r = _bulb_r
         core = max(1, int(r * 0.45))
         circle = pygame.draw.circle
@@ -277,30 +621,29 @@ def draw(screen, lit, px, view, leds):
                     circle(screen, _BULB_OFF, xy, r)
     t2 = time.monotonic()
 
-    # 3. Outline strip (moving looks are redrawn ~12 times a second)
-    moving = view["kind"] in ("motion", "rainbow")
-    if not moving or mono - _strip_at >= 0.08 or _prev_strip is None:
-        _strip_at = mono
-        colors = _strip_colors(view, now)
+    # 3. Outline strip: one steady colour. One-shot flashes (confirmations,
+    # lightning) are skipped -- the strip keeps what it was showing.
+    if view["label"] != "flash":
+        colors = _strip_colors(view)
         if colors != _prev_strip:
             _prev_strip = colors
             fill = screen.fill
-            if isinstance(colors, tuple):
-                for rect in _strip:
-                    fill(colors, rect)
-            else:
-                for rect, c in zip(_strip, colors):
-                    fill(c, rect)
+            for rect in _strip:
+                fill(colors, rect)
             dirty.extend(_strip_edges)
-    label = "OUTLINE: " + view["label"]
-    if view["kind"] in ("motion", "audio"):
-        label += "  (approximate)"
+        _prev_view_label = view["label"]
+        if view["kind"] not in ("off", "solid"):
+            _prev_view_label += "  (shown as a steady colour)"
+    label = "OUTLINE: " + _prev_view_label
     if label != _prev_label:
         _prev_label = label
         text = _font.render(label, True, (90, 90, 96), _BG)
         clear = pygame.Rect(_label_pos[0], _label_pos[1], screen.get_width() // 2, text.get_height())
         screen.fill(_BG, clear)
         screen.blit(text, _label_pos)
+        if _join is not None:      # the label's clear rect can cover the join strip
+            screen.blit(_join, _join_pos)
+            dirty.append(pygame.Rect(_join_pos, _join.get_size()))
         dirty.append(clear)
 
     # 4. Button lights
@@ -321,11 +664,22 @@ def draw(screen, lit, px, view, leds):
             dirty.append(pygame.Rect(x - r - 6, y - r - 6, 2 * r + 13, 2 * r + 13))
 
     t3 = time.monotonic()
+    flares = _flare_frame(now, px)
     if _first:
         _first = False
+        real.blit(_base, (0, 0))
+        for spr, rect in flares:
+            real.blit(spr, rect, special_flags=pygame.BLEND_RGB_ADD)
         pygame.display.flip()
-    elif dirty:
-        pygame.display.update(dirty)
+    elif dirty or flares or _flare_prev:
+        areas = dirty + _flare_prev
+        for rect in areas:
+            real.blit(_base, rect, rect)
+        _flare_prev[:] = []
+        for spr, rect in flares:
+            real.blit(spr, rect, special_flags=pygame.BLEND_RGB_ADD)
+            _flare_prev.append(rect)
+        pygame.display.update(areas + _flare_prev)
 
     # Cost of this view, logged every 10 minutes.
     t4 = time.monotonic()

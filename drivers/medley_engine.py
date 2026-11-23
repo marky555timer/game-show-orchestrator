@@ -719,8 +719,10 @@ def _render_worker(run):
         run["error"] = str(e)
 
 
-def start():
-    """Begin a medley from the current moment. Returns {ok, error?, tracks?}."""
+def start(songs=None, hold=False):
+    """Begin a medley from the current moment. Returns {ok, error?, tracks?}. `songs` overrides the
+    remote's song count (a Fastest Finger round's clip count, drivers/round_engine.py). hold=True renders
+    but doesn't start playback until release_hold() (the Fastest Finger intro plays first)."""
     global _run
     if _run is not None:
         return {"ok": False, "error": "a medley is already running"}
@@ -735,14 +737,14 @@ def start():
         opts = _tempo_options(a["bpm"])
         start_bpm = opts[0] if opts else None
     opt = options()
-    plan = build_plan(start_bpm)
+    plan = build_plan(start_bpm, songs=songs) if songs else build_plan(start_bpm)
     if not plan:
         what = {"green": "human-edited (green)", "yellow": "AI-included (yellow)"}.get(opt["source"], "floor-filler")
         return {"ok": False, "error": f"not enough mixable {what} songs (need {config.MEDLEY_MIN_TRACKS}+ that fit by tempo)"}
     run = {"plan": plan, "requested": opt["songs"], "first": 0, "chunks": {}, "sounds": {}, "played": 0, "queued": -1, "stop": False,
            "started": False, "began_at": 0.0, "chunk_started_at": 0.0, "sweeps": 0,
            "deck": 2 if state.active_deck == 1 else 1, "from_deck": state.active_deck,
-           "handoff_sent": False}
+           "handoff_sent": False, "hold": bool(hold)}
     _run = run
     _last_plan[:] = plan
     from drivers import medley_game
@@ -754,6 +756,13 @@ def start():
     print(f"[MEDLEY] Planned {len(plan)} tracks, ~{sum(s['length'] for s in plan):.0f}s: "
           + " > ".join(f"{s['artist']} - {s['title']} ({s['tempo']:.0f})" for s in plan[:6]) + " ...")
     return {"ok": True, "tracks": len(plan)}
+
+
+def release_hold():
+    """The Fastest Finger intro is over: start playing (as soon as the first chunks are rendered)."""
+    run = _run
+    if run is not None:
+        run["hold"] = False
 
 
 def _finish(run, reason, handoff):
@@ -771,7 +780,13 @@ def _finish(run, reason, handoff):
     from drivers import medley_game
     medley_game.finish(show_results=True)
     print(f"[MEDLEY] Ended ({reason}).")
-    if handoff:
+    deferred = False
+    try:
+        from drivers import round_engine
+        deferred = round_engine.medley_finished(handoff)
+    except Exception as e:
+        print(f"[MEDLEY] Round end hook failed: {e}")
+    if handoff and not deferred:
         from drivers import deck_orchestrator
         state.tempo_operator_set = False
         deck_orchestrator.trigger_track_move("next")
@@ -932,6 +947,8 @@ def update(now):
         return
 
     if not run["started"]:
+        if run.get("hold"):
+            return      # Fastest Finger intro still up (round_engine releases it)
         f0 = run["first"]
         with _lock:
             ready = f0 in run["chunks"] and (f0 + 1 in run["chunks"] or f0 == len(plan) - 1)

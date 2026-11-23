@@ -55,6 +55,8 @@ def mark_operator_interaction():
 def _prepare(show):
     """Loads `show`'s settings and hands it to the runner."""
     show_library.apply_settings(show)
+    from drivers import round_engine
+    round_engine.reset_for_show(show)
     state.show_selected = show["name"]
     state.questions_suppressed = not show.get("questions", False)
     state.listen_enabled = bool(show.get("listen", False))  # phone "Listen to the show" checkbox
@@ -126,9 +128,18 @@ def _enter_dark():
     state.trivia_confirm_active = False
     state.game_round_number = 1
     state.show_cumulative_scores = {}
+    state.last_round_winner_initials = ""
+    state.last_round_number = 0
+    state.last_round_board = []
     state.game_winner_player_id = ""
+    state.quiz_history = []
+    from drivers import results_archive
+    state.show_session_id = results_archive.new_session_id()
+    from drivers import category_round_engine
+    category_round_engine.stop("reset for a new show")
     for player in state.quiz_players.values():
         player["score"] = 0
+        player.update(streak=0, best_streak=0, correct=0, asked=0, last_points=0, streak_lost=0)
     print(f"[SHOW] BLACK -- '{state.show_selected}' loaded"
           f"{' (hands-off)' if state.show_hands_off else ', waiting for a button'}.")
 
@@ -143,6 +154,7 @@ def _reset_asked_tracking():
     print(f"[SHOW] New show -- forgetting {len(state.asked_artists)} asked artist(s) and "
           f"{len(state.asked_question_texts)} asked question(s).")
     state.asked_artists.clear()
+    state.mystery_asked_songs.clear()
     state.asked_question_texts.clear()
     state.mystery_track_key = ""          # re-evaluate the teaser even on the same song
     mystery_band_engine._pending_mystery = None
@@ -157,18 +169,19 @@ def _reset_asked_tracking():
     state.game_active = False             # fresh per-game question count / era slot
 
 
-def resume_from(snap):
+def resume_from(snap, own=False):
     """Backup takeover (drivers/failover_engine.py): pick the show up from the
     other Pi's last report -- same show, players, scores, round and asked
-    questions, starting on the NEXT song. Returns a message for the remote."""
+    questions, starting on the NEXT song. Returns a message for the remote.
+    own=True is RESUME LAST SHOW: the report is this machine's own saved one."""
     global _seq
     phase = snap.get("phase", "setup")
     info = snap.get("show") or {}
     name = info.get("name", "")
     if phase in ("setup", "countdown") or not name:
-        return "The other Pi wasn't running a show -- this Pi is now in charge."
+        return "There is no show to resume." if own else "The other Pi wasn't running a show -- this Pi is now in charge."
     if phase == "outro" or snap.get("background"):
-        return "The other Pi's show was already over -- this Pi is now in charge."
+        return "The last show was already over." if own else "The other Pi's show was already over -- this Pi is now in charge."
 
     # Make sure we have the show (the web sync may not have brought it yet).
     if info.get("data"):
@@ -186,7 +199,7 @@ def resume_from(snap):
         _restore_players(snap)
         if phase == "intro":
             begin_intro()
-        return f"Took over '{name}' at the {'intro' if phase == 'intro' else 'BLACK hold'}."
+        return f"{'Resumed' if own else 'Took over'} '{name}' at the {'intro' if phase == 'intro' else 'BLACK hold'}."
 
     # Live: load the show quietly, restore the room, go straight to the next song.
     _stop_background()
@@ -212,7 +225,7 @@ def resume_from(snap):
     state.show_phase_started_at = now
     _seq = {"context": "resume", "stage": "pre", "at": 0.0, "decade": decade, "path": path}
     nxt = info.get("next_title") or (os.path.basename(path) if path else "a new song")
-    return f"Took over '{name}' -- next song: {nxt}."
+    return f"{'Resumed' if own else 'Took over'} '{name}' -- next song: {nxt}."
 
 
 def _restore_players(snap):
@@ -221,11 +234,17 @@ def _restore_players(snap):
     for pid, p in (snap.get("players") or {}).items():
         players[pid] = {"initials": p.get("initials", "???"), "selected_index": -1, "locked": False,
                         "score": int(p.get("score", 0) or 0),
+                        "name": p.get("name") or p.get("initials", "Team"),
+                        "emoji": p.get("emoji") or "🎵",
+                        "streak": int(p.get("streak", 0) or 0), "best_streak": int(p.get("best_streak", 0) or 0),
+                        "correct": int(p.get("correct", 0) or 0), "asked": int(p.get("asked", 0) or 0),
+                        "last_points": 0,
                         "avatar_color": p.get("avatar_color") or state.AVATAR_COLORS[0]}
     state.quiz_players = players
     state.show_cumulative_scores = {k: int(v) for k, v in (snap.get("cumulative") or {}).items()}
     state.game_round_number = int(snap.get("round", 1) or 1)
     state.asked_artists = set(snap.get("asked_artists") or [])
+    state.mystery_asked_songs = set(snap.get("mystery_asked_songs") or [])
     state.asked_question_texts = set(snap.get("asked_questions") or [])
     s = snap.get("settings") or {}
     for key in ("questions_suppressed", "listen_enabled", "show_outro_enabled", "auto_advance_after_quiz",
@@ -414,6 +433,7 @@ def stop_show():
     state.win_sequence_active = False
     state.win_sequence_phase = ""
     state.intermission_active = False
+    state.intermission_finishing = False
     state.intermission_paused = False
     state.intermission_paused_remaining = 0.0
     state.game_winner_player_id = ""
@@ -434,6 +454,12 @@ def start_outro():
     show_bed.stop_all(400)
     _seq = None
     now = time.time()
+    try:
+        from drivers import results_archive
+        results_archive.snapshot()
+    except Exception as exc:   # never let the archive break the outro
+        print(f"[RESULTS] snapshot failed: {exc}")
+    _end_questions()
     state.show_phase = "outro"
     state.show_phase_started_at = now
     state.show_final_round_number = None
@@ -456,6 +482,28 @@ def start_outro():
     state.show_outro_music_ends_at = (
         now + config.SHOW_OUTRO_DECK_FADE_SECONDS + show_end_sound.get_length())
     print(f"[SHOW] Outro started -- {state.show_outro_message!r}")
+
+
+def _end_questions():
+    """The night is over (2026-11-22): whatever question / teaser / challenge is up goes away and none
+    of the song's queued questions follow. The last round ending used to go to the outro with the
+    question machinery still armed, so questions carried on over the outro."""
+    try:
+        from inputs import gamepad
+        gamepad.cancel_question()
+    except Exception as exc:
+        print(f"[SHOW] Outro: cancelling the question failed: {exc}")
+    try:
+        from drivers import solo_challenge, round_engine
+        if solo_challenge.playing():
+            solo_challenge.cancel()
+        if state.ff_intro_started_at:
+            round_engine._end_ff_intro()
+    except Exception as exc:
+        print(f"[SHOW] Outro: stopping the challenge / intro failed: {exc}")
+    state.track_question_queue = []
+    state.trivia_confirm_active = False
+    state.mode = state.MODE_DJ
 
 
 def _start_outro_music():
@@ -568,7 +616,29 @@ def back_to_menu():
     print("[SHOW] Back to the panel menu.")
 
 
+def new_game_setup():
+    """Admin START NEW GAME: same full stop + music fade as back_to_menu(), but the panels and HDMI
+    board stay BLANK while the operator sets the next game up on the admin page (a physical panel
+    button press brings the panel menu back)."""
+    back_to_menu()
+    state.setup_blank = True
+    print("[SHOW] New game: stopped, music fading, panels blank for setup.")
+
+
 _pending_deck_stop = [0.0]
+def _reveal_sweeper(now):
+    """A random sweeper at the moment a song-change wipe clears the announcement banner ("GET READY")
+    and the new content (the first question) wipes in. drivers/deck_orchestrator.py arms
+    state.reveal_sweeper_at for that instant (= the board wipe's hold end)."""
+    at = state.reveal_sweeper_at
+    if not at or now < at:
+        return
+    state.reveal_sweeper_at = 0.0
+    from drivers import cliffhanger_engine, round_engine
+    if cliffhanger_engine.active() or round_engine.price_round_live():
+        return              # no sweepers during Cliffhanger or a "Wait, how much?" round
+    if now - at < 1.5:      # not for a moment we only just caught up to (a stalled frame)
+        show_bed.play_random_sweeper()
 
 
 # ------------------------------------------------------------- frame
@@ -576,10 +646,18 @@ def update(now):
     """Per-frame pump, called from inputs/gamepad.py::process_events()."""
     global _outro_music_started, _show_music_channel
     from drivers import panel_menu
+    if state.show_phase != "setup":
+        state.setup_blank = False
     if state.show_phase == "setup":
         panel_menu.update(now)
     show_runner.update(now)
+    from drivers import category_round_engine
+    category_round_engine.update(now)
     show_bed.update(now)
+    _reveal_sweeper(now)
+    from drivers import round_engine, solo_challenge
+    solo_challenge.update(now)
+    round_engine.update(now)
     from drivers import failover_engine
     failover_engine.update(now)
 

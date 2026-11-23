@@ -826,6 +826,47 @@ def _segment_range(name):
     return range(seg["start"], seg["start"] + seg["count"])
 
 
+# Show-open chase ring (2026-11-19): the OUTSIDE of the board, clockwise, as (segment, run index in
+# config.MARQUEE_LAYOUT, reversed?). Panel 3 outer side up, the title's left side up / top left->right /
+# right side down, panel 4's top-right corner bulb + outer side down, panel 6's outer side down + bottom
+# leftwards, panel 5's bottom leftwards + outer side up. The title's bottom edge and every inner seam /
+# top / bottom run between the lower panels are left out.
+_INTRO_RING_RUNS = [("panel3", 1, False), ("title", 2, True), ("title", 1, True), ("title", 0, True),
+                    ("panel4", 0, False), ("panel4", 1, False), ("panel6", 1, False), ("panel6", 2, False),
+                    ("panel5", 1, False), ("panel5", 2, False)]
+
+
+def _build_intro_ring():
+    ring = []
+    for seg, run_i, rev in _INTRO_RING_RUNS:
+        i = config.MARQUEE_SEGMENTS[seg]["start"]
+        for j, run in enumerate(config.MARQUEE_LAYOUT[seg]):
+            if j == run_i:
+                idx = list(range(i, i + run[4]))
+                ring += idx[::-1] if rev else idx
+            i += run[4]
+    return ring
+
+
+_INTRO_RING = _build_intro_ring()
+
+
+_INTRO_RING_SET = frozenset(_INTRO_RING)
+
+
+def _intro_ring_chase(now, clear=True):
+    """Classic theater-marquee chase, white, around _INTRO_RING only. Lamps are spaced evenly around the
+    whole ring (a fractional pitch, so there's no uneven gap where the ring closes) and slide clockwise."""
+    if clear:
+        fill(0, 0, 0)
+    n = len(_INTRO_RING)
+    lamps = max(1, round(n / config.SHOW_INTRO_CHASE_SPACING))
+    pitch = n / lamps
+    off = (now / config.SHOW_INTRO_CHASE_STEP_SECONDS) % pitch
+    for j in range(lamps):
+        set_pixel(_INTRO_RING[int(round(off + j * pitch)) % n], 255, 255, 255)
+
+
 def _intro_twinkle(now, level, pixels=None):
     """The "Twinkle Base" look in white at config.SHOW_INTRO_TWINKLE_SPEED:
     a dim wash with occasional brighter sparkles, re-rolled at that fraction
@@ -846,6 +887,26 @@ def _intro_twinkle(now, level, pixels=None):
         set_pixel(i, v, v, v)
 
 
+def _cliff_marquee():
+    from drivers import cliffhanger_engine
+    if cliffhanger_engine.pregame_active():
+        return "title"
+    return cliffhanger_engine.marquee_mode()
+
+
+def _title_ring_chase(now):
+    """Cliffhanger pregame (2026-11-22): a white movie-marquee chase on the bulbs around panels 1+2
+    (the "title" segment, a closed loop), every other bulb dark."""
+    fill(0, 0, 0)
+    ring = list(_segment_range("title"))[::-1]     # the segment runs anticlockwise; chase clockwise
+    n = len(ring)
+    lamps = max(1, round(n / config.CLIFF_TITLE_CHASE_SPACING))
+    pitch = n / lamps
+    off = (now / config.CLIFF_TITLE_CHASE_STEP_SECONDS) % pitch
+    for j in range(lamps):
+        set_pixel(ring[int(round(off + j * pitch)) % n], 255, 255, 255)
+
+
 def _apply_intro(now):
     """Show open (2026-10-14, timings in config.SHOW_INTRO_*): white movie
     chase on every segment while the top strip's words play, lights out as
@@ -858,36 +919,29 @@ def _apply_intro(now):
     if state.show_wheel_started_at:
         _apply_wheel(now)
     elif el < c.SHOW_INTRO_LETS_PLAY_AT_SECONDS:
-        for name in c.MARQUEE_SEGMENTS:
-            _theater_chase_segment(name, now, 255, 255, 255)
-    elif el < c.SHOW_INTRO_FADE_OUT_AT_SECONDS + c.SHOW_INTRO_FADE_OUT_SECONDS:
+        _intro_ring_chase(now)
+    else:
+        # "Let's Play Triviacade" is up: the outer-ring chase keeps running the whole time it holds
+        # (until the show moves on), with the name-outline twinkle on the bulbs the ring doesn't use.
         level = _intro_ramp(el)
         if level > 0.0:
-            # only around "Trivia" / "cade" (panels 3 + 4), one outline
-            _intro_twinkle(now, level, _INTRO_NAME_BULBS)
+            _intro_twinkle(now, level, [i for i in _INTRO_NAME_BULBS if i not in _INTRO_RING_SET])
+            _intro_ring_chase(now, clear=False)
         else:
-            fill(0, 0, 0)
-    else:
-        fill(0, 0, 0)
+            _intro_ring_chase(now)
 
 
 _INTRO_NAME_BULBS = _build_intro_name_bulbs()
 
 
 def _apply_wheel(now):
-    """A wheel spin: every lower-panel outline chases white with the square
-    under the pointer solid; after the stop only the landed panel's outline
-    blinks (in step with its LED square, drivers/intro_wheel.py)."""
+    """A wheel spin: every marquee lamp stays dark while it spins (2026-11-19); after the stop the
+    landed panel's outline blinks (in step with its LED square, drivers/intro_wheel.py)."""
     from drivers import intro_wheel
     wheel_el = now - state.show_wheel_started_at
     _angle, hot, landed = intro_wheel.pointer(wheel_el)
-    fill(0, 0, 0)
-    if landed:
-        if intro_wheel.blink_on(wheel_el):
-            set_segment(f"panel{hot}", 255, 255, 255)
-    else:
-        for name in _SIMON_PANEL_SEGMENTS:
-            _theater_chase_segment(name, now, 255, 255, 255)
+    fill(0, 0, 0)   # marquee stays OFF while the wheel spins; only the final selection lights
+    if landed and intro_wheel.blink_on(wheel_el):
         set_segment(f"panel{hot}", 255, 255, 255)
 
 
@@ -1839,6 +1893,14 @@ def update(now):
             _apply_intro(now)
         elif phase == "outro":
             _apply_outro(now)
+        elif state.ff_intro_started_at:
+            _intro_ring_chase(now, clear=True)   # Fastest Finger intro: outer-edge movie chase, rest dark
+        elif _cliff_marquee() == "title":
+            _title_ring_chase(now)               # Cliffhanger pregame: chase around the title only
+        elif _cliff_marquee() == "chase":
+            _intro_ring_chase(now, clear=True)   # Cliffhanger: he's climbing / made it
+        elif _cliff_marquee() == "dark":
+            fill(0, 0, 0)                        # Cliffhanger: he fell
         elif state.show_spin_active:
             if state.show_wheel_started_at:
                 _apply_wheel(now)

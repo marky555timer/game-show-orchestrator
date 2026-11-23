@@ -140,6 +140,8 @@ def network_ok(st=None):
 def mark_touched(source="button"):
     """A physical button press or the admin remote: never hands-off again this boot."""
     global _touched
+    if source != "admin remote":
+        state.setup_blank = False   # a physical panel press brings the menu back after START NEW GAME
     if not _touched and state.show_phase == "setup":
         print(f"[MENU] Touched ({source}) -- no hands-off start this boot.")
     _touched = True

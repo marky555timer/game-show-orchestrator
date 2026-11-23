@@ -35,6 +35,9 @@ fi
 
 sleep 5
 cd /home/mark/game-show-orchestrator
+# A tunnel left over from the previous run (the app does not always take its
+# cloudflared child down with it) would pile up, one per restart.
+pkill -x cloudflared 2>/dev/null
 # Wait (max 45s) for NTP: the Pi has no RTC battery, so it boots with the
 # clock from its last shutdown and NTP steps it hours forward once WiFi is
 # up -- a step mid-song made Auto-DJ skip the track (2026-10-26). If the

@@ -54,6 +54,7 @@ from graphics.animations import (
 )
 from graphics import overlay_panel
 from graphics import technical_dreams
+from graphics import triviacade_intermission
 from graphics import simon_trip
 from graphics import secondary_canvas
 
@@ -232,6 +233,14 @@ def _render_dj_mode(t):
                        or get_announcement_text_for(state.last_announcement_filename)
                        or "[NO ANNOUNCEMENT TEXT SET]")
         draw_marquee(matrix_surface, "announcement_banner", banner_text, TOP_COMBINED, align="center")
+    elif state.intermission_active:
+        # Post-win intermission (2026-11-13): 1+2 and 3+4 play the TRIVIACADE
+        # scenes (graphics/triviacade_intermission.py) instead of sitting
+        # blank. Call-outs above (banner, mystery) still punch over the top.
+        if triviacade_intermission.showing_stats(time.time()):
+            _render_intermission_stat(0, TOP_COMBINED)
+        else:
+            triviacade_intermission.render_top(matrix_surface, TOP_COMBINED, time.time())
     elif state.idle_cycle_phase == "goal" and not state.intermission_active:
         # GOAL PAGE header: "ROUND N" / "<win score> pt to WIN" -- the
         # panels 3-6 scorecard is drawn by _render_idle_cycle_panel().
@@ -245,7 +254,7 @@ def _render_dj_mode(t):
         line1_rect = (tx, ty, tw, LINE_H)
         line2_rect = (tx, ty + LINE_H, tw, LINE_H)
         draw_marquee(matrix_surface, "goal_round", f"ROUND {state.game_round_number}", line1_rect, align="center")
-        draw_marquee(matrix_surface, "goal_score", f"{state.game_win_score} pt to WIN", line2_rect, align="center")
+        draw_marquee(matrix_surface, "goal_score", f"{state.game_win_score}pt to WIN", line2_rect, align="center")
     elif state.idle_cycle_phase == "goal" and state.intermission_active:
         pass  # blank top strip -- see comment above
     elif _branding_overlay_active(t) and get_current_text():
@@ -312,6 +321,13 @@ def _render_dj_mode(t):
                              rect, align="center")
             elif pid == 3 and kind and t < _status_until:
                 _render_status_panel(rect, t, kind)
+            elif (pid in (3, 4) and state.intermission_active and story_pos is None
+                  and triviacade_intermission.showing_stats(time.time())):
+                # Stats page: panels 3+4 read as one 64x16 line pair (drawn once, from 3).
+                if pid == 3:
+                    _render_intermission_stat(1, (0, PANELS[3][1], 64, PANELS[3][3]))
+            elif pid in (3, 4) and state.intermission_active and story_pos is None:
+                triviacade_intermission.render_panel(matrix_surface, pid, rect, time.time())
             elif pid in (5, 6) and state.intermission_active:
                 # Post-win intermission (2026-08-11): bottom panels show a
                 # "NEXT GAME M:SS" countdown instead of their normal idle
@@ -464,12 +480,23 @@ def _render_idle_cycle_panel(pid, rect, t):
         player_index = page_start + pair_index
         if player_index < len(ranked):
             p = ranked[player_index]
-            text = f"{p['initials']} -" if pid in (3, 5) else f"{p['score']} pt"
+            text = f"{p['initials']} -" if pid in (3, 5) else f"{p['score']}pt"
             draw_marquee(matrix_surface, f"idle_goal_{pid}", text, rect, align="center")
         return
 
     # "dancing" (or any unrecognized phase) -- today's existing behavior.
     render_panel_animation(matrix_surface, pid, rect, t)
+
+
+def _render_intermission_stat(i, rect):
+    """One two-line stat (headline over detail) from triviacade_intermission.stats_lines()."""
+    lines = triviacade_intermission.stats_lines()
+    if i >= len(lines):
+        return
+    x, y, w, h = rect
+    head, detail = lines[i]
+    draw_marquee(matrix_surface, f"intermission_stat_h{i}", head, (x, y, w, LINE_H), align="center")
+    draw_marquee(matrix_surface, f"intermission_stat_d{i}", detail, (x, y + LINE_H, w, LINE_H), align="center")
 
 
 def _render_intermission_countdown(pid, rect):
@@ -481,6 +508,14 @@ def _render_intermission_countdown(pid, rect):
     # module back inside a function -- importing win_sequence_engine at
     # THIS module's top level would risk the same circularity.
     from drivers import win_sequence_engine
+    if state.intermission_finishing:
+        # Timer is up but the song is still playing: panels 5+6 read as one line pair.
+        if pid == 5:
+            x, y, w, h = PANELS[5]
+            draw_marquee(matrix_surface, "intermission_finish_a", "NEXT GAME", (x, y, 64, LINE_H), align="center")
+            draw_marquee(matrix_surface, "intermission_finish_b", "BEGINS AFTER THIS SONG",
+                         (x, y + LINE_H, 64, LINE_H), align="center")
+        return
     if pid == 5:
         label = "PAUSED" if state.intermission_paused else "NEXT GAME"
         draw_marquee(matrix_surface, "intermission_label", label, rect, align="center")
@@ -1744,8 +1779,9 @@ def _render_show_phase(t):
     scripted choreography above."""
     phase = state.show_phase
     if phase == "setup":
-        from graphics import menu_pages
-        menu_pages.draw(matrix_surface)
+        if not state.setup_blank:   # blank (already BLACK) while the admin sets up a new game
+            from graphics import menu_pages
+            menu_pages.draw(matrix_surface)
     elif phase == "countdown":
         remaining = max(0, int(state.show_scheduled_start_at - t))
         h, rem = divmod(remaining, 3600)
@@ -1813,7 +1849,7 @@ def _draw_medley_banner(t, row_panel=3):
     scrolls along the row while bobbing up and down."""
     x0, y0, w, h = PANELS[row_panel][0], PANELS[row_panel][1], PANEL_W * 2, PANEL_H
     matrix_surface.fill(BLACK, (x0, y0, w, h))
-    text = "MEDLEY TIME!"
+    text = "FASTEST FINGER!"
     tw = text_width(text)
     gap = 16
     span = tw + gap
@@ -2007,6 +2043,13 @@ def _draw_hook_words(t):
     from drivers import hook_words
     if state.mode != state.MODE_DJ or state.medley_active or state.show_phase != "live" or state.win_sequence_active:
         return
+    # Never over a question (Mark, 2026-11-17: "WHOLE LOTTA SHAKIN' GOIN' ON"
+    # blanked the answer panels): the Mystery Band teaser/reveal, a loaded
+    # question that is still open, or a question's brief answer reveal.
+    if (state.mystery_active or state.price_game_active
+            or (state.factoid_choices and (not state.quiz_locked
+                or time.time() - state.quiz_graded_at < config.QUIZ_TF_CORRECTION_HOLD_SECONDS))):
+        return
     on = hook_words.active(t)
     if not on:
         return
@@ -2085,8 +2128,147 @@ def start_reveal_at(ts):
     _board_reveal_started_at = ts
 
 
+def _draw_ff_intro(now):
+    """Fastest Finger intro (drivers/round_engine.py): the board wipes dark left to right, then each
+    word of config.FF_INTRO_WORDS lands on its panel on cue and stays."""
+    el = now - state.ff_intro_started_at
+    wipe = config.FF_INTRO_WIPE_SECONDS
+    if el < wipe:
+        w = int(MATRIX_WIDTH * max(0.0, el) / wipe)
+        matrix_surface.fill(BLACK, (0, 0, w, MATRIX_HEIGHT))
+        return
+    matrix_surface.fill(BLACK)
+    words = config.WHM_INTRO_WORDS if state.ff_intro_kind == "whm" else config.FF_INTRO_WORDS
+    if state.ff_intro_kind == "whm" and state.round_decade:
+        # the decade the round's price questions come from, on the otherwise empty panel 5
+        words = tuple(words) + ((config.WHM_INTRO_DECADE_AT, state.round_decade,
+                                 config.WHM_INTRO_DECADE_PANEL, "center"),)
+    for at, word, panel, align in words:
+        if el < at:
+            continue
+        px, py, pw, ph = config.PANELS[panel]
+        tw = text_width(word)
+        if align == "left" or tw > pw and align != "right":
+            x = px + 1
+        elif align == "right" or tw > pw:
+            x = px + pw - tw
+        else:
+            x = px + (pw - tw) // 2
+        # a word flashes inverted for its first moment, then sits plain
+        fresh = el - at < 0.12
+        if fresh:
+            matrix_surface.fill(RED_FULL, (max(0, x - 1), py + 3, tw + 2, 9))
+        draw_bitmap_text(matrix_surface, word, x, py + (ph - 7) // 2, color=BLACK if fresh else RED_FULL)
+
+
+def _draw_cliff_panels(c):
+    """Cliffhanger on the LED panels: top row the game + song, middle the guess and the real year,
+    bottom the years off and the running total."""
+    matrix_surface.fill(BLACK)
+    rows = [("CLIFFHANGER", f"SONG {c['song']} OF {c['songs']}")]
+    if c["guess"] is not None and c.get("title"):
+        rows[0] = (c["title"].upper(), (c.get("artist") or "").upper())   # the answer: which song it was
+    if c["guess"] is not None:
+        rows.append((f"GUESS {c['guess']}", f"YEAR {c['year']}"))
+        rows.append((f"{c['off']} OFF", f"TOTAL {c['total']}/{c['spaces']}"))
+    else:
+        rows.append(("GUESS THE", "YEAR!"))
+        rows.append(("", f"TOTAL {c['total']}/{c['spaces']}"))
+    if c["phase"] in ("fall", "result"):
+        rows[2] = ("HE FELL!" if c["result"] != "win" else "SAFE!", f"TOTAL {c['total']}/{c['spaces']}")
+    for r, (l1, l2) in enumerate(rows):
+        x, y, w, _h = config.PANELS[1 + 2 * r][0], config.PANELS[1 + 2 * r][1], PANEL_W * 2, PANEL_H
+        if l1:
+            draw_marquee(matrix_surface, f"cliff{r}a", l1, (x, y, w, 8), align="center")
+        if l2:
+            draw_marquee(matrix_surface, f"cliff{r}b", l2, (x, y + 8, w, 8), align="center")
+
+
+_NARROW_QMARK = ("010", "101", "001", "010", "010", "000", "010")   # 3 px "?" for words that don't fit
+
+
+def _draw_word_in_panel(pid, word):
+    """One word centred on its panel. A word wider than the panel ending in "?" ("DEBUT?", 35 px)
+    gets a 3 px question mark tucked under the last letter's arm (32 px)."""
+    px, py, pw, ph = config.PANELS[pid]
+    y = py + (ph - 7) // 2
+    tw = text_width(word)
+    if tw <= pw or not word.endswith("?"):
+        draw_bitmap_text(matrix_surface, word, px + max(0, (pw - tw) // 2), y, clip_rect=config.PANELS[pid])
+        return
+    head = word[:-1]
+    last = head[-1:]
+    from config import FONT_5X7
+    g = FONT_5X7.get(last) or FONT_5X7.get(" ")
+    # how far the "?" can tuck in: never closer than one blank pixel on any row
+    room = min((len(r) - 1 - r.rfind("1") if "1" in r else 9) + (q.find("1") if "1" in q else 9)
+               for r, q in zip(g, _NARROW_QMARK))
+    gap = max(0, min(1, 1 - room))
+    total = text_width(head) + gap + 3
+    x = px + max(0, (pw - total) // 2)
+    draw_bitmap_text(matrix_surface, head, x, y, clip_rect=config.PANELS[pid])
+    qx = x + text_width(head) + gap
+    for ry, row in enumerate(_NARROW_QMARK):
+        for rx, bit in enumerate(row):
+            if bit == "1" and px <= qx + rx < px + pw:
+                matrix_surface.set_at((qx + rx, y + ry), RED_FULL)
+
+
+def _wipe_mask(el, seconds):
+    """Left-to-right wipe-in: blacks out the part of the board the wipe hasn't reached yet."""
+    if el >= seconds:
+        return
+    x = int(MATRIX_WIDTH * max(0.0, el) / seconds)
+    matrix_surface.fill(BLACK, (x, 0, MATRIX_WIDTH - x, MATRIX_HEIGHT))
+    if 0 <= x < MATRIX_WIDTH:
+        matrix_surface.fill(RED_FULL, (x, 0, 1, MATRIX_HEIGHT))      # the wipe's bright leading edge
+
+
+def _draw_cliff_pregame(now, started):
+    """Cliffhanger round pregame (drivers/cliffhanger_engine.py): the title alone on panels 1+2 (the
+    marquee runs its movie chase around them), the other panels dark."""
+    matrix_surface.fill(BLACK)
+    text = config.CLIFF_TITLE_TEXT
+    tx, ty, tw, th = TOP_COMBINED
+    w = text_width(text)
+    draw_bitmap_text(matrix_surface, text, tx + max(0, (tw - w) // 2), ty + (th - 7) // 2, clip_rect=TOP_COMBINED)
+    el = now - started
+    if el < config.CLIFF_TITLE_WIPE_SECONDS:
+        x = int(tw * max(0.0, el) / config.CLIFF_TITLE_WIPE_SECONDS)
+        matrix_surface.fill(BLACK, (tx + x, ty, tw - x, th))
+
+
+def _draw_cliff_question(now, t0):
+    """BEGIN GAME: "What year did this song debut?" wipes in, one word per panel."""
+    matrix_surface.fill(BLACK)
+    for pid, word in config.CLIFF_QUESTION_WORDS:
+        _draw_word_in_panel(pid, word)
+    _wipe_mask(now - t0, config.CLIFF_QUESTION_WIPE_SECONDS)
+
+
 def update_matrix_canvas():
     _render_matrix_canvas_content()
+    from drivers import cliffhanger_engine
+    _cv = cliffhanger_engine.view()
+    if _cv is None and cliffhanger_engine.pregame_active():
+        _draw_cliff_pregame(time.time(), cliffhanger_engine._pre["started"])
+        if state.lights_out:
+            matrix_surface.fill(BLACK)
+        return
+    if _cv is not None:
+        q0 = _cv.get("q_t0") or 0.0
+        if q0 and time.time() - q0 < config.CLIFF_QUESTION_LED_SECONDS and _cv["phase"] == "listen":
+            _draw_cliff_question(time.time(), q0)
+        else:
+            _draw_cliff_panels(_cv)
+        if state.lights_out:
+            matrix_surface.fill(BLACK)
+        return
+    if state.ff_intro_started_at:
+        _draw_ff_intro(time.time())
+        if state.lights_out:
+            matrix_surface.fill(BLACK)
+        return
     if state.medley_results and time.time() < state.medley_results_until:
         _draw_medley_results(time.time())
     elif state.medley_active:

@@ -4,6 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Triviacade Music Trivia</title>
+<link rel="icon" type="image/png" href="/art/icon-48.png">
+<link rel="apple-touch-icon" href="/art/icon-180.png">
 <style>
 /* Triviacade look (2026-10-10): tokens, fonts and shapes from triviacade.com.
    Fonts are embedded (latin subsets) so the page still works on venue WiFi
@@ -71,6 +73,8 @@ body {
   padding: 10px; box-shadow: 0 0 0 5px var(--stage), 0 14px 36px rgba(0,0,0,0.45);
 }
 .led-frame canvas { display: block; width: 100%; }
+/* 2026-11-12: the Triviacade logo replaces the LED wordmark (kept as the fallback if the image fails) */
+.brand-logo { display: block; width: 100%; height: auto; }
 .led-fallback { font-family: var(--display); font-size: 1.6rem; color: var(--amber); }
 .subtitle {
   display: flex; align-items: center; justify-content: center; gap: 10px;
@@ -86,6 +90,72 @@ body {
   max-width: 380px;
 }
 .listen-row input[type=checkbox] { width: 40px; height: 40px; accent-color: var(--amber); flex-shrink: 0; }
+
+/* Question mode (2026-11-18): while a question is up the page is one fixed-height
+   screen with no scrolling: slim logo strip, one status row, question, four choices
+   that share the leftover height, Lock Answer at the bottom. body.qmode is set by
+   render(); the roster shows only after the reveal (#locked-count stands in). */
+body.qmode { height: 100vh; height: 100dvh; box-sizing: border-box; display: flex; flex-direction: column;
+  overflow-y: auto; padding: 8px 12px calc(8px + env(safe-area-inset-bottom)); }
+body.qmode .brand { width: 100%; margin: 0 auto 6px; flex: none; }
+body.qmode .brand-logo { height: 40px; width: auto; margin: 0 auto; }
+body.qmode .subtitle { display: none; }
+body.qmode #qr-block, body.qmode #listen-row, body.qmode #goal-inline, body.qmode .rename-link,
+body.qmode #category-banner { display: none !important; }
+body.qmode #play-section { width: 100%; flex: 1 1 auto; min-height: 0; margin: 0 auto; padding: 8px 10px;
+  display: flex; flex-direction: column; }
+body.qmode #my-avatar-row { flex: none; margin-bottom: 4px; gap: 8px; }
+body.qmode #my-avatar { --eav-size: 34px !important; }
+body.qmode #my-avatar-row > div { display: flex; align-items: baseline; gap: 10px; }
+body.qmode #my-avatar-row .playing-as { margin: 0; }
+body.qmode #my-avatar-row .score { font-size: 1.25rem; }
+body.qmode #question-block:not(.hidden) { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; }
+body.qmode .timer-track { flex: none; margin-bottom: 4px; }
+body.qmode .pts-row { flex: none; margin: 0 0 6px; }
+body.qmode .question { flex: none; font-size: clamp(.95rem, 3.8vw, 1.12rem); margin-bottom: 8px; }
+body.qmode #streak-message, body.qmode #correct-message { flex: none; margin-bottom: 6px; font-size: .95rem; }
+body.qmode #choices { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; }
+body.qmode .choice { flex: 1 1 0; min-height: 44px; margin-bottom: 6px; padding: 6px 12px; overflow: hidden;
+  font-size: clamp(.92rem, 3.9vw, 1.02rem); display: flex; align-items: center; }
+body.qmode .choice .k { flex: none; }
+body.qmode #lock-btn, body.qmode #locked-status { flex: none; margin-top: 2px; }
+body.qmode #lock-btn { padding: 12px 18px; }
+body.qmode #question-block.qopen #round-roster { display: none !important; }
+body.qmode #round-roster { flex: none; display: flex; gap: 6px; overflow-x: auto; margin: 0 0 6px; padding-bottom: 2px; }
+body.qmode #round-roster .roster-card { flex: none; flex-direction: row; align-items: center; gap: 6px; padding: 4px 8px; }
+body.qmode #round-roster .roster-card .eav { --eav-size: 26px; }
+body.qmode #round-roster .roster-status-text { display: none; }
+body.qmode #round-roster .roster-card--correct { border-color: var(--green); }
+body.qmode #round-roster .roster-card--incorrect { border-color: var(--pink); }
+.locked-count { display: none; font-size: .78rem; color: var(--muted); margin: 0 0 6px; }
+body.qmode #question-block.qopen .locked-count { display: block; flex: none; }
+
+/* Streak celebrations (2026-11-18): the first milestone (3 in a row) takes over the
+   screen with a ding; later streaks get a smaller bottom banner with a ding. */
+#streak-full { position: fixed; inset: 0; z-index: 70; display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 14px; color: #fff; text-align: center; padding: 24px; opacity: 0; transform: scale(1.06); pointer-events: none;
+  background: repeating-conic-gradient(from 0deg at 50% 42%, #3fae6a 0deg 9deg, #2f9a5a 9deg 18deg);
+  transition: opacity .32s ease, transform .32s ease; }
+#streak-full.show { opacity: 1; transform: scale(1); pointer-events: auto; }
+#streak-full .sf-close { position: absolute; top: 14px; right: 14px; width: 44px; height: 44px; border-radius: 50%; border: 0;
+  background: rgba(0,0,0,.25); color: #fff; font-size: 1.4rem; line-height: 1; }
+#streak-full .sf-pts { font-family: var(--display); font-size: 2.4rem; }
+#streak-full .sf-badge { position: relative; width: 170px; height: 170px; filter: drop-shadow(0 6px 0 rgba(0,0,0,.22)); }
+#streak-full .sf-badge svg, #streak-banner .sb-badge svg { width: 100%; height: 100%; display: block; }
+#streak-full .sf-badge b { position: absolute; right: -12px; bottom: -6px; min-width: 52px; height: 52px; border-radius: 50%; background: #fff;
+  color: #2a7a4a; font-size: 1.5rem; display: flex; align-items: center; justify-content: center; }
+#streak-full .sf-title { font-family: var(--display); font-size: 2rem; line-height: 1.15; }
+#streak-full .sf-sub { font-size: 1.05rem; background: rgba(0,0,0,.25); padding: 10px 18px; border-radius: 999px; }
+#streak-banner { position: fixed; left: 8px; right: 8px; bottom: calc(8px + env(safe-area-inset-bottom)); z-index: 65; display: flex;
+  align-items: center; gap: 12px; padding: 10px 12px; border-radius: 16px; background: #2f9a5a; color: #fff;
+  box-shadow: 0 8px 24px rgba(0,0,0,.45); transform: translateY(140%); transition: transform .35s cubic-bezier(.2,.9,.3,1.2); pointer-events: none; }
+#streak-banner.show { transform: translateY(0); }
+#streak-banner .sb-badge { position: relative; flex: none; width: 56px; height: 56px; }
+#streak-banner .sb-badge b { position: absolute; right: -8px; bottom: -8px; min-width: 24px; height: 24px; border-radius: 50%; background: #fff;
+  color: #2a7a4a; font-size: .85rem; display: flex; align-items: center; justify-content: center; }
+#streak-banner .sb-title { flex: 1; font-family: var(--display); font-size: 1.2rem; }
+#streak-banner .sb-pts { flex: none; padding: 6px 12px; border-radius: 999px; background: rgba(0,0,0,.25); font-weight: 700; }
+@media (prefers-reduced-motion: reduce) { #streak-full, #streak-banner { transition: none; } }
 
 section {
   background: var(--stage);
@@ -139,11 +209,30 @@ button { cursor: pointer; font-family: var(--body); }
 .leaderboard-row .lb-init { flex: 1; }
 .leaderboard-row .lb-score { font-variant-numeric: tabular-nums; font-weight: 700; }
 
+.lobby-poll { margin-top: 18px; text-align: left; }
+.lobby-poll .lp-q { font-weight: 700; margin-bottom: 8px; }
+.lobby-poll button { display: block; width: 100%; text-align: left; margin-bottom: 6px; padding: 10px 12px; border-radius: 10px; border: 2px solid var(--rail); background: transparent; color: var(--text); font: inherit; position: relative; overflow: hidden; }
+.lobby-poll button.mine { border-color: var(--pink); }
+.lobby-poll .lp-bar { position: absolute; left: 0; top: 0; bottom: 0; background: var(--rail); opacity: .55; z-index: 0; }
+.lobby-poll .lp-txt { position: relative; z-index: 1; display: flex; justify-content: space-between; }
+.reclaim { margin: 0 0 16px; padding: 12px; border: 2px solid var(--amber); border-radius: 12px; background: rgba(255,178,30,.08); text-align: center; }
+.reclaim-title { font-weight: 700; margin-bottom: 8px; color: var(--amber); }
+.reclaim button.team { display: inline-flex; align-items: center; gap: 8px; margin: 4px; padding: 8px 14px; border-radius: 999px; border: 2px solid var(--rail); background: var(--stage-inset); color: var(--text); font: inherit; font-weight: 700; }
+.reclaim button.team:active { border-color: var(--amber); }
+.reclaim-msg { font-size: .85rem; color: var(--pink); min-height: 1em; margin-top: 4px; }
+.reclaim .row-btns { display: flex; gap: 8px; margin-top: 10px; }
+.reclaim .row-btns .btn { margin-top: 0; }
+.intermission-next { font-family: var(--display); font-size: 1.35rem; color: var(--amber); margin: 6px 0 14px; line-height: 1.25;
+  text-shadow: 0 0 14px rgba(255,178,30,.5); animation: next-pulse 2.4s ease-in-out infinite; }
+@keyframes next-pulse { 0%, 100% { opacity: .5; } 50% { opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .intermission-next { animation: none; } }
+.social-line { margin-top: 14px; font-size: .85rem; color: var(--muted); }
 .now-playing { text-align: left; margin-top: 18px; }
 .now-playing-label { font-family: var(--display); font-size: .78rem; letter-spacing: 0.04em; text-transform: uppercase; color: var(--pink); border-bottom: 2px solid var(--rail); padding-bottom: 8px; margin-bottom: 8px; }
 .now-playing-track { font-size: 1.05rem; font-weight: 700; color: var(--text); }
 .now-playing-artist { font-size: .9rem; color: var(--muted); margin-bottom: 10px; }
 .trivia-card { padding: 6px 0 6px 12px; border-left: 3px solid var(--pink); margin-bottom: 10px; }
+.trivia-card.got-it { border-left-color: var(--green); }
 .trivia-card:last-child { margin-bottom: 0; }
 .trivia-q { font-size: .92rem; font-weight: 700; margin-bottom: 4px; text-wrap: balance; }
 .trivia-a { font-size: .86rem; color: var(--muted); }
@@ -154,6 +243,14 @@ button { cursor: pointer; font-family: var(--body); }
 .playing-as b { color: var(--text); }
 .score { font-size: 1.9rem; color: var(--amber); font-family: var(--display); line-height: 1.1; }
 .status { font-size: .92rem; color: var(--muted); margin: 10px 0; }
+/* Solo challenge banner (drivers/solo_challenge.py) */
+.solo-banner { border: 2px solid #ffcc33; border-radius: 12px; padding: 10px 12px; margin: 0 0 12px;
+  text-align: center; background: rgba(255, 204, 51, .10); font-size: 1rem; line-height: 1.35; }
+.solo-banner b { color: #ffcc33; }
+.solo-banner.win { border-color: #45e07a; background: rgba(69, 224, 122, .12); }
+.solo-banner.win b { color: #45e07a; }
+.solo-banner.lose { border-color: #ff5a5a; background: rgba(255, 90, 90, .10); }
+.solo-banner.lose b { color: #ff5a5a; }
 .waiting-title { font-family: var(--display); font-size: 1.25rem; line-height: 1.15; color: var(--text); margin: 10px 0; text-wrap: balance; }
 .rename-link { font-size: .78rem; color: var(--faint); text-decoration: underline; text-underline-offset: 3px; background: none; border: none; padding: 4px; margin-top: 4px; font-family: var(--body); }
 .hidden { display: none !important; }
@@ -162,45 +259,27 @@ button { cursor: pointer; font-family: var(--body); }
 .timer-track { width: 100%; height: 8px; border-radius: 4px; background: var(--ink); overflow: hidden; margin-bottom: 14px; }
 .timer-fill { height: 100%; background: linear-gradient(90deg, var(--amber), var(--pink)); box-shadow: 0 0 8px rgba(255,77,148,0.5); transition: width .3s linear; }
 
-/* ---------------- AVATAR (LED creature) ---------------- */
+/* ---------------- AVATAR (headphone mascot, 2026-11-12) ----------------
+   One sprite strip per colour, /art/avatar_<colour>.webp, three square cells:
+   idle (thumbs up), excited (victory), thinking. The red original was tinted
+   for the other four colours. --avatar-sheet is set next to --avatar-color. */
 .avatar {
   --avatar-size: 56px;
   width: var(--avatar-size); height: var(--avatar-size);
-  border-radius: 50%;
-  background: radial-gradient(circle at 35% 30%, color-mix(in srgb, var(--avatar-color) 28%, #241D52), #0E0B20 72%);
-  border: 2px solid color-mix(in srgb, var(--avatar-color) 55%, var(--rail));
-  box-shadow: inset 0 0 10px rgba(0,0,0,0.6), 0 0 10px color-mix(in srgb, var(--avatar-color) 35%, transparent);
+  background: var(--avatar-sheet, url(/art/avatar_red.webp)) 0 0 / 300% 100% no-repeat;
   position: relative;
-  display: inline-flex; align-items: center; justify-content: center;
+  display: inline-block;
   flex-shrink: 0;
 }
-.avatar-face { position: relative; width: 58%; height: 44%; }
-.avatar-eye {
-  position: absolute; top: 8%; width: 22%; height: 10%; border-radius: 2px;
-  background: var(--amber); box-shadow: 0 0 5px var(--amber);
-}
-.avatar-eye.l { left: 0; } .avatar-eye.r { right: 0; }
-.avatar-mouth {
-  position: absolute; bottom: 4%; left: 50%; transform: translateX(-50%);
-  width: 56%; height: 12%;
-  background: var(--amber); box-shadow: 0 0 5px var(--amber);
-}
+.avatar-face { display: none; }   /* the old drawn LED face */
 
 .avatar--idle { animation: avatar-breathe 3s ease-in-out infinite; }
 @keyframes avatar-breathe {
-  0%, 100% { box-shadow: inset 0 0 10px rgba(0,0,0,0.6), 0 0 10px color-mix(in srgb, var(--avatar-color) 35%, transparent); }
-  50% { box-shadow: inset 0 0 10px rgba(0,0,0,0.6), 0 0 16px color-mix(in srgb, var(--avatar-color) 55%, transparent); }
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-3%); }
 }
 
-.avatar--excited .avatar-eye {
-  clip-path: polygon(0% 100%, 50% 0%, 100% 100%); height: 22%; top: 4%;
-  background: var(--green); box-shadow: 0 0 6px var(--green);
-}
-.avatar--excited .avatar-mouth {
-  border-radius: 0 0 50% 50%; height: 32%;
-  background: var(--green); box-shadow: 0 0 6px var(--green);
-}
-.avatar--excited { animation: avatar-bounce .6s cubic-bezier(.34,1.56,.64,1) 1; }
+.avatar--excited { background-position: 50% 0; animation: avatar-bounce .6s cubic-bezier(.34,1.56,.64,1) 1; }
 .avatar--excited.avatar--loop { animation: avatar-bounce .9s cubic-bezier(.34,1.56,.64,1) infinite; }
 @keyframes avatar-bounce {
   0%, 100% { transform: translateY(0) scale(1); }
@@ -208,15 +287,8 @@ button { cursor: pointer; font-family: var(--body); }
   65% { transform: translateY(0) scale(0.98); }
 }
 
-.avatar--disappointed .avatar-eye {
-  clip-path: polygon(0% 0%, 50% 100%, 100% 0%); height: 22%; top: 6%;
-  background: var(--pink); box-shadow: 0 0 6px var(--pink);
-}
-.avatar--disappointed .avatar-mouth {
-  border-radius: 50% 50% 0 0; height: 26%; bottom: 0;
-  background: var(--pink); box-shadow: 0 0 6px var(--pink);
-}
-.avatar--disappointed { transform: translateY(2px) rotate(-2deg); filter: saturate(.65) brightness(.88); }
+.avatar--thinking, .avatar--disappointed { background-position: 100% 0; }
+.avatar--disappointed { transform: translateY(2px) rotate(-4deg); filter: saturate(.6) brightness(.85); }
 
 @media (prefers-reduced-motion: reduce) {
   .avatar--idle, .avatar--excited { animation: none !important; }
@@ -224,15 +296,15 @@ button { cursor: pointer; font-family: var(--body); }
 
 /* my avatar, shown persistently while playing */
 #my-avatar-row { display: flex; align-items: center; justify-content: center; gap: 12px; margin-bottom: 8px; }
-#my-avatar { --avatar-size: 64px; }
+#my-avatar { --avatar-size: 84px; }
 
 /* signup avatar picker */
-.avatar-picker { display: flex; justify-content: center; gap: 10px; margin: 12px 0 4px; }
+.avatar-picker { display: flex; justify-content: center; gap: 6px; margin: 12px 0 4px; }
 .avatar-swatch-btn {
-  background: none; border: none; padding: 3px; border-radius: 50%;
+  background: none; border: none; padding: 3px; border-radius: 14px;
   transition: box-shadow .15s ease;
 }
-.avatar-swatch-btn .avatar { --avatar-size: 40px; }
+.avatar-swatch-btn .avatar { --avatar-size: 50px; }
 .avatar-swatch-btn.selected { box-shadow: 0 0 0 2px var(--stage), 0 0 0 4px var(--amber); }
 
 /* round roster: every connected player, live, while a question is active */
@@ -247,7 +319,7 @@ button { cursor: pointer; font-family: var(--body); }
   background: var(--stage-inset); border: 1px solid var(--rail); border-radius: 10px; padding: 8px 4px 6px;
   min-width: 0;
 }
-.roster-card .avatar { width: 46%; height: auto; aspect-ratio: 1 / 1; }
+.roster-card .avatar { width: 62%; height: auto; aspect-ratio: 1 / 1; }
 .roster-initials { font-weight: 700; font-size: .8rem; }
 .roster-score { font-size: .72rem; color: var(--muted); font-variant-numeric: tabular-nums; }
 .roster-status-text {
@@ -267,49 +339,108 @@ button { cursor: pointer; font-family: var(--body); }
 
 /* win celebration */
 #win-avatar-wrap { margin: 4px 0 14px; }
-#win-avatar { --avatar-size: 96px; }
+#win-avatar { --avatar-size: 150px; }
+
+/* ---------------- EMOJI AVATARS + TEAMS (2026-11-15) ---------------- */
+.eav {
+  --eav-size: 40px; --avatar-color: var(--signal-amber);
+  display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0;
+  width: var(--eav-size); height: var(--eav-size); border-radius: 50%;
+  font-size: calc(var(--eav-size) * .6); line-height: 1;
+  background: rgba(255,255,255,.07); box-shadow: 0 0 0 2px var(--avatar-color);
+  font-family: "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif;
+}
+.eav.avatar--idle { animation: avatar-breathe 3s ease-in-out infinite; }
+.eav.avatar--excited { animation: avatar-bounce .6s cubic-bezier(.34,1.56,.64,1) 1; }
+.eav.avatar--excited.avatar--loop { animation: avatar-bounce .9s cubic-bezier(.34,1.56,.64,1) infinite; }
+.eav.avatar--disappointed { transform: translateY(2px) rotate(-6deg); filter: saturate(.55) brightness(.85); }
+.roster-card .eav { --eav-size: 46px; }
+.emoji-input { font-size: 2.2rem !important; padding: 6px 10px !important; max-width: 140px; margin: 0 auto; display: block; }
+.emoji-hint { font-size: .78rem; color: var(--faint); margin: 6px 0 8px; }
+.emoji-quick { display: flex; flex-wrap: wrap; justify-content: center; gap: 4px; margin-bottom: 10px; }
+.emoji-quick button { font-size: 1.5rem; background: none; border: 2px solid transparent; border-radius: 10px; padding: 2px 5px; line-height: 1.2; }
+.emoji-quick button.selected { border-color: var(--amber); }
+.streak-badge { font-size: .74rem; font-weight: 700; color: var(--ink); background: var(--amber); border-radius: 999px; padding: 1px 7px; margin-left: 6px; white-space: nowrap; }
+.leaderboard-row { position: relative; background: linear-gradient(90deg, rgba(255,178,30,.16) var(--bar, 0%), transparent var(--bar, 0%)); border-radius: 8px; padding-left: 6px; padding-right: 8px; }
+.leaderboard-row .lb-init { overflow-wrap: anywhere; }
+.category-banner { margin: 6px 0 10px; padding: 7px 10px; border-radius: 10px; font-weight: 700; font-size: .95rem; color: var(--ink); background: linear-gradient(90deg, var(--amber), var(--pink)); }
+.category-banner small { font-weight: 600; opacity: .8; }
+.pts-row { display: flex; justify-content: space-between; align-items: baseline; font-size: .8rem; color: var(--muted); margin: -8px 0 12px; font-variant-numeric: tabular-nums; }
+.pts-row b { color: var(--amber); font-size: 1rem; }
+.streak-message { font-size: 1rem; font-weight: 700; color: var(--amber); margin-bottom: 8px; }
+.streak-message.lost { color: var(--pink); }
+.tonight-card { margin-top: 14px; padding: 12px; border-radius: 12px; background: var(--stage-inset); border: 1px solid var(--rail); }
+.tonight-card .tc-big { font-size: 1.05rem; font-weight: 700; }
+.tonight-card .tc-sub { font-size: .85rem; color: var(--muted); margin: 3px 0 10px; }
+.final-title { font-family: var(--display); font-size: 1.7rem; color: var(--amber); text-shadow: 0 0 14px rgba(255,178,30,.5); margin: 6px 0 4px; }
+#recap-overlay { position: fixed; inset: 0; z-index: 50; background: var(--ink); overflow-y: auto; padding: 14px 16px 40px; text-align: left; }
+.recap-row { padding: 10px 0; border-bottom: 1px solid var(--rail); font-size: .92rem; }
+.recap-row .rq { font-weight: 700; margin-bottom: 4px; }
+.recap-row .ra { color: var(--muted); }
+.recap-row.right .ra b { color: var(--green); }
+.recap-row.wrong .ra b.yours { color: var(--pink); }
+.recap-row.right .mark { color: var(--green); } .recap-row.wrong .mark { color: var(--pink); }
+.recap-cat { font-size: .7rem; letter-spacing: .06em; text-transform: uppercase; color: var(--amber); }
 </style>
 </head>
 <body>
   <header class="brand">
     <h1 class="sr-only">Triviacade Music Trivia</h1>
-    <div class="led-frame"><canvas id="led-wordmark" aria-hidden="true"></canvas><div class="led-fallback hidden" id="led-fallback">TRIVIACADE</div></div>
+    <img class="brand-logo" src="/art/logo.webp" alt="Triviacade" width="1106" height="270"
+         onerror="this.remove();document.getElementById('led-frame').classList.remove('hidden');window.dispatchEvent(new Event('resize'))">
+    <div class="led-frame hidden" id="led-frame"><canvas id="led-wordmark" aria-hidden="true"></canvas><div class="led-fallback hidden" id="led-fallback">TRIVIACADE</div></div>
     <div class="subtitle">MUSIC <i></i> TRIVIA</div>
   </header>
 
   <section id="signup-section">
-    <div class="playing-as">Enter your initials to join</div>
-    <input type="text" id="initials-input" maxlength="3" placeholder="ABC" autocomplete="off">
-    <div class="playing-as" style="margin-top:14px">Pick your avatar</div>
-    <div id="avatar-picker" class="avatar-picker"></div>
+    <div id="reclaim-box" class="reclaim hidden">
+      <div class="reclaim-title">Already playing tonight? Tap your team</div>
+      <div id="reclaim-list"></div>
+      <div id="reclaim-msg" class="reclaim-msg"></div>
+    </div>
+    <div id="namematch" class="reclaim hidden"></div>
+    <div class="playing-as">Your team name <span style="color:var(--faint)">(or just your name)</span></div>
+    <input type="text" id="initials-input" maxlength="20" placeholder="The Smartinis" autocomplete="off" style="font-size:1.25rem;text-transform:none;letter-spacing:0;font-family:var(--body)">
+    <div class="playing-as" style="margin-top:14px">Pick your emoji</div>
+    <input type="text" id="emoji-input" class="emoji-input" placeholder="&#128578;" autocomplete="off" aria-label="Team emoji">
+    <div class="emoji-hint">Tap the box, then choose any emoji from your keyboard &mdash; or tap one below</div>
+    <div id="avatar-picker" class="emoji-quick"></div>
     <button class="btn primary" onclick="join()">Join Game</button>
   </section>
 
+  <section id="results-section" class="hidden"></section>
+
   <section id="play-section" class="hidden">
+    <div id="solo-banner" class="solo-banner hidden"></div>
     <div id="my-avatar-row">
-      <div id="my-avatar" class="avatar avatar--idle"><div class="avatar-face"><span class="avatar-eye l"></span><span class="avatar-eye r"></span><span class="avatar-mouth"></span></div></div>
+      <span id="my-avatar" class="eav avatar--idle" style="--eav-size:72px">&#127925;</span>
       <div style="text-align:left">
-        <div class="playing-as" style="justify-content:flex-start">Playing as <b id="my-initials">---</b></div>
+        <div class="playing-as" style="justify-content:flex-start">Team <b id="my-initials">---</b><span id="my-streak" class="streak-badge hidden"></span></div>
         <div class="score" id="my-score">0</div>
       </div>
     </div>
     <div id="goal-inline" class="status" style="margin-top:0"></div>
-    <button class="rename-link" onclick="renamePrompt()">change initials</button>
+    <button class="rename-link" onclick="renamePrompt()">change team name</button>
+    <button class="rename-link" onclick="emojiPrompt()">change emoji</button>
+    <div id="category-banner" class="category-banner hidden"></div>
 
     <div id="win-message" class="win-message hidden"></div>
-    <div id="win-avatar-wrap" class="hidden"><div id="win-avatar" class="avatar avatar--excited avatar--loop"><div class="avatar-face"><span class="avatar-eye l"></span><span class="avatar-eye r"></span><span class="avatar-mouth"></span></div></div></div>
+    <div id="win-avatar-wrap" class="hidden"><span id="win-avatar" class="eav avatar--excited avatar--loop" style="--eav-size:130px">&#127942;</span></div>
     <div id="bonus-message" class="bonus-message hidden"></div>
     <div id="goal-message" class="status hidden"></div>
 
     <div id="intermission-block" class="hidden">
       <div class="win-message">Intermission</div>
       <div id="intermission-countdown" class="score" style="margin-bottom:10px">5:00</div>
-      <div class="status">Scores are reset -- next game starts soon.</div>
+      <div id="intermission-next" class="intermission-next hidden">Next game begins after this song</div>
+      <div id="intermission-board" class="leaderboard"></div>
+      <div id="intermission-night" class="leaderboard" style="margin-top:14px"></div>
+      <button class="btn primary hidden" id="intermission-review" onclick="openRecap()" style="margin:12px 0">Review tonight's questions &amp; answers</button>
+      <div class="status" id="intermission-note">Scores are reset -- next game starts soon.</div>
     </div>
 
     <div id="medley-block" class="hidden">
-      <div class="win-message" style="margin-bottom:6px">MEDLEY TIME!</div>
-      <div id="medley-reveal" class="correct-message hidden"></div>
+      <div class="win-message" style="margin-bottom:6px">FASTEST FINGER!</div>
       <div id="medley-live" class="hidden">
         <div class="timer-track"><div class="timer-fill" id="medley-timer" style="width:100%"></div></div>
         <div class="question" style="margin-top:10px">This is&hellip;</div>
@@ -320,20 +451,28 @@ button { cursor: pointer; font-family: var(--body); }
         </div>
         <div class="status" id="medley-answered"></div>
       </div>
+      <div id="medley-reveal" class="correct-message hidden"></div>
       <div id="medley-results" class="hidden"></div>
       <div class="status" id="medley-points"></div>
     </div>
 
     <div id="waiting-block" class="status">
       <div class="waiting-title" id="waiting-title">Waiting for the next question&hellip;</div>
+      <div id="final-block" class="hidden"></div>
       <div id="waiting-leaderboard" class="leaderboard"></div>
+      <div id="tonight-card" class="tonight-card hidden"></div>
       <div id="now-playing-trivia" class="now-playing hidden"></div>
+      <div id="lobby-poll" class="lobby-poll hidden"></div>
+      <div id="social-line" class="social-line hidden"></div>
     </div>
 
     <div id="question-block" class="hidden">
       <div class="timer-track"><div class="timer-fill" id="timer-fill" style="width:100%"></div></div>
+      <div class="pts-row" id="pts-row"><span id="pts-min">25p</span><span>worth <b id="pts-now">100p</b> now</span><span id="pts-max">100p</span></div>
       <div class="question" id="question-text"></div>
+      <div id="streak-message" class="streak-message hidden"></div>
       <div id="correct-message" class="correct-message hidden"></div>
+      <div id="locked-count" class="locked-count"></div>
       <div id="round-roster"></div>
       <div id="choices"></div>
       <button class="btn primary hidden" id="lock-btn" onclick="lockAnswer()">Lock Answer</button>
@@ -352,6 +491,24 @@ button { cursor: pointer; font-family: var(--body); }
   </label>
   <audio id="listen-audio" preload="none"></audio>
 
+  <div id="streak-full" aria-live="polite">
+    <button class="sf-close" type="button" onclick="hideStreakFull()" aria-label="Close">&times;</button>
+    <div class="sf-pts" id="sf-pts"></div>
+    <div class="sf-badge"><svg viewBox="0 0 100 100" aria-hidden="true"><defs><clipPath id="gc1"><circle cx="50" cy="50" r="44"/></clipPath></defs><circle cx="50" cy="50" r="46" fill="#fff"/><g clip-path="url(#gc1)"><rect width="100" height="100" fill="#5da84a"/><polygon points="50,0 82,12 69,39 50,28" fill="#eef9bd"/><polygon points="82,12 100,50 69,61 69,39" fill="#4f9a45"/><polygon points="100,50 82,88 50,72 69,61" fill="#74bb58"/><polygon points="50,100 18,88 31,61 50,72" fill="#74bb58"/><polygon points="0,50 18,12 50,28 31,39" fill="#4f9a45"/></g><polygon points="50,26 70,38 70,62 50,74 30,62 30,38" fill="#cfe04d"/><path d="M38 51 L47 60 L63 42" fill="none" stroke="#fff" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/></svg><b id="sf-n">3</b></div>
+    <div class="sf-title" id="sf-title"></div>
+    <div class="sf-sub">&#128170; Keep up the great work!</div>
+  </div>
+  <div id="streak-banner" aria-live="polite">
+    <div class="sb-badge"><svg viewBox="0 0 100 100" aria-hidden="true"><defs><clipPath id="gc2"><circle cx="50" cy="50" r="44"/></clipPath></defs><circle cx="50" cy="50" r="46" fill="#fff"/><g clip-path="url(#gc2)"><rect width="100" height="100" fill="#5da84a"/><polygon points="50,0 82,12 69,39 50,28" fill="#eef9bd"/><polygon points="82,12 100,50 69,61 69,39" fill="#4f9a45"/><polygon points="100,50 82,88 50,72 69,61" fill="#74bb58"/><polygon points="50,100 18,88 31,61 50,72" fill="#74bb58"/><polygon points="0,50 18,12 50,28 31,39" fill="#4f9a45"/></g><polygon points="50,26 70,38 70,62 50,74 30,62 30,38" fill="#cfe04d"/><path d="M38 51 L47 60 L63 42" fill="none" stroke="#fff" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/></svg><b id="sb-n">4</b></div>
+    <div class="sb-title" id="sb-title"></div>
+    <div class="sb-pts" id="sb-pts"></div>
+  </div>
+
+  <div id="recap-overlay" class="hidden">
+    <button class="btn primary" onclick="closeRecap()" style="margin-bottom:12px">Close</button>
+    <div id="recap-body"></div>
+  </div>
+
 <script>
 const AVATAR_COLORS = ['red', 'amber', 'cyan', 'green', 'violet'];
 // Must stay in sync with state.AVATAR_COLORS in state.py -- no shared
@@ -360,6 +517,143 @@ const AVATAR_COLOR_VARS = {
   red: 'var(--signal-red)', amber: 'var(--signal-amber)', cyan: 'var(--signal-cyan)',
   green: 'var(--signal-green)', violet: 'var(--signal-violet)',
 };
+
+// ---- teams + emoji avatars (2026-11-15) ----
+function esc(v) {
+  return String(v == null ? '' : v).replace(/[&<>"']/g, c => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'}[c]));
+}
+const EMOJI_QUICK = ['🎸','🎤','🎧','🥁','🎹','🎷','🎺','🪩','🔥','⭐','🍸','🍺','🦄','🐙','👽','🤖','🧙','🦖','🌮','🍕'];
+// The first picture the player typed/pasted: one grapheme, never a plain letter or digit.
+function firstEmoji(text) {
+  text = (text || '').trim();
+  if (!text) return '';
+  let g = '';
+  if (window.Intl && Intl.Segmenter) {
+    const it = new Intl.Segmenter(undefined, {granularity: 'grapheme'}).segment(text)[Symbol.iterator]().next();
+    g = it.done ? '' : it.value.segment;
+  } else {
+    g = Array.from(text)[0] || '';
+  }
+  return /^[\x00-\x7F]/.test(g) ? '' : g;
+}
+function eav(emoji, color, size, pose) {
+  return `<span class="eav${pose ? ' avatar--' + pose : ''}" style="--eav-size:${size}px;--avatar-color:${avatarColorVar(color)}">${esc(emoji || '🎵')}</span>`;
+}
+// Named streak call-outs (2026-11-17).
+const STREAK_NAMES = {2: 'Back to back!', 3: 'Hat trick!', 4: 'Four on the floor!', 5: 'High five!',
+  6: 'Six-string slinger!', 7: 'Lucky seven!', 8: 'Full octave!', 9: 'Nine lives!', 10: 'Perfect ten!'};
+function streakName(n) {
+  return (STREAK_NAMES[n] || 'Unstoppable!') + ` (${n} in a row)`;
+}
+function renderLobbyPoll(d) {
+  const box = document.getElementById('lobby-poll');
+  const p = d.lobby_poll;
+  if (!p || d.win_message) { box.classList.add('hidden'); return; }
+  const key = JSON.stringify(p);
+  if (box.dataset.key === key && !box.classList.contains('hidden')) return;
+  box.dataset.key = key;
+  const total = p.counts.reduce((a, b) => a + b, 0) || 1;
+  box.innerHTML = '<div class="lp-q">' + esc(p.question) + '</div>' + p.options.map((o, i) =>
+    `<button data-i="${i}" class="${p.mine === i ? 'mine' : ''}"><span class="lp-bar" style="width:${p.mine >= 0 ? Math.round(100 * p.counts[i] / total) : 0}%"></span>` +
+    `<span class="lp-txt"><span>${esc(o)}</span><span>${p.mine >= 0 ? p.counts[i] : ''}</span></span></button>`).join('');
+  box.querySelectorAll('button').forEach(b => b.onclick = () => {
+    api('/api/player/poll-vote', {method: 'POST', headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({player_id: playerId, poll_id: p.id, index: +b.dataset.i})});
+    p.counts[+b.dataset.i] += 1; if (p.mine >= 0) p.counts[p.mine] -= 1; p.mine = +b.dataset.i;
+    renderLobbyPoll(d);
+  });
+  box.classList.remove('hidden');
+  const sl = document.getElementById('social-line');
+  sl.textContent = d.social_handle ? 'Follow us ' + d.social_handle + ' for sneak peeks!' : '';
+  sl.classList.toggle('hidden', !d.social_handle);
+}
+// ---- streak celebrations (2026-11-18) ----
+// 3 in a row (and 10): full-screen takeover with a ding. Other streaks of 4+: a smaller
+// bottom banner with a ding. Once per question; the ding is a tiny WebAudio tone (no file)
+// and only plays after the phone has been touched (answering counts).
+let _actx = null, _streakFxFor = '', _sfTimer = 0, _sbTimer = 0;
+function _unlockAudio() {
+  try {
+    _actx = _actx || new (window.AudioContext || window.webkitAudioContext)();
+    if (_actx.state === 'suspended') _actx.resume();
+    _loadWinSound();
+  } catch (e) {}
+}
+// Round win (2026-11-21): the winning team's phone plays bigWin.wav. Fetched once the phone has been
+// touched (browsers only allow sound after that), decoded into the same unlocked AudioContext.
+let _winBuf = null, _winFetch = null, _wonKey = '';
+function _loadWinSound() {
+  if (_winFetch || !_actx) return _winFetch;
+  _winFetch = fetch('/api/player/sfx/bigwin')
+    .then((r) => { if (!r.ok) throw new Error(r.status); return r.arrayBuffer(); })
+    .then((b) => new Promise((res, rej) => _actx.decodeAudioData(b, res, rej)))
+    .then((buf) => { _winBuf = buf; return buf; })
+    .catch(() => { _winFetch = null; return null; });
+  return _winFetch;
+}
+function playWinSound() {
+  try { if (navigator.vibrate) navigator.vibrate([80, 60, 80, 60, 200]); } catch (e) {}
+  if (!_actx) return;
+  if (_actx.state === 'suspended') { try { _actx.resume(); } catch (e) {} }
+  const go = (buf) => {
+    if (!buf) return;
+    try {
+      const s = _actx.createBufferSource(), g = _actx.createGain();
+      s.buffer = buf; g.gain.value = 0.9;
+      s.connect(g); g.connect(_actx.destination); s.start();
+    } catch (e) {}
+  };
+  if (_winBuf) go(_winBuf); else { const f = _loadWinSound(); if (f) f.then(go); }
+}
+document.addEventListener('pointerdown', _unlockAudio, {passive: true});
+function streakDing(big) {
+  try {
+    if (!_actx || _actx.state !== 'running') return;
+    const t = _actx.currentTime;
+    [[880, 0], [1318.5, 0.11]].concat(big ? [[1760, 0.22]] : []).forEach(([f, dt]) => {
+      const o = _actx.createOscillator(), g = _actx.createGain();
+      o.type = 'sine'; o.frequency.value = f;
+      g.gain.setValueAtTime(0.0001, t + dt);
+      g.gain.exponentialRampToValueAtTime(0.18, t + dt + 0.015);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + dt + 0.5);
+      o.connect(g); g.connect(_actx.destination);
+      o.start(t + dt); o.stop(t + dt + 0.55);
+    });
+  } catch (e) {}
+  try { if (navigator.vibrate) navigator.vibrate(big ? [40, 40, 40] : 40); } catch (e) {}
+}
+function hideStreakFull() {
+  clearTimeout(_sfTimer);
+  document.getElementById('streak-full').classList.remove('show');
+}
+function celebrateStreak(n, pts, key) {
+  if (n < 3 || _streakFxFor === key) return;
+  _streakFxFor = key;
+  const name = (STREAK_NAMES[n] || 'Unstoppable!');
+  const ptsText = pts ? '+' + pts : '';
+  if (n === 3 || n === 10) {
+    document.getElementById('sf-pts').textContent = ptsText;
+    document.getElementById('sf-n').textContent = 'x' + n;
+    document.getElementById('sf-title').textContent = name;
+    const el = document.getElementById('streak-full');
+    el.classList.add('show');
+    streakDing(true);
+    clearTimeout(_sfTimer);
+    _sfTimer = setTimeout(hideStreakFull, 2600);
+  } else {
+    document.getElementById('sb-n').textContent = n;
+    document.getElementById('sb-title').textContent = name;
+    document.getElementById('sb-pts').textContent = ptsText;
+    const el = document.getElementById('streak-banner');
+    el.classList.add('show');
+    streakDing(false);
+    clearTimeout(_sbTimer);
+    _sbTimer = setTimeout(() => el.classList.remove('show'), 2600);
+  }
+}
+function streakBadge(n) {
+  return n >= 2 ? `<span class="streak-badge">🔥 ${n}</span>` : '';
+}
 
 // Backup-Pi failover (2026-11-08): a phone that lost the show comes back
 // through https://triviacade.com/play/?pid=<id>, which forwards the id here
@@ -387,6 +681,8 @@ function _maybeRejoin() {
 }
 let playerId = localStorage.getItem('player_id');
 let myAvatarColor = localStorage.getItem('avatar_color') || AVATAR_COLORS[0];
+let myEmoji = localStorage.getItem('emoji') || '🎵';
+let myLed = '';                 // the LED-safe form of my team name (what the Dance Medley results list)
 let selectedAvatarColor = myAvatarColor;
 let lastRoundId = null;
 let lastRosterKey = '';
@@ -410,60 +706,153 @@ function avatarColorVar(name) {
   return AVATAR_COLOR_VARS[name] || AVATAR_COLOR_VARS[AVATAR_COLORS[0]];
 }
 
+function avatarSheet(name) {
+  return `url(/art/avatar_${AVATAR_COLORS.includes(name) ? name : AVATAR_COLORS[0]}.webp)`;
+}
+// inline style for a templated avatar: its glow colour + its mascot sprite strip
+function avatarStyle(name) {
+  return `--avatar-color:${avatarColorVar(name)};--avatar-sheet:${avatarSheet(name)}`;
+}
+function applyAvatarColor(el, name) {
+  el.style.setProperty('--avatar-color', avatarColorVar(name));
+}
+function applyEmoji(el, emoji) {
+  if (el.textContent !== emoji) el.textContent = emoji;
+}
+
 function setAvatarPose(el, pose) {
-  el.classList.remove('avatar--idle', 'avatar--excited', 'avatar--disappointed');
+  el.classList.remove('avatar--idle', 'avatar--excited', 'avatar--disappointed', 'avatar--thinking');
   el.classList.add('avatar--' + pose);
 }
 
 function renderAvatarPicker() {
   const box = document.getElementById('avatar-picker');
-  box.innerHTML = AVATAR_COLORS.map(c => `
-    <button type="button" class="avatar-swatch-btn${c === selectedAvatarColor ? ' selected' : ''}" data-color="${c}" onclick="pickAvatarColor('${c}')">
-      <div class="avatar avatar--idle" style="--avatar-color:${avatarColorVar(c)}">
-        <div class="avatar-face"><span class="avatar-eye l"></span><span class="avatar-eye r"></span><span class="avatar-mouth"></span></div>
-      </div>
-    </button>`).join('');
-}
-
-function pickAvatarColor(color) {
-  selectedAvatarColor = color;
-  document.querySelectorAll('.avatar-swatch-btn').forEach(b => {
-    b.classList.toggle('selected', b.dataset.color === color);
+  box.innerHTML = EMOJI_QUICK.map(e => `<button type="button" data-e="${e}" onclick="pickEmoji('${e}')">${e}</button>`).join('');
+  document.getElementById('emoji-input').addEventListener('input', (ev) => {
+    ev.target.value = firstEmoji(ev.target.value);
+    markQuickPick(ev.target.value);
   });
 }
+function markQuickPick(e) {
+  document.querySelectorAll('#avatar-picker button').forEach(b => b.classList.toggle('selected', b.dataset.e === e));
+}
+function pickEmoji(e) {
+  document.getElementById('emoji-input').value = e;
+  markQuickPick(e);
+}
+
+// ---- reclaim a team (2026-11-18) ----
+// After a tunnel/address change or a lost tab this phone has no saved identity
+// but its team is still in the game. List the teams nobody is using; typing a
+// matching name offers the same team back instead of a dead duplicate.
+let _reclaimTeams = [];
+async function loadReclaim() {
+  const d = await api('/api/player/unclaimed');
+  if (!d || !d.ok) return _reclaimTeams;
+  _reclaimTeams = d.teams || [];
+  const box = document.getElementById('reclaim-box');
+  box.classList.toggle('hidden', !_reclaimTeams.length);
+  document.getElementById('reclaim-list').innerHTML = _reclaimTeams.map(t =>
+    `<button type="button" class="team" onclick="claimTeam('${t.player_id}')">${esc(t.emoji)} ${esc(t.name)}</button>`).join('');
+  return _reclaimTeams;
+}
+async function claimTeam(pid) {
+  const d = await api('/api/player/claim', {
+    method: 'POST', headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({player_id: pid}),
+  });
+  if (!d || !d.ok) {
+    document.getElementById('reclaim-msg').textContent = d && d.reason === 'in use'
+      ? 'That team is playing on another phone.' : "That team isn't available any more.";
+    document.getElementById('namematch').classList.add('hidden');
+    loadReclaim();
+    return;
+  }
+  playerId = d.player_id;
+  myAvatarColor = d.avatar_color;
+  myEmoji = d.emoji || myEmoji;
+  myLed = d.initials || '';
+  localStorage.setItem('player_id', playerId);
+  localStorage.setItem('avatar_color', myAvatarColor);
+  localStorage.setItem('emoji', myEmoji);
+  showPlayView(d.name, d.score || 0);
+  poll();
+}
+let _nameMatchSkip = '';
+function nameMatchNew() {
+  _nameMatchSkip = document.getElementById('initials-input').value.trim().toLowerCase();
+  document.getElementById('namematch').classList.add('hidden');
+  join();
+}
+setInterval(() => {
+  if (!document.getElementById('signup-section').classList.contains('hidden')) loadReclaim();
+}, 8000);
 
 async function join() {
-  const initials = document.getElementById('initials-input').value.trim();
-  if (!initials) return;
+  const name = document.getElementById('initials-input').value.trim();
+  if (!name) { document.getElementById('initials-input').focus(); return; }
+  if (_nameMatchSkip !== name.toLowerCase()) {
+    const teams = await loadReclaim();
+    const hit = teams.find(t => (t.name || '').trim().toLowerCase() === name.toLowerCase());
+    if (hit) {
+      const nm = document.getElementById('namematch');
+      nm.innerHTML = `<div class="reclaim-title">Welcome back, ${esc(hit.name)}! Is this your team?</div>` +
+        `<div style="font-size:2rem">${esc(hit.emoji)}</div>` +
+        `<div class="row-btns"><button type="button" class="btn primary" onclick="claimTeam('${hit.player_id}')">Yes, that's me</button>` +
+        `<button type="button" class="btn" onclick="nameMatchNew()">No, new team</button></div>`;
+      nm.classList.remove('hidden');
+      return;
+    }
+  }
+  const typed = firstEmoji(document.getElementById('emoji-input').value);
+  const emoji = typed || EMOJI_QUICK[Math.floor(Math.random() * EMOJI_QUICK.length)];
   const d = await api('/api/player/join', {
     method: 'POST', headers: {'Content-Type': 'application/json'},
-    body: JSON.stringify({initials, avatar_color: selectedAvatarColor}),
+    body: JSON.stringify({name, emoji}),
   });
   if (!d || !d.ok) return;
   playerId = d.player_id;
   myAvatarColor = d.avatar_color;
+  myEmoji = d.emoji || emoji;
+  myLed = d.initials || '';
   localStorage.setItem('player_id', playerId);
   localStorage.setItem('avatar_color', myAvatarColor);
-  showPlayView(d.initials, 0);
+  localStorage.setItem('emoji', myEmoji);
+  showPlayView(d.name || name, 0);
   poll();
 }
 
 async function renamePrompt() {
-  const initials = prompt('New initials (max 3 letters):');
-  if (!initials) return;
+  const name = prompt('New team name:');
+  if (!name) return;
   const d = await api('/api/player/rename', {
     method: 'POST', headers: {'Content-Type': 'application/json'},
-    body: JSON.stringify({player_id: playerId, initials}),
+    body: JSON.stringify({player_id: playerId, name}),
   });
-  if (d && d.ok) document.getElementById('my-initials').textContent = d.initials;
+  if (d && d.ok) { document.getElementById('my-initials').textContent = d.name; myLed = d.initials || myLed; }
 }
 
-function showPlayView(initials, score) {
+async function emojiPrompt() {
+  const emoji = firstEmoji(prompt('Pick a new emoji (use your emoji keyboard):') || '');
+  if (!emoji) return;
+  const d = await api('/api/player/set-avatar', {
+    method: 'POST', headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({player_id: playerId, emoji}),
+  });
+  if (d && d.ok && d.emoji) {
+    myEmoji = d.emoji;
+    localStorage.setItem('emoji', myEmoji);
+    applyEmoji(document.getElementById('my-avatar'), myEmoji);
+  }
+}
+
+function showPlayView(name, score) {
   document.getElementById('signup-section').classList.add('hidden');
   document.getElementById('play-section').classList.remove('hidden');
-  document.getElementById('my-initials').textContent = initials;
+  document.getElementById('my-initials').textContent = name;
   document.getElementById('my-score').textContent = score;
-  document.getElementById('my-avatar').style.setProperty('--avatar-color', avatarColorVar(myAvatarColor));
+  applyAvatarColor(document.getElementById('my-avatar'), myAvatarColor);
+  applyEmoji(document.getElementById('my-avatar'), myEmoji);
 }
 
 // ---------------------------------------------------------------- snappy answers
@@ -505,6 +894,7 @@ function lockAnswer() {
   if (myPick.locked || myPick.index < 0 || questionRevealed(lastD)) return;
   myPick.locked = true;
   myPick.touched = true;
+  myPick.lockedAt = serverNow();    // what the answer is worth is decided by when it was locked
   renderQuestion(lastD);
   sendLock(myPick.round, myPick.index, 0);
   schedulePoll(500);
@@ -559,22 +949,67 @@ function renderLeaderboard(leaderboard, winScore) {
     box.innerHTML = '';
     return;
   }
+  const top = Math.max(1, ...leaderboard.map(p => p.score));
   const rows = leaderboard.map((p, i) => {
     const isMe = p.player_id === playerId;
-    return `<div class="leaderboard-row${isMe ? ' me' : ''}">
-      <span class="rank">${i + 1}.</span>
-      <div class="avatar avatar--idle" style="--avatar-size:22px;--avatar-color:${avatarColorVar(p.avatar_color)}">
-        <div class="avatar-face"><span class="avatar-eye l"></span><span class="avatar-eye r"></span><span class="avatar-mouth"></span></div>
-      </div>
-      <span class="lb-init">${p.initials}</span>
-      <span class="lb-score">${p.score}</span>
+    const bar = Math.round(100 * p.score / top);
+    return `<div class="leaderboard-row${isMe ? ' me' : ''}" style="--bar:${bar}%">
+      <span class="rank">${p.rank || (i + 1)}.</span>
+      ${eav(p.emoji, p.avatar_color, 30)}
+      <span class="lb-init">${esc(p.name || p.initials)}${streakBadge(p.streak)}</span>
+      <span class="lb-score">${p.score}p</span>
     </div>`;
   }).join('');
-  const title = winScore ? `Leaderboard (first to ${winScore} wins)` : 'Leaderboard';
+  const title = winScore ? `Leaderboard (first to ${winScore}p wins)` : 'Leaderboard';
   box.innerHTML = `<div class="leaderboard-title">${title}</div>${rows}`;
 }
 
+// Last round's final standings, shown while the intermission clock runs.
+let _imKey = '';
+function renderIntermissionBoard(board, roundNo) {
+  const box = document.getElementById('intermission-board');
+  if (!board || !board.length) { box.innerHTML = ''; _imKey = ''; return; }
+  const key = JSON.stringify(board) + '|' + playerId;
+  if (key === _imKey) return;   // render() runs 5x a second; only redraw on change
+  _imKey = key;
+  const top = Math.max(1, ...board.map(p => p.score));
+  const rows = board.map(p => `<div class="leaderboard-row${p.player_id === playerId ? ' me' : ''}" style="--bar:${Math.round(100 * p.score / top)}%">
+      <span class="rank">${p.rank}.</span>
+      ${eav(p.emoji, p.avatar_color, 30)}
+      <span class="lb-init">${esc(p.name)}</span>
+      <span class="lb-score">${p.score}p</span>
+    </div>`).join('');
+  box.innerHTML = `<div class="leaderboard-title">${roundNo ? 'Round ' + roundNo + ' final scores' : 'Last round'}</div>${rows}`;
+}
+
+let _nightKey = '';
+function renderNightBoard(board) {
+  const box = document.getElementById('intermission-night');
+  if (!board || !board.length) { box.innerHTML = ''; _nightKey = ''; return; }
+  const key = JSON.stringify(board) + '|' + playerId;
+  if (key === _nightKey) return;
+  _nightKey = key;
+  const top = Math.max(1, ...board.map(p => p.score));
+  box.innerHTML = `<div class="leaderboard-title">Tonight's totals</div>` + board.map(p =>
+    `<div class="leaderboard-row${p.player_id === playerId ? ' me' : ''}" style="--bar:${Math.round(100 * p.score / top)}%">
+      <span class="rank">${p.rank}.</span>
+      ${eav(p.emoji, p.avatar_color, 30)}
+      <span class="lb-init">${esc(p.name)}</span>
+      <span class="lb-score">${p.score}p</span>
+    </div>`).join('');
+}
+
 let lastTriviaKey = '';
+// Questions this phone answered correctly (2026-11-13): their bar on the
+// Now Playing card turns green. Keyed by question text, kept per tab session.
+let triviaGotIt = {};
+try { triviaGotIt = JSON.parse(sessionStorage.getItem('triviaGotIt') || '{}') || {}; } catch (e) {}
+function noteTriviaResult(question, right) {
+  if (!right || !question || triviaGotIt[question]) return;
+  triviaGotIt[question] = 1;
+  try { sessionStorage.setItem('triviaGotIt', JSON.stringify(triviaGotIt)); } catch (e) {}
+  lastTriviaKey = '';  // force the Now Playing card to redraw with the green bar
+}
 function renderSongTrivia(title, artist, trivia) {
   const box = document.getElementById('now-playing-trivia');
   if (!title) {
@@ -584,14 +1019,14 @@ function renderSongTrivia(title, artist, trivia) {
   }
   // Same cheap re-render guard as renderRoundRoster -- the track doesn't
   // change every 1.2s poll, no reason to rebuild the DOM that often.
-  const key = title + '|' + artist + '|' + (trivia ? trivia.length : 0);
+  const key = title + '|' + artist + '|' + (trivia ? trivia.length : 0) + '|' + Object.keys(triviaGotIt).length;
   if (key === lastTriviaKey) {
     box.classList.remove('hidden');
     return;
   }
   lastTriviaKey = key;
   const cards = (trivia || []).filter(t => t.correct_index >= 0 && t.choices[t.correct_index] !== undefined).map(t => `
-    <div class="trivia-card">
+    <div class="trivia-card${triviaGotIt[t.question] ? ' got-it' : ''}">
       <div class="trivia-q">${t.question}</div>
       <div class="trivia-a">Answer: <b>${t.choices[t.correct_index]}</b></div>
     </div>`).join('');
@@ -616,7 +1051,8 @@ function rosterStatusLabel(status) {
 function rosterStatusPose(status) {
   if (status === 'correct') return 'excited';
   if (status === 'incorrect') return 'disappointed';
-  return 'idle'; // thinking, locked, no_answer -- no reveal yet
+  if (status === 'thinking') return 'thinking';   // chin-scratch pose until they lock in
+  return 'idle'; // locked, no_answer -- no reveal yet (thumbs up)
 }
 function renderRoundRoster(roster) {
   const box = document.getElementById('round-roster');
@@ -628,17 +1064,15 @@ function renderRoundRoster(roster) {
   }
   // Cheap guard against re-rendering (and re-triggering CSS animations) on
   // every 1.2s poll while the same statuses are still showing.
-  const key = roster.map(p => p.player_id + ':' + p.status + ':' + p.score).join(',');
+  const key = roster.map(p => p.player_id + ':' + p.status + ':' + p.score + ':' + p.streak + ':' + p.emoji).join(',');
   if (key === lastRosterKey) return;
   lastRosterKey = key;
   box.classList.toggle('dense', roster.length > 12);
   box.innerHTML = roster.map(p => `
     <div class="roster-card roster-card--${p.status}">
-      <div class="avatar avatar--${rosterStatusPose(p.status)}" style="--avatar-color:${avatarColorVar(p.avatar_color)}">
-        <div class="avatar-face"><span class="avatar-eye l"></span><span class="avatar-eye r"></span><span class="avatar-mouth"></span></div>
-      </div>
-      <span class="roster-initials">${p.initials}</span>
-      <span class="roster-score">${p.score}</span>
+      ${eav(p.emoji, p.avatar_color, 46, rosterStatusPose(p.status))}
+      <span class="roster-initials">${esc(p.name || p.initials)}${streakBadge(p.streak)}</span>
+      <span class="roster-score">${p.score}p</span>
       <span class="roster-status-text status-${p.status}">${rosterStatusLabel(p.status)}</span>
     </div>`).join('');
 }
@@ -662,14 +1096,16 @@ async function sendMedley(qid, value, tries) {
   if (lastD && lastD.medley) renderMedley(lastD.medley);
 }
 
+let medleyPts = {ok: 50, first: 100};
 function medleyRevealText(r) {
   let t = r.was_true ? ('Yes — it was ' + r.real + '!') : ('Nope — not ' + r.shown + '. It was ' + r.real + '.');
-  if (r.correct === true) t += r.first ? '  +2 points — fastest finger!' : '  +1 point!';
+  if (r.correct === true) t += r.first ? `  +${medleyPts.first}p — fastest finger!` : `  +${medleyPts.ok}p!`;
   else if (r.correct === false) t += '  (no point)';
   return t;
 }
 
 function renderMedley(m) {
+  if (m.pts_correct) medleyPts = {ok: m.pts_correct, first: m.pts_first};
   const live = document.getElementById('medley-live');
   const rv = document.getElementById('medley-reveal');
   const res = document.getElementById('medley-results');
@@ -711,12 +1147,12 @@ function renderMedley(m) {
     t.classList.toggle('selected', mine === true);
     f.classList.toggle('selected', mine === false);
     document.getElementById('medley-answered').textContent = answered ? 'Locked in! Answer at the next song.'
-      : listening ? 'Listen…' : 'One tap — first right answer gets a bonus point!';
+      : listening ? 'Listen…' : 'One tap — fastest right answer gets a bonus!';
   } else {
     live.classList.add('hidden');
   }
   if (m.results && !m.active) {
-    const mine = (document.getElementById('my-initials').textContent || '').trim();
+    const mine = myLed;
     res.innerHTML = '<div class="win-message">' + (m.total_songs || 0) + ' TOTAL SONGS</div><div class="leaderboard">' +
       m.results.map((r, i) => '<div class="leaderboard-row' + (r.initials === mine ? ' me' : '') + '"><span class="rank">' + (i + 1) +
         '.</span><span class="lb-init">' + String(r.initials).replace(/&/g, '&amp;').replace(/</g, '&lt;') +
@@ -726,9 +1162,162 @@ function renderMedley(m) {
     res.classList.add('hidden');
   }
   // Points the Pi hasn't counted yet (its reveal still on the way).
-  const pending = localEnded && reveal.correct ? (reveal.first ? 2 : 1) : 0;
-  document.getElementById('medley-points').textContent = 'Medley points: ' + ((m.points || 0) + pending);
+  const pending = localEnded && reveal.correct ? (reveal.first ? medleyPts.first : medleyPts.ok) : 0;
+  document.getElementById('medley-points').textContent = 'Fastest Finger points: ' + ((m.points || 0) + pending) + 'p';
   if (lastD) document.getElementById('my-score').textContent = (lastD.score || 0) + pending;
+}
+
+// What a right answer locked at `at` (server time) is worth: points_max when the
+// question opened, sliding down to points_min at the deadline. Same formula as
+// drivers/player_profile.py::speed_points -- the Pi's number replaces this once graded.
+function predictPoints(d, at) {
+  const lo = d.points_min || 25, hi = d.points_max || 100;
+  const total = d.timeout_seconds || 30;
+  const when = (at == null) ? (myPick.lockedAt || serverNow()) : at;
+  const frac = Math.max(0, Math.min(1, (d.deadline_at - when) / total));
+  return Math.round(lo + (hi - lo) * frac);
+}
+
+function renderCategoryBanner(cat) {
+  const el = document.getElementById('category-banner');
+  if (!cat) { el.classList.add('hidden'); return; }
+  el.innerHTML = `Category: ${esc(cat.label)} <small>&middot; song ${cat.song} of ${cat.songs}</small>`;
+  el.classList.remove('hidden');
+}
+
+// "Tonight so far" card under the waiting leaderboard, and the Final Scores screen
+// once the show has ended.
+let _recap = null, _recapAt = 0, _recapBusy = false;
+async function loadRecap(force) {
+  if (_recapBusy || !playerId) return _recap;
+  if (!force && _recap && Date.now() - _recapAt < 15000) return _recap;
+  _recapBusy = true;
+  try {
+    const r = await api('/api/player/recap?player_id=' + encodeURIComponent(playerId));
+    if (r && r.ok) { _recap = r; _recapAt = Date.now(); }
+  } finally { _recapBusy = false; }
+  return _recap;
+}
+function renderTonight(d) {
+  const card = document.getElementById('tonight-card');
+  const fin = document.getElementById('final-block');
+  if (d.show_final) {
+    loadRecap(false).then(r => { if (r) renderFinal(r); });
+    card.classList.add('hidden');
+    document.getElementById('waiting-leaderboard').classList.add('hidden');
+    document.getElementById('waiting-title').textContent = '';
+    return;
+  }
+  fin.classList.add('hidden');
+  document.getElementById('waiting-leaderboard').classList.remove('hidden');
+  const asked = d.questions_asked || 0;
+  if (!asked) { card.classList.add('hidden'); return; }
+  const pct = Math.round(100 * (d.my_correct || 0) / asked);
+  // Only rebuild when the text changed: this runs every poll, and replacing the button
+  // under a finger mid-tap made "View answers" do nothing.
+  const html = `<div class="tc-big">${d.my_correct || 0} / ${asked} correct (${pct}%)</div>
+    <div class="tc-sub">Rank ${d.my_rank || '-'} / ${d.team_count || '-'}</div>
+    <button class="btn" onclick="openRecap()">View answers</button>`;
+  if (card._html !== html) { card.innerHTML = html; card._html = html; }
+  card.classList.remove('hidden');
+}
+function renderFinal(r) {
+  const fin = document.getElementById('final-block');
+  const board = r.board.map(b => `<div class="leaderboard-row${b.me ? ' me' : ''}" style="--bar:${Math.round(100 * b.score / Math.max(1, r.board[0].score))}%">
+      <span class="rank">${b.rank}.</span>${eav(b.emoji, 'amber', 30)}
+      <span class="lb-init">${esc(b.name)}</span><span class="lb-score">${b.score}p</span></div>`).join('');
+  const html = `<div class="final-title">Final Scores</div>
+    <div class="tc-big">You've got ${r.correct} / ${r.asked} correct (${r.percent}%)</div>
+    <div class="tc-sub">Rank ${r.rank} / ${r.teams}${r.best_streak >= 3 ? ' &middot; best streak ' + r.best_streak : ''}</div>
+    <button class="btn primary" onclick="openRecap()" style="margin-bottom:12px">View answers</button>
+    <div class="leaderboard">${board}</div>
+    ${linkBlock(r.link, r.my_link)}
+    <div class="status">Thank you for playing! &#10084;&#65039;</div>`;
+  // Only rebuild when it changed: renderFinal runs every poll during the outro, and replacing
+  // the buttons under a finger made "Open results page" and Share do nothing.
+  if (fin._html !== html) { fin.innerHTML = html; fin._html = html; }
+  fin.classList.remove('hidden');
+}
+async function openRecap() {
+  const ov = document.getElementById('recap-overlay');
+  const body = document.getElementById('recap-body');
+  body.innerHTML = '<div class="status">Loading&hellip;</div>';
+  ov.classList.remove('hidden');
+  const r = resultsMode ? _recap : await loadRecap(true);
+  if (!r) { body.innerHTML = '<div class="status">Could not load your answers.</div>'; return; }
+  const rows = r.answers.map(a => `<div class="recap-row ${a.right ? 'right' : 'wrong'}">
+      ${a.category ? `<div class="recap-cat">${esc(a.category)}</div>` : ''}
+      <div class="rq"><span class="mark">${a.right ? '&#10003;' : '&#10007;'}</span> ${a.n}. ${esc(a.question)}</div>
+      <div class="ra">${a.yours === null ? 'No answer' : 'You: <b class="yours">' + esc(a.yours) + '</b>'}${a.right ? '' : ' &middot; Answer: <b>' + esc(a.correct) + '</b>'}</div>
+      ${a.info ? `<div class="ra" style="margin-top:4px">&#128161; ${esc(a.info)}</div>` : ''}
+    </div>`).reverse().join('');
+  body.innerHTML = `<div class="tc-big">${r.correct} / ${r.asked} correct (${r.percent}%)</div>
+    <div class="tc-sub">Rank ${r.rank} / ${r.teams} &middot; ${r.score}p tonight</div>${rows || '<div class="status">No questions yet.</div>'}`;
+}
+function closeRecap() { document.getElementById('recap-overlay').classList.add('hidden'); }
+
+// The permanent copy of the night's results on triviacade.com (works with the
+// show machine off). Only offered once the server has uploaded it.
+function linkBlock(link, myLink) {
+  // Not uploaded (yet): still put a share link up -- the game itself (2026-11-22).
+  if (!link) return `<div class="tc-sub" style="margin-top:14px">Had fun? Tell your friends:</div>
+    <button class="btn" data-link="https://triviacade.com/play" onclick="shareResults(this)">Share Triviacade</button>`;
+  return `<div class="tc-sub" style="margin-top:14px">Your results stay online:</div>
+    <a class="btn" href="${esc(myLink || link)}">Open results page</a>
+    <button class="btn" data-link="${esc(link)}" onclick="shareResults(this)">Share</button>`;
+}
+async function shareResults(btn) {
+  const url = btn.dataset.link;
+  if (navigator.share) {
+    try { await navigator.share({title: 'Triviacade results', url}); return; }
+    catch (e) { if (e && e.name === 'AbortError') return; }   // dismissed; anything else: copy instead
+  }
+  try { await navigator.clipboard.writeText(url); btn.textContent = 'Link copied'; return; } catch (e) {}
+  window.prompt('Copy this link:', url);   // no share sheet, no clipboard access
+}
+
+// A finished night stays viewable: the server freezes the results under a
+// session id (drivers/results_archive.py), the phone remembers which session it
+// last finished (results_session) and shows it again on reload / after the
+// next show starts -- until the player taps "Join a game". /play?r=<session>
+// opens one directly (a shareable link).
+let resultsMode = false;
+function lsGet(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }
+function lsSet(k, v) { try { if (v === null) localStorage.removeItem(k); else localStorage.setItem(k, v); } catch (e) {} }
+async function showResults(sid) {
+  let v = null;
+  try { v = await api('/api/results/' + encodeURIComponent(sid) + '?player_id=' + encodeURIComponent(playerId || '')); } catch (e) {}
+  if (!v || !v.ok) return false;
+  resultsMode = true;
+  clearTimeout(_pollTimer);
+  const m = v.mine;
+  if (m) {
+    _recap = {ok: true, answers: m.answers, correct: m.correct, asked: m.asked, percent: m.percent,
+              rank: m.rank, teams: v.teams, score: m.score, best_streak: m.best_streak};
+  } else { _recap = null; }
+  const top = Math.max(1, v.board.length ? v.board[0].score : 1);
+  const rows = v.board.map(b => `<div class="leaderboard-row${b.me ? ' me' : ''}" style="--bar:${Math.round(100 * b.score / top)}%">
+      <span class="rank">${b.rank}.</span>${eav(b.emoji, 'amber', 30)}
+      <span class="lb-init">${esc(b.name)}</span><span class="lb-score">${b.score}p</span></div>`).join('');
+  const when = v.ended_at ? new Date(v.ended_at * 1000).toLocaleDateString(undefined, {weekday: 'long', month: 'short', day: 'numeric'}) : '';
+  document.getElementById('results-section').innerHTML = `<div class="final-title">Final Scores</div>
+    ${when ? `<div class="tc-sub">${esc(when)}</div>` : ''}
+    ${m ? `<div class="tc-big">You've got ${m.correct} / ${m.asked} correct (${m.percent}%)</div>
+      <div class="tc-sub">Rank ${m.rank} / ${v.teams}${m.best_streak >= 3 ? ' &middot; best streak ' + m.best_streak : ''}</div>
+      <button class="btn primary" onclick="openRecap()" style="margin-bottom:12px">View answers</button>`
+      : `<div class="tc-sub">${v.teams} teams &middot; ${v.asked} questions</div>`}
+    <div class="leaderboard">${rows}</div>
+    ${linkBlock(v.link, v.my_link)}
+    <div class="status">Thank you for playing! &#10084;&#65039;</div>
+    <button class="btn" onclick="leaveResults()" style="margin-top:14px">Join a game</button>`;
+  document.getElementById('signup-section').classList.add('hidden');
+  document.getElementById('play-section').classList.add('hidden');
+  document.getElementById('results-section').classList.remove('hidden');
+  return true;
+}
+function leaveResults() {
+  lsSet('results_session', null);
+  location.href = '/play';
 }
 
 function schedulePoll(ms) {
@@ -737,8 +1326,8 @@ function schedulePoll(ms) {
 }
 
 async function poll() {
-  if (!playerId) return;
-  if (_polling) return;          // a slow network must not pile requests up
+  if (!playerId || resultsMode) return;
+  if (_polling) return;         // a slow network must not pile requests up
   _polling = true;
   const t0 = performance.now();
   let d = null;
@@ -761,12 +1350,19 @@ async function poll() {
     // Server restarted or otherwise forgot us -- fall back to sign-up.
     localStorage.removeItem('player_id');
     localStorage.removeItem('avatar_color');
+    localStorage.removeItem('emoji');
     playerId = null;
     document.getElementById('play-section').classList.add('hidden');
     document.getElementById('signup-section').classList.remove('hidden');
+    loadReclaim();
     return;
   }
   lastD = d;
+  // Remember a finished night; forget it once a newer game is under way.
+  if (d.session_id) {
+    if (d.show_final) lsSet('results_session', d.session_id);
+    else if (lsGet('results_session') && lsGet('results_session') !== d.session_id) lsSet('results_session', null);
+  }
 
   document.getElementById('my-score').textContent = d.score;
   updateMediaSession(d.now_playing_title, d.now_playing_artist);
@@ -774,11 +1370,20 @@ async function poll() {
   if (d.avatar_color && d.avatar_color !== myAvatarColor) {
     myAvatarColor = d.avatar_color;
     localStorage.setItem('avatar_color', myAvatarColor);
-    document.getElementById('my-avatar').style.setProperty('--avatar-color', avatarColorVar(myAvatarColor));
+    applyAvatarColor(document.getElementById('my-avatar'), myAvatarColor);
   }
+  if (d.emoji && d.emoji !== myEmoji) {
+    myEmoji = d.emoji;
+    localStorage.setItem('emoji', myEmoji);
+  }
+  applyEmoji(document.getElementById('my-avatar'), myEmoji);
+  if (d.name) document.getElementById('my-initials').textContent = d.name;
+  const sb = document.getElementById('my-streak');
+  sb.textContent = d.streak >= 2 ? '🔥 ' + d.streak : '';
+  sb.classList.toggle('hidden', !(d.streak >= 2));
 
   if (d.win_score) {
-    document.getElementById('goal-inline').textContent = `Goal: ${d.win_score} pts to win`;
+    document.getElementById('goal-inline').textContent = `Goal: ${d.win_score}p to win`;
   }
 
   const winBox = document.getElementById('win-message');
@@ -786,8 +1391,10 @@ async function poll() {
   if (d.win_message) {
     winBox.textContent = d.win_message;
     winBox.classList.remove('hidden');
-    if (d.winner_avatar_color) {
-      document.getElementById('win-avatar').style.setProperty('--avatar-color', avatarColorVar(d.winner_avatar_color));
+    if (d.you_won && d.win_key && d.win_key !== _wonKey) { _wonKey = d.win_key; playWinSound(); }
+    if (d.winner_emoji) {
+      applyAvatarColor(document.getElementById('win-avatar'), d.winner_avatar_color);
+      applyEmoji(document.getElementById('win-avatar'), d.winner_emoji);
       winAvatarWrap.classList.remove('hidden');
     }
   } else {
@@ -797,7 +1404,7 @@ async function poll() {
 
   const goalBox = document.getElementById('goal-message');
   if (d.win_message && d.win_score) {
-    goalBox.textContent = `Goal: ${d.win_score} pts to win`;
+    goalBox.textContent = `Goal: ${d.win_score}p to win`;
     goalBox.classList.remove('hidden');
   } else {
     goalBox.classList.add('hidden');
@@ -824,6 +1431,26 @@ async function poll() {
 // Everything on screen comes from lastD plus what this phone did itself;
 // called by every poll and 5x a second so the countdown and the reveal
 // land on time between polls.
+function renderSolo(s) {
+  const el = document.getElementById('solo-banner');
+  if (!s) { el.classList.add('hidden'); el._html = ''; return; }
+  const esc = (t) => String(t || '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  const mine = s.player_id === playerId;
+  let html, cls = '';
+  if (s.phase === 'result') {
+    cls = s.result === 'win' ? 'win' : 'lose';
+    html = s.result === 'win'
+      ? `<b>${mine ? 'Your team' : esc(s.team)} won the ${esc(s.challenge)} challenge!</b><br>+${s.delta} night points`
+      : `<b>${mine ? 'Your team' : esc(s.team)} lost the ${esc(s.challenge)} challenge</b><br>${s.delta} night points`;
+  } else {
+    html = `<b>${mine ? 'Your team is' : esc(s.team) + ' is'} taking the challenge!</b><br>${esc(s.challenge)}: ${esc(s.rule)}` +
+      ` &mdash; win +${s.stakes}, lose -${s.stakes}` + (s.round != null ? `<br>Rounds cleared: ${s.round}` : '') +
+      (s.progress ? `<br>${esc(s.progress)}` : '');
+  }
+  if (el._html !== html) { el.innerHTML = html; el._html = html; }
+  el.className = 'solo-banner ' + cls;
+}
+
 function render() {
   const d = lastD;
   if (!d || !playerId) return;
@@ -832,6 +1459,8 @@ function render() {
   const intermissionBlock = document.getElementById('intermission-block');
   const myAvatar = document.getElementById('my-avatar');
   const bonusBox = document.getElementById('bonus-message');
+  document.body.classList.remove('qmode');   // set again below only while a question is up
+  renderSolo(d.solo);
 
   // Dance Medley game ("This is <artist>" true/false): takes over the whole
   // view while a statement, its reveal, or the results are up.
@@ -859,18 +1488,43 @@ function render() {
     const mm = Math.floor(remaining / 60);
     const ss = String(remaining % 60).padStart(2, '0');
     document.getElementById('intermission-countdown').textContent = `${mm}:${ss}`;
+    // Timer is up but the song is still playing out: say so instead of 0:00.
+    const fin = !!d.intermission_finishing;
+    document.getElementById('intermission-countdown').classList.toggle('hidden', fin);
+    document.getElementById('intermission-next').classList.toggle('hidden', !fin);
+    renderIntermissionBoard(d.last_round_board, d.last_round_number);
+    renderNightBoard(d.night_board);
+    document.getElementById('intermission-note').textContent = d.last_round_reason === 'songs'
+      ? 'Out of songs -- the round goes to the leader on points. Scores are reset -- next round starts soon.'
+      : d.last_round_reason === 'solo'
+        ? 'Challenge over. Round scores are reset; night scores carry on -- next round starts soon.'
+      : (d.last_round_reason === 'questions' || d.last_round_reason === 'medley')
+        ? 'Round over -- most points takes it. Round scores are reset; your night score carries on.'
+        : 'Scores are reset -- next game starts soon.';
+    document.getElementById('intermission-review').classList.toggle('hidden', !(d.questions_asked > 0));
     return;
   }
   intermissionBlock.classList.add('hidden');
+  renderCategoryBanner(d.category);
 
   if (!d.active || d.win_message) {
     waiting.classList.remove('hidden');
     qBlock.classList.add('hidden');
     if (d.bonus_message) { bonusBox.textContent = d.bonus_message; bonusBox.classList.remove('hidden'); }
     else bonusBox.classList.add('hidden');
-    document.getElementById('waiting-title').textContent =
-      (d.mode === 'DJ') ? 'Waiting for the next song…' : 'Waiting for the next question…';
+    const pr = !d.win_message && d.price_round;   // "Wait, how much?" round: between questions
+    document.getElementById('waiting-title').textContent = pr
+      ? `Wait, how much? Question ${pr.next} of ${pr.of} coming up…`
+      : (d.mode === 'DJ') ? 'Waiting for the next song…' : 'Waiting for the next question…';
     renderLeaderboard(d.leaderboard, d.win_score);
+    if (pr) {
+      ['tonight-card', 'lobby-poll', 'now-playing-trivia'].forEach(id => document.getElementById(id).classList.add('hidden'));
+      lastTriviaKey = '';
+      setAvatarPose(myAvatar, 'idle');
+      return;
+    }
+    renderTonight(d);
+    renderLobbyPoll(d);
     if (d.mode === 'DJ' && !d.win_message) {
       renderSongTrivia(d.now_playing_title, d.now_playing_artist, d.song_trivia);
     } else {
@@ -882,6 +1536,7 @@ function render() {
   }
   waiting.classList.add('hidden');
   qBlock.classList.remove('hidden');
+  document.body.classList.add('qmode');
   renderQuestion(d);
 }
 
@@ -896,14 +1551,19 @@ function renderQuestion(d) {
   const lateLock = myPick.locked && (!!myPick.rejected || (graded && !d.locked));
   const answered = myPick.locked && !lateLock;
   const right = answered && myPick.index === correctIdx;
+  if (right && revealed) noteTriviaResult(d.question, true);
   const frozen = myPick.locked || revealed;
   renderChoices(d.choices, correctIdx, revealed, frozen);
   // Own card: this phone's result and points right away; the others follow
   // when the Pi has graded.
-  const pendingPts = (revealed && !graded && right) ? ((d.bonus_round && myPick.first) ? 2 : 1) : 0;
+  const pendingPts = (revealed && !graded && right) ? (predictPoints(d) + ((d.bonus_round && myPick.first) ? (d.first_bonus || 0) : 0)) : 0;
   renderRoundRoster(revealed && !graded ? (d.round_roster || []).map((p) => p.player_id !== playerId ? p
     : Object.assign({}, p, {status: answered ? (right ? 'correct' : 'incorrect') : 'no_answer', score: p.score + pendingPts}))
     : d.round_roster);
+  document.getElementById('question-block').classList.toggle('qopen', !revealed);
+  const rr = d.round_roster || [];
+  document.getElementById('locked-count').textContent =
+    rr.length ? `${rr.filter(p => p.status !== 'thinking').length} of ${rr.length} locked in` : '';
 
   const msgBox = document.getElementById('correct-message');
   const myAvatar = document.getElementById('my-avatar');
@@ -915,6 +1575,8 @@ function renderQuestion(d) {
     if (correction) {
       msg = right ? `That's right! ${correction}` : `${msg} ${answered ? 'Actually, ' : ''}${correction}`;
     }
+    const earned = graded ? (d.my_points || 0) : pendingPts;
+    if (right && earned) msg += ` +${earned}p`;
     msgBox.textContent = msg;
     msgBox.classList.toggle('wrong', !right);
     msgBox.classList.remove('hidden');
@@ -930,6 +1592,34 @@ function renderQuestion(d) {
   if (myBonus) { bonusBox.textContent = d.bonus_message || 'FIRST ONE RIGHT! BONUS POINT!'; bonusBox.classList.remove('hidden'); }
   else bonusBox.classList.add('hidden');
   document.getElementById('my-score').textContent = (d.score || 0) + pendingPts;
+
+  // Points slide: what a right answer is worth right now.
+  const ptsRow = document.getElementById('pts-row');
+  ptsRow.classList.toggle('hidden', revealed);
+  if (!revealed) {
+    document.getElementById('pts-min').textContent = (d.points_min || 25) + 'p';
+    document.getElementById('pts-max').textContent = (d.points_max || 100) + 'p';
+    document.getElementById('pts-now').textContent = (myPick.locked && myPick.lockedAt ? predictPoints(d, myPick.lockedAt) : predictPoints(d, serverNow())) + 'p';
+  }
+  // Streak: kept, grown or lost.
+  const sm = document.getElementById('streak-message');
+  if (revealed) {
+    const before = graded ? (right ? Math.max(0, (d.streak || 0) - 1) : (d.streak_lost || 0)) : (d.streak || 0);
+    if (right) {
+      const now = before + 1;
+      celebrateStreak(now, graded ? (d.my_points || 0) : pendingPts, d.question);
+      sm.textContent = now >= 2 ? `🔥 ${streakName(now)}` : '';
+      sm.classList.remove('lost');
+    } else if (before >= 2 || (graded && d.streak_lost >= 1)) {
+      sm.textContent = `Oh no, streak lost! (was ${before})`;
+      sm.classList.add('lost');
+    } else {
+      sm.textContent = '';
+    }
+    sm.classList.toggle('hidden', !sm.textContent);
+  } else {
+    sm.classList.add('hidden');
+  }
 
   const total = d.timeout_seconds || 30;
   const remaining = revealed ? 0 : Math.max(0, d.deadline_at - serverNow());
@@ -1000,15 +1690,25 @@ listenAudio.addEventListener('error', () => {
 
 async function init() {
   renderAvatarPicker();
+  loadReclaim();
+  // A shared link (?r=<session>) or a night this phone finished: show those results.
+  let rs = null;
+  try { rs = new URLSearchParams(location.search).get('r'); } catch (e) {}
+  rs = rs || lsGet('results_session');
+  if (rs && await showResults(rs)) return;
   if (playerId) {
     const d = await api('/api/player/whoami?player_id=' + encodeURIComponent(playerId));
     if (d && d.ok) {
       myAvatarColor = d.avatar_color || myAvatarColor;
       localStorage.setItem('avatar_color', myAvatarColor);
-      showPlayView(d.initials, d.score);
+      myEmoji = d.emoji || myEmoji;
+      localStorage.setItem('emoji', myEmoji);
+      myLed = d.initials || '';
+      showPlayView(d.name || d.initials, d.score);
     } else {
       localStorage.removeItem('player_id');
       localStorage.removeItem('avatar_color');
+      localStorage.removeItem('emoji');
       playerId = null;
     }
   }

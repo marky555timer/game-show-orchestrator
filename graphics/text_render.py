@@ -15,7 +15,35 @@ def _glyph_for(char):
     """Bitmap font is case-sensitive (distinct upper/lower glyphs, since
     lowercase is deliberately narrower to save pixels). Falls back to the
     other case, then to a blank space, for characters we don't have art for."""
-    return FONT_5X7.get(char) or FONT_5X7.get(char.upper()) or FONT_5X7.get(char.lower()) or FONT_5X7[' ']
+    g = FONT_5X7.get(char) or FONT_5X7.get(char.upper()) or FONT_5X7.get(char.lower())
+    if g:
+        return g
+    # 2026-11-18: "Mötley Crüe" rendered as "M tley Cr e" -- fold accented letters
+    # to their plain base letter (5x7 has no room for the marks).
+    base = _fold_char(char)
+    if base != char:
+        return FONT_5X7.get(base) or FONT_5X7.get(base.upper()) or FONT_5X7.get(base.lower()) or FONT_5X7[' ']
+    return FONT_5X7[' ']
+
+
+_FOLD_EXTRA = {"ø": "o", "Ø": "O", "æ": "a", "Æ": "A", "œ": "o", "Œ": "O", "ß": "s", "ł": "l", "Ł": "L",
+               "đ": "d", "Đ": "D", "ð": "d", "Ð": "D", "þ": "p", "Þ": "P", "ı": "i",
+               "’": "'", "‘": "'", "“": '"', "”": '"', "–": "-", "—": "-"}
+_fold_cache = {}
+
+
+def _fold_char(char):
+    r = _fold_cache.get(char)
+    if r is None:
+        r = _FOLD_EXTRA.get(char)
+        if r is None:
+            import unicodedata
+            d = unicodedata.normalize("NFD", char)
+            r = "".join(c for c in d if not unicodedata.combining(c)) or char
+            if len(r) != 1:
+                r = char
+        _fold_cache[char] = r
+    return r
 
 
 def _glyph_width(glyph):

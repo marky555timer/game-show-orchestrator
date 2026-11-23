@@ -5,7 +5,7 @@ everything: a saved show is a name, a few settings and an ordered playlist.
   {"id": "3f9a0c1e7b2d", "name": "RedLime", "created_at": ..., "updated_at": ...,
    "updated_ts": 1760750000.0, "last_played": ...,
    "intro": true, "questions": false, "listen": false, "low": "1950s", "high": "1980s",
-   "settings": {"win_score": 15, ...},
+   "settings": {"win_score": 1000, ...},
    "items": [{"type": "spin"},
              {"type": "song", "file": "06 Venus.mp3", "title": "Venus",
               "artist": "Bananarama", "ending": "quiz"},          # full | quiz | cut
@@ -216,13 +216,23 @@ def apply_settings(show):
     """Loads a show's game settings into state (drivers/show_engine.py)."""
     from state import state
     st = show.get("settings") or {}
-    state.game_win_score = max(1, int(st.get("win_score", state.game_win_score)))
+    _ws = max(1, int(st.get("win_score", state.game_win_score)))
+    if _ws < config.LEGACY_WIN_SCORE_BELOW:       # saved in the old 1-point-per-answer scale
+        _ws *= config.LEGACY_WIN_SCORE_FACTOR
+    state.game_win_score = _ws
     state.intermission_minutes = max(1, int(st.get("intermission_minutes", state.intermission_minutes)))
     state.show_exclude_explicit = bool(st.get("exclude_explicit", False))
     state.show_exclude_slow_dance = bool(st.get("exclude_slow_dance", False))
     state.show_exclude_never_charted = bool(st.get("exclude_never_charted", False))
     state.show_allowed_genres = [g for g in st.get("allowed_genres", []) if g in config.MUSIC_GENRES]
-    state.show_allowed_decades = decades_between(show.get("low"), show.get("high"))
+    # 2026-11-21: a show with a round list declares decades per round (round_engine.begin_round
+    # narrows to the round's decade); the old LOW / HIGH range only applies to a show without rounds
+    # (panel-made shows).
+    if show.get("rounds"):
+        state.show_base_decades = list(DECADES)
+    else:
+        state.show_base_decades = decades_between(show.get("low"), show.get("high"))
+    state.show_allowed_decades = list(state.show_base_decades)
     state.show_require_decade = True
 
 
@@ -301,6 +311,33 @@ def create(intro=None, questions=None, low=None, high=None, items=None):
         return copy.deepcopy(show)
 
 
+# Round types the designer may save (docs/rounds_design.md). Only standard trivia runs so far.
+ROUND_TYPES = ("trivia", "wait_how_much", "fastest_finger", "simon", "cliffhanger", "solo_challenge")
+
+
+def _clean_rounds(rounds):
+    """The show's round list: [{"type", "name", "goal", "songs", "wheel", "decade"}]. goal/songs 0 =
+    defaults (the show's win score / an estimate from it), see drivers/round_engine.py. decade "" = any
+    decade (2026-11-21: decades are declared per round, not per show)."""
+    out = []
+    for r in (rounds or [])[:30]:
+        if not isinstance(r, dict):
+            continue
+        rtype = r.get("type") if r.get("type") in ROUND_TYPES else "trivia"
+
+        def _int(key, lo, hi):
+            try:
+                v = int(r.get(key) or 0)
+            except (TypeError, ValueError):
+                v = 0
+            return 0 if v <= 0 else max(lo, min(hi, v))
+        out.append({"type": rtype, "name": str(r.get("name") or "").strip()[:24],
+                    "goal": _int("goal", 100, 20000), "songs": _int("songs", 1, 200),
+                    "wheel": bool(r.get("wheel")),
+                    "decade": r.get("decade") if r.get("decade") in DECADES else ""})
+    return out
+
+
 def _clean_items(items):
     out = []
     for it in items or []:
@@ -343,6 +380,8 @@ def update(name, fields):
             s["low"], s["high"] = s["high"], s["low"]
         if "items" in fields:
             s["items"] = _clean_items(fields["items"])
+        if "rounds" in fields:
+            s["rounds"] = _clean_rounds(fields["rounds"])
         if isinstance(fields.get("settings"), dict):
             st = s.setdefault("settings", {})
             for key in _SETTING_KEYS:
@@ -491,8 +530,12 @@ def merge(remote_shows, remote_deleted):
                 continue
             played = max(mine.get("last_played") or "", r.get("last_played") or "")
             if float(r.get("updated_ts") or 0) > float(mine.get("updated_ts") or 0):
+                # The web designer doesn't know rounds yet: a web edit must not wipe this side's list.
+                keep_rounds = mine.get("rounds") if "rounds" not in r else None
                 mine.clear()
                 mine.update(_from_remote(r))
+                if keep_rounds is not None:
+                    mine["rounds"] = keep_rounds
                 changed += 1
             if (mine.get("last_played") or "") != played:
                 mine["last_played"] = played
@@ -532,4 +575,6 @@ def _from_remote(r):
     if isinstance(r.get("settings"), dict):
         s["settings"] = {k: r["settings"][k] for k in _SETTING_KEYS if k in r["settings"]}
     s["items"] = _clean_items(r.get("items"))
+    if "rounds" in r:
+        s["rounds"] = _clean_rounds(r.get("rounds"))
     return s

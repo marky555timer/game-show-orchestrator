@@ -15,8 +15,8 @@
     "correct_index": 0
   },
   {
-    "question": "How many Grammy Awards has Beyonce won?",
-    "choices": ["32", "18", "25", "9"],
+    "question": "Which girl group was Beyonce the lead singer of?",
+    "choices": ["Destiny's Child", "TLC", "En Vogue", "Xscape"],
     "correct_index": 0
   },
   {

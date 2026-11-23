@@ -48,5 +48,13 @@ tools/add_tracks/*.corrupt.json
 ai_cleanup_cache.json
 autoadvance_linger.json
 failover_role.json
+# Where this machine's last show got to (RESUME LAST SHOW) -- runtime data
+last_show.json
 # Marks a Pi as the TV practice rig (config.PRACTICE_RIG)
 practice_rig.json
+# Windows folder metadata
+desktop.ini
+# End-of-night results snapshots (drivers/results_archive.py) -- runtime data with player picks
+results/
+# One-off backups taken before bulk data edits
+*.before_*

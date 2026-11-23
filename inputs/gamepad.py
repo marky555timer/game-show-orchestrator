@@ -31,6 +31,7 @@ from drivers.factoid_engine import (
     is_exhausted, load_exhausted_fallback_question, apply_mystery_identify_question,
 )
 from drivers import deck_orchestrator
+from drivers import player_profile
 from drivers import price_game_engine
 from drivers import mystery_band_engine
 from drivers import auto_dj_engine
@@ -360,24 +361,69 @@ def _grade_multiplayer_round():
 
     results = []
     winning_player_id = None
+    # Speed-scaled points (2026-11-15): a right answer is worth more the sooner
+    # it was locked in, shown to phones as a slide from SPEED_POINTS_MAX down to
+    # SPEED_POINTS_MIN. See drivers/player_profile.py.
+    mult = player_profile.round_multiplier()
+    picks = {}
+    now = time.time()
     for player_id, player in state.quiz_players.items():
+        player["last_points"] = 0
+        player["streak_lost"] = 0
         if not player["locked"]:
+            # Never answered: a connected player's streak breaks; one whose phone
+            # has dropped off isn't punished for the network.
+            if player.get("streak", 0) and now - player.get("last_seen", 0) <= config.CONNECTED_PLAYER_TIMEOUT_SECONDS:
+                player["streak_lost"] = player["streak"]
+                player["streak"] = 0
             continue
+        picks[player_id] = player["selected_index"]
         correct = player["selected_index"] == state.factoid_correct_index
+        player["asked"] = player.get("asked", 0) + 1
         if correct:
-            player["score"] += 1
+            pts = player_profile.speed_points(player.get("locked_at", 0.0), state.round_deadline_at,
+                                              state.round_timeout_seconds, mult)
+            player["score"] += pts
+            player["last_points"] = pts
+            player["correct"] = player.get("correct", 0) + 1
+            player["streak"] = player.get("streak", 0) + 1
+            player["best_streak"] = max(player.get("best_streak", 0), player["streak"])
+        else:
+            player["streak_lost"] = player.get("streak", 0)
+            player["streak"] = 0
         results.append({"player_id": player_id, "initials": player["initials"], "correct": correct})
     state.quiz_last_round_results = results
+    if state.quiz_players:
+        q_text, q_choices = player_profile.phone_active_text()
+        # Supporting detail shown with the answer in the phones' recap: the real fact behind a False
+        # statement, or the song itself for "Who is this?".
+        info = ""
+        try:
+            if state.factoid_category == "identify_band":
+                t, a = deck_orchestrator.get_now_playing()
+                info = f"It's \"{t}\" by {a}."
+            elif list(state.factoid_choices) == ["True", "False"]:
+                info = state.factoid_correction or ""
+        except Exception:
+            info = ""
+        state.quiz_history.append({
+            "n": len(state.quiz_history) + 1, "question": q_text, "choices": list(q_choices),
+            "correct_index": state.factoid_correct_index, "picks": picks,
+            "category": (state.category_round or {}).get("label", ""),
+            "info": info,
+        })
+        del state.quiz_history[:-600]
 
     # First-correct-answer bonus (2026-08-11): only for the mystery/identify
     # "who is this?" question -- the FIRST player to lock in the right
-    # answer gets an extra point on top of their normal one, and sees a
+    # answer gets FIRST_CORRECT_BONUS_POINTS on top of their normal ones, and sees a
     # dedicated "FIRST ONE RIGHT!" message (web/remote_server.py's
     # player_question()). Ties (identical locked_at, essentially
     # impossible in practice) resolve to whichever dict-iteration order
     # hit first -- not worth guarding against for a live show.
     state.round_bonus_player_id = ""
-    if state.factoid_category == "identify_band":
+    from drivers import round_engine as _rounds
+    if _rounds.first_bonus_on(state.factoid_category):
         correct_locked = [
             (pid, p) for pid, p in state.quiz_players.items()
             if p["locked"] and p["selected_index"] == state.factoid_correct_index
@@ -389,9 +435,10 @@ def _grade_multiplayer_round():
             first_id, first_player = next(
                 ((pid, p) for pid, p in correct_locked if pid == state.round_first_correct_pid),
                 min(correct_locked, key=lambda item: item[1].get("locked_at", 0.0)))
-            first_player["score"] += 1
+            first_player["score"] += config.FIRST_CORRECT_BONUS_POINTS
+            first_player["last_points"] = first_player.get("last_points", 0) + config.FIRST_CORRECT_BONUS_POINTS
             state.round_bonus_player_id = first_id
-            print(f"[MULTIPLAYER QUIZ] First-correct bonus -> {first_player['initials']} (+1 extra point).")
+            print(f"[MULTIPLAYER QUIZ] First-correct bonus -> {first_player['initials']} (+{config.FIRST_CORRECT_BONUS_POINTS}).")
 
     # Only look for a NEW winner once per game (2026-08-11 fix): previously
     # this re-scanned every round regardless, and since a winner's score
@@ -400,7 +447,8 @@ def _grade_multiplayer_round():
     # "already active" guard only blocks WHILE the duck/applause/restore
     # sequence is actively playing, not after) -- the confirmed cause of
     # "questions keep coming and so does the applause" after a win.
-    if not state.game_winner_player_id and not state.intermission_active:
+    from drivers import round_engine
+    if not state.game_winner_player_id and not state.intermission_active and round_engine.goal_counts():
         for player_id, player in state.quiz_players.items():
             if player["score"] >= state.game_win_score and winning_player_id is None:
                 winning_player_id = player_id
@@ -722,8 +770,11 @@ def force_price_game():
 
     if state.intermission_active:
         state.intermission_active = False
+        state.intermission_finishing = False
         state.intermission_ends_at = 0.0
         state.game_round_number += 1  # matrix idle GOAL PAGE's "ROUND N"
+        from drivers import round_engine
+        round_engine.begin_round()
         print("[BUTTON] Btn5+Btn6 hold during intermission -- ending it early to force Price Game.")
 
     _maybe_reset_after_win()

@@ -196,7 +196,7 @@ def _credit(pid, correct, took=0.0, bonus=False):
               "points": 0, "answered": 0, "time": 0.0})
     row["answered"] += 1
     if correct:
-        pts = 2 if bonus else 1
+        pts = config.MEDLEY_POINTS_FIRST if bonus else config.MEDLEY_POINTS_CORRECT
         row["points"] += pts
         row["time"] += took
         if pid != PANEL_ID and pid in state.quiz_players:
@@ -330,7 +330,8 @@ def player_view(pid):
     q = state.medley_q
     rv = state.medley_reveal
     out = {"enabled": enabled(), "active": False, "reveal": None, "results": None,
-           "total_songs": state.medley_songs_total}
+           "total_songs": state.medley_songs_total,
+           "pts_correct": config.MEDLEY_POINTS_CORRECT, "pts_first": config.MEDLEY_POINTS_FIRST}
     if q is not None and enabled() and now < q["deadline"]:
         out.update({"active": True, "qid": q["qid"], "artist": q["shown"],
                     "remaining_seconds": max(0.0, q["deadline"] - now),

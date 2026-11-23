@@ -291,6 +291,27 @@ def _looks_like_real_track(title, artist):
     return True
 
 
+def clip_choices(choices, question=""):
+    """(short, extra) for the 24-char LED limit. A hard [:24] cut left things like
+    "appreciating life's beau" on players' phones (2026-11-14): clip at a word
+    boundary for the LED, and hand the phones the full wording (<= 80 chars).
+    `extra` is {} when nothing was too long, else {"question_long", "choices_long"}."""
+    short, clipped = [], False
+    for c in choices:
+        c = str(c).strip()
+        if len(c) <= 24:
+            short.append(c)
+            continue
+        clipped = True
+        cut = c[:24]
+        if c[24] != " " and " " in cut:
+            cut = cut.rsplit(" ", 1)[0]
+        short.append(cut.rstrip(" ,;:-&"))
+    if not clipped:
+        return short, {}
+    return short, {"question_long": question, "choices_long": [str(c).strip()[:80] for c in choices]}
+
+
 def _apply_active_question(data, source):
     """Loads `data` as the CURRENTLY ACTIVE on-screen round question (Btn6
     pop, multi-question auto-advance, or an offline fallback) -- distinct
@@ -1272,11 +1293,13 @@ def _parse_question_json(text, is_true_false, category=""):
         random.shuffle(choices)
         correct_index = choices.index(correct)
 
+    _short, _long = clip_choices(choices, question[:100])
     result = {
+        **_long,
         "headline": headline[:40],
         "full": full[:200],
         "question": question[:100],
-        "choices": [c[:24] for c in choices],
+        "choices": _short,
         "correct_index": correct_index,
         "correction": correction[:100],
         "release_year": release_year,

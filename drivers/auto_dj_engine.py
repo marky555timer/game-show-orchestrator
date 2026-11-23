@@ -275,6 +275,20 @@ def _fire_transition(track_key):
     _start_timer(track_key, title)
 
 
+def _fire_quiet_transition(track_key):
+    """A "Wait, how much?" round's song change: plain crossfade, no sweeper / VO / spin."""
+    global _last_fired_cycle
+    if _last_fired_cycle == _transition_cycle:
+        return
+    _last_fired_cycle = _transition_cycle
+    print("[AUTO-DJ] Song ended during the price round -- quiet crossfade to the next one.")
+    from drivers import show_runner
+    show_runner.note_ending("full")
+    deck_orchestrator.trigger_quiet_move()
+    title, _artist = get_rekordbox_track()
+    _start_timer(track_key, title)
+
+
 def _fire_announced_transition(track_key):
     """Sweeper -> VO -> deck-duck -> deck-swell transition -- one call now
     does what used to take two coordinated phases (see module docstring)."""
@@ -354,12 +368,27 @@ _load_linger()
 def _quiz_done_advance_due():
     """True once the track's questions are all asked, the last round is over,
     and the leaderboard has fully played (see quiz_advance_enabled)."""
+    # 2026-11-18: a round win on the song's last question started this early
+    # advance while the win sequence (duck, applause, restore) was still
+    # playing; the next song's question then froze until the sequence ended and
+    # the intermission began. No quiz-done advance during the win sequence or
+    # the intermission that follows it.
+    if state.win_sequence_active or state.intermission_active:
+        return False
     if not quiz_advance_enabled() or not state.autoadv_leaderboard_reviewed:
         return False
     if state.autoadv_questions_asked <= 0 or state.autoadv_need_leaderboard:
         return False
     if state.mode not in (state.MODE_DJ, state.MODE_SIMON):
         return False  # a question round (or other game) is still running
+    # 2026-11-14: the "Who is this?" teaser counts as the song's first question
+    # (and with nobody ranked, the leaderboard is "reviewed" at once), while
+    # the board is still in DJ mode -- so the song used to be skipped seconds
+    # after the teaser armed (Whole Lotta Love, 324s). A live round isn't done.
+    from drivers import live_round_engine, mystery_band_engine
+    if (state.mystery_active or mystery_band_engine._pending_mystery is not None
+            or live_round_engine.is_round_active()):
+        return False
     from drivers import factoid_engine
     return not factoid_engine.has_next_queued_question()
 
@@ -367,6 +396,9 @@ def _quiz_done_advance_due():
 def update(now):
     if state.medley_active:
         return  # Dance Medley owns transitions until it hands back (drivers/medley_engine.py)
+    from drivers import round_engine
+    if round_engine.holds_song():
+        return  # Cliffhanger: the song stays until the host moves on
     track_key = state.factoid_track_key  # "" until a track is confidently identified
     if not track_key:
         return
@@ -389,6 +421,13 @@ def update(now):
     from drivers import show_runner
     elapsed = now - state.auto_dj_track_started_at
     trigger_at = max(0.0, state.auto_dj_track_duration - config.AUTODJ_PRE_SWITCH_SECONDS)
+    if round_engine.price_round_live():
+        # "Wait, how much?" round: the playlist plays on under the questions; a song changes only
+        # when it ends, with a plain crossfade (no sweeper / announcement / wheel spin).
+        if elapsed < trigger_at:
+            return
+        _fire_quiet_transition(track_key)
+        return
     if elapsed < trigger_at:
         if not _quiz_done_advance_due():
             state.autoadv_done_at = 0.0   # (another question was asked: start over)

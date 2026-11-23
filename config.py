@@ -455,6 +455,14 @@ DMX_FIXTURE_CHANNELS = 16
 DMX_NUM_FIXTURES = 11
 DMX_TOTAL_CHANNELS = DMX_FIXTURE_CHANNELS * DMX_NUM_FIXTURES  # 176
 
+# DMX adapter type (drivers/dmx_driver.py, 2026-11-18). "auto": an ENTTEC DMX USB PRO is spoken to in
+# its own packet protocol (the rig); any other FTDI USB-RS485 DMX cable (e.g. the Letotech cable on the
+# Lenovo, no onboard buffer) is driven raw as "Open DMX": the computer makes the break and timing.
+# Force with "pro" or "open".
+DMX_MODE = "auto"
+DMX_OPEN_CHANNELS = 200                 # channels sent in open mode (covers fixtures + relay + head block)
+DMX_OPEN_FPS = 30                       # refresh rate in open mode
+
 # 3-channel DMX relay block, address 177 (right after the 176-channel
 # fixture rig above -- see pi_deploy or the dip-switch note from setup).
 # Relay logic per the hardware: any non-zero channel value energizes that
@@ -1816,6 +1824,10 @@ MYSTERY_QUESTION_TIMEOUT_SECONDS = 40.0
 # A player counts as "connected" if /api/player/question polled within this
 # many seconds -- play.html polls every 1.2s, so this is a generous ~4x margin.
 CONNECTED_PLAYER_TIMEOUT_SECONDS = 5.0
+# Reclaim a team (2026-11-18): a team whose phone hasn't checked in for this
+# long (or never since a restart) is offered on the phone sign-up screen so its
+# owner can take it back after a tunnel/address change or a lost tab.
+RECLAIM_AWAY_SECONDS = 90.0
 
 # ==========================================
 # CONNECTION HEALTH (drivers/net_health_engine.py, 2026-10-18): phones report
@@ -1849,7 +1861,116 @@ NET_GREEN_CONFIRM_SECONDS = 10.0     # and be gone this long before clearing
 # WIN SEQUENCE (drivers/win_sequence_engine.py): duck music, play applause,
 # restore -- fires once a phone-joined player's score reaches GAME_WIN_SCORE.
 # ==========================================
-GAME_WIN_SCORE = 15
+# Scoring is speed-based (2026-11-15): a right answer is worth
+# SPEED_POINTS_MAX the instant the question opens, sliding down to
+# SPEED_POINTS_MIN as the clock runs out (phones draw the same slide). The
+# "Who is this?" question is worth IDENTIFY_POINTS_MULT x that, and the first
+# right answer to it earns FIRST_CORRECT_BONUS_POINTS on top. Dance Medley
+# statements pay MEDLEY_POINTS_CORRECT, or MEDLEY_POINTS_FIRST for the fastest.
+# GAME_WIN_SCORE is in these points (about 16 average answers).
+# Rounds (drivers/round_engine.py): a trivia round that nobody wins on points is ended when its songs
+# run out. Song limit = songs needed to reach the goal at this many points per song, plus the spares.
+ROUND_POINTS_PER_SONG_ESTIMATE = 150
+ROUND_SAFETY_SONGS = 4
+# "Wait, how much?" rounds: one Price Game question per song, this many per round unless the show says.
+ROUND_PRICE_QUESTIONS_DEFAULT = 10
+ROUND_PRICE_GAP_SECONDS = 4.0
+ROUND_PRICE_STINGER_SECONDS = 5.0   # "Wait, how much?": the game music plays this long per question, then the playlist song comes back             # pause between one price question's end and the next
+ROUND_PRICE_SETTLE_SECONDS = 8.0          # let a song be heard this long (and its announcement end) first
+ROUND_PRICE_MIN_REMAINING_SECONDS = 50.0  # less song left than this: skip it, ask on the next one
+ROUND_SPECIAL_START_DELAY_SECONDS = 5.0   # Fastest Finger: the intro starts this long into its round
+# Fastest Finger intro (drivers/round_engine.py + graphics/matrix_canvas.py::_draw_ff_intro): the board
+# wipes dark, gameMusic/fastestFinger.wav plays with the marquee's outer-edge movie chase, and these
+# words appear on cue: (seconds into the wav, word, panel, align). Then it holds until the red panel
+# button, NEXT TRACK on the admin page, or FF_INTRO_HOLD_SECONDS after the last word.
+FF_INTRO_SOUND = resource_path("audio", "gameMusic", "fastestFinger.wav")
+FF_INTRO_WIPE_SECONDS = 0.6
+FF_INTRO_WORDS = ((1.235, "WHO", 1, "center"), (1.66, "HAS", 2, "center"), (2.769, "THE", 3, "left"),
+                  (3.036, "FASTEST", 4, "right"), (3.770, "FINGER?", 6, "right"))
+FF_INTRO_HOLD_SECONDS = 10.0
+# "Wait, how much?" round intro (2026-11-20): same board wipe, marquee chase, word timing and hold as
+# Fastest Finger, with gameMusic/waitHowMuch.wav. Word times are first estimates from the wav's
+# loudness (bursts at 0.16 s and 1.10 s, the music kicks in at 1.68 s) -- adjust to taste.
+WHM_INTRO_SOUND = resource_path("audio", "gameMusic", "waitHowMuch.wav")
+WHM_INTRO_WORDS = ((0.16, "WAIT,", 1, "center"), (1.10, "HOW", 4, "center"), (1.68, "MUCH?", 6, "center"))
+# ...and the round's decade ("1980s") lands on panel 5 this long into the wav (no decade = nothing).
+WHM_INTRO_DECADE_AT = 2.4
+WHM_INTRO_DECADE_PANEL = 5
+# The playlist song comes back up this far into waitHowMuch.wav (8.9 s long), crossfading over its
+# last second, so there's no silence while the board holds for the first question (2026-11-21).
+WHM_INTRO_MUSIC_BACK_AT = 7.9
+WHM_INTRO_MUSIC_BACK_SECONDS = 1.0
+ROUND_END_BEFORE_SONG_END_SECONDS = 25
+# Solo challenges (drivers/solo_challenge.py): all or nothing on the team's night score (floored at 0).
+SOLO_STAKES = 1500
+SOLO_SIMON_WIN_ROUNDS = 10      # Simon challenge: clear this many rounds to win
+SOLO_RESULT_SECONDS = 10.0      # the result stays on the LEDs / phones this long
+# Cliffhanger (drivers/cliffhanger_engine.py, TV art in graphics/rig_view.py::_draw_cliff)
+CLIFF_SONGS = 5                 # 2026-11-20: 3 -> 5 so the years off compound
+CLIFF_SPACES = 25               # more than this many years off in total = he falls (the art's 0-25 ruler)
+CLIFF_OVERHANG_SPACES = 0.4     # a fall: he walks this far past the last space before dropping
+CLIFF_SECONDS_PER_SPACE = 2.0
+CLIFF_FALL_SECONDS = 3.0        # the tumble before the result
+CLIFF_NEXT_SONG_SECONDS = 4.0
+CLIFF_BUZZ_SECONDS = 1.4        # a wrong guess: buzzer.wav (1.2 s) plays this long before the climb starts   # after a climb, the next song starts on its own this long later
+CLIFF_CLIMB_SOUND = resource_path("audio", "gameMusic", "cliffhanger.wav")
+CLIFF_ART_BG = resource_path("graphics", "art", "cliffhanger_bg.png")            # the art with the climber removed
+CLIFF_ART_CLIMBER = resource_path("graphics", "art", "cliffhanger_climber.png")  # ...and the climber cut out
+# Art coordinates (911x527 image): the ruler's 0 tick, one ruler mark's step, and the climber
+# sprite's top-left relative to the tick he stands on. The art's ruler runs 0-25 to the cliff edge,
+# so each of the 10 spaces is 2.5 ruler marks.
+CLIFF_RULER_ZERO = (78.75, 456.0)
+CLIFF_RULER_STEP = (30.37, -16.96)
+CLIFF_MARKS_PER_SPACE = 1.0     # one ruler mark per space
+CLIFF_HEADROOM = 76             # art px of extra sky added above the art so the climber's head fits at 22-25
+CLIFF_CLIMBER_OFFSET = (-26.0, -86.0)   # the last song of a round ends the round this long before it finishes
+# Cliffhanger rounds' pregame + BEGIN GAME (2026-11-22, drivers/cliffhanger_engine.py::pregame_*).
+CLIFF_TITLE_TEXT = "Cliffhanger!"          # panels 1+2 during the pregame (62 px of the 64)
+CLIFF_TITLE_WIPE_SECONDS = 0.6             # the title wipes in left to right
+CLIFF_TITLE_CHASE_SPACING = 3              # marquee movie chase around panels 1+2: a lamp every ~3rd bulb
+CLIFF_TITLE_CHASE_STEP_SECONDS = 0.11      # ...moving one bulb this often
+CLIFF_PREGAME_FADE_FRACTION = 0.25         # FADE MUSIC: the volume drops to this share of its setting
+CLIFF_PREGAME_FADE_SECONDS = 2.0
+# BEGIN GAME: one word per panel (panel, word), wiped in left to right, held this long on the LEDs
+CLIFF_QUESTION_WORDS = ((1, "WHAT"), (2, "YEAR"), (3, "DID"), (4, "THIS"), (5, "SONG"), (6, "DEBUT?"))
+CLIFF_QUESTION_WIPE_SECONDS = 0.8
+CLIFF_QUESTION_LED_SECONDS = 8.0
+CLIFF_TV_BOARD_SECONDS = 4.0               # the TV shows the board (the question) this long...
+CLIFF_TV_FADE_SECONDS = 1.2                # ...then fades smoothly to the mountain
+SPEED_POINTS_MAX = 100
+SPEED_POINTS_MIN = 25
+IDENTIFY_POINTS_MULT = 2
+# "Wait, how much?" round (2026-11-21): a price question pays 3x (300 very quick down to 75), plus the
+# first-right bonus, so a team that's usually right reaches a 1000-1500 goal in about 10 questions or
+# fewer (a quick, sharp team in 4-6). Phones' points slide shows the same 300 -> 75.
+ROUND_PRICE_POINTS_MULT = 3
+FIRST_CORRECT_BONUS_POINTS = 50
+MEDLEY_POINTS_CORRECT = 50
+MEDLEY_POINTS_FIRST = 100
+GAME_WIN_SCORE = 1000
+# A win score saved below this was set in the old 1-point-per-answer scale
+# (show_library.py multiplies it up).
+LEGACY_WIN_SCORE_BELOW = 100
+LEGACY_WIN_SCORE_FACTOR = 100
+
+# Category rounds (drivers/category_round_engine.py): the next few songs all
+# come from one decade/genre, with the category named on the phones.
+# Lobby poll (2026-11-17): a light vote shown on phones while waiting between
+# questions; teaches the buttons and fills dead time. One poll per
+# LOBBY_POLL_MINUTES, rotating through this list (a third item of True shows
+# that poll only once per app run). [] turns it off.
+LOBBY_POLLS = [
+    ("Best karaoke move?", ["Power ballad", "Rap verse", "Duet with a stranger", "Never again"]),
+    ("Which decade had the best music?", ["70s", "80s", "90s", "2000s"]),
+    ("Pick a road-trip band", ["Fleetwood Mac", "Journey", "Queen", "Foo Fighters"]),
+    ("Guilty pleasure?", ["Boy bands", "Disco", "Country", "Pop punk"], True),   # True = shown once, then dropped
+]
+LOBBY_POLL_MINUTES = 8
+# Shown under the phone lobby ("Follow us ... for sneak peeks"); "" hides it.
+SOCIAL_HANDLE = ""
+
+CATEGORY_ROUND_SONGS = 4          # default songs per category round
+CATEGORY_MIN_LIBRARY_SONGS = 6    # a category needs at least this many songs to be offered
 APPLAUSE_DIR = resource_path("audio", "applause")
 WIN_DUCK_LEVEL_PCT = 30
 WIN_DUCK_TWEEN_SECONDS = 1.0
@@ -1911,7 +2032,11 @@ PRICE_GAME_QUESTION_TIMEOUT_SECONDS = 8.0
 # window, the title reveals with a slow invert-color blink for
 # MYSTERY_REVEAL_BLINK_SECONDS before standard DJ mode resumes. See
 # drivers/mystery_band_engine.py.
-MYSTERY_REVEAL_TIMEOUT_SECONDS = 15.0
+# 2026-11-14: was a flat 15.0, but phones are told the full
+# MYSTERY_QUESTION_TIMEOUT_SECONDS (40s) -- the board force-graded the question
+# while every client's bar still showed better than half the time left.
+# One clock now: the board's reveal timeout IS the phones' deadline.
+MYSTERY_REVEAL_TIMEOUT_SECONDS = MYSTERY_QUESTION_TIMEOUT_SECONDS
 MYSTERY_REVEAL_BLINK_SECONDS = 3.0
 MYSTERY_REVEAL_BLINK_PERIOD_SECONDS = 0.8
 
@@ -2019,6 +2144,14 @@ PRICE_GAME_WHOLE_DOLLAR_MIN = 100.0
 # (still used by the web remote's "Force Game Mode -> Price Game" control).
 PRICE_GAME_BANK_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "price_game")
 PRICE_GAME_BANK_PATH = os.path.join(PRICE_GAME_BANK_DIR, "price_game_bank.csv")
+# Bank rows whose product contains one of these words are never asked (2026-11-21: rent depends on
+# where you live). Matched as whole words, case-insensitive, on the product and short name.
+PRICE_GAME_EXCLUDE_WORDS = ("rent",)
+# 2026-11-21: the choices are rounded to clean numbers (cents in 5s, then quarters, half dollars,
+# whole dollars, $5s, $10s ... by size -- see drivers/price_bank_engine.py::_tidy_choices) and kept
+# clearly apart: at least $1 apart once the right price is $3 or more. The right price is rounded the
+# same way, so it may be fudged by a few percent.
+PRICE_GAME_TIDY_CHOICES = True
 
 PRICE_GAME_CATEGORIES = [
     {
@@ -2299,6 +2432,10 @@ WEB_AUTODJ_SKIP_SECONDS = 10.0
 TUNNEL_REDIRECT_ADMIN_URL = "https://triviacade.com/play/admin.php"
 TUNNEL_REDIRECT_PLAY_URL = "https://triviacade.com/play/"
 TUNNEL_REDIRECT_UPDATE_URL = "https://triviacade.com/play/update.php"
+# End-of-night results copy (drivers/results_archive.py -> cloudflare_redirect/play/results.php):
+# a player's results link keeps working after the show machine is off. "" = don't upload.
+RESULTS_PUBLIC_URL = "https://triviacade.com/play/results.php"
+RESULTS_KEEP_DAYS = 30
 
 # Must match cloudflare_redirect/config.php's SHARED_SECRET exactly --
 # pre-filled here and in that file so they match out of the box; change
@@ -2323,6 +2460,9 @@ FAILOVER_REPORT_SECONDS = 5.0        # how often each Pi checks in
 FAILOVER_ALIVE_SECONDS = 30          # a Pi silent longer than this counts as down (failover.php matches)
 FAILOVER_ROLE_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "failover_role.json")
 FAILOVER_BACKUP_ADMIN_URL = "https://triviacade.com/play/backup.php"
+# RESUME LAST SHOW (2026-11-12): this machine's own copy of where its last show
+# got to, kept across a restart or power cut (drivers/failover_engine.py).
+LAST_SHOW_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "last_show.json")
 
 # Web Show Designer (2026-10-18): https://triviacade.com/play/designer/ -- make
 # shows while the Pi is off. drivers/web_sync.py keeps it in step (Pi only);
@@ -2559,6 +2699,14 @@ SHOW_INTRO_LINE2_OUT_AT_SECONDS = 8.0    # "It's trivia time!" slides out
 SHOW_INTRO_LETS_PLAY_AT_SECONDS = 9.0    # hard cut-in; marquee lamps go out on the same beat
 SHOW_INTRO_TRIVIA_AT_SECONDS = 9.5       # panel 3, flush right
 SHOW_INTRO_CADE_AT_SECONDS = 10.4        # panel 4, flush left
+# Show-open marquee chase (first SHOW_INTRO_LETS_PLAY_AT_SECONDS): ONE movie-marquee chase running
+# clockwise around the OUTSIDE of the outermost panels only (title top + both sides, the outer side of
+# panels 3/4, the outer + bottom edges of panels 5/6); every inner/seam bulb stays dark.
+SHOW_INTRO_SWEEPER_MAX_SECONDS = 2.0     # a sweeper on each intro wipe-out plays at most this long...
+SHOW_INTRO_SWEEPER_FADE_SECONDS = 0.3    # ...fading out over the last bit of it if it is longer
+SHOW_WHEEL_EASE_POWER = 4.0              # wheel spin ease-out: 3 = old, higher = faster start, longer crawl at the end
+SHOW_INTRO_CHASE_SPACING = 4             # a lit bulb every ~4th bulb around the ring
+SHOW_INTRO_CHASE_STEP_SECONDS = 0.09     # time per 1-bulb shift of the whole ring
 SHOW_INTRO_TWINKLE_START_SECONDS = 10.0  # marquee twinkle + outline puddles begin their ramp
 SHOW_INTRO_TWINKLE_FULL_SECONDS = 14.0   # ...and reach full brightness
 SHOW_INTRO_TWINKLE_SPEED = 0.75          # twinkle roll rate relative to the normal 100%
@@ -2696,6 +2844,28 @@ MEDLEY_RESULTS_SECONDS = 15.0    # game: end-of-medley leaderboard on the main s
 MEDLEY_BANNER_SCROLL_PX_PER_SEC = 20.0  # "MEDLEY TIME!" on panels 3+4: scroll speed
 MEDLEY_BANNER_BOB_PX = 3               # ...and how far it bobs up/down
 MEDLEY_BANNER_BOB_PERIOD_SECONDS = 1.6
+
+# Star-filter flares on the practice TV board (graphics/rig_view.py, 2026-11-18): a soft bloom
+# plus four thin spikes, over MARQUEE BULBS only (never the outline strip, never the LED panels).
+# Mark's rules: flares ride the moving edge of exactly three things and appear nowhere else
+# (no random twinkles, nothing during song play-outs):
+#   "wipe"  - the white band of the "get ready" wipe and the song-change wipes
+#   "sheen" - the shimmer sweeping the lit answer panels while a question is open
+#   "chase" - the correct-answer chase, on the answer bulbs only (not the top title strip)
+# The show app says which one is running (graphics/rig_feed.py); with no signal there are no flares.
+# Edge flares turn slightly as they fade.
+RIG_FLARES_ENABLED = True
+RIG_FLARES_LENGTH = 9.0                 # spike half-length, in bulb radii
+RIG_FLARES_MIN_BRIGHT = 150             # a bulb must be at least this bright (0-255) to keep its flare
+RIG_FLARES_EDGE_JUMP = 100              # a bulb this much brighter in one frame is "on the edge"...
+RIG_FLARES_EDGE_WHITE_JUMP = 60         # ...or this much whiter (the white edge / sheen)
+RIG_FLARES_INTRO_MAX = 12               # show-open chase: star flares on the moving chase bulbs at once
+RIG_FLARES_EDGE_MAX = 6                 # sheen / chase edge flares at once
+RIG_FLARES_WIPE_MAX = 36                # wipe flares at once (the strongest moment: "next song!")
+RIG_FLARES_WIPE_DENSITY = 1.0           # share of the bulbs in a wipe's band that flare
+RIG_FLARES_WIPE_LENGTH = 13.0           # wipe flare spike half-length, in bulb radii (bigger than the others)
+RIG_FLARES_WIPE_LIFE_SECONDS = (0.18, 0.3)  # born full strength on the edge, gone almost at once: they travel with it
+RIG_FLARES_WIPE_ANGLE = 35.0            # degrees an edge flare turns over its life
 
 # HOOK WORDS (drivers/hook_words.py, 2026-10-11): a song's signature phrase
 # across panels 3-6, one word per panel, each appearing as it's sung.

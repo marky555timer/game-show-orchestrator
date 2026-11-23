@@ -26,8 +26,16 @@ import pygame
 
 from state import state
 
-_last = None  # time of the previous update() while active
+_last = None  # time of the previous update() while frozen
 _engaged_at = 0.0
+
+# Pause (2026-11-13): same freeze as blackout -- music/SFX paused, show clock
+# held -- but every light stays on. Either flag freezes the show; sound and
+# clock resume only when BOTH are clear.
+
+
+def _frozen():
+    return state.blackout_active or state.show_paused
 
 # state attributes that are timestamps the show counts toward / from.
 # Shifted only while still relevant (> 0) so an unset 0.0 stays unset.
@@ -59,9 +67,12 @@ def engage():
     global _last, _engaged_at
     if state.blackout_active:
         return
+    was_frozen = _frozen()
     state.blackout_active = True
-    _engaged_at = _last = time.time()
-    _pause_audio(True)
+    _engaged_at = time.time()
+    if not was_frozen:
+        _last = _engaged_at
+        _pause_audio(True)
     try:
         from drivers import simon_hardware
         simon_hardware.set_all_leds(False)
@@ -76,8 +87,9 @@ def release():
         return
     update(time.time())  # final clock shift up to this instant
     state.blackout_active = False
-    _last = None
-    _pause_audio(False)
+    if not _frozen():
+        _last = None
+        _pause_audio(False)
     try:
         from inputs import gamepad
         gamepad._panel_led_state = None  # resync the arcade LEDs next frame
@@ -86,10 +98,42 @@ def release():
     print(f"[BLACKOUT] Released after {time.time() - _engaged_at:.1f}s -- resuming.")
 
 
+def toggle_pause():
+    if state.show_paused:
+        resume()
+    else:
+        pause()
+    return state.show_paused
+
+
+def pause():
+    global _last
+    if state.show_paused:
+        return
+    was_frozen = _frozen()
+    state.show_paused = True
+    if not was_frozen:
+        _last = time.time()
+        _pause_audio(True)
+    print("[PAUSE] Show paused -- music and clock held, lights stay on.")
+
+
+def resume():
+    global _last
+    if not state.show_paused:
+        return
+    update(time.time())
+    state.show_paused = False
+    if not _frozen():
+        _last = None
+        _pause_audio(False)
+    print("[PAUSE] Show resumed.")
+
+
 def update(now):
     """Per-frame (main.py): while active, freeze the show clock."""
     global _last
-    if not state.blackout_active:
+    if not _frozen():
         return
     if _last is None:
         _last = now

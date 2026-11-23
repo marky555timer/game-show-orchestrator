@@ -183,10 +183,10 @@ marquee bulbs, outline strip, the four button lights. Built on a Pi 3 B
   started and fed by `graphics/rig_feed.py` over localhost UDP, because on a
   Pi 3 every screen update costs 10-30 ms and stalled the 40 fps show loop
   when drawn in-process. `tv_mode` drops the TV to 720p for the same reason.
-- The outline strip is an approximation: WLED's effects run on the real
-  board. Solid / blink / rainbow are drawn as such, anything else as the
-  song's colour moving over its background, with the effect name printed
-  under the board. DMX lights are not drawn.
+- The outline strip is a stand-in: WLED's effects run on the real board.
+  It is held at one steady colour (the look's main colour), never blinking
+  or moving, with the effect name printed under the board. DMX lights are
+  not drawn.
 - No arcade buttons are wired, so the web remote has **Arcade Buttons**
   (`/buttons`, in the menu): four pads that press, hold and combine like the
   real ones, and glow when the button's light is lit.

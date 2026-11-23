@@ -218,9 +218,72 @@ def play_lets_play():
     return _play_one(config.SHOW_LETS_PLAY_STAB_PATH)
 
 
+# ---------------------------------------------------- intro wipe-out sweepers
+_sweep_ch = None
+_sweep_sound = None
+_sweep_started = 0.0
+_last_sweeper = [None]
+
+
+def _release_sweeper(stop=False):
+    """Lets go of the sweeper's channel and puts its volume back to full: the fade below drives the
+    channel volume to 0, and a channel left at 0 would make whatever plays on it next silent."""
+    global _sweep_ch, _sweep_sound
+    ch, _sweep_ch, _sweep_sound = _sweep_ch, None, None
+    if ch is None:
+        return
+    try:
+        if stop:
+            ch.stop()
+        ch.set_volume(1.0)
+    except Exception:
+        pass
+
+
+def play_random_sweeper():
+    """A random sweeper for an intro wipe-out. Anything longer than
+    config.SHOW_INTRO_SWEEPER_MAX_SECONDS is faded out fast so it ends by then (see _update_sweeper())."""
+    global _sweep_ch, _sweep_sound, _sweep_started
+    if not state.sweepers_enabled:
+        return
+    paths = glob.glob(os.path.join(config.SWEEPERS_DIR, "*.wav"))
+    if not paths:
+        return
+    path = random.choice([p for p in paths if p != _last_sweeper[0]] or paths)
+    _last_sweeper[0] = path
+    snd = _load(path)
+    if snd is None:
+        return
+    _release_sweeper(stop=True)     # an earlier sweeper still sounding is cut, its channel reset
+    ch = snd.play()
+    if ch is None:
+        return
+    ch.set_volume(_master())
+    _sweep_ch, _sweep_sound, _sweep_started = ch, snd, time.time()
+    print(f"[SHOW BED] Intro sweeper {os.path.basename(path)} ({snd.get_length():.1f}s)")
+
+
+def _update_sweeper(now):
+    if _sweep_ch is None:
+        return
+    if not _sweep_ch.get_busy() or _sweep_ch.get_sound() is not _sweep_sound:
+        _release_sweeper()          # finished by itself (or the channel was reused)
+        return
+    mx, fade = config.SHOW_INTRO_SWEEPER_MAX_SECONDS, config.SHOW_INTRO_SWEEPER_FADE_SECONDS
+    age = now - _sweep_started
+    if _sweep_sound.get_length() > mx:
+        if age >= mx:
+            _release_sweeper(stop=True)
+            return
+        _sweep_ch.set_volume(_master() * min(1.0, max(0.0, (mx - age) / fade)))
+    else:
+        _sweep_ch.set_volume(_master())
+
+
 # ------------------------------------------------------------- general
 def stop_all(fade_ms=0):
     global _intro_ch, _stab_ch, _intro_stop_at
+    _release_sweeper(stop=True)
     stop_wheel_theme()
     for ch in (_intro_ch, _stab_ch):
         if ch is not None:
@@ -260,6 +323,7 @@ def update(now):
             _intro_ch.stop()
             _intro_ch = None
             _intro_stop_at = 0.0
+    _update_sweeper(now)
     if _wheel_ch is not None:
         _wheel_ch.set_volume(_master())
     if _stab_ch is not None:

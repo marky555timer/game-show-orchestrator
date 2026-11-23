@@ -330,9 +330,10 @@ def love_heart_tunnel(surface, rect, t, seed=0.0):
     blit_mask(surface, x0, y0, (np.floor(rho * 1.6 - (t + seed) * 1.5).astype(int) % 2) == 0)
 
 
+# RETIRED 2026-11-18 (operator: twinkling stars on the answer panels can hint at an answer): love_moon_stars is still defined, just no longer dealt.
 ANIMATIONS = [
     love_heartbeat, love_floating_hearts, love_cupid_arrow, love_two_hearts,
     love_rose, love_candles, love_heart_draw, love_ecg, love_sparkle_heart,
-    love_ring, love_letter, love_slow_dance, love_moon_stars, love_heart_plasma,
+    love_ring, love_letter, love_slow_dance, love_heart_plasma,
     love_heart_tunnel,
 ]

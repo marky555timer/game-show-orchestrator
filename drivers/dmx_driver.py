@@ -19,6 +19,10 @@ led_bridge.py already gives the LED panel, rather than requiring the DMX
 box to already be present and enumerated at the exact moment this module
 first imports.
 """
+import os
+import struct
+import subprocess
+import sys
 import threading
 import time
 
@@ -50,10 +54,46 @@ _BLACKOUT_FLUSH_TIMEOUT_S = 1.0
 
 
 def _find_enttec_port():
+    """(device, mode) of the first FTDI DMX adapter, mode "pro" or "open" (see config.DMX_MODE)."""
     for port in serial.tools.list_ports.comports():
         if (port.vid, port.pid) == _ENTTEC_VID_PID:
-            return port.device
-    return None
+            mode = getattr(config, "DMX_MODE", "auto")
+            if mode not in ("pro", "open"):
+                text = f"{port.manufacturer or ''} {port.product or ''}".upper()
+                mode = "pro" if ("ENTTEC" in text or "DMX USB PRO" in text) else "open"
+            return port.device, mode
+    return None, "pro"
+
+
+class _OpenDmxProcLink:
+    """Open-DMX (no-buffer cable) link: a helper process (drivers/dmx_open_sender.py) owns the port and
+    makes the break/timing, so GIL contention in this app can't stretch it. Duck-types the bits of
+    serial.Serial the driver uses (write/flush/close); write() raises once the helper has died."""
+
+    def __init__(self, device, fps):
+        script = os.path.join(os.path.dirname(os.path.abspath(__file__)), "dmx_open_sender.py")
+        self.proc = subprocess.Popen([sys.executable, "-u", script, device, str(fps)],
+                                     stdin=subprocess.PIPE)
+
+    def write(self, frame):
+        if self.proc.poll() is not None:
+            raise BrokenPipeError(f"DMX sender process exited ({self.proc.returncode})")
+        self.proc.stdin.write(struct.pack("<H", len(frame)) + bytes(frame))
+        self.proc.stdin.flush()
+
+    def flush(self):
+        pass
+
+    def close(self):
+        try:
+            self.proc.stdin.close()
+        except Exception:
+            pass
+        try:
+            self.proc.terminate()
+            self.proc.wait(timeout=1)
+        except Exception:
+            pass
 
 
 class EnttecDMXPro:
@@ -69,6 +109,7 @@ class EnttecDMXPro:
         self.serial = None
         self._last_reconnect_attempt = 0.0
         self._pulse_off_at = {}  # {channel: time.monotonic() deadline to zero it}
+        self.mode = "pro"        # "open" = raw FTDI cable, we make the break/timing ourselves
         # Guards self.serial/self.active/self.port -- read/written from
         # both the main thread (maybe_reconnect()/render()) and the
         # dedicated sender thread below (2026-09-18); no lock was needed
@@ -91,16 +132,24 @@ class EnttecDMXPro:
 
     def _try_connect(self):
         self._last_reconnect_attempt = time.monotonic()
-        device = _find_enttec_port()
+        device, mode = _find_enttec_port()
         if device is None:
             return
         try:
-            link = serial.Serial(device, baudrate=57600, timeout=1)
+            if mode == "open":
+                # Probe-open here so a permission/busy error is reported from this process, then hand
+                # the port to the helper process that makes the DMX timing.
+                serial.Serial(device, baudrate=250000, bytesize=8, parity="N",
+                              stopbits=2, timeout=1, write_timeout=1).close()
+                link = _OpenDmxProcLink(device, int(getattr(config, "DMX_OPEN_FPS", 30)))
+            else:
+                link = serial.Serial(device, baudrate=57600, timeout=1)
             with self._state_lock:
                 self.serial = link
                 self.port = device
+                self.mode = mode
                 self.active = True
-            print(f"[DMX PRO] Successfully connected on {device}!")
+            print(f"[DMX {'OPEN' if mode == 'open' else 'PRO'}] Successfully connected on {device}!")
             self.blackout()
         except Exception as e:
             print(f"[DMX ERROR] Could not open {device}: {e}")
@@ -220,6 +269,13 @@ class EnttecDMXPro:
             for ch in (config.RELAY1_CHANNEL, config.RELAY2_CHANNEL, config.RELAY3_CHANNEL):
                 if 0 <= ch < len(frame):
                     frame[ch] = self.dmx_data[ch]
+        if self.mode == "open":
+            # Raw frame: start code (index 0, always 0) + channels 1..N. The sender thread adds the break.
+            n = int(getattr(config, "DMX_OPEN_CHANNELS", 200)) + 1
+            with self._send_lock:
+                self._send_pending = (link, bytes(frame[:n]))
+            self._send_ready.set()
+            return
         data_len = len(frame)
         header = bytearray([
             self.START_VAL,

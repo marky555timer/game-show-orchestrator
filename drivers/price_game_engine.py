@@ -46,14 +46,25 @@ def _register_product_asked(product):
           f"{config.PRICE_GAME_PRODUCT_COOLDOWN_ROUNDS} trivia rounds.")
 
 
-def _arm_intro(decade_label):
+def _in_round():
+    """A "Wait, how much?" round (drivers/round_engine.py::price_round_live) is running."""
+    try:
+        from drivers import round_engine
+        return round_engine.price_round_live()
+    except Exception:
+        return False
+
+
+def _arm_intro(decade_label, quick=False, music=True):
     """Shared setup for both Price Game entry points below: strobe/banner
     intro state + the Section 1 background-music duck. `decade_label` is
     only used for the banner text (graphics/matrix_canvas.py::
     _render_price_banner) -- empty for a Btn6/bank-sourced round, which
     isn't themed to any particular decade."""
     state.price_game_active = True
-    state.price_game_phase = "strobe"
+    # `quick` (2026-11-20): the 2nd+ question of a "Wait, how much?" round skips the strobe + banner
+    # and goes straight to the question.
+    state.price_game_phase = "question_wait" if quick else "strobe"
     state.price_game_phase_started_at = time.time()
     state.price_game_decade = decade_label
     state.price_game_pending = False
@@ -69,6 +80,10 @@ def _arm_intro(decade_label):
     # the whole round (intro + question + grading), capped at
     # PRICE_GAME_AUDIO_MAX_SECONDS regardless of how the round itself plays
     # out -- see _update_price_game_audio().
+    if state.price_game_audio_active and _in_round():
+        _end_price_game_audio(brisk=True)    # the last stinger is still going: start clean
+    if not music:
+        return      # the round's intro jingle just played: no stinger on top of it
     state.price_game_audio_active = True
     state.price_game_audio_entered_game = False
     state.price_game_audio_started_at = time.time()
@@ -103,7 +118,7 @@ def start_price_game(key, decade_label):
         ).start()
 
 
-def start_price_game_from_bank():
+def start_price_game_from_bank(quick=False, music=True):
     """Btn6 hook (inputs/gamepad.py::handle_quiz_gate_button): unconditionally
     arms the Price Game intro sourced from the local CSV bank
     (drivers/price_bank_engine.py, config.PRICE_GAME_BANK_PATH) -- no AI
@@ -120,7 +135,9 @@ def start_price_game_from_bank():
     if state.price_game_active:
         return
 
-    question = price_bank_engine.draw_price_question(state.track_release_year)
+    # A "Wait, how much?" round with a decade asks about that decade (shown on panel 5 in its intro).
+    decade = state.round_decade if _in_round() else ""
+    question = price_bank_engine.draw_price_question(state.track_release_year, decade=decade)
     if question is None:
         # 2026-09-18: load_forced_fallback_question() no longer fabricates
         # fake content when fallback_questions.json is also unavailable --
@@ -137,7 +154,7 @@ def start_price_game_from_bank():
         state.mode = state.MODE_GAME
         return
 
-    _arm_intro("")
+    _arm_intro("", quick=quick, music=music)
     state.price_game_bank_question = question
 
 
@@ -192,7 +209,8 @@ def end_price_game_audio_on_answer():
     """Public hook for inputs/gamepad.py::grade_quiz_selection(): the moment
     a Price Game question is graded, fade the bed out briskly and tween the
     channel faders back up quickly, rather than waiting for the scorecard
-    hold + return-to-DJ-mode path in _update_price_game_audio() below."""
+    hold + return-to-DJ-mode path in _update_price_game_audio() below.
+    """
     _end_price_game_audio(brisk=True)
 
 
@@ -205,6 +223,14 @@ def _update_price_game_audio(now):
     # audio/dj_engine.py scales by state.music_volume, so without this a
     # volume nudge mid-round wouldn't be heard until the NEXT Price Game.
     sync_game_music_volume()
+
+    if _in_round():
+        # "Wait, how much?" round (2026-11-20): the game music is only a stinger -- a few seconds,
+        # then it fades and the night's playlist song comes back up under the question.
+        if (not is_game_music_playing()
+                or now - state.price_game_audio_started_at >= config.ROUND_PRICE_STINGER_SECONDS):
+            _end_price_game_audio(brisk=True)
+        return
 
     # The bed plays exactly once, no loop (audio_engine.py::
     # play_random_game_music, loops=0 -- it must never audibly repeat in a
