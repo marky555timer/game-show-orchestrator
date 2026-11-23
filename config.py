@@ -3144,3 +3144,5 @@ INTERMISSION_FIT_ENABLED = True
 INTERMISSION_EARLY_END_MAX_SECONDS = 30.0   # a gap this small after a song: end the break with it
 INTERMISSION_FIT_TOLERANCE_SECONDS = 5.0    # the last song may run this far past the timer
 INTERMISSION_FIT_MIN_PLAY_SECONDS = 75.0    # a song faded early still plays at least this long
+INTERMISSION_FIT_BIG_CUT_SECONDS = 60.0     # a fade-early bigger than this ...
+INTERMISSION_EARLY_END_STRETCH_SECONDS = 45.0   # ... ends the break early instead, if that's within this

@@ -177,6 +177,13 @@ def _fit_intermission(now):
     over = n_len - gap
     if over <= config.INTERMISSION_FIT_TOLERANCE_SECONDS:
         return      # the next song fits (whatever is left after it is planned when it plays)
+    if over > config.INTERMISSION_FIT_BIG_CUT_SECONDS and gap <= config.INTERMISSION_EARLY_END_STRETCH_SECONDS:
+        # Fading minutes off this song would hurt more than ending the break a little early.
+        state.intermission_ends_at = max(now, end - 2.0)
+        _fit["key"] = (state.transition_count, nxt.get("path"), round(state.intermission_ends_at))
+        print(f"[WIN SEQUENCE] Intermission fit: '{nxt.get('title', '?')}' would need {over:.0f}s cut from this "
+              f"song -- ending the break with this one instead, {gap:.0f}s early.")
+        return
     earliest = max(now + 3.0, state.auto_dj_track_started_at + config.INTERMISSION_FIT_MIN_PLAY_SECONDS)
     cut_at = max(earliest, end - over)
     if cut_at >= end - 1.0:
