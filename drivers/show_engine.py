@@ -208,6 +208,8 @@ def resume_from(snap, own=False):
     _reset_asked_tracking()
     _prepare(show)
     _restore_players(snap)
+    from drivers import round_engine
+    round_engine.restore(snap.get("rounds"))
     path, decade = show_runner.resume_point(info)
     now = time.time()
     state.show_hands_off = False

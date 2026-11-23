@@ -235,6 +235,51 @@ def reset_for_show(show):
     begin_round()
 
 
+def snapshot():
+    """Where the night is in its round list, for RESUME LAST SHOW / backup takeover
+    (drivers/failover_engine.py). "between" = the round just ended (win celebration or intermission):
+    its scores are already folded into the night totals and round_index already points at the next."""
+    return {"index": state.round_index, "results": list(state.round_results),
+            "last_reason": state.last_round_reason, "songs": songs_in_round(),
+            "between": bool(state.win_sequence_active or state.intermission_active)}
+
+
+def restore(snap):
+    """RESUME LAST SHOW / backup takeover (2026-11-23): pick the round list up at the round that was
+    running (from its start; a trivia round keeps its song count), or at the next one if the restart
+    came between rounds. Called after the show is loaded and the players restored. A report from
+    before rounds were saved (no "rounds") leaves round 1 as it is."""
+    if not isinstance(snap, dict):
+        return
+    try:
+        index = max(0, int(snap.get("index") or 0))
+    except (TypeError, ValueError):
+        index = 0
+    if state.rounds:
+        index = min(index, len(state.rounds) - 1)
+    between = bool(snap.get("between"))
+    state.round_index = index
+    state.round_results = [r for r in (snap.get("results") or []) if isinstance(r, dict)][-50:]
+    state.last_round_reason = str(snap.get("last_reason") or "")
+    if between:
+        for player in state.quiz_players.values():
+            player["score"] = 0     # already in the night totals
+    begin_round()
+    songs = 0
+    if not between and state.round_type == "trivia":
+        try:
+            songs = max(0, int(snap.get("songs") or 0))
+        except (TypeError, ValueError):
+            songs = 0
+        if songs:
+            state.round_start_transition = state.transition_count - songs
+            state.round_wheel_pending = False   # its opening spin already happened
+    print(f"[ROUND] Resumed at {state.round_name} (round {index + 1}"
+          f"{' of ' + str(len(state.rounds)) if state.rounds else ''})"
+          + (f", {songs} song(s) already played" if songs else "")
+          + (" -- the last round had just ended" if between else "") + ".")
+
+
 def songs_in_round():
     return max(0, state.transition_count - state.round_start_transition)
 

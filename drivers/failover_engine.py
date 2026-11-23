@@ -157,7 +157,7 @@ def _show_running():
 
 # ------------------------------------------------------------ snapshot
 def _build_snapshot():
-    from drivers import show_runner, deck_orchestrator
+    from drivers import show_runner, deck_orchestrator, round_engine
     title, artist = deck_orchestrator.get_now_playing()
     elapsed = time.time() - state.now_playing_started_at if state.now_playing_started_at else 0.0
     players = {pid: {"initials": p.get("initials", ""), "score": p.get("score", 0),
@@ -177,6 +177,7 @@ def _build_snapshot():
                  "elapsed": round(max(0.0, elapsed), 1),
                  "duration": round(float(state.auto_dj_track_duration or 0), 1)},
         "round": state.game_round_number,
+        "rounds": round_engine.snapshot(),      # 2026-11-23: resume at the round that was running
         "players": players,
         "cumulative": dict(state.show_cumulative_scores),
         "asked_artists": sorted(state.asked_artists),
