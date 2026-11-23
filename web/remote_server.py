@@ -136,7 +136,14 @@ if app is not None:
                 or (request.method == "GET" and path in _ADMIN_PAGES)):
             from drivers import panel_menu
             panel_menu.mark_touched("admin remote")
-        return await call_next(request)
+        response = await call_next(request)
+        # 2026-11-23: pages are always re-checked with the show machine. Without this a phone kept
+        # running a pre-update copy of the admin remote (no Cliffhanger auto-switch) from its cache.
+        # no-cache still lets the browser reuse its copy when the server says it hasn't changed (ETag).
+        if (response.headers.get("content-type", "").startswith("text/html")
+                and "cache-control" not in response.headers):
+            response.headers["Cache-Control"] = "no-cache"
+        return response
 
     # Admin password (web/remote_auth.py) -- added last, so it runs first.
     from web import remote_auth
