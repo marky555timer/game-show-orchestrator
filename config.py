@@ -3136,3 +3136,11 @@ SELFTEST_STALL_SECONDS = 720.0          # nothing moved this long = a hang (100%
 SELFTEST_SOLO_WAIT_SECONDS = 20.0       # a solo round waiting for the host is ended after this
 SELFTEST_BED_HOLD_SECONDS = 15.0        # Fastest Finger's vocal-drop bed: the "host" talks this long
 SELFTEST_MAX_RUN_SECONDS = 4 * 3600.0
+
+# Intermission fit (2026-11-23, drivers/win_sequence_engine.py::_fit_intermission): the break's last song
+# ends on the timer -- the song before it is faded early by the overrun, or the break ends early when no
+# other song fits.
+INTERMISSION_FIT_ENABLED = True
+INTERMISSION_EARLY_END_MAX_SECONDS = 30.0   # a gap this small after a song: end the break with it
+INTERMISSION_FIT_TOLERANCE_SECONDS = 5.0    # the last song may run this far past the timer
+INTERMISSION_FIT_MIN_PLAY_SECONDS = 75.0    # a song faded early still plays at least this long

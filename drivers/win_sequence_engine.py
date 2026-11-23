@@ -114,6 +114,7 @@ def _update_intermission(now):
         else:
             _watchdog_auto_next(now)
         return
+    _fit_intermission(now)
     if now >= state.intermission_ends_at:
         if _song_is_playing() and _next_round_opens_on_intro():
             # 2026-11-23: waiting for the song to end meant a song change (banner, wipe, a few seconds
@@ -130,6 +131,62 @@ def _update_intermission(now):
         _end_intermission("timer")
         return
     _watchdog_auto_next(now)
+
+
+# Intermission fit (2026-11-23): the intermission's last song should END at the timer, not run 3 min
+# past it. Planned once per song (and again if the next song or the timer changes):
+#   gap = timer end - this song's end.
+#   * gap <= INTERMISSION_EARLY_END_MAX_SECONDS: this is the last song -- the intermission ends early,
+#     when it ends (nobody waits for a song that can't fit).
+#   * otherwise, if the next song would run past the timer, this song is faded out early by the
+#     overrun, so the next one plays in full and ends on the timer ("people remember bad endings much
+#     more than bad middles"). This song still plays at least INTERMISSION_FIT_MIN_PLAY_SECONDS.
+_fit = {"key": None}
+
+
+def _song_end():
+    """When Auto-DJ will start moving off the playing song (its cue-out)."""
+    return state.auto_dj_track_started_at + state.auto_dj_track_duration - config.AUTODJ_PRE_SWITCH_SECONDS
+
+
+def _fit_intermission(now):
+    if not config.INTERMISSION_FIT_ENABLED or state.intermission_finishing or state.intermission_paused:
+        return
+    if not _song_is_playing() or not state.auto_dj_track_key or deck_orchestrator.has_pending_move():
+        return
+    if now - state.auto_dj_track_started_at < 2.0:
+        return      # the new song's timer/cue-out is still settling
+    nxt = deck_orchestrator.peek_next_track()
+    key = (state.transition_count, (nxt or {}).get("path"), round(state.intermission_ends_at))
+    if key == _fit["key"]:
+        return
+    _fit["key"] = key
+    end = _song_end()
+    gap = state.intermission_ends_at - end
+    if gap < 0:
+        return      # this song already runs past the timer (it was playing when the break began)
+    if gap <= config.INTERMISSION_EARLY_END_MAX_SECONDS:
+        state.intermission_ends_at = max(now, end - 2.0)
+        _fit["key"] = (state.transition_count, (nxt or {}).get("path"), round(state.intermission_ends_at))
+        print(f"[WIN SEQUENCE] Intermission fit: no room for another song ({gap:.0f}s left after this one) "
+              f"-- the break ends with this song, {gap:.0f}s early.")
+        return
+    if not nxt or not nxt.get("duration"):
+        return
+    n_len = auto_dj_engine.planned_length(nxt["path"], float(nxt["duration"]))
+    over = n_len - gap
+    if over <= config.INTERMISSION_FIT_TOLERANCE_SECONDS:
+        return      # the next song fits (whatever is left after it is planned when it plays)
+    earliest = max(now + 3.0, state.auto_dj_track_started_at + config.INTERMISSION_FIT_MIN_PLAY_SECONDS)
+    cut_at = max(earliest, end - over)
+    if cut_at >= end - 1.0:
+        return
+    state.auto_dj_track_duration = (cut_at - state.auto_dj_track_started_at) + config.AUTODJ_PRE_SWITCH_SECONDS
+    _fit["key"] = (state.transition_count, nxt.get("path"), round(state.intermission_ends_at))
+    left = (cut_at + n_len) - state.intermission_ends_at
+    print(f"[WIN SEQUENCE] Intermission fit: '{nxt.get('title', '?')}' ({n_len:.0f}s) is the last song -- "
+          f"fading this one {end - cut_at:.0f}s early so it ends on the timer"
+          + (f" ({left:.0f}s over: this song can't give more)" if left > 2 else "") + ".")
 
 
 def _next_round_opens_on_intro():

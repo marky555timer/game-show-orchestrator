@@ -274,6 +274,16 @@ def get_cued_track():
     return next((t for t in music_library.all_tracks() if t["path"] == _cued_track_paths[0]), None)
 
 
+def peek_next_track():
+    """The song the next "next" move will play, if known: the cue, else the preloaded pick (read-only;
+    drivers/win_sequence_engine.py's intermission fit, 2026-11-23)."""
+    cued = get_cued_track()
+    if cued is not None:
+        return cued
+    pre = _preloaded_track
+    return pre["track"] if pre else None
+
+
 def get_queued_after_next_track():
     """Read-only peek at slot 1 -- not consumed. Not wired to any UI yet;
     exposed for a possible future Library-page "queued after next" indicator."""
