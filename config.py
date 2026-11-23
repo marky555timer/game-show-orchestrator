@@ -3134,4 +3134,5 @@ SELFTEST_BOT_TEAMS = 10                 # tools/phone_bots.py teams on 127.0.0.1
 SELFTEST_BOT_SKILL = 0.6                # "medium IQ"
 SELFTEST_STALL_SECONDS = 720.0          # nothing moved this long = a hang (100% linger songs play out)
 SELFTEST_SOLO_WAIT_SECONDS = 20.0       # a solo round waiting for the host is ended after this
+SELFTEST_BED_HOLD_SECONDS = 15.0        # Fastest Finger's vocal-drop bed: the "host" talks this long
 SELFTEST_MAX_RUN_SECONDS = 4 * 3600.0

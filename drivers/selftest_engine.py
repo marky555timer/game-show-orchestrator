@@ -365,6 +365,18 @@ def _signature():
 
 def _watchdog(now):
     from drivers import round_engine, deck_orchestrator, solo_challenge
+    from drivers import medley_engine
+    # Fastest Finger's vocal-drop bed holds for the host's panel button (2026-11-23: the first run sat
+    # there). Play the host: let the winner screen stand a moment, then end the bed.
+    if medley_engine.in_bed_hold():
+        if not _rt.get("bed_at"):
+            _rt["bed_at"] = now
+        elif now - _rt["bed_at"] >= config.SELFTEST_BED_HOLD_SECONDS:
+            _rt["bed_at"] = 0.0
+            _note("Fastest Finger bed: pressed the host's button")
+            medley_engine.end_bed("self test")
+        return
+    _rt["bed_at"] = 0.0
     # A solo round that waits for the host to pick a team / game: nobody will. End it.
     if (state.show_phase == "live" and state.round_type == "solo_challenge"
             and state.round_solo_game != "cliffhanger" and not solo_challenge.active()
