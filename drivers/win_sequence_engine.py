@@ -115,6 +115,12 @@ def _update_intermission(now):
             _watchdog_auto_next(now)
         return
     if now >= state.intermission_ends_at:
+        if _song_is_playing() and _next_round_opens_on_intro():
+            # 2026-11-23: waiting for the song to end meant a song change (banner, wipe, a few seconds
+            # of the new song) right before the round's intro faded it out again. These rounds open
+            # on their own intro, which fades the intermission song itself -- start it now.
+            _end_intermission("timer -- the next round opens on its intro")
+            return
         if _song_is_playing():
             state.intermission_finishing = True
             state.intermission_finish_transition = state.transition_count
@@ -124,6 +130,12 @@ def _update_intermission(now):
         _end_intermission("timer")
         return
     _watchdog_auto_next(now)
+
+
+def _next_round_opens_on_intro():
+    """The coming round starts with its own jingle ("Wait, how much?" / Fastest Finger)."""
+    from drivers import round_engine
+    return str(round_engine._spec_for(state.round_index).get("type") or "") in ("wait_how_much", "fastest_finger")
 
 
 def _song_is_playing():
