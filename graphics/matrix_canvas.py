@@ -1224,7 +1224,9 @@ def _price_fit_choices(choices):
     if not _is_price_question() or not choices:
         return choices
     box_width = PANELS[3][2]
-    bare = [c[1:] if c.startswith("$") else c for c in choices]
+    # No thousands commas on the panels (2026-11-23: "$25,000" -> "$25000"): a comma costs pixels the
+    # digits need. Phones keep them.
+    bare = [(c[1:] if c.startswith("$") else c).replace(",", "") for c in choices]
     with_dollar = [f"${b}" for b in bare]
     if all(text_width(c) <= box_width for c in with_dollar):
         return with_dollar
