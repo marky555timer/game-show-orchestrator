@@ -110,7 +110,7 @@ def ranked_players():
     (Python dicts preserve insertion order, and sort() is stable)."""
     return sorted(
         ({"initials": p.get("initials", "???"), "score": p.get("score", 0)}
-         for p in state.quiz_players.values()),
+         for p in state.quiz_players.values() if not p.get("idle")),
         key=lambda p: p["score"],
         reverse=True,
     )

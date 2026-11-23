@@ -425,6 +425,14 @@ QUIZ_WRONG_ANSWER_HOLD_SECONDS = 5.0
 # post-grade hold is at least this long before returning to DJ mode, so people
 # not playing on the app have time to read the right answer (2026-09-30).
 QUIZ_LAST_ANSWER_HOLD_SECONDS = 5.0
+# Teams on phones (2026-11-23 beta test): the "who got it right" result holds this long before the
+# score page (QUIZ_STATS_HOLD_SECONDS) -- the old 2.5 s left only ~5 s between questions once every
+# team had answered, too short for a room to react, talk and get a drink.
+QUIZ_MULTI_RESULT_HOLD_SECONDS = 7.5
+# Idle teams (2026-11-23): a team that misses this many questions in a row gets "Still playing?" on its
+# phone; one more miss and it is idle -- off the leaderboards, LED rankings and solo-challenge team
+# lists, and it no longer holds up "everyone has answered". Its score is kept; any tap brings it back.
+IDLE_PROMPT_AFTER_MISSES = 3
 
 # ==========================================
 # GAMEPAD BUTTON DEBOUNCE (Btns 5-8)
@@ -1941,6 +1949,14 @@ CLIFF_TV_FADE_SECONDS = 1.2                # ...then fades smoothly to the mount
 # analysed hook (medley_analysis.json); a song with neither starts this far through.
 CLIFF_CHORUS_FALLBACK_FRACTION = 0.40
 CLIFF_CHORUS_MIN_LEFT_SECONDS = 30.0       # a chorus closer than this to the end isn't used (fallback instead)
+# AUTO HOST (2026-11-23, beta / timing tests with nobody on /cliff): BEGIN GAME this long after the
+# pregame comes up (lowest team), and each song is "guessed" this long after it starts -- the real
+# year off by a random medium-player amount (|normal(0, SD)| years, rounded). Switched on /cliff;
+# the setting is kept in cliff_auto_host.json.
+CLIFF_AUTO_BEGIN_SECONDS = 15.0
+CLIFF_AUTO_GUESS_SECONDS = 25.0
+CLIFF_AUTO_GUESS_SD_YEARS = 5.0
+CLIFF_AUTO_HOST_FILE = "cliff_auto_host.json"
 SPEED_POINTS_MAX = 100
 SPEED_POINTS_MIN = 25
 IDENTIFY_POINTS_MULT = 2

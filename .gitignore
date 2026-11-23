@@ -58,3 +58,4 @@ desktop.ini
 results/
 # One-off backups taken before bulk data edits
 *.before_*
+cliff_auto_host.json

@@ -1045,6 +1045,8 @@ def _render_quiz_mode(t):
         celebration_hold = QUIZ_WRONG_ANSWER_HOLD_SECONDS
     else:
         celebration_hold = QUIZ_CELEBRATION_HOLD_SECONDS
+    if state.quiz_players:
+        celebration_hold = max(celebration_hold, config.QUIZ_MULTI_RESULT_HOLD_SECONDS)
 
     if locked and not has_next_queued_question():
         # Last question: don't zip back to DJ mode -- give the room at least

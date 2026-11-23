@@ -745,6 +745,8 @@ if app is not None:
         correctness_by_player = {r["player_id"]: r["correct"] for r in state.quiz_last_round_results}
         roster = []
         for player_id, player in state.quiz_players.items():
+            if player.get("idle") and not player["locked"]:
+                continue        # idle team (2026-11-23): not in the "who's answered" roster
             if live:
                 status = "locked" if player["locked"] else "thinking"
             elif player_id in correctness_by_player:
@@ -881,7 +883,7 @@ if app is not None:
               "emoji": p.get("emoji") or player_profile.DEFAULT_EMOJI,
               "streak": p.get("streak", 0),
               "avatar_color": p.get("avatar_color", state.AVATAR_COLORS[0])}
-             for pid, p in state.quiz_players.items()),
+             for pid, p in state.quiz_players.items() if not p.get("idle") or pid == player_id),
             key=lambda p: p["score"], reverse=True,
         )
         # My rank is by tonight's total (finished games + this one), like the recap.
@@ -986,6 +988,8 @@ if app is not None:
             "lobby_poll": _lobby_poll_view(player_id),
             "social_handle": config.SOCIAL_HANDLE,
             "my_rank": my_rank, "team_count": len(state.quiz_players),
+            # idle teams (2026-11-23): "Still playing?" after N misses in a row; idle after one more
+            "still_prompt": player.get("missed", 0) >= config.IDLE_PROMPT_AFTER_MISSES, "idle": bool(player.get("idle")),
             "questions_asked": len(state.quiz_history),
             "show_final": _night_final(),
             "session_id": state.show_session_id,
@@ -1135,6 +1139,7 @@ if app is not None:
         if not (0 <= body.index < len(state.factoid_choices)):
             return {"ok": False, "reason": "bad index"}
         player["selected_index"] = body.index
+        _wake_team(player)
         if not state.round_first_answer_at:
             # First answer of this round -- panels 3-6 flip from the
             # teaser/idle content to showing the 4 answer options
@@ -1180,6 +1185,7 @@ if app is not None:
         if player["selected_index"] < 0:
             return {"ok": False, "reason": "no selection"}
         player["locked"] = True
+        _wake_team(player)
         # Timestamp of THIS lock -- inputs/gamepad.py::_grade_multiplayer_round()
         # uses this to find who answered the mystery question first (bonus
         # point), not just who's correct.
@@ -1192,6 +1198,24 @@ if app is not None:
                 and player["selected_index"] == state.factoid_correct_index):
             state.round_first_correct_pid = body.player_id
         return {"ok": True, "first": player_id_is_first(body.player_id)}
+
+    def _wake_team(player):
+        """Any answer, or YES on "Still playing?", brings an idle team back (2026-11-23)."""
+        if player.get("idle"):
+            print(f"[MULTIPLAYER QUIZ] '{player.get('name') or player.get('initials')}' is back.")
+        player["missed"] = 0
+        player["idle"] = False
+
+    class PlayerId(BaseModel):
+        player_id: str
+
+    @app.post("/api/player/still-here")
+    def player_still_here(body: PlayerId):
+        player = state.quiz_players.get(body.player_id)
+        if player is None:
+            return {"ok": False}
+        _wake_team(player)
+        return {"ok": True}
 
     def player_id_is_first(player_id):
         return bool(player_id) and player_id == state.round_first_correct_pid
@@ -3319,7 +3343,8 @@ if app is not None:
         """Every team's NIGHT total (all rounds + solo challenges), for the phones' intermission."""
         from drivers import player_profile
         rows = sorted(((pid, p, state.show_cumulative_scores.get(pid, 0) + p.get("score", 0))
-                       for pid, p in state.quiz_players.items()), key=lambda r: r[2], reverse=True)
+                       for pid, p in state.quiz_players.items() if not p.get("idle")),
+                      key=lambda r: r[2], reverse=True)
         return [{"player_id": pid, "rank": i + 1, "score": night,
                  "name": p.get("name") or p.get("initials", "???"),
                  "emoji": p.get("emoji") or player_profile.DEFAULT_EMOJI,
@@ -3376,7 +3401,15 @@ if app is not None:
         from drivers import cliffhanger_engine, solo_challenge
         v = solo_challenge.public_view()
         return {"ok": True, "cliff": cliffhanger_engine.host_view(), "team": (v or {}).get("team", ""),
-                "pregame": cliffhanger_engine.pregame_view()}
+                "pregame": cliffhanger_engine.pregame_view(), "auto": cliffhanger_engine.auto_host()}
+
+    class CliffAuto(BaseModel):
+        on: bool
+
+    @app.post("/api/solo/cliff/auto")
+    def solo_cliff_auto(body: CliffAuto):
+        from drivers import cliffhanger_engine
+        return {"ok": True, "on": cliffhanger_engine.set_auto_host(body.on)}
 
     # Cliffhanger round pregame (2026-11-22): /cliff's pregame control panel.
     @app.post("/api/solo/cliff/pregame/fade")

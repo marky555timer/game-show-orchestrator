@@ -137,6 +137,14 @@
     <h2>System Status</h2>
     <div class="row" id="status-row" style="font-size:.85rem;color:#999">Checking...</div>
     <button class="btn" style="margin-top:10px" onclick="reconnectGamepad()">RECONNECT GAMEPAD</button>
+    <!-- App / machine controls (2026-11-23): tap once to arm, tap again within 5 s to do it -->
+    <div class="row" style="margin-top:12px;gap:8px;flex-wrap:wrap">
+      <button class="btn" data-act="restart-app" data-label="RESTART APP" onclick="sysAction(this)">RESTART APP</button>
+      <button class="btn" data-act="shutdown" data-label="SHUT DOWN APP" onclick="sysAction(this)">SHUT DOWN APP</button>
+      <button class="btn" data-act="reboot" data-label="RESTART MACHINE" onclick="sysAction(this)">RESTART MACHINE</button>
+      <button class="btn" data-act="poweroff" data-label="POWER OFF MACHINE" onclick="sysAction(this)">POWER OFF MACHINE</button>
+    </div>
+    <div style="font-size:.78rem;color:#888;margin-top:6px">Tap twice to confirm. A running show can be picked back up with RESUME LAST SHOW after a restart. Shut down / power off needs someone at the machine to start it again.</div>
   </section>
 
   <section>
@@ -163,6 +171,29 @@ function _onApiFailure() {
     _apiFailRedirecting = true;
     location.href = _ADMIN_FALLBACK_URL;
   }
+}
+
+// App / machine controls (2026-11-23): first tap arms the button for 5 s, the second does it.
+const _SYS_DONE = {'restart-app': 'Restarting the app -- this page reconnects in about 30 s.',
+                   'shutdown': 'Shutting the app down.', 'reboot': 'Restarting the machine.',
+                   'poweroff': 'Powering the machine off.'};
+function sysAction(btn) {
+  if (!btn.dataset.armed) {
+    document.querySelectorAll('[data-act]').forEach(b => { delete b.dataset.armed; b.textContent = b.dataset.label; b.classList.remove('primary'); });
+    btn.dataset.armed = '1';
+    btn.textContent = 'TAP AGAIN TO ' + btn.dataset.label;
+    btn.classList.add('primary');
+    clearTimeout(btn._t);
+    btn._t = setTimeout(() => { delete btn.dataset.armed; btn.textContent = btn.dataset.label; btn.classList.remove('primary'); }, 5000);
+    return;
+  }
+  clearTimeout(btn._t);
+  delete btn.dataset.armed;
+  btn.textContent = btn.dataset.label;
+  btn.classList.remove('primary');
+  api('/api/system/' + btn.dataset.act, { method: 'POST' });
+  if (typeof showToast === 'function') showToast(_SYS_DONE[btn.dataset.act]);
+  if (btn.dataset.act === 'restart-app') setTimeout(() => location.reload(), 30000);
 }
 
 async function api(path, opts) {

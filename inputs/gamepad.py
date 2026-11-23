@@ -371,6 +371,12 @@ def _grade_multiplayer_round():
         player["last_points"] = 0
         player["streak_lost"] = 0
         if not player["locked"]:
+            # Idle teams (2026-11-23): N misses in a row -> "Still playing?", one more -> idle.
+            player["missed"] = player.get("missed", 0) + 1
+            if player["missed"] > config.IDLE_PROMPT_AFTER_MISSES and not player.get("idle"):
+                player["idle"] = True
+                print(f"[MULTIPLAYER QUIZ] '{player.get('name') or player.get('initials')}' missed "
+                      f"{player['missed']} in a row -- idle (score kept; any tap brings them back).")
             # Never answered: a connected player's streak breaks; one whose phone
             # has dropped off isn't punished for the network.
             if player.get("streak", 0) and now - player.get("last_seen", 0) <= config.CONNECTED_PLAYER_TIMEOUT_SECONDS:
@@ -378,6 +384,8 @@ def _grade_multiplayer_round():
                 player["streak"] = 0
             continue
         picks[player_id] = player["selected_index"]
+        player["missed"] = 0
+        player["idle"] = False
         correct = player["selected_index"] == state.factoid_correct_index
         player["asked"] = player.get("asked", 0) + 1
         if correct:
@@ -469,7 +477,7 @@ def _grade_multiplayer_round():
     now = time.time()
     correct_ids = {r["player_id"] for r in results if r["correct"]}
     connected = [pid for pid, p in state.quiz_players.items()
-                 if now - p.get("last_seen", 0) <= config.CONNECTED_PLAYER_TIMEOUT_SECONDS]
+                 if now - p.get("last_seen", 0) <= config.CONNECTED_PLAYER_TIMEOUT_SECONDS and not p.get("idle")]
     if connected and all(pid in correct_ids for pid in connected):
         green_light_engine.on_correct_round("everybody got it right")
     elif operator_correct:

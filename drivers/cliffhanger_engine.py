@@ -36,6 +36,7 @@ from state import state
 # phase: "" | "listen" (song playing, waiting for the guess) | "climb" | "between" (waiting for NEXT
 # SONG) | "fall" | "result"
 _c = {"phase": ""}
+_auto = {"on": None}     # AUTO HOST (2026-11-23); None = not read from disk yet
 
 
 def active():
@@ -135,7 +136,7 @@ def _load_song(index):
     track, year = got
     _c["used"].add(track["path"])
     _c.update(song=index, title=track.get("title", ""), artist=track.get("artist", ""), path=track["path"],
-              year=year, guess=None, off=None, phase="listen")
+              year=year, guess=None, off=None, phase="listen", listen_at=time.time())
     _cue(track)
     print(f"[CLIFFHANGER] Song {index + 1}/{config.CLIFF_SONGS}: {track.get('artist')} - {track.get('title')} ({year}).")
     return True
@@ -414,7 +415,7 @@ def pregame_teams():
     """Tonight's teams, lowest night score first (the default pick is the first)."""
     rows = [{"player_id": pid, "name": p.get("name") or p.get("initials") or "???",
              "night": int(state.show_cumulative_scores.get(pid, 0)) + int(p.get("score", 0))}
-            for pid, p in state.quiz_players.items()]
+            for pid, p in state.quiz_players.items() if not p.get("idle")]
     rows.sort(key=lambda r: (r["night"], r["name"].lower()))
     return rows
 
@@ -440,10 +441,60 @@ def pregame_begin(player_id):
     return ok, msg
 
 
+# ------------------------------------------------------------------ AUTO HOST
+def _auto_path():
+    import os
+    return os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), config.CLIFF_AUTO_HOST_FILE)
+
+
+def auto_host():
+    if _auto["on"] is None:
+        try:
+            with open(_auto_path(), encoding="utf-8") as f:
+                _auto["on"] = bool(json.load(f).get("on"))
+        except Exception:
+            _auto["on"] = False
+    return _auto["on"]
+
+
+def set_auto_host(on):
+    _auto["on"] = bool(on)
+    try:
+        with open(_auto_path(), "w", encoding="utf-8") as f:
+            json.dump({"on": _auto["on"]}, f)
+    except Exception as e:
+        print(f"[CLIFFHANGER] Couldn't save the AUTO HOST setting: {e}")
+    print(f"[CLIFFHANGER] AUTO HOST {'on' if _auto['on'] else 'off'}.")
+    return _auto["on"]
+
+
+def auto_tick(now):
+    """drivers/round_engine.py::update, every frame of a Cliffhanger round: with AUTO HOST on, runs the
+    host's part -- BEGIN GAME (lowest team) after the pregame has been up a while, then a medium
+    player's guess on each song. Moving on between songs is already automatic."""
+    if not auto_host():
+        return
+    if not active():
+        if pregame_active() and now - _pre["started"] >= config.CLIFF_AUTO_BEGIN_SECONDS:
+            teams = pregame_teams()
+            ok, msg = pregame_begin(teams[0]["player_id"] if teams else "")
+            print(f"[CLIFFHANGER] AUTO HOST: BEGIN GAME ({teams[0]['name'] if teams else 'no team'})"
+                  + ("" if ok else f" failed: {msg}") + ".")
+            if not ok:
+                _pre["started"] = now      # try again after another wait, not every frame
+        return
+    if _c.get("phase") == "listen" and now - _c.get("listen_at", now) >= config.CLIFF_AUTO_GUESS_SECONDS:
+        off = int(round(abs(random.gauss(0.0, config.CLIFF_AUTO_GUESS_SD_YEARS))))
+        year = max(1900, min(2100, int(_c["year"]) + random.choice((-1, 1)) * off))
+        _c["listen_at"] = now + 3600       # once per song
+        print(f"[CLIFFHANGER] AUTO HOST: guesses {year}.")
+        guess(year)
+
+
 def pregame_view():
     """/cliff's pregame panel (None when no pregame is up)."""
     if not pregame_active():
         return None
     return {"faded": _pre["vol_before"] is not None, "volume": state.music_volume,
             "volume_before": _pre["vol_before"], "teams": pregame_teams(), "round": state.round_name,
-            "id": f"{state.show_session_id}:{_pre['round']}:{int(_pre['started'])}"}
+            "id": f"{state.show_session_id}:{_pre['round']}:{int(_pre['started'])}", "auto": auto_host()}

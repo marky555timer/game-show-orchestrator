@@ -61,6 +61,10 @@
     <button id="submit" onclick="submitGuess()">SUBMIT</button>
   </div>
   <div id="msg"></div>
+  <!-- AUTO HOST (2026-11-23): the show begins the game and guesses on its own (beta / timing tests) -->
+  <label id="auto-wrap" style="display:flex;gap:8px;align-items:center;justify-content:center;margin:10px 0;color:#bbb;font-size:.9rem">
+    <input type="checkbox" id="auto" onchange="setAuto(this.checked)"> AUTO HOST (no one at this page: begins after 15 s, guesses each song)
+  </label>
   <button id="back" onclick="location.href='/'">BACK</button>
 </div>
 <script>
@@ -72,6 +76,10 @@ const PHASE = {
   fall: 'Over the edge!',
 };
 let preId = '', teamsKey = '', preBusy = false, lastPre = null;
+async function setAuto(on) {
+  const d = await post('/api/solo/cliff/auto', { on });
+  if (d && d.ok) document.getElementById('auto').checked = !!d.on;
+}
 function post(url, body) {
   return fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' },
                       body: JSON.stringify(body || {}) }).then(r => r.json());
@@ -129,6 +137,7 @@ async function beginGame() {
 async function refresh() {
   let d;
   try { d = await (await fetch('/api/solo/cliff/host', { cache: 'no-store' })).json(); } catch (e) { return; }
+  if (d && document.activeElement !== document.getElementById('auto')) document.getElementById('auto').checked = !!d.auto;
   const pre = d && !d.cliff && d.pregame;
   document.getElementById('pre').classList.toggle('hidden', !pre);
   document.getElementById('op').classList.toggle('hidden', !!pre);

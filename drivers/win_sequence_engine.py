@@ -230,7 +230,8 @@ def _start_intermission(now):
     # Freeze this round's standings for the phones' intermission screen.
     try:
         from drivers import player_profile
-        rows = sorted(state.quiz_players.items(), key=lambda kv: kv[1].get("score", 0), reverse=True)
+        rows = sorted(((pid, p) for pid, p in state.quiz_players.items() if not p.get("idle")),
+                      key=lambda kv: kv[1].get("score", 0), reverse=True)
         state.last_round_board = [{
             "player_id": pid, "rank": i + 1, "score": p.get("score", 0),
             "name": p.get("name") or p.get("initials", "???"),

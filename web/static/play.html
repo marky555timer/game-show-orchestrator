@@ -381,9 +381,20 @@ button { cursor: pointer; font-family: var(--body); }
 .recap-row.wrong .ra b.yours { color: var(--pink); }
 .recap-row.right .mark { color: var(--green); } .recap-row.wrong .mark { color: var(--pink); }
 .recap-cat { font-size: .7rem; letter-spacing: .06em; text-transform: uppercase; color: var(--amber); }
+/* "Still playing?" (2026-11-23): a team that has missed a few questions in a row */
+#still-here { position: fixed; inset: 0; z-index: 900; background: rgba(10, 8, 26, .86); display: flex;
+  flex-direction: column; align-items: center; justify-content: center; gap: 18px; padding: 24px; text-align: center; }
+#still-here .q { font-size: 1.7rem; font-weight: 800; color: var(--amber); }
+#still-here .sub { color: #cfc8f0; max-width: 300px; line-height: 1.4; }
+#still-here .btn { font-size: 1.4rem; padding: 18px 48px; }
 </style>
 </head>
 <body>
+<div id="still-here" class="hidden">
+  <div class="q">Still playing?</div>
+  <div class="sub" id="still-here-sub">You've missed the last few questions.</div>
+  <button class="btn primary" onclick="stillHere()">YES!</button>
+</div>
   <header class="brand">
     <h1 class="sr-only">Triviacade Music Trivia</h1>
     <img class="brand-logo" src="/art/logo.webp" alt="Triviacade" width="1106" height="270"
@@ -1320,6 +1331,14 @@ function leaveResults() {
   location.href = '/play';
 }
 
+async function stillHere() {
+  document.getElementById('still-here').classList.add('hidden');
+  if (lastD) { lastD.still_prompt = false; lastD.idle = false; }
+  await api('/api/player/still-here', {method: 'POST', headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({player_id: playerId})});
+  schedulePoll(200);
+}
+
 function schedulePoll(ms) {
   clearTimeout(_pollTimer);
   _pollTimer = setTimeout(poll, ms);
@@ -1358,6 +1377,11 @@ async function poll() {
     return;
   }
   lastD = d;
+  // "Still playing?" (2026-11-23): shown after a few missed questions; idle teams are off the boards.
+  document.getElementById('still-here').classList.toggle('hidden', !(d.still_prompt || d.idle) || !!d.show_final);
+  document.getElementById('still-here-sub').textContent = d.idle
+    ? 'Your team is paused and off the leaderboard. Your points are safe -- tap to jump back in.'
+    : "You've missed the last few questions. Tap YES or your team will be paused.";
   // Remember a finished night; forget it once a newer game is under way.
   if (d.session_id) {
     if (d.show_final) lsSet('results_session', d.session_id);

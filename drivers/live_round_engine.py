@@ -66,6 +66,7 @@ def update(now):
         connected = [
             p for p in state.quiz_players.values()
             if now - p.get("last_seen", 0) <= config.CONNECTED_PLAYER_TIMEOUT_SECONDS
+            and not p.get("idle")       # an idle team (2026-11-23) doesn't hold the question open
         ]
         if connected and all(p["locked"] for p in connected):
             gamepad.grade_quiz_selection(forced=True)

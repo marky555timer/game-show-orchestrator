@@ -266,6 +266,7 @@ def main():
     accent_engine.cleanup()
     relay_engine.cleanup()
     sfx_engine.cleanup()
+    tunnel_engine.stop()    # 2026-11-23: an in-place RESTART APP otherwise left the old cloudflared running
     pygame.quit()
 
     if state.poweroff_after_exit:

@@ -212,7 +212,7 @@ def status():
     """Admin page."""
     teams = sorted(({"player_id": pid, "name": _team_name(pid),
                      "night": state.show_cumulative_scores.get(pid, 0) + p.get("score", 0)}
-                    for pid, p in state.quiz_players.items()), key=lambda t: t["name"].lower())
+                    for pid, p in state.quiz_players.items() if not p.get("idle")), key=lambda t: t["name"].lower())
     from drivers import cliffhanger_engine
     return {"ok": True, "view": public_view(), "can_start": _idle_reason() is None, "why_not": _idle_reason(),
             "cliff": cliffhanger_engine.admin_view() if _s["challenge"] == "cliffhanger" else None,

@@ -275,6 +275,23 @@ _NET_POLL_SECONDS = 4.0
 _NET_OUTAGE_RESTART_SECONDS = 15.0
 
 
+def stop():
+    """App shutdown / in-place restart: end cloudflared (the run loop won't respawn it -- shutdown is
+    already requested). Without this an execv() restart orphaned the old tunnel process."""
+    proc = _proc
+    if proc is None or proc.poll() is not None:
+        return
+    try:
+        proc.terminate()
+        proc.wait(timeout=3)
+    except Exception:
+        try:
+            proc.kill()
+        except Exception:
+            pass
+    print("[TUNNEL] cloudflared stopped.")
+
+
 def _local_ip():
     """The address the Pi would use to reach the internet, or None with no
     route. A UDP connect sends no packets -- it only picks the interface."""

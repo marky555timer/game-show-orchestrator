@@ -548,10 +548,11 @@ def update(now):
     if state.intermission_active or state.win_sequence_active or state.game_winner_player_id:
         return
     from drivers import solo_challenge
-    if (state.round_type == "solo_challenge" and state.round_solo_game == "cliffhanger"
-            and not solo_challenge.active()):
+    if state.round_type == "solo_challenge" and state.round_solo_game == "cliffhanger":
         from drivers import cliffhanger_engine
-        cliffhanger_engine.pregame_tick(now)    # a Cliffhanger round opens on its pregame
+        if not solo_challenge.active():
+            cliffhanger_engine.pregame_tick(now)    # a Cliffhanger round opens on its pregame
+        cliffhanger_engine.auto_tick(now)           # AUTO HOST (2026-11-23), when switched on
         return
     if solo_challenge.active() or state.round_type == "solo_challenge":
         return      # a challenge holds everything; a solo round waits for the host
