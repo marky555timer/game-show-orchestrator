@@ -343,6 +343,7 @@
     <section id="medley-bar" style="display:none">
       <button class="btn medley big" id="medley-btn" onclick="toggleMedley()">DANCE MEDLEY</button>
       <div id="medley-status"></div>
+      <button class="btn big" id="medley-continue-btn" style="display:none;margin-top:10px;width:100%;background:#1db954;border-color:#1db954;color:#fff;font-weight:800;font-size:1.3rem;padding:18px" onclick="medleyContinue()">CONTINUE &#9654;</button>
       <!-- Fastest Finger leaderboard (2026-11-23) -->
       <div id="ff-board" style="display:none;margin-top:10px;font-size:.95rem"></div>
       <!-- Medley options (2026-10-01): which songs a medley draws from + how many. Hidden while one runs. -->
@@ -982,6 +983,10 @@ async function medleyOptionsSave() {
   else if (d) showToast(d.error || 'Could not save');
 }
 
+function medleyContinue() {
+  document.getElementById('medley-continue-btn').style.display = 'none';
+  api('/api/medley/continue', { method: 'POST' }).then(() => refreshMedley());
+}
 async function refreshMedley() {
   const d = await api('/api/medley/status');
   if (!d) return;
@@ -1053,6 +1058,14 @@ async function refreshMedley() {
     document.getElementById('medley-edit').style.display = 'none';
     btn.textContent = 'DANCE MEDLEY';
     st.textContent = (d.eligible != null) ? d.eligible + ' floor-fillers ready \u00b7 hooks of ~15s, beat-matched' : '';
+  }
+  // Vocal-drop bed holding for the host (2026-11-23): one big CONTINUE instead of hunting for a panel button.
+  const cb = document.getElementById('medley-continue-btn');
+  cb.style.display = (d.active && d.bed_hold) ? '' : 'none';
+  if (d.active && d.bed_hold) {
+    cb.innerHTML = ff ? 'CONTINUE &#9654; announce the winner' : 'CONTINUE &#9654; back to the music';
+    st.textContent = ff ? 'Clips are done -- the winner is on the board. Talk it up, then press CONTINUE.'
+                        : 'Medley is done -- the bed is holding for you. Press CONTINUE when you are ready.';
   }
   const rb = document.getElementById('medley-replay-btn');
   rb.style.display = (d.has_last && !d.starting && !d.edit) ? '' : 'none';

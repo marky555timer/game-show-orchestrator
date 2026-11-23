@@ -1680,6 +1680,7 @@ if app is not None:
         # Fastest Finger, and carries the round's leaderboard (fastest correct taps break ties).
         st["ff_round"] = state.round_type == "fastest_finger" and state.show_phase == "live"
         st["ff_intro"] = bool(state.ff_intro_started_at) and state.ff_intro_kind == "ff"
+        st["bed_hold"] = medley_engine.in_bed_hold()     # vocal-drop bed waiting for the host (CONTINUE)
         rows = sorted(state.medley_scores.items(), key=lambda kv: (-kv[1].get("points", 0), kv[1].get("time", 0.0)))
         st["leaderboard"] = [{"name": (state.quiz_players.get(pid) or {}).get("name") or r.get("initials") or "???",
                               "points": r.get("points", 0), "answered": r.get("answered", 0)}
@@ -1709,6 +1710,13 @@ if app is not None:
     def medley_start():
         from drivers import medley_engine
         return medley_engine.start()
+
+    @app.post("/api/medley/continue")
+    def medley_continue():
+        """CONTINUE on the remote (2026-11-23): the host is done talking over the vocal-drop bed --
+        same as a panel button press (announce the winner, then the next song)."""
+        from drivers import medley_engine
+        return {"ok": medley_engine.end_bed("remote CONTINUE")}
 
     @app.post("/api/medley/stop")
     def medley_stop():
