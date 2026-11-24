@@ -557,6 +557,17 @@ async function refreshSelfTest() {
 }
 refreshSelfTest();
 setInterval(refreshSelfTest, 5000);
+
+// A Cliffhanger pregame that needs the host (AUTO HOST off) while this page is open -- e.g. watching
+// the self-test table -- goes to its control panel, same as the remote does (2026-11-23).
+async function cliffWatch() {
+  const d = await api('/api/solo/status');
+  if (!d || !d.ok || !d.pregame || !d.pregame.id || d.pregame.auto) return;
+  if (sessionStorage.getItem('cliffPregame') === d.pregame.id) return;
+  sessionStorage.setItem('cliffPregame', d.pregame.id);
+  location.href = '/cliff';
+}
+setInterval(cliffWatch, 2000);
 </script>
 </body>
 </html>
