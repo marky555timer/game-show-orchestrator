@@ -1019,7 +1019,16 @@ def update(now):
             run["handoff_sent"] = True
             _finish(run, "mixable tracks exhausted -- resuming normal play", handoff=True)
             return
+    if run["started"] and ch.get_busy():
+        run.pop("dry_at", None)     # playing (again): a momentary not-busy at a chunk boundary is over
     if run["started"] and not ch.get_busy() and not deck_orchestrator.has_pending_move():
+        # The channel can report not-busy for a moment at a chunk boundary while the queued clip is
+        # about to start (2026-11-24 log) -- only a dry spell that lasts counts.
+        if not run.get("dry_at"):
+            run["dry_at"] = now
+            return
+        if now - run["dry_at"] < config.MEDLEY_DRY_CONFIRM_SECONDS:
+            return
         # 2026-11-23 (self test): a Fastest Finger round once stopped after clip 5 of 10 -- the deck
         # ran dry mid-medley. If clips are left, play the next one as soon as it is rendered (a short
         # gap beats ending the round); give up only if it never comes.
@@ -1038,11 +1047,12 @@ def update(now):
                 run["chunk_started_at"] = now
                 run["cur_len"] = len(raw) / 4 / FS
                 run.pop("dry_at", None)
+                run.pop("dry_logged", None)
                 _set_now_playing(run, k)
                 _maybe_sweeper(run)
                 return
-            if not run.get("dry_at"):
-                run["dry_at"] = now
+            if not run.get("dry_logged"):
+                run["dry_logged"] = True
                 print(f"[MEDLEY] Deck ran dry after {run['played'] + 1}/{len(plan)} (queued {run['queued'] + 1}, "
                       f"rendered {have}, render error {run.get('error')!r}) -- waiting for clip {k + 1}.")
             if now - run["dry_at"] < config.MEDLEY_DRY_WAIT_SECONDS:
