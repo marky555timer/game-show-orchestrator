@@ -160,7 +160,10 @@ def new_game(plan, seed=None):
             if best <= 2:   # never more than two TRUE/FALSE in a row
                 break
         # artists who actually appear in this medley are never used as decoys
-        _game = {"truths": truths, "rng": rng, "qid": 0, "active": False,
+        # Question ids never repeat across medleys (2026-11-23): they used to restart at 1, so a phone
+        # (or bot) that remembered the last medley's last tap ignored the same-numbered hook in the next
+        # one -- and the self-test bots skipped every question of every Fastest Finger after the first.
+        _game = {"truths": truths, "rng": rng, "qid": int(time.time()) * 100, "active": False,
                  "used_decoys": {primary_artist(s["artist"]).lower() for s in plan}}
 
 
