@@ -193,6 +193,10 @@ def begin_round():
         n = int(spec.get("songs") or 0)
         state.round_song_limit = n if n > 0 else _default_count(rtype)
     state.round_name = str(spec.get("name") or f"Round {state.round_index + 1}")
+    if _prog["idx"] != state.round_index or state.round_index == 0 and not state.round_results:
+        _prog["idx"], _prog["began"] = state.round_index, time.time()
+        if state.round_index == 0:
+            _prog["done"] = {}
     state.round_start_transition = state.transition_count
     state.round_wheel_pending = bool(spec.get("wheel")) and rtype == "trivia"
     _apply_decade(spec)
@@ -308,6 +312,9 @@ def note_round_end(reason, winner_id):
     })
     del state.round_results[:-50]
     state.last_round_reason = reason
+    if _prog["began"]:
+        kind = state.round_solo_game or state.round_type
+        _prog["done"].setdefault(kind, []).append(time.time() - _prog["began"])
     state.round_index += 1
 
 
@@ -605,3 +612,107 @@ def status():
         "next": nxt, "exhausted": rounds_exhausted(),
         "results": state.round_results[-10:], "night": night[:10],
     }
+
+
+# ------------------------------------------------------------------ progress (2026-11-24)
+# The remote's "where are we" line: round N of M, its type, rounds to go, minutes left in this round and
+# the show's estimated finish. Rounds already played tonight are the best guide for the ones to come
+# (a small or slow crowd makes trivia rounds longer); before that, the self test's numbers
+# (show_library.preview_estimates). A trivia round in progress is projected from the leader's pace.
+_prog = {"idx": None, "began": 0.0, "done": {}}
+_TYPE_LABEL = {"trivia": "Trivia", "wait_how_much": "Wait, how much?", "fastest_finger": "Fastest Finger",
+               "simon": "Tipsy Simon", "cliffhanger": "Cliffhanger", "solo_challenge": "Solo challenge"}
+
+
+def _kind(spec):
+    return str((spec or {}).get("type") or "trivia")
+
+
+def _default_seconds(kind, spec):
+    from drivers import show_library, show_runner, auto_dj_engine
+    e = show_library.preview_estimates()
+    if kind == "trivia":
+        goal = int(spec.get("goal") or 0) or int(state.game_win_score or 1000)
+        songs = max(1, math.ceil(goal / max(1, e["trivia_pps"])))
+        if int(spec.get("songs") or 0) > 0:
+            songs = min(songs, int(spec["songs"]))
+        lens = []
+        for t in show_runner.upcoming_tracks()[:12]:
+            try:
+                lens.append(auto_dj_engine.planned_length(t["path"], float(t.get("duration") or 0)))
+            except Exception:
+                pass
+        avg = (sum(lens) / len(lens)) if lens else 230.0
+        q = min(avg, e["trivia_quiz_s"])
+        return songs * (q + (avg - q) * e["linger"] / 100.0)
+    if kind == "wait_how_much":
+        n = int(spec.get("songs") or 0) or config.ROUND_PRICE_QUESTIONS_DEFAULT
+        return e["whm_s"] * n / 10.0 + 30
+    if kind == "fastest_finger":
+        return e["ff_min"] * 60
+    if kind == "cliffhanger":
+        return e["cliff_min"] * 60
+    return e["simon_min"] * 60
+
+
+def _estimate(kind, spec):
+    """(seconds, from tonight?) for a whole round of this kind."""
+    done = _prog["done"].get(kind)
+    if done:
+        return sum(done) / len(done), True
+    return _default_seconds(kind, spec), False
+
+
+def progress(now=None):
+    from drivers import win_sequence_engine, show_library
+    now = now or time.time()
+    rounds = list(state.rounds or [])
+    phase = state.show_phase
+    out = {"ok": True, "phase": phase, "rounds": len(rounds)}
+    if not rounds or phase not in ("intro", "live"):
+        return out
+    e = show_library.preview_estimates()
+    inter = max(1, int(state.intermission_minutes or e["intermission_min"])) * 60
+    idx = min(state.round_index, len(rounds) - 1)
+    spec = _spec_for(idx)
+    kind = _kind(spec)
+    est, tonight = _estimate(kind, spec)
+    in_break = bool(state.intermission_active)
+    basis = "tonight's rounds" if tonight else "self-test averages"
+    if phase == "intro":
+        cur_left = e["intro_min"] * 60 + est
+    elif in_break:
+        cur_left = win_sequence_engine.get_intermission_remaining_seconds(now)
+    else:
+        el = now - (_prog["began"] or now)
+        cur_left = max(30.0, est - el)
+        if state.win_sequence_active or state.game_winner_player_id:
+            cur_left = 20.0
+        elif state.round_type == "trivia" and state.round_goal:
+            lead = max((int(p.get("score", 0) or 0) for p in state.quiz_players.values()), default=0)
+            if lead >= 100 and el > 90:
+                cur_left = max(20.0, el * (state.round_goal - lead) / lead)
+                basis = "the leader's pace"
+        elif state.round_type == "wait_how_much" and state.round_special_count and state.round_song_limit:
+            n, tot = state.round_special_count, state.round_song_limit
+            cur_left = max(15.0, el / n * (tot - n))
+            basis = "questions so far"
+        elif state.medley_active and state.medley_count:
+            cur_left = max(15.0, est - el)
+    total = cur_left
+    first_future = idx + 1
+    if in_break:
+        total += est                 # the round after this break
+    for j in range(first_future, len(rounds)):
+        sp = _spec_for(j)
+        total += inter + _estimate(_kind(sp), sp)[0]
+    if not in_break and phase == "live" and idx < len(rounds) - 1:
+        pass                         # (the break after this round is counted with the next round above)
+    total += e["outro_min"] * 60
+    out.update({
+        "round": idx + 1, "type": kind, "type_label": _TYPE_LABEL.get(kind, kind), "name": state.round_name,
+        "in_break": in_break, "rounds_left": len(rounds) - (idx + 1),
+        "round_left_s": round(cur_left), "show_left_s": round(total), "finish_at": now + total,
+        "basis": basis,
+    })
+    return out

@@ -636,6 +636,14 @@ if app is not None:
                 "initials": p.get("initials", ""), "emoji": p.get("emoji") or player_profile.DEFAULT_EMOJI,
                 "avatar_color": p.get("avatar_color", state.AVATAR_COLORS[0]), "score": p.get("score", 0)}
 
+    @app.get("/api/show/progress")
+    def show_progress():
+        from drivers import round_engine
+        try:
+            return round_engine.progress()
+        except Exception as e:
+            return {"ok": False, "reason": str(e)}
+
     @app.get("/api/teams")
     def teams_list():
         now = time.time()
