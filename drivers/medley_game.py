@@ -180,15 +180,25 @@ def _grade_current(reveal):
     # fastest finger: the first correct answer earns one extra point
     right = [pid for pid, ok in marks.items() if ok]
     first = min(right, key=lambda pid: took.get(pid, 1e9)) if right else None
+    earned = {}
     for pid, ok in marks.items():
-        _credit(pid, ok, took.get(pid, 0.0), bonus=pid == first)
+        earned[pid] = _credit(pid, ok, took.get(pid, 0.0), bonus=pid == first)
     if first is not None:
         print(f"[MEDLEY GAME] Fastest finger: {state.medley_scores[first]['initials']} "
-              f"({took.get(first, 0.0):.1f}s, +1 bonus).")
+              f"({took.get(first, 0.0):.1f}s, +{earned.get(first, 0)} pts with the speed bonus).")
     if reveal:
         state.medley_reveal = {"qid": q["qid"], "shown": q["shown"], "real": q["real"], "was_true": q["is_true"],
                                "panel": q["panel"], "answers": dict(q["answers"]), "first": first,
+                               "earned": earned,
                                "until": time.time() + config.MEDLEY_REVEAL_SECONDS}
+
+
+def speed_bonus(took):
+    """Fastest Finger is about speed (2026-11-24): a correct tap earns up to MEDLEY_SPEED_BONUS_MAX extra,
+    sliding to 0 over MEDLEY_SPEED_BONUS_WINDOW_SECONDS from when the answers open."""
+    window = max(0.1, config.MEDLEY_SPEED_BONUS_WINDOW_SECONDS)
+    frac = max(0.0, 1.0 - max(0.0, took) / window)
+    return int(round(config.MEDLEY_SPEED_BONUS_MAX * frac / 5.0)) * 5
 
 
 def _credit(pid, correct, took=0.0, bonus=False):
@@ -198,12 +208,15 @@ def _credit(pid, correct, took=0.0, bonus=False):
         pid, {"initials": "PNL" if pid == PANEL_ID else (state.quiz_players.get(pid, {}).get("initials", "???")),
               "points": 0, "answered": 0, "time": 0.0})
     row["answered"] += 1
+    pts = 0
     if correct:
         pts = config.MEDLEY_POINTS_FIRST if bonus else config.MEDLEY_POINTS_CORRECT
+        pts += speed_bonus(took)
         row["points"] += pts
         row["time"] += took
         if pid != PANEL_ID and pid in state.quiz_players:
             state.quiz_players[pid]["score"] += pts  # bonus point(s) on the regular scoreboard
+    return pts
 
 
 def begin_hook(i, seg, length):
@@ -353,7 +366,7 @@ def player_view(pid):
         mine = rv["answers"].get(pid)
         out["reveal"] = {"qid": rv["qid"], "shown": rv["shown"], "real": rv["real"], "was_true": rv["was_true"],
                          "you": mine, "correct": (None if mine is None else mine == rv["was_true"]),
-                         "first": rv.get("first") == pid}
+                         "first": rv.get("first") == pid, "pts": (rv.get("earned") or {}).get(pid, 0)}
     if state.medley_results and now < state.medley_results_until:
         out["results"] = list(state.medley_results)
     row = state.medley_scores.get(pid)

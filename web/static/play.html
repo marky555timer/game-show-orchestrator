@@ -1110,7 +1110,7 @@ async function sendMedley(qid, value, tries) {
 let medleyPts = {ok: 50, first: 100};
 function medleyRevealText(r) {
   let t = r.was_true ? ('Yes — it was ' + r.real + '!') : ('Nope — not ' + r.shown + '. It was ' + r.real + '.');
-  if (r.correct === true) t += r.first ? `  +${medleyPts.first}p — fastest finger!` : `  +${medleyPts.ok}p!`;
+  if (r.correct === true) t += r.first ? `  +${r.pts || medleyPts.first}p — fastest finger!` : `  +${r.pts || medleyPts.ok}p` + ((r.pts || 0) > medleyPts.ok ? ' — speed bonus!' : '!');
   else if (r.correct === false) t += '  (no point)';
   return t;
 }

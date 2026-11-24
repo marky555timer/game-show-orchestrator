@@ -1963,10 +1963,14 @@ IDENTIFY_POINTS_MULT = 2
 # "Wait, how much?" round (2026-11-21): a price question pays 3x (300 very quick down to 75), plus the
 # first-right bonus, so a team that's usually right reaches a 1000-1500 goal in about 10 questions or
 # fewer (a quick, sharp team in 4-6). Phones' points slide shows the same 300 -> 75.
-ROUND_PRICE_POINTS_MULT = 3
+ROUND_PRICE_POINTS_MULT = 2   # 2026-11-24: was 3 (rounds often ended after 4 of 10 questions)
 FIRST_CORRECT_BONUS_POINTS = 50
 MEDLEY_POINTS_CORRECT = 50
 MEDLEY_POINTS_FIRST = 100
+# Fastest Finger speed bonus (2026-11-24): every correct tap also earns up to MEDLEY_SPEED_BONUS_MAX,
+# sliding to 0 over MEDLEY_SPEED_BONUS_WINDOW_SECONDS after the answers open (rounded to 5s).
+MEDLEY_SPEED_BONUS_MAX = 50
+MEDLEY_SPEED_BONUS_WINDOW_SECONDS = 6.0
 GAME_WIN_SCORE = 1000
 # A win score saved below this was set in the old 1-point-per-answer scale
 # (show_library.py multiplies it up).
