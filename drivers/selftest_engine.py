@@ -81,6 +81,13 @@ def request_start(show_name):
     return True
 
 
+def request_cliff_demo():
+    """2026-11-23: interrupt the running test show and jump to its Cliffhanger round for a demo (AUTO
+    HOST off so the host runs it). The run is then logged as "demo" and played again."""
+    _rt["request"] = ("cliff_demo",)
+    return True
+
+
 def request_stop():
     _rt["request"] = ("stop",)
     return True
@@ -355,6 +362,45 @@ def _finish(why):
         show_engine.back_to_menu()
 
 
+# ------------------------------------------------------------------ Cliffhanger demo
+def _cliff_index():
+    for i, r in enumerate(state.rounds or []):
+        if (r or {}).get("type") == "cliffhanger":
+            return i
+    return None
+
+
+def _start_cliff_demo():
+    from drivers import round_engine, cliffhanger_engine
+    idx = _cliff_index()
+    if idx is None:
+        print("[SELFTEST] This show has no Cliffhanger round -- no demo.")
+        return
+    run = _rt["run"]
+    run["demo"] = idx
+    _note("interrupted for a Cliffhanger demo (this run will be played again)")
+    if cliffhanger_engine.auto_host():
+        cliffhanger_engine.set_auto_host(False)
+
+
+def _update_cliff_demo(now):
+    """Waits for the break after the interrupted round, then starts the Cliffhanger at once. The
+    watchdog stays off while the host runs it."""
+    from drivers import win_sequence_engine, round_engine, medley_engine
+    idx = _rt["run"]["demo"]
+    if (state.show_phase == "live" and state.round_index != idx and not state.intermission_active
+            and not (state.win_sequence_active or state.game_winner_player_id)):
+        if state.medley_active:
+            medley_engine.stop("Cliffhanger demo")      # ends a Fastest Finger round with its leader
+        else:
+            round_engine.end_round("operator")
+        return
+    if state.intermission_active and state.round_index != idx:
+        state.round_index = idx
+        win_sequence_engine._end_intermission("Cliffhanger demo")
+        print(f"[SELFTEST] Cliffhanger demo: round {idx + 1} now.")
+
+
 # ------------------------------------------------------------------ watchdog
 def _signature():
     from drivers import solo_challenge
@@ -424,6 +470,8 @@ def update(now):
     if req:
         if req[0] == "start":
             _begin(req[1])
+        elif req[0] == "cliff_demo" and _d.get("active") and _rt["run"] is not None:
+            _start_cliff_demo()
         elif req[0] == "stop" and _d.get("active"):
             _close_run("stopped", "stopped from the Setup page")
             _finish("stopped from the Setup page")
@@ -449,7 +497,12 @@ def update(now):
         _note("bot teams had stopped -- started them again")
         _start_bots()
     if state.show_background or state.show_phase in ("setup", "dark"):
-        if state.show_background:
+        if state.show_background and run.get("demo") is not None:
+            from drivers import cliffhanger_engine
+            _close_run("demo", "Cliffhanger demo over -- playing this run again")
+            cliffhanger_engine.set_auto_host(True)
+            _close_show()
+        elif state.show_background:
             _close_run("done")
             _advance()
         else:
@@ -467,6 +520,9 @@ def update(now):
                 _rt["step"] = "running"
         elif state.show_phase in ("live", "outro"):
             _rt["step"] = "running"        # a show with no intro goes straight in
+    if run.get("demo") is not None:
+        _update_cliff_demo(now)
+        return
     if now - run["started_at"] > config.SELFTEST_MAX_RUN_SECONDS:
         _close_run("hung", f"over {config.SELFTEST_MAX_RUN_SECONDS / 3600:.0f} h")
         _advance()

@@ -3303,6 +3303,11 @@ if app is not None:
         state.show_final_round_number = None      # the test plays each show's whole round list
         return {"ok": selftest_engine.request_start(state.show_selected)}
 
+    @app.post("/api/selftest/cliff-demo")
+    def selftest_cliff_demo():
+        from drivers import selftest_engine
+        return {"ok": selftest_engine.request_cliff_demo()}
+
     @app.post("/api/selftest/stop")
     def selftest_stop():
         from drivers import selftest_engine
