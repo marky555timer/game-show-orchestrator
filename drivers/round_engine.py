@@ -710,7 +710,8 @@ def progress(now=None):
         pass                         # (the break after this round is counted with the next round above)
     total += e["outro_min"] * 60
     out.update({
-        "round": idx + 1, "type": kind, "type_label": _TYPE_LABEL.get(kind, kind), "name": state.round_name,
+        "round": idx + 1, "type": kind, "type_label": _TYPE_LABEL.get(kind, kind),
+        "name": str(spec.get("name") or f"Round {idx + 1}"),     # (during a break: the coming round)
         "in_break": in_break, "rounds_left": len(rounds) - (idx + 1),
         "round_left_s": round(cur_left), "show_left_s": round(total), "finish_at": now + total,
         "basis": basis,
