@@ -181,6 +181,36 @@ def round_changed():
         deck_orchestrator.set_cued_track(path)
 
 
+def upcoming_tracks():
+    """The playlist's songs after the one playing now, in order (library track dicts). Used by
+    Cliffhanger (2026-11-24), which takes its songs from the playlist so the designer can show them."""
+    if _mode != "play":
+        return []
+    out, i = [], _next_song_index(_pos)
+    while i is not None:
+        out.append(_items[i]["track"])
+        i = _next_song_index(i)
+    return out
+
+
+def show_decades():
+    """The decades this show is about (2026-11-24): the running round's decade if it has one, else
+    every decade holding at least 10% of the playlist's songs, else the show's allowed decades."""
+    if state.round_decade:
+        return [state.round_decade]
+    if _mode == "play" and _items:
+        counts = {}
+        songs = [it for it in _items if it["type"] == "song"]
+        for it in songs:
+            d = track_decade(it["track"])
+            if d:
+                counts[d] = counts.get(d, 0) + 1
+        total = sum(counts.values())
+        if total:
+            return sorted(d for d, n in counts.items() if n >= max(1, 0.10 * total))
+    return list(state.show_allowed_decades or [])
+
+
 # ----------------------------------------------------------- show opening
 def opening():
     """What the show opens with, after the intro theme: (decade, path).

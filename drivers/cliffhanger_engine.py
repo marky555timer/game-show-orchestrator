@@ -65,16 +65,28 @@ def _years():
 
 
 def _pick_song():
-    """A random library song with a known year, not used in this challenge, not the one playing."""
+    """The next song with a known year. 2026-11-24 (operator): from the running show's PLAYLIST first
+    (its next songs, in order -- so the Show Designer can show which ones Cliffhanger will use), then a
+    random library song from the show's decades; never the one playing, never one already used."""
     from drivers.music_library import music_library
     from drivers.factoid_engine import _sanitize_track_key
+    from drivers import show_runner
     years = _c.get("years") or {}
     used = _c.get("used", set())
-    pool = []
-    for t in music_library.all_tracks():
-        key = _sanitize_track_key(t.get("title", ""), t.get("artist", ""))
-        if key in years and t["path"] not in used and t["path"] != state.now_playing_path:
-            pool.append((t, years[key]))
+
+    def ok(t):
+        return t["path"] not in used and t["path"] != state.now_playing_path
+
+    def year_of(t):
+        return years.get(_sanitize_track_key(t.get("title", ""), t.get("artist", "")))
+
+    decades = set(show_runner.show_decades())
+    for t in show_runner.upcoming_tracks():
+        if ok(t) and year_of(t) and (not decades or show_runner.track_decade(t) in decades):
+            return t, year_of(t)
+    pool = [(t, year_of(t)) for t in music_library.all_tracks() if ok(t) and year_of(t)]
+    if decades:
+        pool = [(t, y) for t, y in pool if show_runner.track_decade(t) in decades] or pool
     if not pool:
         return None
     try:

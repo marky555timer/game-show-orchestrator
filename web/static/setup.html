@@ -533,7 +533,7 @@ async function refreshSelfTest() {
   const c = d.current;
   if (d.active && c) {
     now.innerHTML = `<b style="color:#ffcc00">TESTING</b> ${_esc(c.show)} at ${c.linger}% linger -- ${c.minutes} min in` +
-      (c.part ? `, ${_esc(c.part)}` : '') + ` &middot; ${c.teams} teams` +
+      (c.part ? `, ${_esc(c.part)}` : '') + ` &middot; ${c.teams} teams` + (c.crowd ? ` (bots: ${_esc(c.crowd)}; linger ${(c.steps || []).join('/')}%)` : '') +
       (c.queue && c.queue.length ? `<div style="color:#888;font-size:.78rem">Then: ${c.queue.map(_esc).join(', ')}</div>` : '') +
       (c.notes && c.notes.length ? `<div style="color:#ff9f43;font-size:.78rem">${c.notes.map(_esc).join('<br>')}</div>` : '');
   } else {
@@ -546,9 +546,9 @@ async function refreshSelfTest() {
   d.results.slice().reverse().forEach((r) => {
     const eff = r.vs0 == null ? (r.linger === 0 ? 'baseline' : '') : (r.linger === 0 ? 'baseline' : (r.vs0 >= 0 ? '+' : '') + r.vs0 + ' min');
     const ok = r.status === 'done';
-    const parts = (r.parts || []).map((p) => `${_esc(p.label)} ${p.min}`).join(' &middot; ');
+    const parts = (r.parts || []).map((p) => `${_esc(p.label)} ${p.min}` + (p.songs ? ` <span style="color:#777">(${p.songs}&#9834;)</span>` : '')).join(' &middot; ');
     const notes = (r.notes || []).length ? `<div style="color:#ff9f43">${r.notes.map(_esc).join('<br>')}</div>` : '';
-    h += `<tr><td ${td}>${_esc(r.show)}<div style="color:#666">${_esc(r.finished)}</div></td><td ${td}>${r.linger}%</td>` +
+    h += `<tr><td ${td}>${_esc(r.show)}<div style="color:#666">${_esc(r.finished)}</div></td><td ${td}>${r.linger}%<div style="color:#666">${_esc(r.crowd || '')}</div></td>` +
       `<td ${td}><b>${r.minutes}</b></td><td ${td}>${eff}</td><td ${td}>${r.songs}</td>` +
       `<td ${td} style="color:#aaa">${parts}${notes}</td>` +
       `<td ${td} style="color:${ok ? '#4caf50' : '#ff3b30'}">${_esc(r.status)}<div style="color:#888">${_esc(r.winner)}</div></td></tr>`;

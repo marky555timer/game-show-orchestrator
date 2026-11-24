@@ -3297,11 +3297,22 @@ if app is not None:
 
     # Self test (2026-11-23): plays every show back to back at 0-100% linger (drivers/selftest_engine.py).
     @app.post("/api/selftest/start")
-    def selftest_start(body: ShowSetupSave):
+    def selftest_start(body: ShowSetupSave, lingers: str = "", teams: int = 0, slow: int = 0, only: int = 0):
+        """lingers="0,60", teams=4, slow=1, only=1: a custom test (2026-11-24); none = the full test."""
         from drivers import selftest_engine
         _apply_show_setup(body)
         state.show_final_round_number = None      # the test plays each show's whole round list
-        return {"ok": selftest_engine.request_start(state.show_selected)}
+        plan = {}
+        steps = [max(0, min(100, int(x))) for x in lingers.split(",") if x.strip().isdigit()]
+        if steps:
+            plan["lingers"] = steps
+        if teams > 0:
+            plan["teams"] = min(15, teams)
+        if slow > 0:
+            plan["slow"] = min(slow, plan.get("teams", config.SELFTEST_BOT_TEAMS))
+        if only:
+            plan["only"] = True
+        return {"ok": selftest_engine.request_start(state.show_selected, plan)}
 
     @app.post("/api/selftest/cliff-demo")
     def selftest_cliff_demo():
@@ -3564,7 +3575,7 @@ if app is not None:
                 "round_points_per_song": config.ROUND_POINTS_PER_SONG_ESTIMATE,
                 "round_safety_songs": config.ROUND_SAFETY_SONGS,
                 "round_price_questions": config.ROUND_PRICE_QUESTIONS_DEFAULT,
-                "round_medley_clips": _medley_default_clips()}
+                "round_medley_clips": _medley_default_clips(), "est": show_library.preview_estimates()}
 
     @app.get("/api/shows/get")
     def shows_get(name: str):

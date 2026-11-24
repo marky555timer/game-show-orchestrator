@@ -226,7 +226,7 @@ def _round_defaults():
             "round_points_per_song": config.ROUND_POINTS_PER_SONG_ESTIMATE,
             "round_safety_songs": config.ROUND_SAFETY_SONGS,
             "round_price_questions": config.ROUND_PRICE_QUESTIONS_DEFAULT,
-            "round_medley_clips": clips}
+            "round_medley_clips": clips, "est": show_library.preview_estimates()}
 
 
 def _catalog_hash(cat):

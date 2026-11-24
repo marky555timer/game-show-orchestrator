@@ -66,6 +66,21 @@
     padding: 6px 8px; border-radius: 8px; background: #202024; border: 1px solid transparent; }
   .row.drag-over { border-color: #ff3b30; }
   .row.spin { background: #241c33; }
+  /* Round preview (2026-11-24): the songs each round will likely use, from the self test's numbers */
+  .row.pr { border-left: 4px solid var(--rc); background: var(--rb); }
+  .row.pr-int { background: #1a1a1d; }
+  .row.pr-off { opacity: .42; }
+  .rchip { display: inline-block; font-size: .66rem; font-weight: 700; padding: 1px 6px; border-radius: 9px; margin-right: 6px;
+    color: #111; background: var(--rc, #888); vertical-align: 1px; }
+  .rchip.int { background: #3a3a40; color: #bbb; }
+  .rchip.off { background: #2a2a2e; color: #888; }
+  .pmark { padding: 5px 10px; border-radius: 8px; font-size: .8rem; color: #ddd; background: var(--rb, #1a1a1d);
+    border-left: 4px solid var(--rc, #555); }
+  .pmark b { color: #fff; }
+  .pmark small { color: #999; }
+  .plegend { display: flex; flex-wrap: wrap; gap: 6px 12px; align-items: center; font-size: .78rem; color: #aaa; margin: 0 0 8px; }
+  .plegend .lg { display: inline-flex; align-items: center; gap: 5px; }
+  .plegend .sw { width: 12px; height: 12px; border-radius: 3px; background: var(--rc); display: inline-block; }
   .row .num { color: #666; font-size: .75rem; text-align: right; cursor: grab; }
   .row .ttl { font-size: .88rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .row .ttl small { color: #888; }
@@ -176,6 +191,7 @@
           <span>Running time <span class="big" id="total-time">0:00</span></span>
           <span id="total-detail"></span>
         </div>
+        <div class="plegend" id="plegend"></div>
         <div class="playlist" id="playlist"></div>
         <div class="insert-bar">
           <button class="btn" onclick="insertSpin()">+ INSERT WHEEL SPIN</button>
@@ -436,7 +452,7 @@ function addRound() {
   if (!_show) return;
   _show.rounds = _show.rounds || [];
   _show.rounds.push({ type: 'trivia', name: '', goal: 0, songs: 0, wheel: _show.rounds.length === 0, decade: '' });
-  renderRounds(); scheduleSave();
+  renderRounds(); renderPlaylist(); scheduleSave();
 }
 function setRound(i, key, v) {
   const r = _show.rounds[i];
@@ -448,9 +464,9 @@ function setRound(i, key, v) {
 function moveRound(i, d) {
   const r = _show.rounds; const j = i + d;
   if (j < 0 || j >= r.length) return;
-  [r[i], r[j]] = [r[j], r[i]]; renderRounds(); scheduleSave();
+  [r[i], r[j]] = [r[j], r[i]]; renderRounds(); renderPlaylist(); scheduleSave();
 }
-function removeRound(i) { _show.rounds.splice(i, 1); renderRounds(); scheduleSave(); }
+function removeRound(i) { _show.rounds.splice(i, 1); renderRounds(); renderPlaylist(); scheduleSave(); }
 
 // ---------------------------------------------------------- settings
 function setSeg(id, on) {
@@ -588,19 +604,175 @@ function itemSeconds(it) {
   const info = songInfo(it.file);
   return info ? (info.cue_out || info.duration) : 0;
 }
+// Round preview (2026-11-24): walks the playlist the way the show will play it and colours the songs
+// each round (and each intermission) will likely use. Numbers come from the self test (_meta.est):
+// a trivia song plays until its quiz is done, then the linger share of what is left; a trivia round
+// takes about goal / points-per-song songs; an intermission fills its timer (its last song may run up
+// to a minute over); "Wait, how much?" plays the playlist under its questions; Fastest Finger's medley
+// clips are not playlist songs; Cliffhanger plays one song under its pregame, then its quiz songs are
+// the playlist's next songs from the show's decades. A guide, not a promise: crowds differ.
+const ROUND_COLORS = [
+  ['#4a90e2', '#1b2a44'], ['#3fbf6f', '#18352a'], ['#e05aa8', '#3d1c33'], ['#f2a23c', '#3d2c16'],
+  ['#36c3c9', '#15363a'], ['#a77bf0', '#2c2145'], ['#e8d44d', '#38341a'], ['#e5534b', '#3e1c1d'],
+];
+const ROUND_SHORT = { trivia: 'Trivia', wait_how_much: 'Wait, how much?', fastest_finger: 'Fastest Finger',
+  simon: 'Tipsy Simon', cliffhanger: 'Cliffhanger', solo_challenge: 'Solo challenge' };
+function _estLinger() {
+  const raw = localStorage.getItem('tc_est_linger');
+  if (raw !== null && Number.isFinite(Number(raw))) return Number(raw);
+  return Number((_meta.est || {}).linger || 0);
+}
+function setEstLinger(v) { try { localStorage.setItem('tc_est_linger', String(v)); } catch (e) {} renderPlaylist(); }
+function songLen(i) {
+  const info = songInfo((_show.items[i] || {}).file);
+  return info ? (Number(info.cue_out || info.duration) || 0) : 0;
+}
+function playlistDecades(items) {
+  const n = {}; let t = 0;
+  items.forEach((it) => {
+    if (it.type !== 'song') return;
+    const inf = songInfo(it.file);
+    if (inf && inf.decade) { n[inf.decade] = (n[inf.decade] || 0) + 1; t++; }
+  });
+  return Object.keys(n).filter((d) => n[d] >= Math.max(1, 0.1 * t)).sort();
+}
+function predictPlaylist() {
+  const items = _show.items || [], rounds = _show.rounds || [];
+  if (!rounds.length || !items.some((it) => it.type === 'song')) return null;
+  const E = Object.assign({ trivia_pps: 220, trivia_quiz_s: 85, whm_s: 210, ff_min: 4.5, cliff_min: 3.3, simon_min: 4,
+    intro_min: 0.5, outro_min: 0.7, cliff_songs: 5, intermission_min: 5, max_overrun_s: 60, early_end_s: 30 }, _meta.est || {});
+  const linger = _estLinger() / 100;
+  const intMin = Number((_show.settings || {}).intermission_minutes) || E.intermission_min;
+  const tag = items.map(() => null);    // per item: {kind: 'round'|'int'|'skip'|'off', ...}
+  const marks = {};                     // item index -> marker rows shown above it
+  const songs = items.map((it, i) => i).filter((i) => items[i].type === 'song' && songInfo(items[i].file));
+  const showDecs = playlistDecades(items);
+  let p = 0, carry = 0, runOut = '';
+  const legend = [];
+  const mark = (at, m) => { (marks[at] = marks[at] || []).push(m); };
+  const nextAt = () => (p < songs.length ? songs[p] : items.length);
+  const take = (ok) => {
+    while (p < songs.length) {
+      const i = songs[p++];
+      if (!ok || ok(i)) return i;
+      if (!tag[i]) tag[i] = { kind: 'skip' };
+    }
+    return -1;
+  };
+  const decIs = (decs) => (decs && decs.length ? (i) => decs.includes((songInfo(items[i].file) || {}).decade) : null);
+  let total = (_show.intro ? E.intro_min : 0) + (_show.outro !== false ? E.outro_min : 0);
+  rounds.forEach((r, ri) => {
+    const [fg, bg] = ROUND_COLORS[ri % ROUND_COLORS.length];
+    const label = `R${ri + 1}`;
+    const name = r.name || ROUND_SHORT[r.type] || r.type;
+    const dec = roundUsesDecade(r) ? r.decade : '';
+    const ok = decIs(dec ? [dec] : null);
+    let sec = 0, used = 0;
+    const own = (i, extra) => { tag[i] = Object.assign({ kind: 'round', fg, bg, label }, extra || {}); used++; };
+    if (r.type === 'trivia') {
+      const goal = r.goal > 0 ? r.goal : roundDefaults().goal;
+      let want = Math.ceil(goal / E.trivia_pps);
+      if (r.songs > 0) want = Math.min(want, r.songs);
+      carry = 0;
+      for (let k = 0; k < want; k++) {
+        const i = take(ok);
+        if (i < 0) { runOut = runOut || label; break; }
+        own(i);
+        const L = songLen(i), q = Math.min(L, E.trivia_quiz_s);
+        sec += q + (L - q) * linger;
+      }
+    } else if (r.type === 'wait_how_much') {
+      const qs = r.songs > 0 ? r.songs : (_meta.round_price_questions || 10);
+      let budget = E.whm_s * qs / 10;
+      sec = budget + 30;                       // + the jingle
+      if (dec) carry = 0;                      // a decade round opens on a fresh song of its decade
+      budget -= carry; carry = 0;              // else the break's song comes back up under the questions
+      while (budget > 0) {
+        const i = take(ok);
+        if (i < 0) { runOut = runOut || label; break; }
+        own(i); budget -= songLen(i);
+      }
+      carry = Math.max(0, -budget);            // the song under the last question plays on into the break
+    } else if (r.type === 'fastest_finger') {
+      sec = E.ff_min * 60; carry = 0;
+      const clips = r.songs || _meta.round_medley_clips || 10;
+      mark(nextAt(), { fg, bg, html: `<span class="rchip" style="--rc:${fg}">${label}</span><b>&#9889; ${esc(name)}</b> &mdash; a ${clips}-clip medley of ${showDecs.length ? showDecs.map(decLabel).join('/') + ' ' : ''}floor-fillers (mixable songs, not the playlist's; playlist songs win close picks) <small>~${E.ff_min} min</small>` });
+    } else if (r.type === 'cliffhanger') {
+      sec = E.cliff_min * 60; carry = 0;
+      const i0 = take(null);
+      if (i0 >= 0) own(i0, { note: 'pregame', tip: 'Plays under the Cliffhanger pregame' });
+      else runOut = runOut || label;
+      const okc = decIs(showDecs);
+      for (let k = 0; k < E.cliff_songs; k++) {
+        const i = take(okc);
+        if (i < 0) { runOut = runOut || label; break; }
+        own(i, { note: `&#9968; ${k + 1}`, tip: `Cliffhanger song ${k + 1}: guess the year` });
+      }
+    } else {
+      sec = E.simon_min * 60; carry = 0;
+      const i = take(null);
+      if (i >= 0) own(i, { note: 'under the game', tip: 'Plays under the solo challenge' });
+    }
+    total += sec / 60;
+    legend.push({ fg, label, name, min: sec / 60, used });
+    if (ri === rounds.length - 1) return;      // the last round goes straight to the outro
+    // the intermission after this round fills its timer
+    const nr = rounds[ri + 1];
+    const opensOnIntro = nr.type === 'wait_how_much' || nr.type === 'fastest_finger';
+    let left = intMin * 60 - carry; carry = 0;
+    while (left > E.early_end_s) {
+      const i = take(ok);
+      if (i < 0) { runOut = runOut || `intermission ${ri + 1}`; break; }
+      tag[i] = { kind: 'int', label: `INT ${ri + 1}` };
+      const L = songLen(i);
+      if (opensOnIntro && L > left) { carry = L - left; left = 0; break; }   // the intro fades it at the timer
+      left -= L;
+    }
+    total += intMin + (left < 0 ? Math.min(-left, E.max_overrun_s) / 60 : 0);
+  });
+  songs.slice(p).forEach((i) => { if (!tag[i]) tag[i] = { kind: 'off' }; });
+  return { tag, marks, legend, total, runOut, linger: Math.round(linger * 100) };
+}
+function renderPlegend(pred) {
+  const el = document.getElementById('plegend');
+  if (!el) return;
+  if (!pred) { el.innerHTML = ''; return; }
+  const sel = `<label title="Linger setting to estimate with (the show uses the Setup page's)">linger <select onchange="setEstLinger(this.value)">${[...new Set([0, 10, 20, 30, 40, 50, 60, 80, 100, pred.linger])].sort((x, y) => x - y).map((v) =>
+    `<option value="${v}" ${v === pred.linger ? 'selected' : ''}>${v}%</option>`).join('')}</select></label>`;
+  el.innerHTML = `<span title="From the self test: 10 teams, typical crowd">Likely songs per round &middot; show &asymp; <b style="color:#f2f2f2">${Math.round(pred.total)} min</b></span>` +
+    pred.legend.map((g) => `<span class="lg" style="--rc:${g.fg}"><span class="sw"></span>${g.label} ${esc(g.name)} ~${g.min.toFixed(1)}m</span>`).join('') +
+    `<span class="lg" style="--rc:#3a3a40"><span class="sw"></span>intermission</span>` + sel +
+    (pred.runOut ? `<span class="warn">The playlist runs out in ${pred.runOut}: add songs</span>` : '');
+}
 function renderPlaylist() {
   const el = document.getElementById('playlist');
   const items = _show.items || [];
   if (!items.length) {
+    renderPlegend(null);
     el.innerHTML = '<div class="empty">No songs yet. Add songs from the list on the right — or leave it empty and the show records itself the first time it runs.</div>';
   } else {
     let n = 0;
-    el.innerHTML = items.map((it, i) => {
+    const pred = predictPlaylist();
+    renderPlegend(pred);
+    const markHtml = (i) => ((pred && pred.marks[i]) || []).map((m) =>
+      `<div class="pmark" style="--rc:${m.fg};--rb:${m.bg}">${m.html}</div>`).join('');
+    const deco = (i) => {
+      const t = pred && pred.tag[i];
+      if (!t) return { cls: '', style: '', chip: '' };
+      if (t.kind === 'round') return { cls: ' pr', style: `--rc:${t.fg};--rb:${t.bg};`,
+        chip: `<span class="rchip" style="--rc:${t.fg}" title="${t.tip || 'likely played in this round'}">${t.label}${t.note ? ' ' + t.note : ''}</span>` };
+      if (t.kind === 'int') return { cls: ' pr-int', style: '', chip: `<span class="rchip int">${t.label}</span>` };
+      if (t.kind === 'skip') return { cls: ' pr-off', style: '', chip: '<span class="rchip off" title="Another decade than its round: the show passes it by">skipped</span>' };
+      return { cls: ' pr-off', style: '', chip: '<span class="rchip off" title="Probably not reached before the show ends">after the end</span>' };
+    };
+    const styleAttr = (sel, extra) => (sel || extra) ? ` style="${sel ? 'border-color:#3a7bd5;' : ''}${extra || ''}"` : '';
+    const tail = pred ? markHtml(items.length) : '';
+    el.innerHTML = items.map((it, i) => markHtml(i) + (() => {
       const ops = `<div class="ops">
         <button class="btn small" ${i === 0 ? 'disabled' : ''} onclick="moveItem(${i},-1)" title="Up">&#9650;</button>
         <button class="btn small" ${i === items.length - 1 ? 'disabled' : ''} onclick="moveItem(${i},1)" title="Down">&#9660;</button>
         <button class="btn small danger" onclick="removeItem(${i})" title="Remove">&#10005;</button></div>`;
-      const sel = _insertAt === i ? ' style="border-color:#3a7bd5"' : '';
+      const sel = _insertAt === i;
       if (it.type === 'spin') {
         const nx = nextSongIndex(items, i);
         let land = '<span class="warn">no song after it — skipped</span>';
@@ -611,7 +783,8 @@ function renderPlaylist() {
           else if (!(_meta.wheel_decades || []).includes(dec)) land = `<span class="warn">the wheel has no ${decLabel(dec)} slot yet — skipped</span>`;
           else land = `lands on <b>${decLabel(dec)}</b> (the next song's decade; in a round with a decade, that decade)`;
         }
-        return `<div class="row spin" draggable="true" data-i="${i}" onclick="pickRow(event,${i})"${sel}>
+        const dn = nx >= 0 ? deco(nx) : { cls: '', style: '' };
+        return `<div class="row spin${dn.cls === ' pr' ? ' pr' : ''}" draggable="true" data-i="${i}" onclick="pickRow(event,${i})"${styleAttr(sel, dn.cls === ' pr' ? dn.style : '')}>
           <span class="num">&#8597;</span>
           <span class="ttl">&#127905; WHEEL SPIN &nbsp;<small>${land}</small></span>
           <span></span><span class="len">${fmt(itemSeconds(it))}</span>${ops}</div>`;
@@ -630,11 +803,12 @@ function renderPlaylist() {
           <option value="cut" ${cut ? 'selected' : ''}>Cut at</option>
         </select>
         ${cut ? `<input value="${fmt(it.at || 0)}" onchange="setCut(${i}, this)" title="mm:ss into the song">` : ''}</div>`;
-      return `<div class="row" draggable="true" data-i="${i}" onclick="pickRow(event,${i})"${sel}>
+      const dc = deco(i);
+      return `<div class="row${dc.cls}" draggable="true" data-i="${i}" onclick="pickRow(event,${i})"${styleAttr(sel, dc.style)}>
         <span class="num">${n}</span>
-        <span class="ttl">${esc(title)} <small>— ${esc(artist)}</small>${dec}${missing}</span>
+        <span class="ttl">${dc.chip}${esc(title)} <small>— ${esc(artist)}</small>${dec}${missing}</span>
         ${ending}<span class="len">${fmt(itemSeconds(it))}${it.ending === 'quiz' ? '*' : ''}</span>${ops}</div>`;
-    }).join('');
+    })()).join('') + tail;
     wireDrag();
   }
   document.getElementById('insert-hint').textContent = _insertAt === null

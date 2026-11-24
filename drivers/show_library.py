@@ -578,3 +578,18 @@ def _from_remote(r):
     if "rounds" in r:
         s["rounds"] = _clean_rounds(r.get("rounds"))
     return s
+
+
+def preview_estimates():
+    """The Show Designer's playlist preview numbers (2026-11-24, see config.SHOW_EST_*)."""
+    from state import state
+    return {"trivia_pps": config.SHOW_EST_TRIVIA_POINTS_PER_SONG,
+            "trivia_quiz_s": config.SHOW_EST_TRIVIA_QUIZ_SECONDS,
+            "whm_s": config.SHOW_EST_WHM_SECONDS,
+            "ff_min": config.SHOW_EST_FF_MINUTES, "cliff_min": config.SHOW_EST_CLIFF_MINUTES,
+            "simon_min": config.SHOW_EST_SIMON_MINUTES,
+            "intro_min": config.SHOW_EST_INTRO_MINUTES, "outro_min": config.SHOW_EST_OUTRO_MINUTES,
+            "cliff_songs": config.CLIFF_SONGS, "intermission_min": int(state.intermission_minutes),
+            "linger": int(state.autoadv_linger_pct),
+            "max_overrun_s": config.INTERMISSION_MAX_OVERRUN_SECONDS,
+            "early_end_s": config.INTERMISSION_EARLY_END_MAX_SECONDS}

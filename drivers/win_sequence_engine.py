@@ -112,6 +112,7 @@ def _update_intermission(now):
         if state.transition_count != state.intermission_finish_transition:
             _end_intermission("song finished")
         else:
+            _cap_overrun(now)
             _watchdog_auto_next(now)
         return
     _fit_intermission(now)
@@ -126,6 +127,7 @@ def _update_intermission(now):
             state.intermission_finishing = True
             state.intermission_finish_transition = state.transition_count
             state.intermission_ends_at = now
+            _fit["finish_at"] = now
             print("[WIN SEQUENCE] Intermission timer up -- letting the current song finish first.")
             return
         _end_intermission("timer")
@@ -194,6 +196,23 @@ def _fit_intermission(now):
     print(f"[WIN SEQUENCE] Intermission fit: '{nxt.get('title', '?')}' ({n_len:.0f}s) is the last song -- "
           f"fading this one {end - cut_at:.0f}s early so it ends on the timer"
           + (f" ({left:.0f}s over: this song can't give more)" if left > 2 else "") + ".")
+
+
+def _cap_overrun(now):
+    """Timer is up and the last song is finishing: if it would run more than
+    INTERMISSION_MAX_OVERRUN_SECONDS past the timer, fade it out at that mark (Auto-DJ's normal
+    transition) -- the song change then ends the intermission."""
+    cap_s = getattr(config, "INTERMISSION_MAX_OVERRUN_SECONDS", 0)
+    if not cap_s or not state.auto_dj_track_key or deck_orchestrator.has_pending_move():
+        return
+    cap = _fit.get("finish_at", now) + cap_s
+    if _song_end() <= cap + 1.0:
+        return
+    at = max(cap, now + 1.0)
+    over = _song_end() - _fit.get("finish_at", now)
+    state.auto_dj_track_duration = (at - state.auto_dj_track_started_at) + config.AUTODJ_PRE_SWITCH_SECONDS
+    print(f"[WIN SEQUENCE] Intermission overrun: the last song would run {over:.0f}s past the timer -- "
+          f"fading it at {cap_s:.0f}s over and starting the next game.")
 
 
 def _next_round_opens_on_intro():

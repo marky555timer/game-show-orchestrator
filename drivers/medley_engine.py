@@ -305,13 +305,15 @@ def pool_counts():
     return {"latest": len(pool), "green": green, "yellow": len(pool) - green}
 
 
-def build_plan(start_bpm=None, seed=None, first_name=None, source=None, songs=None):
+def build_plan(start_bpm=None, seed=None, first_name=None, source=None, songs=None, decades=None, prefer=None):
     """Greedy tempo/key chain over the eligible pool. Returns a list of
     segment dicts (see render_chunk) -- empty if there aren't enough.
     source: "latest" = every eligible song, human-edited clips first and the
     most recently edited leading; "green" = human-edited clips only;
     "yellow" = AI-included songs only. songs = how many to plan (MEDLEY_MAX_SECONDS, if set,
-    cap can still cut it shorter). Both default to the saved options()."""
+    cap can still cut it shorter). Both default to the saved options().
+    decades (2026-11-24, Fastest Finger rounds): keep to these decades when enough songs fit;
+    prefer: paths (the show's playlist) that win close picks."""
     rng = random.Random(seed)
     o = options()
     source = source or o["source"]
@@ -321,6 +323,15 @@ def build_plan(start_bpm=None, seed=None, first_name=None, source=None, songs=No
         pool = [c for c in pool if c.get("clip")]
     elif source == "yellow":
         pool = [c for c in pool if not c.get("clip")]
+    if decades:
+        from drivers.music_metadata_engine import get_metadata_for
+        dset = set(decades)
+        narrowed = [c for c in pool if (get_metadata_for(c["key"]) or {}).get("decade") in dset]
+        if len(narrowed) >= max(config.MEDLEY_MIN_TRACKS, int(songs or 0) + 2):
+            pool = narrowed
+        else:
+            print(f"[MEDLEY] Only {len(narrowed)} mixable songs from {', '.join(sorted(dset))} -- using every decade.")
+    prefer = set(prefer or ())
     if len(pool) < config.MEDLEY_MIN_TRACKS:
         return []
     named = [c for c in pool if first_name and first_name.lower() in (c["name"] + " " + c["key"]).lower()]
@@ -387,7 +398,7 @@ def build_plan(start_bpm=None, seed=None, first_name=None, source=None, songs=No
             tempo_fit, n, nt = f
             key_pen = 0.08 * min(3, _camelot_distance(cur["key_cam"], c["key_cam"]))
             energy_bonus = -0.02 * c["energy"]
-            score = tempo_fit + key_pen + energy_bonus + rng.random() * 0.06 - clip_bonus(c)
+            score = tempo_fit + key_pen + energy_bonus + rng.random() * 0.06 - clip_bonus(c)                 - (0.15 if c["path"] in prefer else 0.0)
             scored.append((score, c, n, nt))
         if not scored:
             break
@@ -719,7 +730,7 @@ def _render_worker(run):
         run["error"] = str(e)
 
 
-def start(songs=None, hold=False):
+def start(songs=None, hold=False, decades=None, prefer=None):
     """Begin a medley from the current moment. Returns {ok, error?, tracks?}. `songs` overrides the
     remote's song count (a Fastest Finger round's clip count, drivers/round_engine.py). hold=True renders
     but doesn't start playback until release_hold() (the Fastest Finger intro plays first)."""
@@ -737,7 +748,7 @@ def start(songs=None, hold=False):
         opts = _tempo_options(a["bpm"])
         start_bpm = opts[0] if opts else None
     opt = options()
-    plan = build_plan(start_bpm, songs=songs) if songs else build_plan(start_bpm)
+    plan = build_plan(start_bpm, songs=songs or None, decades=decades, prefer=prefer)
     if not plan:
         what = {"green": "human-edited (green)", "yellow": "AI-included (yellow)"}.get(opt["source"], "floor-filler")
         return {"ok": False, "error": f"not enough mixable {what} songs (need {config.MEDLEY_MIN_TRACKS}+ that fit by tempo)"}

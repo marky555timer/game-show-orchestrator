@@ -35,7 +35,25 @@ _BOT_LOG = os.path.join(_APP_DIR, "selftest_bots.log")
 LINGER_STEPS = (0, 20, 40, 60, 80, 100)
 
 _d = {"active": False, "show": "", "linger": 0, "results": [], "saved": {}, "bot_pid": 0,
-      "retry": 0}
+      "retry": 0, "plan": {}}
+# plan (2026-11-24): a custom test -- {"lingers": [0, 60], "teams": 4, "slow": 1, "only": True}
+# ("only" = this show alone, no moving on to the untested ones). {} = the full default test.
+
+
+def _steps():
+    return list((_d.get("plan") or {}).get("lingers") or LINGER_STEPS)
+
+
+def _teams():
+    return int((_d.get("plan") or {}).get("teams") or config.SELFTEST_BOT_TEAMS)
+
+
+def _slow():
+    return int((_d.get("plan") or {}).get("slow") or 0)
+
+
+def _crowd():
+    return f"{_teams()} teams" + (f", {_slow()} slow" if _slow() else "")
 _rt = {"step": "", "at": 0.0, "run": None, "request": None, "boot": time.time(), "loaded": False,
        "proc": None, "sig": None, "sig_at": 0.0, "stalls": 0, "solo_wait": 0.0, "seg": None, "seg_at": 0.0,
        "tries": 0}
@@ -76,8 +94,8 @@ def active():
 
 
 # ------------------------------------------------------------------ requests (web thread)
-def request_start(show_name):
-    _rt["request"] = ("start", show_name)
+def request_start(show_name, plan=None):
+    _rt["request"] = ("start", show_name, plan or {})
     return True
 
 
@@ -116,15 +134,18 @@ def status():
                "minutes": _fmt_min(time.time() - run["started_at"]) if run else 0,
                "part": (_rt["seg"] or "") if run else "",
                "notes": list(run["notes"][-5:]) if run else [],
-               "queue": _untested(), "teams": len(state.quiz_players)}
+               "queue": [] if (_d.get("plan") or {}).get("only") else _untested(),
+               "teams": len(state.quiz_players), "crowd": _crowd(), "steps": _steps()}
     rows = []
     base = {}
+    crowd = lambda r: r.get("crowd") or f"{config.SELFTEST_BOT_TEAMS} teams"
     for r in _d["results"]:
         if r.get("status") == "done" and r.get("linger") == 0:
-            base[r["show"]] = r["minutes"]
+            base[(r["show"], crowd(r))] = r["minutes"]
     for r in _d["results"]:
         row = dict(r)
-        b = base.get(r["show"])
+        row["crowd"] = crowd(r)
+        b = base.get((r["show"], row["crowd"]))
         row["vs0"] = round(r["minutes"] - b, 1) if (b is not None and r.get("status") == "done") else None
         rows.append(row)
     return {"active": bool(_d.get("active")), "current": cur, "results": rows,
@@ -155,12 +176,12 @@ def _start_bots():
         log.flush()
         _rt["proc"] = subprocess.Popen(
             [sys.executable, "-u", os.path.join(_APP_DIR, "tools", "phone_bots.py"),
-             "--teams", str(config.SELFTEST_BOT_TEAMS), "--skill", str(config.SELFTEST_BOT_SKILL),
+             "--teams", str(_teams()), "--slow", str(_slow()), "--skill", str(config.SELFTEST_BOT_SKILL),
              "--base", f"http://127.0.0.1:{config.WEB_REMOTE_PORT}", "--host", "", "--local-dir", _APP_DIR],
             stdout=log, stderr=subprocess.STDOUT, cwd=_APP_DIR, start_new_session=True)
         _d["bot_pid"] = _rt["proc"].pid
         _save()
-        print(f"[SELFTEST] {config.SELFTEST_BOT_TEAMS} bot teams started (pid {_d['bot_pid']}, log {_BOT_LOG}).")
+        print(f"[SELFTEST] {_crowd()} (bots) started (pid {_d['bot_pid']}, log {_BOT_LOG}).")
     except Exception as e:
         print(f"[SELFTEST] Couldn't start the bot teams: {e}")
 
@@ -224,7 +245,7 @@ def _note(msg):
         run["notes"].append(f"{_fmt_min(time.time() - run['started_at'])}m: {msg}")
 
 
-def _begin(show_name):
+def _begin(show_name, plan=None):
     from drivers import show_library
     _load()
     if not show_library.get(show_name):
@@ -232,12 +253,18 @@ def _begin(show_name):
         return
     if _d.get("active"):
         _close_run("stopped", "restarted from the Setup page")
-    _d.update(active=True, show=show_name, linger=LINGER_STEPS[0], retry=0)
+    _stop_bots()        # a new plan may want a different crowd
+    _d["plan"] = dict(plan or {})
+    if _d["plan"]:
+        # a custom crowd starts from an empty team list (the last test's bot teams would linger as "away")
+        state.quiz_players.clear()
+        state.show_cumulative_scores.clear()
+    _d.update(active=True, show=show_name, linger=_steps()[0], retry=0)
     _hold_settings()
     _save()
     _start_bots()
-    print(f"[SELFTEST] Started: '{show_name}' first, then every untested show; linger "
-          f"{'/'.join(str(x) for x in LINGER_STEPS)}%.")
+    print(f"[SELFTEST] Started: '{show_name}'" + (" only" if _d["plan"].get("only") else ", then every untested show")
+          + f"; linger {'/'.join(str(x) for x in _steps())}%; {_crowd()}.")
     _close_show()
 
 
@@ -267,8 +294,9 @@ def _launch(now):
     _rt["tries"] = 0
     show_engine.begin_intro()
     _rt["run"] = {"show": _d["show"], "linger": _d["linger"], "started_at": now, "segments": [],
-                  "notes": [], "tc0": state.transition_count, "intro_wait_at": 0.0}
-    _rt.update(step="intro", seg=None, seg_at=now, sig=None, sig_at=now, stalls=0, solo_wait=0.0)
+                  "notes": [], "tc0": state.transition_count, "intro_wait_at": 0.0, "crowd": _crowd()}
+    _rt.update(step="intro", seg=None, seg_at=now, sig=None, sig_at=now, stalls=0, solo_wait=0.0,
+               seg_tc=state.transition_count)
     print(f"[SELFTEST] Run: '{_d['show']}' at {_d['linger']}% linger "
           f"({len(state.quiz_players)} teams).")
 
@@ -295,10 +323,13 @@ def _flush_segment(now):
         return
     segs = run["segments"]
     sec = now - _rt["seg_at"]
+    songs = max(0, state.transition_count - _rt.get("seg_tc", state.transition_count))
     if segs and (segs[-1]["label"] == key or segs[-1]["label"].startswith(key + " ")):
         segs[-1]["sec"] += sec
+        segs[-1]["songs"] = segs[-1].get("songs", 0) + songs
     else:
-        segs.append({"label": key, "sec": sec})
+        segs.append({"label": key, "sec": sec, "songs": songs})
+    _rt["seg_tc"] = state.transition_count
     _rt["seg_at"] = now
 
 
@@ -320,7 +351,9 @@ def _close_run(status, note=""):
     total = now - run["started_at"]
     row = {"show": run["show"], "linger": run["linger"], "minutes": _fmt_min(total), "status": status,
            "finished": time.strftime("%Y-%m-%d %H:%M"),
-           "parts": [{"label": s["label"], "min": _fmt_min(s["sec"])} for s in run["segments"] if s["sec"] >= 5],
+           "parts": [{"label": s["label"], "min": _fmt_min(s["sec"]), "songs": s.get("songs", 0)}
+                     for s in run["segments"] if s["sec"] >= 5],
+           "crowd": run.get("crowd") or _crowd(),
            "songs": max(0, state.transition_count - run["tc0"]),
            "rounds": len(state.round_results), "winner": state.show_outro_message or "",
            "notes": run["notes"][-12:]}
@@ -335,11 +368,14 @@ def _close_run(status, note=""):
 def _advance():
     """The run finished: next linger step, else the next untested show, else done."""
     _d["retry"] = 0
-    steps = list(LINGER_STEPS)
+    steps = _steps()
     i = steps.index(_d["linger"]) if _d["linger"] in steps else len(steps) - 1
     if i + 1 < len(steps):
         _d["linger"] = steps[i + 1]
     else:
+        if (_d.get("plan") or {}).get("only"):
+            _finish(f"'{_d['show']}' tested at {'/'.join(str(x) for x in steps)}% ({_crowd()})")
+            return
         nxt = _next_untested()
         if not nxt:
             _finish("every show tested")
@@ -469,7 +505,7 @@ def update(now):
     req, _rt["request"] = _rt["request"], None
     if req:
         if req[0] == "start":
-            _begin(req[1])
+            _begin(req[1], req[2] if len(req) > 2 else None)
         elif req[0] == "cliff_demo" and _d.get("active") and _rt["run"] is not None:
             _start_cliff_demo()
         elif req[0] == "stop" and _d.get("active"):

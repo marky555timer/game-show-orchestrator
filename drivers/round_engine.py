@@ -476,7 +476,10 @@ def _update_medley_round(now):
         return
     from drivers import medley_engine
     state.medley_game_enabled = True    # the round IS the medley game
-    r = medley_engine.start(songs=state.round_song_limit, hold=True)   # renders during the intro
+    from drivers import show_runner
+    # 2026-11-24: the show's decades, and its playlist songs win close picks
+    r = medley_engine.start(songs=state.round_song_limit, hold=True, decades=show_runner.show_decades(),
+                            prefer=[t["path"] for t in show_runner.upcoming_tracks()])
     if r.get("ok"):
         _sp["medley"] = True
         state.round_song_limit = int(r.get("tracks") or state.round_song_limit)

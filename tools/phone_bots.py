@@ -136,9 +136,14 @@ class AnswerKey:
 
 # ------------------------------------------------------------------ one phone
 class Bot(threading.Thread):
-    def __init__(self, n, name, emoji, base, key, skill, stop):
+    def __init__(self, n, name, emoji, base, key, skill, stop, slow=False):
         super().__init__(daemon=True, name=f"bot-{n}")
         self.name_, self.emoji, self.base, self.key, self.skill, self.stop = name, emoji, base, key, skill, stop
+        # --slow (2026-11-24): a team that reads slowly and knows less -- answers late in the window
+        # (sometimes not at all) and taps Fastest Finger late
+        self.slow = slow
+        if slow:
+            self.skill = max(0.0, skill - 0.25)
         self.s = requests.Session()
         self.s.headers["User-Agent"] = "Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) phone-bot"
         self.pid = None
@@ -210,7 +215,12 @@ class Bot(threading.Thread):
     def answer(self, d):
         choices, rid = d["choices"], d.get("round_id")
         left = float(d.get("remaining_seconds") or d.get("timeout_seconds") or 20)
-        time.sleep(max(0.8, min(random.uniform(3, 12), left - 1.5)))   # reading time
+        if self.slow:
+            if random.random() < 0.15:
+                return                                                   # missed this one
+            time.sleep(max(0.8, min(random.uniform(0.6, 0.95) * left, left - 1.5)))
+        else:
+            time.sleep(max(0.8, min(random.uniform(3, 12), left - 1.5)))   # reading time
         right = self.key.correct_index(d.get("question", ""), choices)
         if right is not None and random.random() < self.skill:
             idx = right
@@ -232,7 +242,7 @@ class Bot(threading.Thread):
 
     def medley(self, m, server_time):
         opens = float(m.get("opens_at") or 0)
-        self.stop.wait(max(0.0, opens - server_time) + random.uniform(0.8, 4.0))
+        self.stop.wait(max(0.0, opens - server_time) + (random.uniform(4.0, 8.0) if self.slow else random.uniform(0.8, 4.0)))
         try:
             self.s.post(self.url("/api/player/medley-answer"),
                         json={"player_id": self.pid, "qid": m["qid"], "answer": random.random() < 0.5}, timeout=10)
@@ -252,6 +262,7 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--teams", type=int, default=10)
     ap.add_argument("--skill", type=float, default=0.6, help="chance of answering a known question right")
+    ap.add_argument("--slow", type=int, default=0, help="how many of the teams are slow (the last ones)")
     ap.add_argument("--base", default="", help="show machine URL (default: follow triviacade.com/play)")
     ap.add_argument("--host", default="mark@192.168.1.26", help="ssh target for the answer key ('' = none)")
     ap.add_argument("--key", default=os.path.expanduser("~/.ssh/trivia_pi"))
@@ -288,7 +299,8 @@ def main():
 
     key = AnswerKey(a.host, a.key, a.dir, a.local_dir)
     stop = threading.Event()
-    bots = [Bot(i, NAMES[i % len(NAMES)], EMOJIS[i % len(EMOJIS)], lambda: base["url"], key, a.skill, stop)
+    bots = [Bot(i, NAMES[i % len(NAMES)], EMOJIS[i % len(EMOJIS)], lambda: base["url"], key, a.skill, stop,
+                slow=i >= a.teams - a.slow)
             for i in range(a.teams)]
     for b in bots:
         b.start()
