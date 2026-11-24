@@ -978,9 +978,11 @@ def update(now):
         with _lock:
             raw = run["chunks"].pop(k, None)
         if raw is not None and ch.get_queue() is None:
-            ch.queue(pygame.mixer.Sound(buffer=mono_mode.apply_raw(raw)))
+            snd = pygame.mixer.Sound(buffer=mono_mode.apply_raw(raw))
+            ch.queue(snd)
             run["queued"] = k
             run["queue_len"] = len(raw) / 4 / FS
+            run["queued_raw"], run["queued_snd"] = raw, snd   # kept: a lost queue can be replayed
     # a chunk boundary passed: the queued sound became the current one
     if run["queued"] > run["played"] and ch.get_queue() is None:
         run["played"] = run["queued"]
@@ -1026,6 +1028,8 @@ def update(now):
             with _lock:
                 raw = run["chunks"].pop(k, None)
                 have = sorted(run["chunks"])
+            if raw is None and k == run["queued"] and run.get("queued_raw"):
+                raw = run["queued_raw"]     # it was queued on the deck but the channel dropped it
             if raw is not None:
                 print(f"[MEDLEY] Deck ran dry after {run['played'] + 1}/{len(plan)} (queued {run['queued'] + 1}) "
                       f"-- playing {k + 1} now.")
