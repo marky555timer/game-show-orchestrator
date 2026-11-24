@@ -637,6 +637,8 @@ def _reveal_sweeper(now):
         return
     state.reveal_sweeper_at = 0.0
     from drivers import cliffhanger_engine, round_engine
+    if state.show_background or state.show_phase == "outro":
+        return              # the show is over and the lights are out: no sweeper in the dark
     if cliffhanger_engine.active() or round_engine.price_round_live():
         return              # no sweepers during Cliffhanger or a "Wait, how much?" round
     if now - at < 1.5:      # not for a moment we only just caught up to (a stalled frame)

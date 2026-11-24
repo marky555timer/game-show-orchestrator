@@ -619,6 +619,12 @@ def trigger_track_move(direction):
     crossfade; neither -> plain crossfade. update() re-checks state.sweepers_enabled
     when the move actually fires."""
     from drivers import round_engine
+    if _show_over():
+        # The show is over (2026-11-24): the outro / after-show dark background music. Every light
+        # is out, so no VO, sweeper, GET READY banner or marquee/board/DMX wipe -- they used to play
+        # in the dark at each song change.
+        _begin_seamless_move(direction, bypass=True)
+        return
     if round_engine.price_round_live():
         # "Wait, how much?" round (2026-11-22): the host skipping a song mid-round gets the same
         # seamless crossfade as a song ending -- no GET READY / VO / sweeper, no board, marquee or
@@ -632,6 +638,9 @@ def trigger_track_move(direction):
 def trigger_announced_track_move():
     """Sweeper + VO + duck/swell choreographed transition -- Auto-DJ's
     overlapping station-announcement handoff (drivers/auto_dj_engine.py)."""
+    if _show_over():
+        _begin_seamless_move("next", bypass=True)
+        return
     _begin_move("next", announced=True)
 
 
@@ -658,8 +667,15 @@ def _begin_seamless_move(direction, bypass=False):
 
 
 def trigger_plain_move():
-    """Plain crossfade with no sweeper/VO (after-show background music)."""
-    _begin_move("next", announced=False, sweeper_only=False, bypass=True)
+    """Plain crossfade with no sweeper/VO (after-show background music) -- and no song-change light
+    transition either: the lights are out."""
+    _begin_seamless_move("next", bypass=True)
+
+
+def _show_over():
+    """The show has ended: its outro, or the dark easy-listening music after it (until an encore or
+    the panel menu)."""
+    return bool(state.show_background) or state.show_phase == "outro"
 
 
 def update(now):
