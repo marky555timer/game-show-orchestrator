@@ -12,7 +12,7 @@ import config
 from state import state
 
 NAME_MAX = 20          # characters kept from what a phone sends
-LED_MAX = 12           # characters the panels get
+LED_MAX = 20           # characters the panels get (2026-11-24: 12 -> 20; long names scroll)
 DEFAULT_EMOJI = "\U0001F3B5"   # musical note
 _EMOJI_MAX_CODEPOINTS = 12     # a family / flag / skin-tone emoji is a few code points
 _BAD_CHARS = re.compile(r"[<>&\"'\\\x00-\x1f\x7f]")

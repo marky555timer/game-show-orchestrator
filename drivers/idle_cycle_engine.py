@@ -22,6 +22,29 @@ def _leaderboard_page_count():
     return math.ceil(len(state.quiz_players) / config.IDLE_LEADERBOARD_PAGE_SIZE)
 
 
+def _panel_name(p):
+    """The full team name for the panels (teams that joined before LED_MAX went up still have a
+    12-letter cut in "initials"); falls back to the stored initials."""
+    from drivers import player_profile
+    return player_profile.led_name(p.get("name") or "") or p.get("initials", "???")
+
+
+def _page_hold_seconds(page):
+    """2026-11-24 (operator): a leaderboard page stays up until its longest name has scrolled all
+    the way through once -- never less than IDLE_LEADERBOARD_PAGE_SECONDS."""
+    from graphics.text_render import scroll_pass_duration
+    hold = config.IDLE_LEADERBOARD_PAGE_SECONDS
+    ranked = ranked_players()
+    start = page * config.IDLE_LEADERBOARD_PAGE_SIZE
+    for i, p in enumerate(ranked[start:start + config.IDLE_LEADERBOARD_PAGE_SIZE]):
+        label = f"{start + i + 1}-{p['initials']}"
+        try:
+            hold = max(hold, scroll_pass_duration(label, config.PANEL_W) + 0.5)
+        except Exception:
+            pass
+    return hold
+
+
 def _goal_page_count():
     if not state.quiz_players:
         return 0
@@ -75,7 +98,7 @@ def update(now):
                 _enter_phase("dancing", now)
 
     elif phase == "leaderboard":
-        if elapsed >= config.IDLE_LEADERBOARD_PAGE_SECONDS:
+        if elapsed >= _page_hold_seconds(state.idle_cycle_leaderboard_page):
             page_count = _leaderboard_page_count()
             next_page = state.idle_cycle_leaderboard_page + 1
             if page_count == 0 or next_page >= page_count:
@@ -109,7 +132,7 @@ def ranked_players():
     as {"initials": str, "score": int}. Ties keep dict insertion order
     (Python dicts preserve insertion order, and sort() is stable)."""
     return sorted(
-        ({"initials": p.get("initials", "???"), "score": p.get("score", 0)}
+        ({"initials": _panel_name(p), "score": p.get("score", 0)}
          for p in state.quiz_players.values() if not p.get("idle")),
         key=lambda p: p["score"],
         reverse=True,
