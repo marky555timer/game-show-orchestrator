@@ -3146,3 +3146,4 @@ INTERMISSION_FIT_TOLERANCE_SECONDS = 5.0    # the last song may run this far pas
 INTERMISSION_FIT_MIN_PLAY_SECONDS = 75.0    # a song faded early still plays at least this long
 INTERMISSION_FIT_BIG_CUT_SECONDS = 60.0     # a fade-early bigger than this ...
 INTERMISSION_EARLY_END_STRETCH_SECONDS = 45.0   # ... ends the break early instead, if that's within this
+MEDLEY_DRY_WAIT_SECONDS = 8.0   # a medley deck that ran dry waits this long for its next clip (2026-11-23)

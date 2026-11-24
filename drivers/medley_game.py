@@ -209,9 +209,13 @@ def begin_hook(i, seg, length):
     with _lock:
         g = _game
         if g is None:
+            print(f"[MEDLEY GAME] Hook {i + 1}: no game running -- no question.")
             return
         _grade_current(reveal=True)
         if not enabled():
+            if g.get("active", True) or i == 0:
+                print(f"[MEDLEY GAME] Hook {i + 1}: game off (switch {state.medley_game_enabled}, "
+                      f"questions suppressed {state.questions_suppressed}) -- no question.")
             g["active"] = False
             return
         real = primary_artist(seg["artist"])

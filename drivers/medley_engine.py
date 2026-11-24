@@ -1018,6 +1018,31 @@ def update(now):
             _finish(run, "mixable tracks exhausted -- resuming normal play", handoff=True)
             return
     if run["started"] and not ch.get_busy() and not deck_orchestrator.has_pending_move():
+        # 2026-11-23 (self test): a Fastest Finger round once stopped after clip 5 of 10 -- the deck
+        # ran dry mid-medley. If clips are left, play the next one as soon as it is rendered (a short
+        # gap beats ending the round); give up only if it never comes.
+        k = run["played"] + 1
+        if k < len(plan) and not run["stop"]:
+            with _lock:
+                raw = run["chunks"].pop(k, None)
+                have = sorted(run["chunks"])
+            if raw is not None:
+                print(f"[MEDLEY] Deck ran dry after {run['played'] + 1}/{len(plan)} (queued {run['queued'] + 1}) "
+                      f"-- playing {k + 1} now.")
+                dj.play_deck(_deck_name(run["deck"]), pygame.mixer.Sound(buffer=mono_mode.apply_raw(raw)), volume=1.0)
+                run["queued"] = run["played"] = k
+                run["chunk_started_at"] = now
+                run["cur_len"] = len(raw) / 4 / FS
+                run.pop("dry_at", None)
+                _set_now_playing(run, k)
+                _maybe_sweeper(run)
+                return
+            if not run.get("dry_at"):
+                run["dry_at"] = now
+                print(f"[MEDLEY] Deck ran dry after {run['played'] + 1}/{len(plan)} (queued {run['queued'] + 1}, "
+                      f"rendered {have}, render error {run.get('error')!r}) -- waiting for clip {k + 1}.")
+            if now - run["dry_at"] < config.MEDLEY_DRY_WAIT_SECONDS:
+                return
         _finish(run, "playback ended", handoff=True)
 
 
