@@ -233,9 +233,34 @@
     <button class="btn" style="margin-top:10px; display:none" id="net-continue-btn" onclick="netContinue()">CONTINUE ANYWAY</button>
   </div>
 
-  <!-- Backup-Pi failover (2026-11-08): filled by /failover.js -->
-  <section id="failover-panel" style="display:none"></section>
-  <script src="/failover.js" defer></script>
+  <!-- Leaderboard (2026-11-24): the host's first information, every team. Took the backup-Pi failover
+       panel's place (it is still on the Setup page, where it's needed after a restart). -->
+  <section id="lb-panel">
+    <h2 style="display:flex;justify-content:space-between;align-items:baseline">Leaderboard <span id="lb-sub" style="font-size:.75rem;color:#888;font-weight:400"></span></h2>
+    <div id="lb-rows"><div style="color:#777">No teams yet.</div></div>
+  </section>
+  <script>
+  async function lbRefresh() {
+    let d;
+    try { d = await (await fetch('/api/teams', {cache: 'no-store'})).json(); } catch (e) { return; }
+    if (!d || !d.ok) return;
+    const el = document.getElementById('lb-rows');
+    const esc = (x) => String(x == null ? '' : x).replace(/[&<>"']/g, (c) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+    const t = d.teams || [];
+    document.getElementById('lb-sub').textContent = t.length ? `${t.length} team${t.length === 1 ? '' : 's'} · round / night` : '';
+    if (!t.length) { el.innerHTML = '<div style="color:#777">No teams yet.</div>'; return; }
+    el.innerHTML = '<table style="width:100%;border-collapse:collapse;font-size:.95rem">' + t.map((r, i) => {
+      const away = r.away_seconds != null && r.away_seconds >= 90;
+      const night = r.score + r.tonight;
+      return `<tr style="border-bottom:1px solid #2a2a2e;${away ? 'opacity:.45' : ''}">
+        <td style="padding:5px 4px;width:28px;color:${i === 0 ? '#ffd400' : '#888'};font-weight:700">${i + 1}</td>
+        <td style="padding:5px 4px">${esc(r.emoji)} ${esc(r.name)}${away ? ' <span style="font-size:.72rem;color:#999">away ' + Math.round(r.away_seconds / 60) + 'm</span>' : ''}</td>
+        <td style="padding:5px 4px;text-align:right;color:#aaa;font-variant-numeric:tabular-nums">${r.score}</td>
+        <td style="padding:5px 4px;text-align:right;font-weight:700;font-variant-numeric:tabular-nums;width:70px">${night}</td></tr>`;
+    }).join('') + '</table>';
+  }
+  lbRefresh(); setInterval(lbRefresh, 2000);
+  </script>
 
   <section>
     <h2>Now Playing</h2>
