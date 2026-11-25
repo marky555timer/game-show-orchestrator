@@ -2929,6 +2929,7 @@ MEDLEY_DROP_SWEEPER_BARS = 2      # sweeper + duck this many bars after the drop
 MEDLEY_DROP_DUCK_DB = -5.0        # live duck of the bed under the host
 MEDLEY_DROP_DUCK_RAMP_SECONDS = 0.6   # live deck-volume ramp, fired with the sweeper
 MEDLEY_DROP_FADE_SECONDS = 5.0    # bed fade-out at its end
+FF_BED_AUTO_END_SECONDS = 10.0    # Fastest Finger round: the bed/winner screen moves on by itself after this (0 = wait for a button)
 
 # Manual recovery button (drivers/recovery_button.py): a momentary switch
 # between GPIO4 (physical pin 7) and GND (pin 6 or 9), internal pull-up,

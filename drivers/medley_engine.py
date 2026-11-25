@@ -1016,6 +1016,7 @@ def update(now):
             medley_game.close_question()
         if not run.get("bed_hold") and into >= sweep_at:
             run["bed_hold"] = True
+            run["bed_hold_at"] = now
             state.medley_bed_hold = True
             _drop_sweeper()
             dj.ramp_volume(_deck_name(run["deck"]), 10 ** (config.MEDLEY_DROP_DUCK_DB / 20.0),
@@ -1023,7 +1024,12 @@ def update(now):
             medley_game.finish(show_results=True, hold=True)
             print("[MEDLEY] Vocal-drop bed: holding for a panel button.")
         if run.get("bed_hold"):
-            return  # no auto-handoff: the host ends the bed
+            # A Fastest Finger round (2026-11-25) doesn't wait for the host's button: after
+            # FF_BED_AUTO_END_SECONDS on the winner screen it moves on to the round's end by itself.
+            if (state.round_type == "fastest_finger" and config.FF_BED_AUTO_END_SECONDS > 0
+                    and now - run.get("bed_hold_at", now) >= config.FF_BED_AUTO_END_SECONDS):
+                end_bed(f"{config.FF_BED_AUTO_END_SECONDS:.0f} s timer")
+            return  # otherwise no auto-handoff: the host ends the bed
     # hand off to normal Auto-DJ shortly before the last chunk finishes
     if run["played"] == last and not run["handoff_sent"]:
         if now - run["chunk_started_at"] >= run["cur_len"] - config.MEDLEY_HANDOFF_LEAD_SECONDS:
