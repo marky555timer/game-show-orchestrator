@@ -88,17 +88,32 @@
     <h2>Show</h2>
     <select id="show-select" onchange="onShowSelect()" style="width:100%;padding:10px;background:#111;color:#f2f2f2;border:1px solid #333;border-radius:8px;font-size:1rem"></select>
     <div id="show-summary" style="color:#999;font-size:.8rem;margin-top:6px"></div>
+    <!-- Show length (2026-11-25): estimate stamped on every save (drivers/show_estimate.py) + self-test results -->
+    <div id="show-est" style="margin-top:10px"></div>
     <div style="font-size:.8rem;margin-top:8px"><a href="/designer" style="color:#6cb4ff">Open the Show Designer</a> to edit playlists, intro, questions and decades.</div>
-    <!-- Self test (2026-11-23): drivers/selftest_engine.py -->
-    <div class="row" style="margin-top:12px;gap:8px;flex-wrap:wrap">
+    <!-- Self test (2026-11-23): drivers/selftest_engine.py -- folded away (2026-11-25) -->
+    <details id="st-box" style="margin-top:12px;border:1px solid #2a2a2e;border-radius:8px;padding:6px 10px">
+    <summary style="cursor:pointer;color:#ccc;font-size:.9rem;font-weight:600">Duration testing <span id="st-badge" style="font-weight:400;color:#888;font-size:.78rem"></span></summary>
+    <div class="row" style="margin-top:10px;gap:8px;flex-wrap:wrap">
       <button class="btn" id="st-start" onclick="selfTestStart(this)">START SELF TEST</button>
       <button class="btn" id="st-stop" style="display:none" onclick="selfTestStop()">STOP SELF TEST</button>
-      <button class="btn" id="st-clear" onclick="selfTestClear()">CLEAR RESULTS</button>
+      <button class="btn" id="st-clear" onclick="selfTestClearAsk()">CLEAR RESULTS</button>
     </div>
     <div style="font-size:.78rem;color:#888;margin-top:6px">Closes any running show and plays the show above with no host and 10 bot teams, at 0% linger, then 20%, 40% ... 100%; then every untested show. Tap twice to start.</div>
     <div id="st-now" style="font-size:.85rem;margin-top:8px"></div>
     <div id="st-table" style="margin-top:8px;overflow-x:auto"></div>
+    </details>
   </section>
+  <div id="st-confirm" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:50;align-items:center;justify-content:center" onclick="if(event.target===this)selfTestClearCancel()">
+    <div role="dialog" aria-modal="true" style="background:#1c1c20;border:1px solid #444;border-radius:12px;padding:18px;max-width:340px;margin:16px">
+      <div style="font-weight:700;margin-bottom:6px">Clear all self-test results?</div>
+      <div style="color:#aaa;font-size:.85rem;margin-bottom:14px">Every show's tested times are deleted. This can't be undone; the estimates stay.</div>
+      <div class="row" style="gap:8px;justify-content:flex-end">
+        <button class="btn" id="st-confirm-cancel" onclick="selfTestClearCancel()">CANCEL</button>
+        <button class="btn primary" onclick="selfTestClear()">CLEAR</button>
+      </div>
+    </div>
+  </div>
 
   <section>
     <h2>Crowd-Matching Tags</h2>
@@ -369,16 +384,61 @@ function fillSettings(st) {
   document.querySelectorAll('.genre-cb').forEach((cb) => { cb.checked = (st.allowed_genres || []).includes(cb.value); });
   updateRoundsEstimate();
 }
+// ------------------------------------------
+// SHOW LENGTH (2026-11-25)
+// ------------------------------------------
+let _stResults = [], _lingerNow = 5;
+function _estAt(by, l) {               // by = {"0": min, "20": ...}; straight line between the steps
+  const ks = Object.keys(by || {}).map(Number).sort((a, b) => a - b);
+  if (!ks.length) return null;
+  if (l <= ks[0]) return by[ks[0]];
+  for (let i = 1; i < ks.length; i++) {
+    if (l <= ks[i]) { const a = ks[i - 1], b = ks[i]; return by[a] + (by[b] - by[a]) * (l - a) / (b - a); }
+  }
+  return by[ks[ks.length - 1]];
+}
+function _tested(name, l) {            // the latest 10-team self-test run of this show at this linger
+  const rs = _stResults.filter((r) => r.show === name && r.linger === l && r.status === 'done'
+    && (!r.crowd || /^10 teams$/.test(r.crowd)));
+  return rs.length ? rs[rs.length - 1].minutes : null;
+}
+function renderShowEst() {
+  const el = document.getElementById('show-est');
+  const name = document.getElementById('show-select').value;
+  const sh = _shows.find((x) => x.name === name);
+  const by = sh && sh.est && sh.est.by_linger;
+  if (!sh || !by) { el.innerHTML = ''; return; }
+  if (!(sh.items || []).some((i) => i.type === 'song')) {
+    el.innerHTML = '<div style="color:#888;font-size:.8rem">Show length: add songs and rounds in the Show Designer and save to get an estimate.</div>';
+    return;
+  }
+  const fmt = (m) => (m == null ? '<span style="color:#555">&ndash;</span>' : `${Math.round(m)} min`);
+  const clock = (m) => { const h = Math.floor(m / 60), mm = Math.round(m % 60); return h ? `${h} h ${mm} m` : `${mm} min`; };
+  const td = 'style="padding:5px 8px;border-top:1px solid #2a2a2e"', tn = 'style="padding:5px 8px;border-top:1px solid #2a2a2e;text-align:right;white-space:nowrap"';
+  const rows = [['Shortest (0% linger)', 0, true]];
+  if (_lingerNow > 0) rows.push([`Your linger now (${_lingerNow}%)`, _lingerNow, false]);
+  el.innerHTML = `<table style="width:100%;border-collapse:collapse;font-size:.85rem;background:#161619;border-radius:8px">` +
+    `<tr style="color:#888;font-size:.75rem"><th style="text-align:left;padding:5px 8px;font-weight:600">Show length</th>` +
+    `<th style="text-align:right;padding:5px 8px;font-weight:600">Estimate</th><th style="text-align:right;padding:5px 8px;font-weight:600">Self test</th></tr>` +
+    rows.map(([lab, l, bold]) => {
+      const e = _estAt(by, l), t = _tested(name, l);
+      return `<tr><td ${td}>${lab}</td><td ${tn}>${bold ? `<b style="color:#ffcc00;font-size:1rem">${clock(e)}</b>` : clock(e)}</td><td ${tn}>${fmt(t)}</td></tr>`;
+    }).join('') + '</table>' +
+    `<div style="color:#666;font-size:.72rem;margin-top:3px">Estimate worked out when the show was saved, from its songs and rounds (10 teams). ` +
+    `A small or slow crowd: about a quarter longer.</div>`;
+}
 function onShowSelect() {
   const name = document.getElementById('show-select').value;
   const sh = _shows.find((x) => x.name === name);
   document.getElementById('show-summary').textContent = showSummary(sh);
   if (sh) fillSettings(sh.settings);
+  renderShowEst();
 }
 async function loadShows(selected) {
   const d = await api('/api/shows');
   if (!d) return;
   _shows = d.shows || [];
+  if (d.linger_now != null) _lingerNow = d.linger_now;
   const sel = document.getElementById('show-select');
   sel.innerHTML = _shows.length
     ? _shows.map((x) => `<option value="${x.name}">${x.name}</option>`).join('')
@@ -521,7 +581,17 @@ function selfTestStart(btn) {
 function selfTestStop() {
   api('/api/selftest/stop', { method: 'POST' }).then(() => { showToast('Self test stopping.'); refreshSelfTest(); });
 }
+function selfTestClearAsk() {
+  const m = document.getElementById('st-confirm');
+  m.style.display = 'flex';
+  document.getElementById('st-confirm-cancel').focus();
+}
+function selfTestClearCancel() { document.getElementById('st-confirm').style.display = 'none'; }
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape' && document.getElementById('st-confirm').style.display !== 'none') selfTestClearCancel();
+});
 function selfTestClear() {
+  selfTestClearCancel();
   api('/api/selftest/clear', { method: 'POST' }).then((r) => {
     showToast(r && r.ok ? 'Results cleared.' : 'Stop the self test first.'); refreshSelfTest();
   });
@@ -529,6 +599,11 @@ function selfTestClear() {
 async function refreshSelfTest() {
   const d = await api('/api/selftest');
   if (!d) return;
+  _stResults = d.results || [];
+  renderShowEst();
+  document.getElementById('st-badge').innerHTML = d.active && d.current
+    ? `&middot; <b style="color:#ffcc00">TESTING</b> ${_esc(d.current.show)} ${d.current.linger}%`
+    : (_stResults.length ? `&middot; ${_stResults.length} run${_stResults.length === 1 ? '' : 's'}` : '');
   document.getElementById('st-stop').style.display = d.active ? '' : 'none';
   document.getElementById('st-clear').style.display = d.active ? 'none' : '';
   const now = document.getElementById('st-now');

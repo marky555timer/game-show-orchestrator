@@ -3574,7 +3574,8 @@ if app is not None:
     @app.get("/api/shows")
     def shows_list():
         last = show_library.last_played()
-        return {"ok": True, "shows": show_library.all_shows("created"),
+        return {"ok": True, "shows": show_library.with_estimates(show_library.all_shows("created")),
+                "linger_now": int(state.autoadv_linger_pct),
                 "selected": state.show_selected, "last_played": last["name"] if last else "",
                 "running": show_runner.running_name(), "decades": show_library.DECADES,
                 "wheel_decades": sorted(config.MUSIC_DECADES), "name_max": show_library.NAME_MAX,

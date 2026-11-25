@@ -305,6 +305,7 @@ def create(intro=None, questions=None, low=None, high=None, items=None):
             show["low"], show["high"] = show["high"], show["low"]
         if items is not None:
             show["items"] = _clean_items(items)
+        _stamp_est(show)
         _shows.append(show)
         _save()
         print(f"[SHOWS] New show '{show['name']}'.")
@@ -388,6 +389,7 @@ def update(name, fields):
                 if key in fields["settings"]:
                     st[key] = fields["settings"][key]
         _touch(s)
+        _stamp_est(s)
         _save()
         _sync_live_flags(s)
         return copy.deepcopy(s)
@@ -523,7 +525,7 @@ def merge(remote_shows, remote_deleted):
                 continue
             mine = by_id.get(rid)
             if mine is None:
-                new = _from_remote(r)
+                new = _stamp_est(_from_remote(r))
                 _shows.append(new)
                 by_id[rid] = new
                 changed += 1
@@ -536,6 +538,7 @@ def merge(remote_shows, remote_deleted):
                 mine.update(_from_remote(r))
                 if keep_rounds is not None:
                     mine["rounds"] = keep_rounds
+                _stamp_est(mine)
                 changed += 1
             if (mine.get("last_played") or "") != played:
                 mine["last_played"] = played
@@ -578,6 +581,20 @@ def _from_remote(r):
     if "rounds" in r:
         s["rounds"] = _clean_rounds(r.get("rounds"))
     return s
+
+
+def _stamp_est(show):
+    """Every save works out the show's length (drivers/show_estimate.py) -> show["est"]."""
+    from drivers import show_estimate
+    return show_estimate.stamp(show)
+
+
+def with_estimates(shows):
+    """Shows saved before the estimate existed get one worked out on the fly (not saved)."""
+    for s in shows:
+        if not (s.get("est") or {}).get("by_linger"):
+            _stamp_est(s)
+    return shows
 
 
 def preview_estimates():
