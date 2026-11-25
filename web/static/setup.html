@@ -95,7 +95,7 @@
       <button class="btn" id="st-stop" style="display:none" onclick="selfTestStop()">STOP SELF TEST</button>
       <button class="btn" id="st-clear" onclick="selfTestClear()">CLEAR RESULTS</button>
     </div>
-    <div style="font-size:.78rem;color:#888;margin-top:6px">Closes any running show and plays the show above with no host and 10 bot teams, at 0% linger, then 20%, 40% ... 100%; then every untested show the same way. Tap twice to start.</div>
+    <div style="font-size:.78rem;color:#888;margin-top:6px">Closes any running show and plays the show above with no host and 10 bot teams, at 0% linger, then 20%, 40% ... 100%; then every untested show. Tap twice to start.</div>
     <div id="st-now" style="font-size:.85rem;margin-top:8px"></div>
     <div id="st-table" style="margin-top:8px;overflow-x:auto"></div>
   </section>
@@ -540,20 +540,65 @@ async function refreshSelfTest() {
     now.innerHTML = d.results.length ? '' : '<span style="color:#666">No self-test runs yet.</span>';
   }
   if (!d.results.length) { document.getElementById('st-table').innerHTML = ''; return; }
-  const th = 'style="text-align:left;padding:4px 6px;color:#999;font-weight:600;border-bottom:1px solid #333"';
-  const td = 'style="padding:4px 6px;border-bottom:1px solid #222;vertical-align:top"';
-  let h = `<table style="width:100%;border-collapse:collapse;font-size:.8rem"><tr><th ${th}>Show</th><th ${th}>Linger</th><th ${th}>Minutes</th><th ${th}>Linger effect</th><th ${th}>Songs</th><th ${th}>Parts (min)</th><th ${th}>Result</th></tr>`;
-  d.results.slice().reverse().forEach((r) => {
-    const eff = r.vs0 == null ? (r.linger === 0 ? 'baseline' : '') : (r.linger === 0 ? 'baseline' : (r.vs0 >= 0 ? '+' : '') + r.vs0 + ' min');
-    const ok = r.status === 'done';
-    const parts = (r.parts || []).map((p) => `${_esc(p.label)} ${p.min}` + (p.songs ? ` <span style="color:#777">(${p.songs}&#9834;)</span>` : '')).join(' &middot; ');
-    const notes = (r.notes || []).length ? `<div style="color:#ff9f43">${r.notes.map(_esc).join('<br>')}</div>` : '';
-    h += `<tr><td ${td}>${_esc(r.show)}<div style="color:#666">${_esc(r.finished)}</div></td><td ${td}>${r.linger}%<div style="color:#666">${_esc(r.crowd || '')}</div></td>` +
-      `<td ${td}><b>${r.minutes}</b></td><td ${td}>${eff}</td><td ${td}>${r.songs}</td>` +
-      `<td ${td} style="color:#aaa">${parts}${notes}</td>` +
-      `<td ${td} style="color:${ok ? '#4caf50' : '#ff3b30'}">${_esc(r.status)}<div style="color:#888">${_esc(r.winner)}</div></td></tr>`;
+  // Compact layout (2026-11-25): one card per show + crowd; one short line per linger level, and a
+  // round-by-round grid (rounds down, linger levels across) folded away until tapped. Intermissions
+  // are one "Breaks" row, intro + outro one row -- the old one-row-per-run table scrolled for pages.
+  const groups = [];
+  d.results.forEach((r) => {
+    const key = r.show + '|' + (r.crowd || '');
+    let g = groups.find((x) => x.key === key);
+    if (!g) groups.push(g = { key, show: r.show, crowd: r.crowd || '', runs: [], last: '' });
+    g.runs.push(r);
+    if ((r.finished || '') > g.last) g.last = r.finished || '';
   });
-  document.getElementById('st-table').innerHTML = h + '</table>';
+  groups.sort((x, y) => (y.last > x.last ? 1 : -1));
+  const was = {};
+  document.querySelectorAll('#st-table details[data-k]').forEach((el) => { was[el.dataset.k] = el.open; });
+  const cell = 'padding:3px 6px;text-align:right;white-space:nowrap';
+  let h = '';
+  groups.forEach((g, gi) => {
+    const runs = g.runs.slice().sort((x, y) => x.linger - y.linger);
+    const lines = runs.map((r) => {
+      const ok = r.status === 'done';
+      const eff = r.linger === 0 ? '' : (r.vs0 == null ? '' : ` <span style="color:#888">(${r.vs0 >= 0 ? '+' : ''}${r.vs0})</span>`);
+      return `<div style="display:flex;gap:8px;align-items:baseline;padding:2px 0">` +
+        `<span style="width:3.2em;color:#aaa">${r.linger}%</span>` +
+        `<b style="width:5.5em">${r.minutes} min</b>` +
+        `<span style="flex:1;color:#ccc">${eff ? eff.replace(/^ /, '') : (r.linger === 0 ? '<span style="color:#666">baseline</span>' : '')}` +
+        ` <span style="color:#666">&middot; ${r.songs}&#9834;</span></span>` +
+        `<span style="color:${ok ? '#4caf50' : '#ff3b30'};font-size:.75rem">${ok ? '&#10003;' : _esc(r.status)}</span></div>`;
+    }).join('');
+    // the grid: rows = rounds (+ breaks, + intro/outro), columns = linger levels
+    const rows = [], val = {};
+    const put = (row, li, min, songs) => {
+      if (!rows.includes(row)) rows.push(row);
+      const k = row + '|' + li; val[k] = val[k] || { min: 0, songs: 0 };
+      val[k].min += Number(min) || 0; val[k].songs += songs || 0;
+    };
+    runs.forEach((r, li) => (r.parts || []).forEach((p) => {
+      const lab = /^Intermission/.test(p.label) ? 'Breaks' : /^(Intro|Outro)/.test(p.label) ? 'Intro + outro' : p.label;
+      put(lab, li, p.min, p.songs);
+    }));
+    const order = (x) => (x === 'Breaks' ? 1e3 : x === 'Intro + outro' ? 1e3 + 1 : rows.indexOf(x));
+    rows.sort((x, y) => order(x) - order(y));
+    const grid = `<table style="border-collapse:collapse;font-size:.75rem;margin-top:4px"><tr><th style="text-align:left;padding:3px 6px;color:#888;font-weight:600">min (songs)</th>` +
+      runs.map((r) => `<th style="${cell};color:#888;font-weight:600">${r.linger}%</th>`).join('') + '</tr>' +
+      rows.map((row) => `<tr style="border-top:1px solid #222"><td style="padding:3px 6px;color:#bbb;white-space:nowrap">${_esc(row.replace(/ Wait How Much/i, ' Wait, how much?'))}</td>` +
+        runs.map((r, li) => {
+          const v = val[row + '|' + li];
+          return `<td style="${cell}">${v ? v.min.toFixed(1) + (v.songs ? `<span style="color:#666"> ${v.songs}</span>` : '') : '<span style="color:#444">-</span>'}</td>`;
+        }).join('') + '</tr>').join('') + '</table>';
+    const notes = runs.filter((r) => (r.notes || []).length).map((r) =>
+      `<div><span style="color:#aaa">${r.linger}%:</span> ${r.notes.map(_esc).join('; ')}</div>`).join('');
+    const open = g.key in was ? was[g.key] : false;
+    h += `<div style="border:1px solid #2a2a2e;border-radius:8px;padding:6px 10px;margin-bottom:8px;font-size:.82rem">` +
+      `<div style="display:flex;justify-content:space-between;gap:8px"><b>${_esc(g.show)}</b><span style="color:#777;font-size:.75rem">${_esc(g.crowd)} &middot; ${_esc((g.last || '').slice(5, 16))}</span></div>` +
+      lines +
+      `<details data-k="${_esc(g.key)}" ${open ? 'open' : ''}><summary style="color:#6cb4ff;font-size:.75rem;cursor:pointer;margin-top:2px">Round by round</summary>` +
+      `<div style="overflow-x:auto">${grid}</div>` +
+      (notes ? `<div style="color:#ff9f43;font-size:.72rem;margin-top:4px">${notes}</div>` : '') + `</details></div>`;
+  });
+  document.getElementById('st-table').innerHTML = h;
 }
 refreshSelfTest();
 setInterval(refreshSelfTest, 5000);
