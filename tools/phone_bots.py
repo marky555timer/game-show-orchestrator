@@ -142,6 +142,7 @@ class Bot(threading.Thread):
         # --slow (2026-11-24): a team that reads slowly and knows less -- answers late in the window
         # (sometimes not at all) and taps Fastest Finger late
         self.slow = slow
+        self.stagger = True
         if slow:
             self.skill = max(0.0, skill - 0.25)
         self.s = requests.Session()
@@ -164,7 +165,7 @@ class Bot(threading.Thread):
             log(f"[{self.name_}] joined as {d.get('name')!r}.")
 
     def run(self):
-        time.sleep(random.uniform(0, 8))          # people don't all scan the QR in the same second
+        time.sleep(random.uniform(0, 8) if self.stagger else 0.3)   # people don't all scan the QR in the same second
         while not self.stop.is_set() and self.pid is None:
             try:
                 self.join()
@@ -268,6 +269,7 @@ def main():
     ap.add_argument("--key", default=os.path.expanduser("~/.ssh/trivia_pi"))
     ap.add_argument("--dir", default="game-show-orchestrator")
     ap.add_argument("--local-dir", default="", help="read the answer key from this folder (on the show machine)")
+    ap.add_argument("--offset", type=int, default=0, help="start at this name in the list (remote ADD BOT)")
     a = ap.parse_args()
 
     base = {"url": a.base.rstrip("/")}
@@ -299,9 +301,11 @@ def main():
 
     key = AnswerKey(a.host, a.key, a.dir, a.local_dir)
     stop = threading.Event()
-    bots = [Bot(i, NAMES[i % len(NAMES)], EMOJIS[i % len(EMOJIS)], lambda: base["url"], key, a.skill, stop,
-                slow=i >= a.teams - a.slow)
+    bots = [Bot(i, NAMES[(i + a.offset) % len(NAMES)], EMOJIS[(i + a.offset) % len(EMOJIS)], lambda: base["url"],
+                key, a.skill, stop, slow=i >= a.teams - a.slow)
             for i in range(a.teams)]
+    if a.teams == 1:
+        bots[0].stagger = False     # one bot added from the remote: join right away
     for b in bots:
         b.start()
     import signal

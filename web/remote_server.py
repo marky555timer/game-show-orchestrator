@@ -486,7 +486,7 @@ if app is not None:
         return Response(content=buf.getvalue(), media_type="image/png")
 
     @app.post("/api/player/join")
-    def player_join(body: PlayerJoin):
+    def player_join(body: PlayerJoin, request: Request):
         name, initials = player_profile.make_names(body.name if body.name is not None else body.initials)
         # The ring colour is handed out round-robin; the emoji is the player's own pick.
         avatar_color = (body.avatar_color if body.avatar_color in state.AVATAR_COLORS
@@ -498,6 +498,7 @@ if app is not None:
             "selected_index": -1, "locked": False, "score": 0,
             "avatar_color": avatar_color, "streak": 0, "best_streak": 0,
             "correct": 0, "asked": 0, "last_points": 0, "last_seen": time.time(),
+            "bot": "phone-bot" in (request.headers.get("user-agent") or ""),   # tools/phone_bots.py
         }
         print(f"[MULTIPLAYER QUIZ] '{name}' {emoji} joined ({len(state.quiz_players)} teams signed up).")
         return {"ok": True, "player_id": player_id, "name": name, "initials": initials,
@@ -654,7 +655,7 @@ if app is not None:
                          "emoji": p.get("emoji") or player_profile.DEFAULT_EMOJI,
                          "score": int(p.get("score", 0) or 0),
                          "tonight": int(state.show_cumulative_scores.get(pid, 0) or 0),
-                         "away_seconds": (round(now - ls) if ls else None)})
+                         "away_seconds": (round(now - ls) if ls else None), "bot": bool(p.get("bot"))})
         rows.sort(key=lambda r: -(r["score"] + r["tonight"]))
         return {"ok": True, "teams": rows}
 
@@ -681,6 +682,16 @@ if app is not None:
 
     class TeamRemove(BaseModel):
         player_id: str
+
+    @app.post("/api/bots/add")
+    def bots_add():
+        from drivers import bot_engine
+        return bot_engine.add()
+
+    @app.post("/api/bots/remove-all")
+    def bots_remove_all():
+        from drivers import bot_engine
+        return bot_engine.remove_all()
 
     @app.post("/api/teams/remove")
     def teams_remove(body: TeamRemove):
