@@ -412,6 +412,29 @@ if app is not None:
         # from the File Manager's Medley column.
         return FileResponse(_MEDLEY_EDIT_HTML_PATH)
 
+    @app.get("/listen.js")
+    def listen_js():
+        return FileResponse(os.path.join(_STATIC_DIR, "listen.js"), media_type="text/javascript")
+
+    @app.get("/api/remote/question")
+    def remote_question():
+        """The remote's leaderboard header (2026-11-25): the question being asked, how many teams have
+        locked in, and -- once the last team has answered (or the round is graded) -- the right answer."""
+        now = time.time()
+        just_graded = state.quiz_locked and (now - state.quiz_graded_at) < config.QUIZ_TF_CORRECTION_HOLD_SECONDS
+        active = bool(state.factoid_choices) and (not state.quiz_locked or just_graded)
+        if not active:
+            return {"ok": True, "active": False}
+        teams = [p for p in state.quiz_players.values() if not p.get("idle") or p.get("locked")]
+        locked = sum(1 for p in teams if p.get("locked"))
+        reveal = bool(state.quiz_locked or (teams and locked == len(teams)))
+        q, ch = _phone_active_text()
+        ci = state.factoid_correct_index
+        return {"ok": True, "active": True, "round_id": state.quiz_round_id, "question": q, "choices": ch,
+                "locked": locked, "teams": len(teams), "reveal": reveal,
+                "answer": (ch[ci] if reveal and 0 <= ci < len(ch) else ""),
+                "correction": _reveal_correction() if reveal else ""}
+
     @app.get("/failover.js")
     def failover_js():
         return FileResponse(os.path.join(_STATIC_DIR, "failover.js"), media_type="text/javascript")

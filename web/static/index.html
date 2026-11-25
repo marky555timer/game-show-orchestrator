@@ -237,6 +237,7 @@
        panel's place (it is still on the Setup page, where it's needed after a restart). -->
   <section id="lb-panel">
     <h2 style="display:flex;justify-content:space-between;align-items:baseline">Leaderboard <span id="lb-sub" style="font-size:.75rem;color:#888;font-weight:400"></span></h2>
+    <div id="lb-q" style="display:none;margin:-2px 0 8px;padding:8px 10px;border-radius:8px;background:#1d2533;border-left:4px solid #4a90e2"></div>
     <div id="lb-prog" style="display:none;margin:-2px 0 8px;padding:6px 10px;border-radius:8px;background:#202024;font-size:.85rem;color:#ccc;line-height:1.45"></div>
     <div id="lb-rows"><div style="color:#777">No teams yet.</div></div>
     <!-- Bots (2026-11-25): drivers/bot_engine.py -->
@@ -262,6 +263,32 @@
     } catch (e) { showToast("Couldn't remove the bots."); }
     btn.disabled = false; lbRefresh();
   }
+  // The question being asked (2026-11-25), and its answer once the last team is in. The last one stays
+  // up (dimmed) until the next question starts.
+  let _lbQ = null;
+  async function lbQuestion() {
+    let d;
+    try { d = await (await fetch('/api/remote/question', {cache: 'no-store'})).json(); } catch (e) { return; }
+    if (!d || !d.ok) return;
+    const el = document.getElementById('lb-q');
+    const esc = (x) => String(x == null ? '' : x).replace(/[&<>"']/g, (c) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+    if (d.active) {
+      if (!_lbQ || _lbQ.round_id !== d.round_id) _lbQ = {};
+      const keep = d.answer ? {} : {answer: _lbQ.answer || '', correction: _lbQ.correction || ''};   // once shown, it stays
+      _lbQ = Object.assign(_lbQ, d, keep);
+    }
+    if (!_lbQ) { el.style.display = 'none'; return; }
+    const q = _lbQ, live = d.active;
+    el.style.display = '';
+    el.style.opacity = live ? '1' : '.55';
+    el.innerHTML = `<div style="font-size:.7rem;color:#8fb3e8;text-transform:uppercase;letter-spacing:.06em;display:flex;justify-content:space-between">` +
+        `<span>${live ? 'Question now' : 'Last question'}</span>${live ? `<span>${q.locked}/${q.teams} answered</span>` : ''}</div>` +
+      `<div style="font-size:1rem;font-weight:600;margin:3px 0">${esc(q.question)}</div>` +
+      `<div style="font-size:.8rem;color:#aaa">${(q.choices || []).map(esc).join(' &middot; ')}</div>` +
+      (q.answer ? `<div style="margin-top:5px;font-size:.95rem;color:#4cd964;font-weight:700">&#10003; ${esc(q.answer)}</div>` +
+        (q.correction ? `<div style="font-size:.8rem;color:#bbb">${esc(q.correction)}</div>` : '') : '');
+  }
+  lbQuestion(); setInterval(lbQuestion, 1500);
   async function lbRefresh() {
     let d;
     try { d = await (await fetch('/api/teams', {cache: 'no-store'})).json(); } catch (e) { return; }
@@ -886,15 +913,8 @@
       </details>
     </section>
 
-    <!-- Listen here (2026-11-25): the show's sound in this browser tab (/api/audio/stream, the same
-         stream as the phones' "Listen to the show"). A few seconds behind the room. -->
-    <section>
-      <label style="display:flex;align-items:center;gap:12px;font-size:1rem;cursor:pointer">
-        <input type="checkbox" id="tab-listen" style="width:26px;height:26px;accent-color:#ffd400">
-        <span>Stream the show's audio in this tab <span id="tab-listen-msg" style="color:#888;font-size:.8rem"></span></span>
-      </label>
-      <audio id="tab-listen-audio" preload="none"></audio>
-    </section>
+    <!-- Listen here (2026-11-25): web/static/listen.js (shared with Setup + Countdown) -->
+    <section><div id="listen-slot"></div></section>
 
   </div>
 
@@ -939,24 +959,7 @@
   </div>
 
   <div class="toast" id="toast"></div>
-<script>
-(function () {
-  const box = document.getElementById('tab-listen'), au = document.getElementById('tab-listen-audio');
-  const msg = (t) => { document.getElementById('tab-listen-msg').textContent = t; };
-  const stop = () => { au.pause(); au.removeAttribute('src'); au.load(); };
-  box.addEventListener('change', () => {
-    if (!box.checked) { stop(); msg(''); return; }
-    msg('connecting...');
-    au.src = '/api/audio/stream?t=' + Date.now();
-    au.play().then(() => msg('playing (a few seconds behind the room)'))
-      .catch(() => { box.checked = false; stop(); msg("couldn't start the stream"); });
-  });
-  au.addEventListener('error', () => {
-    if (!box.checked) return;
-    box.checked = false; stop(); msg('stream stopped (not available on this machine?)');
-  });
-})();
-</script>
+<script src="/listen.js"></script>
 
 <script>
 const AVATAR_COLOR_VARS = { red: '#ff3b30', amber: '#f5a623', cyan: '#3ec9e0', green: '#3ba55c', violet: '#b06bff' };
