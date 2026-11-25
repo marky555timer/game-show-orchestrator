@@ -886,6 +886,16 @@
       </details>
     </section>
 
+    <!-- Listen here (2026-11-25): the show's sound in this browser tab (/api/audio/stream, the same
+         stream as the phones' "Listen to the show"). A few seconds behind the room. -->
+    <section>
+      <label style="display:flex;align-items:center;gap:12px;font-size:1rem;cursor:pointer">
+        <input type="checkbox" id="tab-listen" style="width:26px;height:26px;accent-color:#ffd400">
+        <span>Stream the show's audio in this tab <span id="tab-listen-msg" style="color:#888;font-size:.8rem"></span></span>
+      </label>
+      <audio id="tab-listen-audio" preload="none"></audio>
+    </section>
+
   </div>
 
   <div class="modal-backdrop" id="stop-modal">
@@ -929,6 +939,24 @@
   </div>
 
   <div class="toast" id="toast"></div>
+<script>
+(function () {
+  const box = document.getElementById('tab-listen'), au = document.getElementById('tab-listen-audio');
+  const msg = (t) => { document.getElementById('tab-listen-msg').textContent = t; };
+  const stop = () => { au.pause(); au.removeAttribute('src'); au.load(); };
+  box.addEventListener('change', () => {
+    if (!box.checked) { stop(); msg(''); return; }
+    msg('connecting...');
+    au.src = '/api/audio/stream?t=' + Date.now();
+    au.play().then(() => msg('playing (a few seconds behind the room)'))
+      .catch(() => { box.checked = false; stop(); msg("couldn't start the stream"); });
+  });
+  au.addEventListener('error', () => {
+    if (!box.checked) return;
+    box.checked = false; stop(); msg('stream stopped (not available on this machine?)');
+  });
+})();
+</script>
 
 <script>
 const AVATAR_COLOR_VARS = { red: '#ff3b30', amber: '#f5a623', cyan: '#3ec9e0', green: '#3ba55c', violet: '#b06bff' };
