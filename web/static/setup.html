@@ -82,7 +82,6 @@
   <h1>Show Setup</h1>
   <section>
     <button class="btn primary big" onclick="startGameNow()">START GAME</button>
-    <button class="btn big" style="margin-top:10px" id="start-scheduled-btn" onclick="startGameScheduled()">START GAME AT --:--</button>
   </section>
 
   <section>
@@ -157,6 +156,9 @@
     <div style="font-size:.78rem;color:#888;margin-top:6px">Tap twice to confirm. A running show can be picked back up with RESUME LAST SHOW after a restart. Shut down / power off needs someone at the machine to start it again.</div>
   </section>
 
+  <section>
+    <button class="btn big" id="start-scheduled-btn" onclick="startGameScheduled()">START GAME AT --:--</button>
+  </section>
   <!-- Backup-Pi failover (2026-11-08): filled by /failover.js -->
   <section id="failover-panel" style="display:none"></section>
   <script src="/failover.js" defer></script>
