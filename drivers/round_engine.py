@@ -73,7 +73,18 @@ def holds_song():
     much?" round no longer holds it (2026-11-20): the playlist plays on under the questions, songs
     change only when they end, with a plain crossfade (no sweeper / announcement / wheel spin)."""
     from drivers import solo_challenge
+    if whm_waiting():
+        return True   # "Wait, how much?" before its first question: no song loads (see below)
     return solo_challenge.holds_song()
+
+
+def whm_waiting():
+    """2026-11-26 (operator): a "Wait, how much?" round opens on its intro over silence, and no new song
+    loads until the intro has played and the first question is being asked (a song used to load first
+    and start its "Who is this?" before the intro cut in). True from the round's start until then."""
+    return (state.round_type == "wait_how_much" and state.show_phase in ("intro", "live")
+            and not state.intermission_active and not state.win_sequence_active
+            and _sp.get("asked_tc", None) is None)
 
 
 def price_round_live():
@@ -366,24 +377,25 @@ def _update_price_round(now):
     if state.ff_intro_started_at:
         # The round's intro (waitHowMuch.wav + words): hold until red / NEXT TRACK / the hold time.
         # The playlist comes back up as the jingle ends -- no silence while the board holds.
-        from audio.audio_engine import is_game_music_playing
+        # 2026-11-26: the music no longer comes back as the jingle ends -- silence until the first
+        # question, when the round's first song loads.
         el = now - state.ff_intro_started_at
-        if not _sp.get("music_back") and (el >= config.WHM_INTRO_MUSIC_BACK_AT
-                                          or (el > 1.0 and not is_game_music_playing())):
-            _sp["music_back"] = True
-            _restore_song_under_intro()
         last = max(w[0] for w in config.WHM_INTRO_WORDS)
         if not (_sp["intro_skip"] or el >= last + config.FF_INTRO_HOLD_SECONDS):
             return
         _end_ff_intro()
         _sp["intro_done"] = True
     if _sp["asked_tc"] is None and not _sp.get("intro_done"):
-        # Before the round's first question: let the song be heard (and its announcement end), then
-        # the intro.
-        started = state.now_playing_started_at or 0
-        if not started or now < max(state.mystery_defer_until, started + config.ROUND_PRICE_SETTLE_SECONDS):
+        # Round start: straight into the intro (2026-11-26) -- no song is let in first.
+        if now < _sp["began_at"] + config.WHM_INTRO_DELAY_SECONDS or state.mystery_active:
             return
         _begin_ff_intro(now, "whm")
+        return
+    if _sp["asked_tc"] is None and not _sp.get("song_in"):
+        # Intro done: NOW the round's first song comes in (from silence), and the first question
+        # follows as soon as that crossfade has finished.
+        _sp["song_in"] = True
+        _restore_song_under_intro()
         return
     first = _sp["asked_tc"] is None
     _sp["asked_tc"] = state.transition_count
@@ -437,12 +449,16 @@ def _restore_song_under_intro():
     from drivers import deck_orchestrator, midi_driver
     midi_driver.tween_channel_faders_to(state.music_volume, config.WHM_INTRO_MUSIC_BACK_SECONDS)
     path = _sp.pop("whm_song", None)
-    if path and path != state.now_playing_path and not deck_orchestrator.has_pending_move():
-        deck_orchestrator.set_cued_track(path)
+    if not deck_orchestrator.has_pending_move():
+        # 2026-11-26: always a NEW song (the round's decade pick, else the playlist's next), after the
+        # intro -- the song that was faded for the jingle never comes back.
+        if path and path != state.now_playing_path:
+            deck_orchestrator.set_cued_track(path)
         deck_orchestrator.trigger_quiet_move()     # seamless: no banner / wipe over the intro board
         from drivers import auto_dj_engine
         auto_dj_engine.notify_manual_track_move()
-        print(f"[ROUND] {state.round_name}: jingle ending -- a new {state.round_decade} song comes in.")
+        print(f"[ROUND] {state.round_name}: intro done -- the round's first song comes in"
+              f"{' (' + state.round_decade + ')' if path else ''}, then the first question.")
         return
     try:
         deck_orchestrator.dj_engine.ramp_volume("deck1" if state.active_deck == 1 else "deck2", 1.0,
@@ -458,7 +474,7 @@ def _end_ff_intro():
     state.ff_intro_started_at = 0.0
     fade_out_game_music(600)
     midi_driver.tween_channel_faders_to(state.music_volume, 1.0)
-    if state.ff_intro_kind == "whm":
+    if state.ff_intro_kind == "whm" and not whm_waiting():
         try:    # the song was faded for the jingle; bring it back (the medley replaces it in Fastest Finger)
             deck_orchestrator.dj_engine.ramp_volume("deck1" if state.active_deck == 1 else "deck2", 1.0, 1.0)
         except Exception as e:

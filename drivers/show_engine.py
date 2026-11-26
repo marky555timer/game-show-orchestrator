@@ -374,6 +374,18 @@ def _start_song(now):
     """The show's next song comes in (dovetailed under the stab's tail)."""
     global _seq
     seq, _seq = _seq, None
+    from drivers import round_engine
+    if round_engine.whm_waiting():
+        # 2026-11-26: the show opens on (or resumes at) a "Wait, how much?" round -- no song now; the
+        # round's intro plays over silence and its first song comes in with the first question.
+        if state.show_phase == "intro":
+            state.show_phase = "live"
+            state.show_phase_started_at = now
+            print("[SHOW] Intro finished -- live show begins (Wait, how much? round: no song until its first question).")
+        show_bed.stop_wheel_theme()
+        state.show_spin_active = False
+        state.show_wheel_started_at = 0.0
+        return
     if seq and seq.get("path"):
         deck_orchestrator.set_cued_track(seq["path"])
     if state.show_phase == "intro":

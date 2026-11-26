@@ -1906,7 +1906,8 @@ WHM_INTRO_DECADE_AT = 2.4
 WHM_INTRO_DECADE_PANEL = 5
 # The playlist song comes back up this far into waitHowMuch.wav (8.9 s long), crossfading over its
 # last second, so there's no silence while the board holds for the first question (2026-11-21).
-WHM_INTRO_MUSIC_BACK_AT = 7.9
+WHM_INTRO_MUSIC_BACK_AT = 7.9   # (unused since 2026-11-26: the round's first song now waits for its first question)
+WHM_INTRO_DELAY_SECONDS = 1.0   # "Wait, how much?" round start -> its intro (no song in between)
 WHM_INTRO_MUSIC_BACK_SECONDS = 1.0
 ROUND_END_BEFORE_SONG_END_SECONDS = 25
 # Solo challenges (drivers/solo_challenge.py): all or nothing on the team's night score (floored at 0).
