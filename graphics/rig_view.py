@@ -63,6 +63,44 @@ _buttons = []      # (color name, (x, y))
 _btn_r = 0
 _label_pos = (0, 0)
 _font = None
+_ip_font = None
+
+# The Lenovo's own address where "OUTLINE: off" used to be (2026-11-26, operator): readable from across
+# the room, so the host can always reach it (ssh / the admin page) without a keyboard. Looked up on a
+# background thread every IP_REFRESH_SECONDS -- never on the draw path.
+IP_REFRESH_SECONDS = 10.0
+_ip_text = {"v": "IP: looking..."}
+
+
+def _ip_lookup():
+    out = subprocess.run(["ip", "-4", "-o", "addr", "show", "scope", "global"],
+                         capture_output=True, text=True, timeout=5).stdout
+    parts = []
+    for line in out.splitlines():
+        f = line.split()
+        if len(f) < 4 or "inet" not in f:
+            continue
+        dev, addr = f[1], f[f.index("inet") + 1].split("/")[0]
+        if addr.startswith("192.168.42."):
+            kind = "setup hotspot"
+        elif dev.startswith("wl"):
+            kind = "Wi-Fi"
+        elif dev.startswith(("en", "eth")):
+            kind = "cable"
+        else:
+            continue
+        parts.append(f"{addr} ({kind})")
+    return "IP: " + ("   ".join(parts) if parts else "no network")
+
+
+def _ip_worker():
+    while True:
+        try:
+            _ip_text["v"] = _ip_lookup()
+        except Exception as ex:
+            _ip_text["v"] = "IP: unknown"
+            print(f"[RIG VIEW] IP lookup failed: {ex}")
+        time.sleep(IP_REFRESH_SECONDS)
 
 _prev_view_label = "off"
 _prev_lit = None
@@ -220,7 +258,11 @@ def _init(screen):
 
     pygame.font.init()
     _font = pygame.font.Font(None, label_h + 4)
-    _label_pos = (rx0, H - label_h - 4)
+    global _ip_font
+    _ip_font = pygame.font.Font(None, label_h + 14)
+    _label_pos = (rx0, H - _ip_font.get_height() - 2)   # bottom left, level with the JOIN strip
+    import threading
+    threading.Thread(target=_ip_worker, name="rig-view-ip", daemon=True).start()
     # Join strip (2026-11-17, from a competitor's always-visible join code):
     # the stable redirector address, bottom right of the board, drawn once.
     global _join, _join_pos
@@ -634,10 +676,10 @@ def draw(screen, lit, px, view, leds):
         _prev_view_label = view["label"]
         if view["kind"] not in ("off", "solid"):
             _prev_view_label += "  (shown as a steady colour)"
-    label = "OUTLINE: " + _prev_view_label
+    label = _ip_text["v"]          # was "OUTLINE: " + _prev_view_label (2026-11-26)
     if label != _prev_label:
         _prev_label = label
-        text = _font.render(label, True, (90, 90, 96), _BG)
+        text = _ip_font.render(label, True, (235, 205, 80), _BG)
         clear = pygame.Rect(_label_pos[0], _label_pos[1], screen.get_width() // 2, text.get_height())
         screen.fill(_BG, clear)
         screen.blit(text, _label_pos)
