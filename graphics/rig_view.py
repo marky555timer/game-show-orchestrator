@@ -69,6 +69,7 @@ _ip_font = None
 # the room, so the host can always reach it (ssh / the admin page) without a keyboard. Looked up on a
 # background thread every IP_REFRESH_SECONDS -- never on the draw path.
 IP_REFRESH_SECONDS = 10.0
+FOOT_MARGIN_FRACTION = 0.05     # bottom margin kept clear for TV overscan
 _ip_text = {"v": "IP: looking..."}
 
 
@@ -144,6 +145,10 @@ def _init(screen):
     miny, maxy = min(p[1] for p in allp), max(p[1] for p in allp)
     pad = 85.0                      # photo units from the outermost bulbs to the outline strip
     label_h = max(18, H // 40)
+    # TVs crop the picture's edges (overscan, 2026-11-26: the bottom line was cut in half), so the
+    # IP / JOIN line sits FOOT_MARGIN_FRACTION of the height up from the bottom, with the board above it.
+    margin = int(H * FOOT_MARGIN_FRACTION)
+    foot = label_h + 14 + margin
     btn_col = int(W * 0.13)
     _btn_r = max(10, int(min(btn_col * 0.30, H * 0.075)))
     # Layout (2026-11-13): the board is centred on the screen; the name sign
@@ -153,10 +158,10 @@ def _init(screen):
     side = int(btn_col)                                  # space kept clear on each side while sizing the board
     left, right = side, W - side
 
-    k = min((H - label_h - 12) / (maxy - miny + 2 * pad), (right - left - 12) / (maxx - minx + 2 * pad))
+    k = min((H - foot - 12) / (maxy - miny + 2 * pad), (right - left - 12) / (maxx - minx + 2 * pad))
     board_w, board_h = (maxx - minx + 2 * pad) * k, (maxy - miny + 2 * pad) * k
     ox = left + (right - left - board_w) / 2 + pad * k
-    oy = (H - label_h - board_h) / 2 + pad * k
+    oy = (H - foot - board_h) / 2 + pad * k
 
     def to_screen(p):
         return (int(round(ox + (p[0] - minx) * k)), int(round(oy + (p[1] - miny) * k)))
@@ -260,7 +265,7 @@ def _init(screen):
     _font = pygame.font.Font(None, label_h + 4)
     global _ip_font
     _ip_font = pygame.font.Font(None, label_h + 14)
-    _label_pos = (rx0, H - _ip_font.get_height() - 2)   # bottom left, level with the JOIN strip
+    _label_pos = (rx0, H - margin - _ip_font.get_height())   # bottom left, level with the JOIN strip
     import threading
     threading.Thread(target=_ip_worker, name="rig-view-ip", daemon=True).start()
     # Join strip (2026-11-17, from a competitor's always-visible join code):
@@ -270,7 +275,7 @@ def _init(screen):
         jf = pygame.font.Font(None, label_h + 14)
         url = config.TUNNEL_REDIRECT_PLAY_URL.replace("https://", "").rstrip("/")
         _join = jf.render("JOIN: " + url, True, (235, 205, 80), _BG)
-        _join_pos = (rx1 - _join.get_width(), H - _join.get_height() - 2)
+        _join_pos = (rx1 - _join.get_width(), H - margin - _join.get_height())
     except Exception as ex:
         print(f"[RIG VIEW] No join strip: {ex}")
     global _base
