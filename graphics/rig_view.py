@@ -696,7 +696,7 @@ def draw(screen, lit, px, view, leds):
     label = _ip_text["v"]          # was "OUTLINE: " + _prev_view_label (2026-11-26)
     if label != _prev_label:
         _prev_label = label
-        text = _ip_font.render(label, True, (235, 205, 80), _BG)
+        text = _ip_font.render(label, True, (100, 100, 106), _BG)   # dim grey: a diagnostic, not for the room
         clear = pygame.Rect(_label_pos[0], _label_pos[1], screen.get_width() // 2, text.get_height())
         screen.fill(_BG, clear)
         screen.blit(text, _label_pos)
