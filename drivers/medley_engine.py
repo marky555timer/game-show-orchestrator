@@ -44,6 +44,19 @@ _analysis = {"mtime": 0.0, "data": {}}
 _overrides = {"mtime": 0.0, "data": {}}
 _hook_ov = {"mtime": 0.0, "data": {}}
 
+# Fastest Finger's own, looser song pool (2026-11-26): it's an artist-guessing game, not a dance-floor
+# mix, so it takes medium-energy songs, shakier beat grids, a wider tempo window and bigger tempo steps
+# between clips (config.FF_POOL_*). Set only while a Fastest Finger plan is being built; Dance Medley
+# keeps the strict MEDLEY_* rules.
+_ff_pool = {"on": False}
+
+
+def _lim(name):
+    """config.MEDLEY_<name>, or config.FF_POOL_<name> while planning a Fastest Finger round."""
+    if _ff_pool["on"] and hasattr(config, "FF_POOL_" + name):
+        return getattr(config, "FF_POOL_" + name)
+    return getattr(config, "MEDLEY_" + name)
+
 
 # --------------------------------------------------------------------------
 # data
@@ -78,7 +91,7 @@ def _tempo_options(bpm):
     out = []
     for m in (1.0, 2.0, 0.5):
         n = bpm * m
-        if config.MEDLEY_TEMPO_MIN <= n <= config.MEDLEY_TEMPO_MAX:
+        if _lim("TEMPO_MIN") <= n <= _lim("TEMPO_MAX"):
             out.append(n)
     return out
 
@@ -94,13 +107,14 @@ def _exclusion_reason(name, key, a, meta, include, exclude, has_clip):
     forced = has_clip or name.lower() in include or key in include
     if not forced:
         energy = int(meta.get("energy_rank") or 0)
-        if a["grid_conf"] < config.MEDLEY_MIN_GRID_CONF:
-            return f"beat grid unsure ({a['grid_conf']:.0f} < {config.MEDLEY_MIN_GRID_CONF:.0f})"
-        if energy < config.MEDLEY_MIN_ENERGY:
-            return "not tagged for energy yet" if energy == 0 else f"energy {energy} < {config.MEDLEY_MIN_ENERGY}"
+        if a["grid_conf"] < _lim("MIN_GRID_CONF"):
+            return f"beat grid unsure ({a['grid_conf']:.0f} < {_lim('MIN_GRID_CONF'):.0f})"
+        untagged_ok = energy == 0 and _ff_pool["on"] and config.FF_POOL_ALLOW_UNTAGGED
+        if energy < _lim("MIN_ENERGY") and not untagged_ok:
+            return "not tagged for energy yet" if energy == 0 else f"energy {energy} < {_lim('MIN_ENERGY')}"
         if meta.get("slow_dance") is True:
             return "slow dance"
-        if meta.get("genre") in config.MEDLEY_EXCLUDE_GENRES:
+        if meta.get("genre") in _lim("EXCLUDE_GENRES"):
             return f"genre {meta.get('genre')} is excluded"
         if state.show_exclude_explicit and meta.get("explicit") is True:
             return "explicit (filtered out)"
@@ -196,7 +210,7 @@ def set_pool_override(name, mode):
 # --------------------------------------------------------------------------
 def _step_tempo(cur, native):
     """Next playback tempo when moving toward `native`, drift-limited."""
-    d = cur * config.MEDLEY_MAX_TEMPO_DRIFT
+    d = cur * _lim("MAX_TEMPO_DRIFT")
     return cur + max(-d, min(d, native - cur))
 
 
@@ -207,7 +221,7 @@ def _feasible(cur, bpm):
     for n in _tempo_options(bpm):
         nt = _step_tempo(cur, n)
         stretch = abs(nt / n - 1.0)
-        if stretch <= config.MEDLEY_MAX_STRETCH and abs(n - cur) / cur <= config.MEDLEY_MAX_JUMP:
+        if stretch <= _lim("MAX_STRETCH") and abs(n - cur) / cur <= _lim("MAX_JUMP"):
             score = abs(n - cur) / cur
             if best is None or score < best[0]:
                 best = (score, n, nt)
@@ -305,7 +319,22 @@ def pool_counts():
     return {"latest": len(pool), "green": green, "yellow": len(pool) - green}
 
 
-def build_plan(start_bpm=None, seed=None, first_name=None, source=None, songs=None, decades=None, prefer=None):
+def build_plan(start_bpm=None, seed=None, first_name=None, source=None, songs=None, decades=None, prefer=None,
+               ff=False):
+    """ff=True: a Fastest Finger round -- the looser FF_POOL_* rules and every eligible song (the remote's
+    medley source buttons don't apply). See _plan() for the rest."""
+    if not ff:
+        return _plan(start_bpm, seed, first_name, source, songs, decades, prefer)
+    _ff_pool["on"] = True
+    try:
+        plan = _plan(start_bpm, seed, first_name, "latest", songs, decades, prefer)
+        print(f"[MEDLEY] Fastest Finger pool: {len(eligible_candidates())} songs.")
+        return plan
+    finally:
+        _ff_pool["on"] = False
+
+
+def _plan(start_bpm=None, seed=None, first_name=None, source=None, songs=None, decades=None, prefer=None):
     """Greedy tempo/key chain over the eligible pool. Returns a list of
     segment dicts (see render_chunk) -- empty if there aren't enough.
     source: "latest" = every eligible song, human-edited clips first and the
@@ -730,7 +759,7 @@ def _render_worker(run):
         run["error"] = str(e)
 
 
-def start(songs=None, hold=False, decades=None, prefer=None):
+def start(songs=None, hold=False, decades=None, prefer=None, ff=False):
     """Begin a medley from the current moment. Returns {ok, error?, tracks?}. `songs` overrides the
     remote's song count (a Fastest Finger round's clip count, drivers/round_engine.py). hold=True renders
     but doesn't start playback until release_hold() (the Fastest Finger intro plays first)."""
@@ -748,9 +777,9 @@ def start(songs=None, hold=False, decades=None, prefer=None):
         opts = _tempo_options(a["bpm"])
         start_bpm = opts[0] if opts else None
     opt = options()
-    plan = build_plan(start_bpm, songs=songs or None, decades=decades, prefer=prefer)
+    plan = build_plan(start_bpm, songs=songs or None, decades=decades, prefer=prefer, ff=ff)
     if not plan:
-        what = {"green": "human-edited (green)", "yellow": "AI-included (yellow)"}.get(opt["source"], "floor-filler")
+        what = "Fastest Finger" if ff else {"green": "human-edited (green)", "yellow": "AI-included (yellow)"}.get(opt["source"], "floor-filler")
         return {"ok": False, "error": f"not enough mixable {what} songs (need {config.MEDLEY_MIN_TRACKS}+ that fit by tempo)"}
     run = {"plan": plan, "requested": opt["songs"], "first": 0, "chunks": {}, "sounds": {}, "played": 0, "queued": -1, "stop": False,
            "started": False, "began_at": 0.0, "chunk_started_at": 0.0, "sweeps": 0,

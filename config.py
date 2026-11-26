@@ -2929,7 +2929,18 @@ MEDLEY_DROP_SWEEPER_BARS = 2      # sweeper + duck this many bars after the drop
 MEDLEY_DROP_DUCK_DB = -5.0        # live duck of the bed under the host
 MEDLEY_DROP_DUCK_RAMP_SECONDS = 0.6   # live deck-volume ramp, fired with the sweeper
 MEDLEY_DROP_FADE_SECONDS = 5.0    # bed fade-out at its end
-FF_BED_AUTO_END_SECONDS = 10.0    # Fastest Finger round: the bed/winner screen moves on by itself after this (0 = wait for a button)
+FF_BED_AUTO_END_SECONDS = 10.0
+# Fastest Finger's song pool (2026-11-26): much wider than Dance Medley's (MEDLEY_* below/above), since
+# it's guessing the artist, not keeping a dance floor. Anything not set here uses the MEDLEY_ value.
+FF_POOL_MIN_ENERGY = 2            # medley: 4 (floor-fillers only)
+FF_POOL_ALLOW_UNTAGGED = True     # songs with no energy tag yet are in too (slow dances still out)
+FF_POOL_MIN_GRID_CONF = 5.0       # medley: 15 -- live/organic recordings are welcome
+FF_POOL_EXCLUDE_GENRES = ("Children's",)   # medley also leaves out Country
+FF_POOL_TEMPO_MIN = 80.0          # medley: 96-140 (double/half time counted)
+FF_POOL_TEMPO_MAX = 165.0
+FF_POOL_MAX_STRETCH = 0.05        # medley: 0.04 -- max speed change on any clip
+FF_POOL_MAX_TEMPO_DRIFT = 0.04    # medley: 0.015 -- tempo change from one clip to the next
+FF_POOL_MAX_JUMP = 0.10           # medley: 0.06    # Fastest Finger round: the bed/winner screen moves on by itself after this (0 = wait for a button)
 
 # Manual recovery button (drivers/recovery_button.py): a momentary switch
 # between GPIO4 (physical pin 7) and GND (pin 6 or 9), internal pull-up,

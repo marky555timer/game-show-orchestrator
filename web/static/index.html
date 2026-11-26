@@ -52,6 +52,15 @@
   body.medley-on #live-panel { display: block !important; }
   body.medley-on #live-panel > :not(#volume-section):not(#medley-bar) { display: none !important; }
   body.medley-on #medley-btn { padding: 26px 14px; font-size: 1.25rem; }
+  /* Dance Medley commented out of the remote (2026-11-26): the bar only appears for Fastest Finger (its
+     END / CONTINUE / leaderboard), or to EXIT a medley started from the panel's yellow button. Delete this
+     rule (and the d.live line in refreshMedley) to bring the medley controls back. */
+  #medley-options, #medley-edit-btn, #medley-edit, #medley-replay-btn, #medley-game-btn, #medley-sweep-btn { display: none !important; }
+  /* host's live right/wrong, as each team answers (2026-11-26) */
+  .lb-right { color: #34d058; font-weight: 800; }
+  .lb-wrong { color: #ff453a; font-weight: 800; }
+  .roster-card--correct .roster-initials { color: #34d058; }
+  .roster-card--incorrect .roster-initials { color: #ff453a; }
   .btn.ask { background: #0a7d3b; border-color: #34c759; color: #fff; font-weight: 800; letter-spacing: .04em; }
   .btn.big { width: 100%; padding: 18px 14px; font-size: 1.1rem; }
   .timer { font-size: 1.6rem; font-variant-numeric: tabular-nums; }
@@ -283,7 +292,7 @@
     el.style.display = '';
     el.style.opacity = live ? '1' : '.55';
     el.innerHTML = `<div style="font-size:.7rem;color:#8fb3e8;text-transform:uppercase;letter-spacing:.06em;display:flex;justify-content:space-between">` +
-        `<span>${live ? 'Question now' : 'Last question'}</span>${live ? `<span>${q.locked}/${q.teams} answered</span>` : ''}</div>` +
+        `<span>${live ? (q.label || 'Question now') : 'Last question'}</span>${live ? `<span>${q.locked}/${q.teams} answered</span>` : ''}</div>` +
       `<div style="font-size:1rem;font-weight:600;margin:3px 0">${esc(q.question)}</div>` +
       `<div style="font-size:.8rem;color:#aaa">${(q.choices || []).map(esc).join(' &middot; ')}</div>` +
       (q.answer ? `<div style="margin-top:5px;font-size:.95rem;color:#4cd964;font-weight:700">&#10003; ${esc(q.answer)}</div>` +
@@ -331,9 +340,10 @@
     el.innerHTML = '<table style="width:100%;border-collapse:collapse;font-size:.95rem">' + t.map((r, i) => {
       const away = r.away_seconds != null && r.away_seconds >= 90;
       const night = r.score + r.tonight;
+      const vc = r.verdict === 'right' ? 'lb-right' : r.verdict === 'wrong' ? 'lb-wrong' : '';
       return `<tr style="border-bottom:1px solid #2a2a2e;${away ? 'opacity:.45' : ''}">
         <td style="padding:5px 4px;width:28px;color:${i === 0 ? '#ffd400' : '#888'};font-weight:700">${i + 1}</td>
-        <td style="padding:5px 4px">${esc(r.emoji)} ${esc(r.name)}${r.bot ? ' <span style="font-size:.7rem;color:#888" title="bot">&#129302;</span>' : ''}${away ? ' <span style="font-size:.72rem;color:#999">away ' + Math.round(r.away_seconds / 60) + 'm</span>' : ''}</td>
+        <td style="padding:5px 4px">${esc(r.emoji)} <span class="${vc}">${esc(r.name)}</span>${r.bot ? ' <span style="font-size:.7rem;color:#888" title="bot">&#129302;</span>' : ''}${away ? ' <span style="font-size:.72rem;color:#999">away ' + Math.round(r.away_seconds / 60) + 'm</span>' : ''}</td>
         <td style="padding:5px 4px;text-align:right;color:#aaa;font-variant-numeric:tabular-nums">${r.score}</td>
         <td style="padding:5px 4px;text-align:right;font-weight:700;font-variant-numeric:tabular-nums;width:70px">${night}</td></tr>`;
     }).join('') + '</table>';
@@ -355,7 +365,7 @@
       `<span style="color:#777;font-size:.75rem">from ${d.basis}</span>`;
     el.style.display = '';
   }
-  lbRefresh(); setInterval(lbRefresh, 2000);
+  lbRefresh(); setInterval(lbRefresh, 1000);
   progRefresh(); setInterval(progRefresh, 5000);
   </script>
 
@@ -1124,11 +1134,12 @@ async function refreshMedley() {
     document.getElementById('medley-next-only').checked = !!d.options.next_only;
   }
   if (d.counts) for (const k of ['latest', 'green', 'yellow']) document.getElementById('mo-n-' + k).textContent = '(' + d.counts[k] + ' songs)';
-  document.getElementById('medley-bar').style.display = d.live ? '' : 'none';
   const btn = document.getElementById('medley-btn');
   const st = document.getElementById('medley-status');
   // Fastest Finger round (2026-11-23): same panel, its own name, opened from the intro on.
   const ff = !!(d.ff_round || d.ff_intro);
+  // Dance Medley commented out (2026-11-26): was `d.live ? '' : 'none'`
+  document.getElementById('medley-bar').style.display = (d.live && (ff || d.active)) ? '' : 'none';
   const word = ff ? 'Fastest Finger' : 'Medley';
   const board = document.getElementById('ff-board');
   const rows = d.leaderboard || [];

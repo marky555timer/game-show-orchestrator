@@ -181,6 +181,37 @@ def _phone_active_text():
     return state.factoid_question, state.factoid_choices
 
 
+def _ff_question():
+    """Fastest Finger (2026-11-26): the open "This is <artist>" statement -- or, right after the last one
+    closed, its reveal -- for the host's leaderboard header. None when there's neither."""
+    from drivers import medley_game
+    now = time.time()
+    q = state.medley_q
+    if q is not None and medley_game.enabled() and now < q["deadline"]:
+        return {"qid": q["qid"], "idx": q["idx"], "shown": q["shown"], "real": q["real"],
+                "is_true": q["is_true"], "answers": dict(q["answers"]), "open": True}
+    rv = state.medley_reveal
+    if rv is not None and now < rv["until"]:
+        return {"qid": rv["qid"], "idx": None, "shown": rv["shown"], "real": rv["real"],
+                "is_true": rv["was_true"], "answers": dict(rv["answers"]), "open": False}
+    return None
+
+
+def _live_verdicts():
+    """Host-only (2026-11-26): player_id -> True/False for every team that has answered the current
+    question, the moment it answers (the phones still see nothing until the reveal)."""
+    ff = _ff_question()
+    if ff is not None:
+        return {pid: (ans == ff["is_true"]) for pid, ans in ff["answers"].items()}
+    just_graded = state.quiz_locked and (time.time() - state.quiz_graded_at) < config.QUIZ_TF_CORRECTION_HOLD_SECONDS
+    if not state.factoid_choices or (state.quiz_locked and not just_graded):
+        return {}
+    ci = state.factoid_correct_index
+    if ci < 0:
+        return {}
+    return {pid: p.get("selected_index") == ci for pid, p in state.quiz_players.items() if p.get("locked")}
+
+
 def _current_stream_title():
     if state.medley_active:
         return "Dance Medley"  # the artist/title would spoil the medley game
@@ -421,6 +452,22 @@ if app is not None:
         """The remote's leaderboard header (2026-11-25): the question being asked, how many teams have
         locked in, and -- once the last team has answered (or the round is graded) -- the right answer."""
         now = time.time()
+        ff = _ff_question()
+        if ff is not None:
+            # Fastest Finger (2026-11-26): its true/false statements used to leave the last standard
+            # question up, greyed out. Answer shown once every team is in, or the clip is over.
+            teams = [pid for pid, p in state.quiz_players.items() if not p.get("idle") or pid in ff["answers"]]
+            n_in = sum(1 for pid in teams if pid in ff["answers"])
+            reveal = (not ff["open"]) or (bool(teams) and n_in == len(teams))
+            all_right = bool(reveal and len(teams) >= 2 and n_in == len(teams)
+                             and all(ff["answers"][pid] == ff["is_true"] for pid in teams))
+            label = f"Fastest Finger{'' if ff['idx'] is None else ' #' + str(ff['idx'] + 1)}"
+            return {"ok": True, "active": True, "round_id": f"ff-{ff['qid']}",
+                    "kind": "ff", "label": label,
+                    "question": f"This is {ff['shown']}", "choices": ["TRUE", "FALSE"],
+                    "all_right": all_right, "locked": n_in, "teams": len(teams), "reveal": reveal,
+                    "answer": (("TRUE" if ff["is_true"] else "FALSE") if reveal else ""),
+                    "correction": (("" if ff["is_true"] else f"It's {ff['real']}.") if reveal else "")}
         just_graded = state.quiz_locked and (now - state.quiz_graded_at) < config.QUIZ_TF_CORRECTION_HOLD_SECONDS
         active = bool(state.factoid_choices) and (not state.quiz_locked or just_graded)
         if not active:
@@ -676,13 +723,16 @@ if app is not None:
     def teams_list():
         now = time.time()
         rows = []
+        verdicts = _live_verdicts()
         for pid, p in state.quiz_players.items():
             ls = p.get("last_seen")
             rows.append({"player_id": pid, "name": p.get("name") or p.get("initials", "Team"),
                          "emoji": p.get("emoji") or player_profile.DEFAULT_EMOJI,
                          "score": int(p.get("score", 0) or 0),
                          "tonight": int(state.show_cumulative_scores.get(pid, 0) or 0),
-                         "away_seconds": (round(now - ls) if ls else None), "bot": bool(p.get("bot"))})
+                         "away_seconds": (round(now - ls) if ls else None), "bot": bool(p.get("bot")),
+                         # host-only (2026-11-26): green/red the moment this team answers the current question
+                         "verdict": ({True: "right", False: "wrong"}.get(verdicts.get(pid)))})
         rows.sort(key=lambda r: -(r["score"] + r["tonight"]))
         return {"ok": True, "teams": rows}
 
@@ -751,7 +801,7 @@ if app is not None:
             player["avatar_color"] = body.avatar_color
         return {"ok": True, "avatar_color": player.get("avatar_color"), "emoji": player.get("emoji")}
 
-    def _build_round_roster():
+    def _build_round_roster(admin=False):
         """Per-player LIVE status for the round-roster UI shown on both
         play.html (every phone) and index.html (operator) while a question
         is in progress -- single source of truth for
@@ -795,6 +845,9 @@ if app is not None:
                 continue        # idle team (2026-11-23): not in the "who's answered" roster
             if live:
                 status = "locked" if player["locked"] else "thinking"
+                if admin and player["locked"] and state.factoid_correct_index >= 0:
+                    # the host sees right/wrong as each team locks in (2026-11-26); phones never do
+                    status = "correct" if player.get("selected_index") == state.factoid_correct_index else "incorrect"
             elif player_id in correctness_by_player:
                 status = "correct" if correctness_by_player[player_id] else "incorrect"
             else:
@@ -3181,7 +3234,7 @@ if app is not None:
             "questions_suppressed": state.questions_suppressed,
             "dmx_hold": _dmx_hold_status(),
             "quiz_player_count": len(state.quiz_players),
-            "round_roster": _build_round_roster(),
+            "round_roster": _build_round_roster(admin=True),
             "game_win_score": state.game_win_score,
             "intermission_minutes": state.intermission_minutes,
             "music_volume": state.music_volume,
