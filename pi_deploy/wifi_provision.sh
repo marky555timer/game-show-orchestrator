@@ -43,9 +43,13 @@ done
 
 echo "$LOG_TAG No WiFi connection after 20s -- opening the setup hotspot."
 while ! is_wifi_connected; do
+    # --activity-timeout (2026-11-26): wifi-connect lists the networks it can see once, when it starts.
+    # A router switched on after that (the venue's, or ours in a test) never made the list -- so with
+    # nobody using the setup page for 2 minutes it exits and this loop starts it again, list refreshed.
     "$WIFI_CONNECT_BIN" \
         --portal-ssid "TriviaRig-Setup" \
-        --ui-directory "$WIFI_CONNECT_UI"
+        --ui-directory "$WIFI_CONNECT_UI" \
+        --activity-timeout 120
     sleep 2
 done
 
