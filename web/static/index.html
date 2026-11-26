@@ -276,6 +276,7 @@
       if (!_lbQ || _lbQ.round_id !== d.round_id) _lbQ = {};
       const keep = d.answer ? {} : {answer: _lbQ.answer || '', correction: _lbQ.correction || ''};   // once shown, it stays
       _lbQ = Object.assign(_lbQ, d, keep);
+      if (d.all_right && _allRightShown !== d.round_id) { _allRightShown = d.round_id; allRight(); }
     }
     if (!_lbQ) { el.style.display = 'none'; return; }
     const q = _lbQ, live = d.active;
@@ -287,6 +288,31 @@
       `<div style="font-size:.8rem;color:#aaa">${(q.choices || []).map(esc).join(' &middot; ')}</div>` +
       (q.answer ? `<div style="margin-top:5px;font-size:.95rem;color:#4cd964;font-weight:700">&#10003; ${esc(q.answer)}</div>` +
         (q.correction ? `<div style="font-size:.8rem;color:#bbb">${esc(q.correction)}</div>` : '') : '');
+  }
+  // Everyone got it right (2026-11-26): the page background flashes green three times, quickly, and a
+  // bold banner says so for a few seconds.
+  let _allRightShown = null;
+  function allRight() {
+    const b = document.body, was = b.style.background;
+    let n = 0;
+    const tick = () => {
+      b.style.background = (n % 2 === 0) ? '#1fbf4a' : (was || '');
+      if (++n < 6) setTimeout(tick, 140); else b.style.background = was || '';
+    };
+    tick();
+    let ban = document.getElementById('all-right-banner');
+    if (!ban) {
+      ban = document.createElement('div');
+      ban.id = 'all-right-banner';
+      ban.style.cssText = 'position:fixed;left:50%;top:18px;transform:translateX(-50%);z-index:9999;' +
+        'background:#1fbf4a;color:#fff;font-weight:900;font-size:1.6rem;letter-spacing:.03em;padding:14px 26px;' +
+        'border-radius:14px;box-shadow:0 6px 30px rgba(0,0,0,.6);text-align:center;pointer-events:none;max-width:90vw';
+      document.body.appendChild(ban);
+    }
+    ban.textContent = 'EVERYONE GOT IT RIGHT!';
+    ban.style.display = '';
+    clearTimeout(ban._t);
+    ban._t = setTimeout(() => { ban.style.display = 'none'; }, 4000);
   }
   lbQuestion(); setInterval(lbQuestion, 1500);
   async function lbRefresh() {

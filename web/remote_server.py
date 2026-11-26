@@ -430,7 +430,11 @@ if app is not None:
         reveal = bool(state.quiz_locked or (teams and locked == len(teams)))
         q, ch = _phone_active_text()
         ci = state.factoid_correct_index
+        # Everyone got it right (2026-11-26): every team in play locked in the right answer (2+ teams).
+        all_right = bool(reveal and len(teams) >= 2 and 0 <= ci < len(ch)
+                         and all(p.get("locked") and p.get("selected_index") == ci for p in teams))
         return {"ok": True, "active": True, "round_id": state.quiz_round_id, "question": q, "choices": ch,
+                "all_right": all_right,
                 "locked": locked, "teams": len(teams), "reveal": reveal,
                 "answer": (ch[ci] if reveal and 0 <= ci < len(ch) else ""),
                 "correction": _reveal_correction() if reveal else ""}
