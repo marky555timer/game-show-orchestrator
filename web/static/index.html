@@ -293,10 +293,20 @@
     el.style.opacity = live ? '1' : '.55';
     el.innerHTML = `<div style="font-size:.7rem;color:#8fb3e8;text-transform:uppercase;letter-spacing:.06em;display:flex;justify-content:space-between">` +
         `<span>${live ? (q.label || 'Question now') : 'Last question'}</span>${live ? `<span>${q.locked}/${q.teams} answered</span>` : ''}</div>` +
+      (live ? lbProgLine(q.progress) : '') +
       `<div style="font-size:1rem;font-weight:600;margin:3px 0">${esc(q.question)}</div>` +
       `<div style="font-size:.8rem;color:#aaa">${(q.choices || []).map(esc).join(' &middot; ')}</div>` +
       (q.answer ? `<div style="margin-top:5px;font-size:.95rem;color:#4cd964;font-weight:700">&#10003; ${esc(q.answer)}</div>` +
         (q.correction ? `<div style="font-size:.8rem;color:#bbb">${esc(q.correction)}</div>` : '') : '');
+  }
+  // Question progress in the blue box (2026-11-26): "Question 2 of 3 this song · about 8 left this round".
+  function lbProgLine(p) {
+    if (!p) return '';
+    const bits = [];
+    if (p.song_of) bits.push(`Question <b>${p.song_n}</b> of ${p.song_of} this song`);
+    if (p.round_left != null) bits.push(p.round_left === 0 ? 'last one this round'
+      : `${p.round_approx ? 'about ' : ''}<b>${p.round_left}</b> more this round`);
+    return bits.length ? `<div style="font-size:.8rem;color:#cfe0ff;margin-top:3px">${bits.join(' &middot; ')}</div>` : '';
   }
   // Everyone got it right (2026-11-26): the page background flashes green three times, quickly, and a
   // bold banner says so for a few seconds.

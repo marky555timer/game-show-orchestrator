@@ -197,6 +197,34 @@ def _ff_question():
     return None
 
 
+def _question_progress():
+    """The host's blue question box (2026-11-26): which question this is on the current song, and how
+    many the round has left. A trivia round ends on songs (or its points goal, sooner), so its count is
+    this song's remaining questions plus TRACK_QUESTIONS_PER_TRACK for each song still to come -- an
+    estimate ("about"). Price and Fastest Finger rounds count exactly."""
+    from drivers import round_engine
+    out = {"song_n": 0, "song_of": 0, "round_left": None, "round_approx": False}
+    rt = state.round_type
+    if rt == "fastest_finger":
+        tot = state.medley_count or state.round_song_limit
+        if tot:
+            out["round_left"] = max(0, tot - max(1, state.medley_pos))
+        return out
+    if state.factoid_category == "price_game" or rt == "wait_how_much":
+        if state.round_song_limit:
+            out["round_left"] = max(0, state.round_song_limit - max(1, state.round_special_count))
+        return out
+    queued = len(state.track_question_queue or [])
+    n = state.autoadv_questions_asked if state.autoadv_track_key == state.factoid_track_key else 0
+    if n > 0:
+        out["song_n"], out["song_of"] = n, n + queued
+    if state.show_phase == "live" and rt == "trivia" and state.round_song_limit:
+        songs_after = max(0, state.round_song_limit - max(1, round_engine.songs_in_round()))
+        out["round_left"] = queued + songs_after * config.TRACK_QUESTIONS_PER_TRACK
+        out["round_approx"] = True
+    return out
+
+
 def _live_verdicts():
     """Host-only (2026-11-26): player_id -> True/False for every team that has answered the current
     question, the moment it answers (the phones still see nothing until the reveal)."""
@@ -462,7 +490,7 @@ if app is not None:
             all_right = bool(reveal and len(teams) >= 2 and n_in == len(teams)
                              and all(ff["answers"][pid] == ff["is_true"] for pid in teams))
             label = f"Fastest Finger{'' if ff['idx'] is None else ' #' + str(ff['idx'] + 1)}"
-            return {"ok": True, "active": True, "round_id": f"ff-{ff['qid']}",
+            return {"ok": True, "active": True, "round_id": f"ff-{ff['qid']}", "progress": _question_progress(),
                     "kind": "ff", "label": label,
                     "question": f"This is {ff['shown']}", "choices": ["TRUE", "FALSE"],
                     "all_right": all_right, "locked": n_in, "teams": len(teams), "reveal": reveal,
@@ -481,6 +509,7 @@ if app is not None:
         all_right = bool(reveal and len(teams) >= 2 and 0 <= ci < len(ch)
                          and all(p.get("locked") and p.get("selected_index") == ci for p in teams))
         return {"ok": True, "active": True, "round_id": state.quiz_round_id, "question": q, "choices": ch,
+                "progress": _question_progress(),
                 "all_right": all_right,
                 "locked": locked, "teams": len(teams), "reveal": reveal,
                 "answer": (ch[ci] if reveal and 0 <= ci < len(ch) else ""),
