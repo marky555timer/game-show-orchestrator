@@ -899,6 +899,13 @@ def has_pending_move():
     return _pending is not None
 
 
+def cancel_pending_move():
+    """BACK TO SHOW MENU / STOP GAME (2026-11-26): drop any song change in flight -- nothing may
+    start on the decks after the show is stopped."""
+    global _pending
+    _pending = None
+
+
 def get_now_playing():
     """(title, artist) for the deck currently up on the crossfader -- drop-in
     replacement for the old drivers.rekordbox_driver.get_rekordbox_track()."""

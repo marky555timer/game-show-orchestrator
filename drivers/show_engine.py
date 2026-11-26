@@ -593,11 +593,39 @@ def start_encore():
     print("[SHOW] Encore! Energy up.")
 
 
+def _clear_decks():
+    """BACK TO SHOW MENU / START NEW GAME / STOP GAME (2026-11-26): stop every bit of music and clear
+    the decks. They used to fade to silence but keep going underneath -- the auto-DJ timer still fired
+    song changes (transitions, wipes, sweepers) on the silent decks, and a medley ran on."""
+    try:
+        from drivers import medley_engine
+        if medley_engine._run is not None:
+            medley_engine._finish(medley_engine._run, "show stopped", handoff=False)
+    except Exception as exc:
+        print(f"[SHOW] Stop: ending the medley failed: {exc}")
+    _end_questions()
+    deck_orchestrator.cancel_pending_move()
+    state.win_sequence_active = False
+    state.win_sequence_phase = ""
+    state.intermission_active = False
+    state.intermission_finishing = False
+    state.intermission_paused = False
+    state.intermission_paused_remaining = 0.0
+    state.game_winner_player_id = ""
+    state.reveal_sweeper_at = 0.0
+    state.show_song_ending = ""
+    state.factoid_track_key = ""         # the auto-DJ has no song to time any more
+    state.auto_dj_track_key = ""
+    state.deck1_track = ("", "")
+    state.deck2_track = ("", "")
+
+
 def back_to_menu():
     """Admin remote: full reset -- stop everything and bring the panel menu
     back (Load Show)."""
     global _seq, _show_music_channel
     show_runner.stop()
+    _clear_decks()
     show_bed.stop_all(400)
     _seq = None
     if _show_music_channel is not None:
@@ -606,7 +634,7 @@ def back_to_menu():
     from inputs import gamepad
     gamepad.abort_game_mode_early()
     _stop_background()
-    midi_driver.tween_channel_faders_to(0, 1.5)
+    midi_driver.tween_channel_faders_to(0, 0.5)
     state.show_spin_active = False
     state.show_wheel_started_at = 0.0
     state.show_intro_waiting = False
@@ -614,8 +642,26 @@ def back_to_menu():
     state.show_phase_started_at = time.time()
     from drivers import panel_menu
     panel_menu.reset(touched=True)
-    _pending_deck_stop[0] = time.time() + 1.6
-    print("[SHOW] Back to the panel menu.")
+    _pending_deck_stop[0] = time.time() + 0.6     # a quick fade, then the decks are stopped outright
+    print("[SHOW] Back to the panel menu (music stopped, decks cleared).")
+
+
+def stop_game_now():
+    """Remote STOP GAME (2026-11-26): the night's results are saved, then everything stops at once --
+    music off, decks cleared -- and it's back to Setup (panels blank). No outro, no background music.
+    (A saved show's own ending still goes through stop_show() and its outro.)"""
+    if state.show_phase == "setup":
+        return False
+    try:
+        if state.show_phase == "live" and not state.show_background:
+            accumulate_round_scores()
+        from drivers import results_archive
+        results_archive.snapshot()
+    except Exception as exc:
+        print(f"[SHOW] Stop: saving the results failed: {exc}")
+    new_game_setup()
+    print("[SHOW] STOP GAME: stopped now, decks cleared, back to Setup.")
+    return True
 
 
 def new_game_setup():

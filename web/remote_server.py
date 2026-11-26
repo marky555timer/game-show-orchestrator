@@ -3423,8 +3423,8 @@ if app is not None:
 
     @app.post("/api/show/stop")
     def show_stop():
-        ok = show_engine.stop_show()
-        return {"ok": ok, "reason": None if ok else "Show isn't live."}
+        ok = show_engine.stop_game_now()
+        return {"ok": ok, "reason": None if ok else "No show is running."}
 
     @app.post("/api/show/back-to-menu")
     def show_back_to_menu():

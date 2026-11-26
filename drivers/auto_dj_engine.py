@@ -396,6 +396,8 @@ def _quiz_done_advance_due():
 
 
 def update(now):
+    if state.show_phase in ("setup", "countdown"):
+        return  # no show running (2026-11-26): the decks stay clear -- no timers, no song changes
     if state.medley_active:
         return  # Dance Medley owns transitions until it hands back (drivers/medley_engine.py)
     from drivers import round_engine
