@@ -73,10 +73,26 @@ FOOT_MARGIN_FRACTION = 0.025    # bottom margin kept clear for TV overscan (the 
 _ip_text = {"v": "IP: looking..."}
 
 
+def _wifi_signal():
+    """{interface: "83% (-52 dBm)"} from /proc/net/wireless (link quality is out of 70 on Linux)."""
+    out = {}
+    try:
+        with open("/proc/net/wireless") as f:
+            for line in f.readlines()[2:]:
+                f2 = line.split()
+                if len(f2) >= 4:
+                    link, level = float(f2[2].rstrip(".")), float(f2[3].rstrip("."))
+                    out[f2[0].rstrip(":")] = f"{max(0, min(100, round(link / 70 * 100)))}% / {level:.0f} dBm"
+    except Exception:
+        pass
+    return out
+
+
 def _ip_lookup():
     out = subprocess.run(["ip", "-4", "-o", "addr", "show", "scope", "global"],
                          capture_output=True, text=True, timeout=5).stdout
     parts = []
+    sig = _wifi_signal()
     for line in out.splitlines():
         f = line.split()
         if len(f) < 4 or "inet" not in f:
@@ -90,6 +106,8 @@ def _ip_lookup():
             kind = "cable"
         else:
             continue
+        if kind == "Wi-Fi" and dev in sig:
+            kind += ", signal " + sig[dev]     # 2026-11-26 (operator): strength next to the address
         parts.append(f"{addr} ({kind})")
     return "IP: " + ("   ".join(parts) if parts else "no network")
 
