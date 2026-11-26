@@ -169,6 +169,11 @@ WiFi). Live-tested end to end on the show Pi.
   sudo mkdir -p /usr/local/share/wifi-connect && sudo tar -xzf wifi-connect-ui.tar.gz -C /usr/local/share/wifi-connect/
   ```
 
+- **Lenovo practice box (2026-11-26):** same script and service, the
+  `x86_64-unknown-linux-gnu` build of wifi-connect. Files staged in `~/wifi-setup`
+  on the Lenovo; `sudo bash ~/wifi-setup/install_wifi_provision.sh` does all the
+  root steps above (binary + UI, script, service, enable).
+
 ## Practice rig: second Pi on an HDMI TV (2026-11-11)
 
 A Pi with no game board attached that rehearses the show: usual audio (over
