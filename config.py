@@ -1923,6 +1923,11 @@ CLIFF_FALL_SECONDS = 3.0        # the tumble before the result
 CLIFF_NEXT_SONG_SECONDS = 4.0
 CLIFF_BUZZ_SECONDS = 1.4        # a wrong guess: buzzer.wav (1.2 s) plays this long before the climb starts   # after a climb, the next song starts on its own this long later
 CLIFF_CLIMB_SOUND = resource_path("audio", "gameMusic", "cliffhanger.wav")
+# TV climb camera (graphics/rig_view.py, 2026-11-26): zoom in on the climber and follow him during a
+# climb so the back of the room can see, then back out.
+CLIFF_CAM_ZOOM = 5.0            # about four ruler marks across the screen (operator photo, 2026-11-26)
+CLIFF_CAM_EASE_SECONDS = 1.0    # zoom in / out glide
+CLIFF_CAM_HOLD_SECONDS = 1.5    # stay zoomed this long after he stops, then back out
 CLIFF_ART_BG = resource_path("graphics", "art", "cliffhanger_bg.png")            # the art with the climber removed
 CLIFF_ART_CLIMBER = resource_path("graphics", "art", "cliffhanger_climber.png")  # ...and the climber cut out
 # Art coordinates (911x527 image): the ruler's 0 tick, one ruler mark's step, and the climber

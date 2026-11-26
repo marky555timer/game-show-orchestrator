@@ -483,6 +483,9 @@ def _strip_colors(view):
 
 # ------------------------------------------------------------------ Cliffhanger (drivers/cliffhanger_engine.py)
 _cliff = {"art": None, "was_up": False, "snap": None}
+# Climb camera (2026-11-26, operator): while he climbs, the TV zooms in on him and follows him up the
+# ruler (so the back of the room can see), then eases back out to the whole mountain.
+_cam = {"z": 1.0, "cx": None, "cy": None, "t": 0.0, "climb_end": 0.0, "world": None}
 
 
 def _cliff_assets(screen):
@@ -558,6 +561,11 @@ def _draw_cliff(screen, c):
     a = _cliff_assets(screen)
     now = time.time()
     k = a["k"]
+    W, H = screen.get_size()
+    out = screen
+    if _cam["world"] is None or _cam["world"].get_size() != (W, H):
+        _cam["world"] = pygame.Surface((W, H)).convert()
+    screen = _cam["world"]              # mountain + climber here; the camera crops it onto the TV
     screen.fill((0, 0, 0))
     screen.blit(a["art"], (a["ox"], a["oy"]))
     mps = config.CLIFF_MARKS_PER_SPACE
@@ -583,7 +591,9 @@ def _draw_cliff(screen, c):
         cy += 0.5 * 800 * k * t * t - 110 * k * t        # a little hop, then gravity
         spr = pygame.transform.rotate(spr, -300 * t)
     screen.blit(spr, (cx, cy))
-    # the scoreboard, top left over the sky
+    _cliff_camera(out, screen, c, now, cx + spr.get_width() / 2, cy + spr.get_height() / 2)
+    screen = out
+    # the scoreboard, top left over the sky (drawn over the camera view, never zoomed)
     y0 = a["oy"] + 14 * k
     x0 = a["ox"] + 18 * k
     h = _cliff_text(screen, a["font"], "CLIFFHANGER", (x0, y0), (255, 210, 40))
@@ -605,6 +615,38 @@ def _draw_cliff(screen, c):
         won = c["result"] == "win"
         _cliff_text(screen, a["big"], "SAFE!  +1500" if won else "HE FELL!  -1500", (W / 2, H * 0.40),
                     (90, 240, 120) if won else (255, 70, 70), center=True)
+
+
+def _cliff_camera(out, world, c, now, fx, fy):
+    """Blit `world` onto `out` through the climb camera: zoom config.CLIFF_CAM_ZOOM centred on the
+    climber (fx, fy) during a climb (and CLIFF_CAM_HOLD_SECONDS after), 1x otherwise; zoom and centre
+    glide (CLIFF_CAM_EASE_SECONDS) instead of jumping."""
+    W, H = out.get_size()
+    climbing = c["phase"] == "climb"
+    if climbing:
+        _cam["climb_end"] = now
+    want = config.CLIFF_CAM_ZOOM if (climbing or now - _cam["climb_end"] < config.CLIFF_CAM_HOLD_SECONDS) else 1.0
+    dt = min(0.25, max(0.0, now - (_cam["t"] or now)))
+    _cam["t"] = now
+    rate = 1.0 - math.exp(-dt * 3.0 / max(0.05, config.CLIFF_CAM_EASE_SECONDS))
+    _cam["z"] += (want - _cam["z"]) * rate
+    if _cam["cx"] is None:
+        _cam["cx"], _cam["cy"] = fx, fy
+    _cam["cx"] += (fx - _cam["cx"]) * min(1.0, rate * 2.5)      # follows his motion closely
+    _cam["cy"] += (fy - _cam["cy"]) * min(1.0, rate * 2.5)
+    z = _cam["z"]
+    if z < 1.01:
+        out.blit(world, (0, 0))
+        return
+    # the view's centre slides from the screen's centre to him as the zoom grows
+    f = min(1.0, (z - 1.0) / max(0.01, config.CLIFF_CAM_ZOOM - 1.0))
+    vx = W / 2 + (_cam["cx"] - W / 2) * f
+    vy = H / 2 + (_cam["cy"] - H / 2) * f
+    w, h = W / z, H / z
+    x0 = min(max(0.0, vx - w / 2), W - w)
+    y0 = min(max(0.0, vy - h / 2), H - h)
+    crop = world.subsurface(pygame.Rect(int(x0), int(y0), max(1, int(w)), max(1, int(h))))
+    out.blit(pygame.transform.smoothscale(crop, (W, H)), (0, 0))
 
 
 def draw(screen, lit, px, view, leds):
