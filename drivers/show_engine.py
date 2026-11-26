@@ -630,6 +630,10 @@ def _clear_decks():
     state.auto_dj_track_key = ""
     state.deck1_track = ("", "")
     state.deck2_track = ("", "")
+    # 2026-11-26: the stopped song's path lingered here, and the next show's playlist tracker
+    # (show_runner.begin) took it as "already playing" -- a show whose first song was that same song
+    # never counted it, so its playlist stayed on song 1 and that song came round again two songs later.
+    state.now_playing_path = ""
 
 
 def back_to_menu():
