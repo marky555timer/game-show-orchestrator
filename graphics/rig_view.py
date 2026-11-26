@@ -69,7 +69,7 @@ _ip_font = None
 # the room, so the host can always reach it (ssh / the admin page) without a keyboard. Looked up on a
 # background thread every IP_REFRESH_SECONDS -- never on the draw path.
 IP_REFRESH_SECONDS = 10.0
-FOOT_MARGIN_FRACTION = 0.05     # bottom margin kept clear for TV overscan
+FOOT_MARGIN_FRACTION = 0.025    # bottom margin kept clear for TV overscan (the safe area)
 _ip_text = {"v": "IP: looking..."}
 
 
@@ -148,7 +148,6 @@ def _init(screen):
     # TVs crop the picture's edges (overscan, 2026-11-26: the bottom line was cut in half), so the
     # IP / JOIN line sits FOOT_MARGIN_FRACTION of the height up from the bottom, with the board above it.
     margin = int(H * FOOT_MARGIN_FRACTION)
-    foot = label_h + 14 + margin
     btn_col = int(W * 0.13)
     _btn_r = max(10, int(min(btn_col * 0.30, H * 0.075)))
     # Layout (2026-11-13): the board is centred on the screen; the name sign
@@ -158,10 +157,10 @@ def _init(screen):
     side = int(btn_col)                                  # space kept clear on each side while sizing the board
     left, right = side, W - side
 
-    k = min((H - foot - 12) / (maxy - miny + 2 * pad), (right - left - 12) / (maxx - minx + 2 * pad))
+    k = min((H - label_h - 12) / (maxy - miny + 2 * pad), (right - left - 12) / (maxx - minx + 2 * pad))
     board_w, board_h = (maxx - minx + 2 * pad) * k, (maxy - miny + 2 * pad) * k
     ox = left + (right - left - board_w) / 2 + pad * k
-    oy = (H - foot - board_h) / 2 + pad * k
+    oy = (H - label_h - board_h) / 2 + pad * k
 
     def to_screen(p):
         return (int(round(ox + (p[0] - minx) * k)), int(round(oy + (p[1] - miny) * k)))
@@ -218,14 +217,20 @@ def _init(screen):
     ry1 = int(oy + (maxy - miny) * k + pad * k * 0.72)
     step = max(10, int(round(30 * k)))
     cells = []
-    for x in range(rx0, rx1, step):
-        cells.append(pygame.Rect(x, ry0 - t // 2, step - 2, t))                 # top, left -> right
-    for y in range(ry0, ry1, step):
-        cells.append(pygame.Rect(rx1 - t // 2, y, t, step - 2))                 # right, down
-    for x in range(rx1 - step, rx0 - step, -step):
-        cells.append(pygame.Rect(x, ry1 - t // 2, step - 2, t))                 # bottom, right -> left
-    for y in range(ry1 - step, ry0 - step, -step):
-        cells.append(pygame.Rect(rx0 - t // 2, y, t, step - 2))                 # left, up
+    # Each side is split into a whole number of equal cells (2026-11-26): fixed-size steps left a
+    # remainder that made the bottom overshoot the left corner and the top fall short of the right.
+    nx = max(1, round((rx1 - rx0) / step))
+    ny = max(1, round((ry1 - ry0) / step))
+    xs = [rx0 + (rx1 - rx0) * i // nx for i in range(nx + 1)]
+    ys = [ry0 + (ry1 - ry0) * i // ny for i in range(ny + 1)]
+    for a, b in zip(xs, xs[1:]):
+        cells.append(pygame.Rect(a, ry0 - t // 2, b - a - 2, t))                 # top, left -> right
+    for a, b in zip(ys, ys[1:]):
+        cells.append(pygame.Rect(rx1 - t // 2, a, t, b - a - 2))                 # right, down
+    for a, b in reversed(list(zip(xs, xs[1:]))):
+        cells.append(pygame.Rect(a, ry1 - t // 2, b - a - 2, t))                 # bottom, right -> left
+    for a, b in reversed(list(zip(ys, ys[1:]))):
+        cells.append(pygame.Rect(rx0 - t // 2, a, t, b - a - 2))                 # left, up
     _strip[:] = cells
     _strip_phase = np.arange(len(cells), dtype=np.float32) / len(cells)
     _gamma_np = np.array(_GAMMA, dtype=np.uint8)
@@ -264,18 +269,25 @@ def _init(screen):
     pygame.font.init()
     _font = pygame.font.Font(None, label_h + 4)
     global _ip_font
-    _ip_font = pygame.font.Font(None, label_h + 14)
-    _label_pos = (rx0, H - margin - _ip_font.get_height())   # bottom left, level with the JOIN strip
+    # IP / JOIN line (2026-11-26): just under the outline strip, at the biggest size that still ends
+    # FOOT_MARGIN_FRACTION above the bottom (TV safe area); the board keeps its original size.
+    text_top = ry1 + t // 2 + 3
+    avail = H - margin - text_top
+    fsize = label_h + 14
+    while fsize > 14 and pygame.font.Font(None, fsize).get_height() > avail:
+        fsize -= 1
+    _ip_font = pygame.font.Font(None, fsize)
+    _label_pos = (rx0, text_top)   # bottom left, level with the JOIN strip
     import threading
     threading.Thread(target=_ip_worker, name="rig-view-ip", daemon=True).start()
     # Join strip (2026-11-17, from a competitor's always-visible join code):
     # the stable redirector address, bottom right of the board, drawn once.
     global _join, _join_pos
     try:
-        jf = pygame.font.Font(None, label_h + 14)
+        jf = _ip_font
         url = config.TUNNEL_REDIRECT_PLAY_URL.replace("https://", "").rstrip("/")
         _join = jf.render("JOIN: " + url, True, (235, 205, 80), _BG)
-        _join_pos = (rx1 - _join.get_width(), H - margin - _join.get_height())
+        _join_pos = (rx1 - _join.get_width(), text_top)
     except Exception as ex:
         print(f"[RIG VIEW] No join strip: {ex}")
     global _base
