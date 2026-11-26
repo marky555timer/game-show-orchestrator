@@ -164,7 +164,7 @@ def _build_snapshot():
                      "name": p.get("name", ""), "emoji": p.get("emoji", ""),
                      "streak": p.get("streak", 0), "best_streak": p.get("best_streak", 0),
                      "correct": p.get("correct", 0), "asked": p.get("asked", 0),
-                     "avatar_color": p.get("avatar_color", "")}
+                     "avatar_color": p.get("avatar_color", ""), "bot": bool(p.get("bot"))}
                for pid, p in list(state.quiz_players.items())}
     return {
         "v": 1,

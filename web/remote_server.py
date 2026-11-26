@@ -595,13 +595,27 @@ if app is not None:
         avatar_color = (body.avatar_color if body.avatar_color in state.AVATAR_COLORS
                         else state.AVATAR_COLORS[len(state.quiz_players) % len(state.AVATAR_COLORS)])
         emoji = player_profile.clean_emoji(body.emoji)
+        is_bot = "phone-bot" in (request.headers.get("user-agent") or "")   # tools/phone_bots.py
+        if is_bot:
+            # 2026-11-26: after an app restart + show resume, a bot (which drops its id the moment the show
+            # doesn't know it) signed up again next to its own restored team -- duplicate teams. A bot
+            # joining under the name of a bot team nobody is playing hands that team back.
+            now = time.time()
+            for pid, p in state.quiz_players.items():
+                if ((p.get("name") or "").casefold() == name.casefold()
+                        and (p.get("bot") or not p.get("last_seen"))
+                        and now - (p.get("last_seen") or 0) > 15):
+                    p["last_seen"], p["bot"] = now, True
+                    print(f"[MULTIPLAYER QUIZ] Bot '{name}' is back on its own team ({p.get('score', 0)} pts).")
+                    return {"ok": True, "player_id": pid, "name": p.get("name"), "initials": p.get("initials"),
+                            "emoji": p.get("emoji"), "avatar_color": p.get("avatar_color")}
         player_id = uuid.uuid4().hex
         state.quiz_players[player_id] = {
             "name": name, "initials": initials, "emoji": emoji,
             "selected_index": -1, "locked": False, "score": 0,
             "avatar_color": avatar_color, "streak": 0, "best_streak": 0,
             "correct": 0, "asked": 0, "last_points": 0, "last_seen": time.time(),
-            "bot": "phone-bot" in (request.headers.get("user-agent") or ""),   # tools/phone_bots.py
+            "bot": is_bot,
         }
         print(f"[MULTIPLAYER QUIZ] '{name}' {emoji} joined ({len(state.quiz_players)} teams signed up).")
         return {"ok": True, "player_id": player_id, "name": name, "initials": initials,

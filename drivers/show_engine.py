@@ -241,7 +241,8 @@ def _restore_players(snap):
                         "streak": int(p.get("streak", 0) or 0), "best_streak": int(p.get("best_streak", 0) or 0),
                         "correct": int(p.get("correct", 0) or 0), "asked": int(p.get("asked", 0) or 0),
                         "last_points": 0,
-                        "avatar_color": p.get("avatar_color") or state.AVATAR_COLORS[0]}
+                        "avatar_color": p.get("avatar_color") or state.AVATAR_COLORS[0],
+                        "bot": bool(p.get("bot"))}
     state.quiz_players = players
     state.show_cumulative_scores = {k: int(v) for k, v in (snap.get("cumulative") or {}).items()}
     state.game_round_number = int(snap.get("round", 1) or 1)
