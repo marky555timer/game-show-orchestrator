@@ -2430,6 +2430,9 @@ def render_led_grid():
     # the real panels over UDP. Everything below this line is only the
     # on-screen simulator window.
     led_bridge.send_frame(matrix_surface)
+    # The Remote page's TV preview (graphics/tv_live.py): only does work while someone is watching.
+    from graphics import tv_live
+    tv_live.capture(matrix_surface)
 
     # 2026-10-08 CPU survey: the preview below was ~80% of the app's CPU
     # while drawn to a desktop with no monitor attached. Skip it entirely

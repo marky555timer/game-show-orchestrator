@@ -73,6 +73,17 @@
   .qfact { color: #c9c9cf; font-size: .82rem; line-height: 1.45; }
   .qnext { color: var(--muted); font-size: .72rem; margin-top: 8px; }
   .loading { position: absolute; inset: 0; display: grid; place-items: center; color: var(--muted); font-size: .9rem; }
+  /* Live mode (?live=1, 2026-11-28): the Remote page's TV preview -- the real board as it is right now,
+     drawn from /api/tv/live. Just the cabinet with the buttons beside it, filling the window. */
+  body.live { overflow: hidden; background: #000; }
+  body.live aside, body.live h1, body.live .sub, body.live .hint, body.live .arcade span { display: none; }
+  body.live .wrap { display: block; padding: 0; max-width: none; height: 100vh; }
+  body.live .stage { height: 100vh; border-radius: 0; padding: 2vh 2vw; display: flex; align-items: center;
+    justify-content: center; gap: 4vw; background: #000; }
+  body.live canvas { height: 96vh; width: auto; max-width: calc(96vw - 120px); object-fit: contain; }
+  body.live .buttons { display: flex; flex-direction: column; gap: 5vh; padding: 0; }
+  body.live .arcade { cursor: default; width: min(64px, 15vh); height: min(64px, 15vh); }
+  #live-msg { position: fixed; left: 0; right: 0; bottom: 8px; text-align: center; color: #777; font-size: .85rem; }
 </style>
 </head>
 <body>
@@ -140,6 +151,7 @@
 // from the same endpoints as the Show Designer page.
 const WEB = location.pathname.startsWith('/play/designer');
 const SHOW_NAME = new URLSearchParams(location.search).get('show') || '';
+const LIVE = new URLSearchParams(location.search).get('live') === '1';
 const EP = WEB ? { shows: 'api.php?a=shows', songs: 'api.php?a=songs', questions: 'api.php?a=questions' }
                 : { shows: '/api/shows', songs: '/api/shows/songs', questions: '/api/shows/questions' };
 let CAT = null, SIM = null, SHOW = null, PLAN = [], QS = { songs: {}, timeout: 30, solo_excluded: [] };
@@ -431,6 +443,7 @@ function buttonsLit() {
   }
 }
 function press(color) {
+  if (LIVE) return;
   if (!CAT) return;
   switch (S.phase) {
     case 'black': startShow(); break;
@@ -810,6 +823,13 @@ function drawPanelBlock(rect, mx, my, cols, rows) {
 // marquee bulbs: a generic look per moment (the real board has a look per song)
 function hue(file) { let h = 0; for (const c of file) h = (h * 31 + c.charCodeAt(0)) % 360; return h; }
 function bulbColor(seg, k, n, t) {
+  if (LIVE) {
+    const st = LV.layout && LV.layout.marquee_start[seg];
+    if (st == null || !LV.px) return null;
+    const o = (st + k) * 3, r = LV.px[o], gg = LV.px[o + 1], b = LV.px[o + 2], m = Math.max(r, gg, b);
+    if (m < 6) return null;
+    return [r * 255 / m, gg * 255 / m, b * 255 / m, m / 255];
+  }
   const p = S.phase;
   if (p === 'black' || p === 'spinfade') return null;
   if (p === 'intro' || p === 'stab') {
@@ -874,7 +894,7 @@ function drawBulbs(t) {
 }
 function draw(t) {
   if (!RECTS) return;
-  composeMatrix(t);
+  if (!LIVE) composeMatrix(t);
   g2.fillStyle = '#141016'; g2.fillRect(0, 0, cv.width, cv.height);
   drawPanelBlock(RECTS.top, 0, 0, 64, 16);
   drawPanelBlock(RECTS[3], 0, 16, 32, 16); drawPanelBlock(RECTS[4], 32, 16, 32, 16);
@@ -961,7 +981,68 @@ document.getElementById('jump').addEventListener('click', () => {
 document.getElementById('vol').addEventListener('input', (e) => { if (master) master.gain.value = Number(e.target.value) / 100; });
 
 // =================================================================== start
+// ------------------------------------------------------------- live mode
+const LV = { layout: null, px: null, btn: 0 };
+function liveApply(buf) {
+  const L = LV.layout, w = L.width, bitsLen = Math.ceil(w * L.height / 8), bits = buf.subarray(0, bitsLen);
+  // the real matrix has a seam between rows of panels; the preview's 64 x 48 doesn't
+  const rows = [L.rows['1'], L.rows['3'], L.rows['5']];
+  for (let y = 0; y < H; y++) {
+    const ry = rows[Math.floor(y / 16)] + (y % 16);
+    for (let x = 0; x < W; x++) {
+      const i = ry * w + x;
+      M[y * W + x] = (bits[i >> 3] >> (7 - (i & 7))) & 1;
+    }
+  }
+  LV.px = buf.subarray(bitsLen, bitsLen + L.marquee_leds * 3);
+  LV.btn = buf[bitsLen + L.marquee_leds * 3] || 0;
+  COLORS.forEach((c, i) => BTN[c].classList.toggle('lit', !!(LV.btn & (1 << i))));
+}
+async function liveStream() {
+  const msg = document.getElementById('live-msg');
+  for (;;) {
+    try {
+      const r = await fetch('/api/tv/live?t=' + Date.now(), { cache: 'no-store' });
+      if (r.status === 401) { location.href = '/auth/login?next=' + encodeURIComponent(location.pathname + location.search); return; }
+      const rd = r.body.getReader();
+      let pend = new Uint8Array(0);
+      msg.textContent = '';
+      for (;;) {
+        const { value, done } = await rd.read();
+        if (done) break;
+        const n = new Uint8Array(pend.length + value.length); n.set(pend); n.set(value, pend.length); pend = n;
+        let last = null;
+        while (pend.length >= 4) {
+          const len = pend[0] | (pend[1] << 8) | (pend[2] << 16) | (pend[3] << 24);
+          if (pend.length < 4 + len) break;
+          last = pend.slice(4, 4 + len); pend = pend.slice(4 + len);
+        }
+        if (last) liveApply(last);          // only the newest frame matters
+      }
+    } catch (e) {}
+    msg.textContent = 'Reconnecting to the board...';
+    await new Promise((res) => setTimeout(res, 1000));
+  }
+}
+async function liveInit() {
+  document.body.classList.add('live');
+  document.title = 'TV';
+  const m = document.createElement('div'); m.id = 'live-msg'; m.textContent = 'Connecting to the board...'; document.body.appendChild(m);
+  const [cat, lay] = await Promise.all([getJSON(EP.songs), getJSON('/api/tv/layout')]);
+  SIM = cat.sim || {}; LV.layout = lay;
+  layout();
+  const loop = () => { draw(performance.now() / 1000); requestAnimationFrame(loop); };
+  requestAnimationFrame(loop);
+  liveStream();
+}
+
 (async function init() {
+  if (LIVE) {
+    try { await liveInit(); } catch (e) {
+      if (String(e.message) !== 'login') document.body.insertAdjacentHTML('beforeend', '<div id="live-msg">Could not load: ' + esc(e.message) + '</div>');
+    }
+    return;
+  }
   try {
     const [shows, cat, qs] = await Promise.all([getJSON(EP.shows), getJSON(EP.songs),
                                                 getJSON(EP.questions).catch(() => null)]);

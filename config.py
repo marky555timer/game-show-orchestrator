@@ -3135,14 +3135,6 @@ RIG_VIEW_FPS = 20            # TV frames sent per second (the show loop itself s
 RIG_VIEW_PORT = 47821        # localhost UDP: show app -> the practice-board window (graphics/rig_view.py)
 RIG_VIEW_TV_MODE = ""        # e.g. "1280x720": TV mode set before the window opens ("" = leave it)
 RIG_VIEW_OFF_PIXEL = 26      # red level of an unlit panel LED on the TV
-# TV preview on the Remote page (2026-11-28): while someone is watching (the page asked for a frame in the
-# last RIG_VIEW_PREVIEW_IDLE_SECONDS), the TV window also saves a small JPEG of what it shows this often.
-_SHM = "/dev/shm" if os.path.isdir("/dev/shm") else os.path.join(os.path.dirname(os.path.abspath(__file__)))
-RIG_VIEW_PREVIEW_PATH = os.path.join(_SHM, "tc_tv_preview.jpg")
-RIG_VIEW_PREVIEW_WANT_PATH = os.path.join(_SHM, "tc_tv_preview.want")
-RIG_VIEW_PREVIEW_FPS = 6
-RIG_VIEW_PREVIEW_WIDTH = 960
-RIG_VIEW_PREVIEW_IDLE_SECONDS = 5.0
 if PRACTICE_RIG:
     import json as _json
     try:
