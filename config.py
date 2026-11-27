@@ -1928,8 +1928,11 @@ CLIFF_CLIMB_SOUND = resource_path("audio", "gameMusic", "cliffhanger.wav")
 CLIFF_CAM_ZOOM = 5.0            # about four ruler marks across the screen (operator photo, 2026-11-26)
 CLIFF_CAM_EASE_SECONDS = 1.0    # zoom in / out glide
 CLIFF_CAM_HOLD_SECONDS = 1.5    # stay zoomed this long after he stops, then back out
-CLIFF_ART_BG = resource_path("graphics", "art", "cliffhanger_bg.png")            # the art with the climber removed
-CLIFF_ART_CLIMBER = resource_path("graphics", "art", "cliffhanger_climber.png")  # ...and the climber cut out
+# Original vector art (2026-11-27, tools/make_cliff_art.py): the mountain (with the CLIFF_HEADROOM sky built
+# in) and the climber, drawn sharp at any zoom.
+CLIFF_ART_BG = resource_path("graphics", "art", "cliffhanger_bg.svg")
+CLIFF_ART_CLIMBER = resource_path("graphics", "art", "cliffhanger_climber.svg")
+CLIFF_CAM_ART_SCALE = 4.0       # the close-up copy of the mountain is drawn this much larger than the fitted view
 # Art coordinates (911x527 image): the ruler's 0 tick, one ruler mark's step, and the climber
 # sprite's top-left relative to the tick he stands on. The art's ruler runs 0-25 to the cliff edge,
 # so each of the 10 spaces is 2.5 ruler marks.

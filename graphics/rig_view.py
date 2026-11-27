@@ -485,55 +485,47 @@ def _strip_colors(view):
 _cliff = {"art": None, "was_up": False, "snap": None}
 # Climb camera (2026-11-26, operator): while he climbs, the TV zooms in on him and follows him up the
 # ruler (so the back of the room can see), then eases back out to the whole mountain.
-_cam = {"z": 1.0, "cx": None, "cy": None, "t": 0.0, "climb_end": 0.0, "world": None}
+_cam = {"z": 1.0, "cx": None, "cy": None, "t": 0.0, "climb_end": 0.0}
 
 
 def _cliff_assets(screen):
-    """The art scaled to fit the screen (letterboxed), the climber at the same scale, fonts."""
+    """The vector art (2026-11-27, original drawings from tools/make_cliff_art.py; the SVG already includes
+    the CLIFF_HEADROOM sky) drawn to fit the screen (letterboxed), plus fonts. A sharper copy for the climb
+    camera (CLIFF_CAM_ART_SCALE x) is rendered on a background thread; the climber is drawn per zoom level."""
     W, H = screen.get_size()
     if _cliff["art"] is not None and _cliff["size"] == (W, H):
         return _cliff
-    bg = _cliff_headroom(pygame.image.load(config.CLIFF_ART_BG).convert())
-    spr = pygame.image.load(config.CLIFF_ART_CLIMBER).convert_alpha()
-    k = min(W / bg.get_width(), H / bg.get_height())
-    _cliff.update(size=(W, H), k=k, ox=(W - bg.get_width() * k) / 2, oy=(H - bg.get_height() * k) / 2,
-                  art=pygame.transform.smoothscale(bg, (int(bg.get_width() * k), int(bg.get_height() * k))),
-                  climber=pygame.transform.smoothscale(spr, (int(spr.get_width() * k), int(spr.get_height() * k))),
+    aw, ah = 911, 527 + int(config.CLIFF_HEADROOM)
+    k = min(W / aw, H / ah)
+    art = pygame.image.load_sized_svg(config.CLIFF_ART_BG, (int(aw * k), int(ah * k))).convert()
+    _cliff.update(size=(W, H), k=k, aw=aw, ah=ah, ox=(W - art.get_width()) / 2, oy=(H - art.get_height()) / 2,
+                  art=art, art_hi=None, art_hi_raw=None, sprites={},
                   font=pygame.font.Font(None, max(18, int(44 * k))), big=pygame.font.Font(None, max(30, int(110 * k))),
                   small=pygame.font.Font(None, max(14, int(26 * k))))
+    S = max(1.0, float(config.CLIFF_CAM_ART_SCALE))
+    size = (int(aw * k * S), int(ah * k * S))
+
+    def render_hi():
+        try:
+            _cliff["art_hi_raw"] = (pygame.image.load_sized_svg(config.CLIFF_ART_BG, size), S)
+        except Exception as ex:
+            print(f"[RIG VIEW] Cliffhanger close-up art not rendered: {ex}")
+    import threading
+    threading.Thread(target=render_hi, name="cliff-art-hi", daemon=True).start()
     return _cliff
 
 
-def _cliff_headroom(bg):
-    """The art's top edge is a grey storm-cloud band; the ruler's top marks sit so close to it that
-    the climber's head would leave the screen. Extend that band upward by config.CLIFF_HEADROOM px:
-    the top row, smoothed sideways, fading to a darker grey."""
-    pad = int(config.CLIFF_HEADROOM)
-    if pad <= 0:
-        return bg
-    w, h = bg.get_size()
-    row = [bg.get_at((x, 0))[:3] for x in range(w)]
-    r = 40
-    smooth = []
-    for x in range(w):
-        seg = row[max(0, x - r):x + r + 1]
-        smooth.append(tuple(sum(c[i] for c in seg) // len(seg) for i in range(3)))
-    out = pygame.Surface((w, h + pad)).convert()
-    dark = (70, 72, 80)
-    for y in range(pad):
-        t = (pad - y) / pad           # 1 at the very top, 0 at the art's edge
-        t = t * t
-        for x in range(w):
-            c = smooth[x]
-            out.set_at((x, y), tuple(int(c[i] + (dark[i] - c[i]) * t) for i in range(3)))
-    # blend the first few art rows into the smoothed band so there is no hard seam
-    out.blit(bg, (0, pad))
-    for y in range(6):
-        a = 1 - y / 6
-        for x in range(w):
-            c, s = out.get_at((x, pad + y))[:3], smooth[x]
-            out.set_at((x, pad + y), tuple(int(c[i] + (s[i] - c[i]) * a * 0.6) for i in range(3)))
-    return out
+def _cliff_sprite(a, scale):
+    """The climber drawn at `scale` x the fitted art (cached per 0.25 step, then sized exactly)."""
+    q = max(0.25, round(scale * 4) / 4)
+    spr = a["sprites"].get(q)
+    if spr is None:
+        spr = pygame.image.load_sized_svg(config.CLIFF_ART_CLIMBER,
+                                          (max(2, int(54 * a["k"] * q)), max(2, int(92 * a["k"] * q)))).convert_alpha()
+        a["sprites"][q] = spr
+    if abs(scale - q) > 0.01:
+        spr = pygame.transform.smoothscale(spr, (max(2, int(54 * a["k"] * scale)), max(2, int(92 * a["k"] * scale))))
+    return spr
 
 
 def _cliff_pt(a, mark):
@@ -562,12 +554,10 @@ def _draw_cliff(screen, c):
     now = time.time()
     k = a["k"]
     W, H = screen.get_size()
-    out = screen
-    if _cam["world"] is None or _cam["world"].get_size() != (W, H):
-        _cam["world"] = pygame.Surface((W, H)).convert()
-    screen = _cam["world"]              # mountain + climber here; the camera crops it onto the TV
-    screen.fill((0, 0, 0))
-    screen.blit(a["art"], (a["ox"], a["oy"]))
+    if a.get("art_hi_raw") is not None and a.get("art_hi") is None:
+        raw, S = a["art_hi_raw"]
+        a["art_hi"] = (raw.convert(), S)          # (convert needs the display: done here, on the draw thread)
+        a["art_hi_raw"] = None
     mps = config.CLIFF_MARKS_PER_SPACE
     # where he is
     hop = 0.0
@@ -582,17 +572,46 @@ def _draw_cliff(screen, c):
     if c["phase"] == "between" or (c["phase"] == "result" and c["result"] == "win"):
         s = min(c["total"], c["spaces"])
     x, y = _cliff_pt(a, s * mps)
-    cx = x + config.CLIFF_CLIMBER_OFFSET[0] * k
+    cx = x + config.CLIFF_CLIMBER_OFFSET[0] * k                 # sprite top-left, fitted (1x) screen coords
     cy = y + config.CLIFF_CLIMBER_OFFSET[1] * k - hop
-    spr = a["climber"]
+    rot = 0.0
     if c["fall_at"] and now >= c["fall_at"]:
         t = now - c["fall_at"]
         cx += 45 * k * t                                 # off the edge and down the cliff face
         cy += 0.5 * 800 * k * t * t - 110 * k * t        # a little hop, then gravity
-        spr = pygame.transform.rotate(spr, -300 * t)
-    screen.blit(spr, (cx, cy))
-    _cliff_camera(out, screen, c, now, cx + spr.get_width() / 2, cy + spr.get_height() / 2)
-    screen = out
+        rot = -300 * t
+    sw, sh = 54 * k, 92 * k
+    z, x0, y0 = _cliff_camera(c, now, cx + sw / 2, cy + sh / 2, W, H)
+    if z >= 1.01:
+        # keep the close-up inside the picture (never the black side bands)
+        aw_, ah_ = a["art"].get_size()
+        x0 = min(max(x0, a["ox"]), max(a["ox"], a["ox"] + aw_ - W / z))
+        y0 = min(max(y0, a["oy"]), max(a["oy"], a["oy"] + ah_ - H / z))
+    # mountain: the fitted art at 1x; zoomed, a crop of the sharp copy
+    screen.fill((0, 0, 0))
+    if z < 1.01:
+        screen.blit(a["art"], (a["ox"], a["oy"]))
+    else:
+        src, S = a["art_hi"] if a.get("art_hi") else (a["art"], 1.0)
+        w, h = W / z, H / z
+        ix0, iy0 = max(x0, a["ox"]), max(y0, a["oy"])
+        ix1 = min(x0 + w, a["ox"] + a["art"].get_width())
+        iy1 = min(y0 + h, a["oy"] + a["art"].get_height())
+        if ix1 > ix0 and iy1 > iy0:
+            r = pygame.Rect(int((ix0 - a["ox"]) * S), int((iy0 - a["oy"]) * S),
+                            max(1, int((ix1 - ix0) * S)), max(1, int((iy1 - iy0) * S))).clip(src.get_rect())
+            if r.w > 0 and r.h > 0:
+                dw, dh = max(1, int(round((ix1 - ix0) * z))), max(1, int(round((iy1 - iy0) * z)))
+                screen.blit(pygame.transform.smoothscale(src.subsurface(r), (dw, dh)),
+                            (int((ix0 - x0) * z), int((iy0 - y0) * z)))
+    # climber, drawn at the zoomed size (sharp)
+    spr = _cliff_sprite(a, z)
+    px, py = (cx - x0) * z, (cy - y0) * z
+    if rot:
+        ctr = (px + spr.get_width() / 2, py + spr.get_height() / 2)
+        spr = pygame.transform.rotate(spr, rot)
+        px, py = ctr[0] - spr.get_width() / 2, ctr[1] - spr.get_height() / 2
+    screen.blit(spr, (px, py))
     # the scoreboard, top left over the sky (drawn over the camera view, never zoomed)
     y0 = a["oy"] + 14 * k
     x0 = a["ox"] + 18 * k
@@ -617,11 +636,10 @@ def _draw_cliff(screen, c):
                     (90, 240, 120) if won else (255, 70, 70), center=True)
 
 
-def _cliff_camera(out, world, c, now, fx, fy):
-    """Blit `world` onto `out` through the climb camera: zoom config.CLIFF_CAM_ZOOM centred on the
-    climber (fx, fy) during a climb (and CLIFF_CAM_HOLD_SECONDS after), 1x otherwise; zoom and centre
-    glide (CLIFF_CAM_EASE_SECONDS) instead of jumping."""
-    W, H = out.get_size()
+def _cliff_camera(c, now, fx, fy, W, H):
+    """The climb camera: (zoom, view left, view top) in fitted screen coords. Zoom config.CLIFF_CAM_ZOOM
+    centred on the climber (fx, fy) during a climb (and CLIFF_CAM_HOLD_SECONDS after), 1x otherwise; zoom and
+    centre glide (CLIFF_CAM_EASE_SECONDS) instead of jumping."""
     climbing = c["phase"] == "climb"
     if climbing:
         _cam["climb_end"] = now
@@ -636,17 +654,13 @@ def _cliff_camera(out, world, c, now, fx, fy):
     _cam["cy"] += (fy - _cam["cy"]) * min(1.0, rate * 2.5)
     z = _cam["z"]
     if z < 1.01:
-        out.blit(world, (0, 0))
-        return
+        return 1.0, 0.0, 0.0
     # the view's centre slides from the screen's centre to him as the zoom grows
     f = min(1.0, (z - 1.0) / max(0.01, config.CLIFF_CAM_ZOOM - 1.0))
     vx = W / 2 + (_cam["cx"] - W / 2) * f
     vy = H / 2 + (_cam["cy"] - H / 2) * f
     w, h = W / z, H / z
-    x0 = min(max(0.0, vx - w / 2), W - w)
-    y0 = min(max(0.0, vy - h / 2), H - h)
-    crop = world.subsurface(pygame.Rect(int(x0), int(y0), max(1, int(w)), max(1, int(h))))
-    out.blit(pygame.transform.smoothscale(crop, (W, H)), (0, 0))
+    return z, min(max(0.0, vx - w / 2), W - w), min(max(0.0, vy - h / 2), H - h)
 
 
 def draw(screen, lit, px, view, leds):
