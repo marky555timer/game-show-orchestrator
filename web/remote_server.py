@@ -763,12 +763,15 @@ if app is not None:
     @app.get("/api/tv/live")
     async def tv_live_stream(request: Request):
         """The Remote page's TV preview (2026-11-28): the board's live state -- LED matrix bits, marquee
-        bulbs, button lights -- as a stream of frames (4-byte little-endian length, then the frame from
-        graphics/tv_live.py), up to 20 a second while it changes. The page draws the cabinet itself."""
+        bulbs, button lights (graphics/tv_live.py) -- up to 20 frames a second while it changes, as
+        server-sent events (one base64 frame per event). Server-sent events, not a raw byte stream: the
+        Cloudflare tunnel holds a raw stream back (the board stayed blank on a phone outside the LAN)."""
+        import base64
         from graphics import tv_live
 
         async def gen():
             last, sent_at = -1, 0.0
+            yield ": hello\n\n"
             while True:
                 if await request.is_disconnected():
                     break
@@ -777,10 +780,19 @@ if app is not None:
                 now = time.monotonic()
                 if data and (seq != last or now - sent_at > 2.0):
                     last, sent_at = seq, now
-                    yield len(data).to_bytes(4, "little") + data
+                    yield "data: " + base64.b64encode(data).decode() + "\n\n"
                 await asyncio.sleep(0.04)
-        return StreamingResponse(gen(), media_type="application/octet-stream",
-                                 headers={"Cache-Control": "no-store", "X-Accel-Buffering": "no"})
+        return StreamingResponse(gen(), media_type="text/event-stream",
+                                 headers={"Cache-Control": "no-store, no-transform", "X-Accel-Buffering": "no"})
+
+    @app.get("/api/tv/now")
+    def tv_now():
+        """The newest board frame (base64), for a browser whose live stream doesn't get through."""
+        import base64
+        from graphics import tv_live
+        tv_live.watching()
+        seq, data = tv_live.latest()
+        return {"ok": True, "seq": seq, "data": base64.b64encode(data).decode()}
 
     @app.get("/api/show/progress")
     def show_progress():

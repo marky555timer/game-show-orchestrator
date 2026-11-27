@@ -82,7 +82,7 @@
     justify-content: center; gap: 4vw; background: #000; }
   body.live canvas { height: 96vh; width: auto; max-width: calc(96vw - 120px); object-fit: contain; }
   body.live .buttons { display: flex; flex-direction: column; gap: 5vh; padding: 0; }
-  body.live .arcade { cursor: default; width: min(64px, 15vh); height: min(64px, 15vh); }
+  body.live .arcade { width: min(84px, 17vh); height: min(84px, 17vh); -webkit-tap-highlight-color: transparent; user-select: none; }
   #live-msg { position: fixed; left: 0; right: 0; bottom: 8px; text-align: center; color: #777; font-size: .85rem; }
 </style>
 </head>
@@ -998,31 +998,52 @@ function liveApply(buf) {
   LV.btn = buf[bitsLen + L.marquee_leds * 3] || 0;
   COLORS.forEach((c, i) => BTN[c].classList.toggle('lit', !!(LV.btn & (1 << i))));
 }
-async function liveStream() {
+function liveB64(b64) {
+  const bin = atob(b64), u = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) u[i] = bin.charCodeAt(i);
+  return u;
+}
+// Server-sent events (one base64 frame each); if none arrive within 4 s (something on the way holds the
+// stream back) it polls /api/tv/now instead, about 8 times a second.
+function liveStream() {
   const msg = document.getElementById('live-msg');
-  for (;;) {
-    try {
-      const r = await fetch('/api/tv/live?t=' + Date.now(), { cache: 'no-store' });
-      if (r.status === 401) { location.href = '/auth/login?next=' + encodeURIComponent(location.pathname + location.search); return; }
-      const rd = r.body.getReader();
-      let pend = new Uint8Array(0);
-      msg.textContent = '';
-      for (;;) {
-        const { value, done } = await rd.read();
-        if (done) break;
-        const n = new Uint8Array(pend.length + value.length); n.set(pend); n.set(value, pend.length); pend = n;
-        let last = null;
-        while (pend.length >= 4) {
-          const len = pend[0] | (pend[1] << 8) | (pend[2] << 16) | (pend[3] << 24);
-          if (pend.length < 4 + len) break;
-          last = pend.slice(4, 4 + len); pend = pend.slice(4 + len);
-        }
-        if (last) liveApply(last);          // only the newest frame matters
-      }
-    } catch (e) {}
-    msg.textContent = 'Reconnecting to the board...';
-    await new Promise((res) => setTimeout(res, 1000));
+  let gotAt = 0, polling = false, lastSeq = -1;
+  const es = new EventSource('/api/tv/live');
+  es.onmessage = (e) => { gotAt = Date.now(); msg.textContent = ''; liveApply(liveB64(e.data)); };
+  es.onerror = () => { if (!polling) msg.textContent = 'Reconnecting to the board...'; };
+  setTimeout(function check() {
+    if (gotAt || polling) return;
+    polling = true; es.close();
+    (async function poll() {
+      try {
+        const r = await fetch('/api/tv/now?t=' + Date.now(), { cache: 'no-store' });
+        if (r.status === 401) { location.href = '/auth/login?next=' + encodeURIComponent(location.pathname + location.search); return; }
+        const d = await r.json();
+        if (d.ok && d.data && d.seq !== lastSeq) { lastSeq = d.seq; liveApply(liveB64(d.data)); }
+        msg.textContent = '';
+      } catch (e) { msg.textContent = 'Reconnecting to the board...'; }
+      setTimeout(poll, 120);
+    })();
+  }, 4000);
+}
+// The preview's four buttons press the real ones (same as the /buttons page): held buttons are re-sent
+// every second, and let go if the page loses focus.
+function liveButtons() {
+  const held = new Set();
+  const send = (color, down) => fetch('/api/arcade/button', { method: 'POST', headers: { 'Content-Type': 'application/json' },
+                                                             body: JSON.stringify({ color, down }) }).catch(() => {});
+  const press = (c) => { if (held.has(c)) return; held.add(c); BTN[c].style.transform = 'translateY(3px)'; send(c, true); };
+  const release = (c) => { if (!held.has(c)) return; held.delete(c); BTN[c].style.transform = ''; send(c, false); };
+  for (const [c, b] of Object.entries(BTN)) {
+    b.style.cursor = 'pointer'; b.style.touchAction = 'none';
+    b.addEventListener('pointerdown', (e) => { e.preventDefault(); try { b.setPointerCapture(e.pointerId); } catch (_) {} press(c); });
+    ['pointerup', 'pointercancel', 'lostpointercapture'].forEach((n) => b.addEventListener(n, () => release(c)));
+    b.addEventListener('contextmenu', (e) => e.preventDefault());
   }
+  setInterval(() => held.forEach((c) => send(c, true)), 1000);
+  window.addEventListener('blur', () => [...held].forEach(release));
+  document.addEventListener('visibilitychange', () => { if (document.hidden) [...held].forEach(release); });
+  window.addEventListener('pagehide', () => [...held].forEach(release));
 }
 async function liveInit() {
   document.body.classList.add('live');
@@ -1034,6 +1055,7 @@ async function liveInit() {
   const loop = () => { draw(performance.now() / 1000); requestAnimationFrame(loop); };
   requestAnimationFrame(loop);
   liveStream();
+  liveButtons();
 }
 
 (async function init() {
