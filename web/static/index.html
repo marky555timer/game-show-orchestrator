@@ -93,6 +93,17 @@
   .subhead { font-size: .75rem; text-transform: uppercase; letter-spacing: .05em; color: #777; margin: 12px 0 6px; }
   .subhead:first-child { margin-top: 0; }
   .nav-bar { display: flex; align-items: center; gap: 10px; margin-bottom: 4px; position: relative; }
+  /* TV preview (2026-11-28): what the HDMI board shows, turned to fill a phone held upright */
+  .tv-btn { margin-left: auto; background: none; border: 1px solid #333; border-radius: 8px; padding: 4px 10px;
+    cursor: pointer; line-height: 0; }
+  .tv-btn svg { width: 30px; height: 28px; }
+  #tv-overlay { display: none; position: fixed; inset: 0; z-index: 10000; background: #000; overflow: hidden; }
+  #tv-overlay.open { display: block; }
+  #tv-stage { position: absolute; left: 50%; top: 50%; display: flex; align-items: center; justify-content: center; }
+  #tv-img { max-width: 100%; max-height: 100%; object-fit: contain; display: block; }
+  #tv-msg { position: absolute; color: #888; font-size: 1rem; text-align: center; padding: 20px; }
+  #tv-close { position: fixed; top: 10px; right: 10px; z-index: 10001; background: rgba(40,40,44,.85); color: #fff;
+    border: 1px solid #555; border-radius: 22px; font-size: 1.05rem; font-weight: 700; padding: 10px 18px; cursor: pointer; }
   .hamburger-btn {
     background: none; border: 1px solid #333; border-radius: 8px; color: #f2f2f2;
     font-size: 1.2rem; line-height: 1; padding: 6px 12px; cursor: pointer;
@@ -218,6 +229,13 @@
 <body>
   <div class="nav-bar">
     <button class="hamburger-btn" onclick="toggleNavMenu()">&#9776;</button>
+    <button class="tv-btn" title="Show the TV board (and stream the show's audio)" onclick="tvOpen()">
+      <svg viewBox="0 0 30 28" fill="none" stroke="#f2f2f2" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M10 2l5 5 5-5"/><rect x="2" y="7" width="26" height="17" rx="3"/>
+        <rect x="5" y="10" width="16" height="11" rx="1.5" fill="#4a90e2" fill-opacity=".35"/>
+        <circle cx="24.5" cy="12" r="1.2" fill="#f2f2f2"/><circle cx="24.5" cy="17" r="1.2" fill="#f2f2f2"/>
+        <path d="M7 24v2.5M23 24v2.5"/></svg>
+    </button>
     <div class="nav-menu" id="nav-menu">
       <a href="/" class="active">Remote</a>
       <a href="/library">File Manager</a>
@@ -999,6 +1017,65 @@
 
   <div class="toast" id="toast"></div>
 <script src="/listen.js"></script>
+<div id="tv-overlay">
+  <div id="tv-stage"><img id="tv-img" alt=""><div id="tv-msg">Connecting to the TV...</div></div>
+  <button id="tv-close" onclick="tvClose()">&#10005; CLOSE</button>
+</div>
+<script>
+// TV preview (2026-11-28). Opening it also starts the show-audio stream (the Remote page's "Stream the
+// show's audio here" box) if it isn't on; closing leaves the stream playing, so reopening is instant.
+// The stream is stopped only with that box. A phone held upright gets the picture turned 90 degrees.
+let _tv = {open: false, url: null, timer: null};
+function tvLayout() {
+  const st = document.getElementById('tv-stage');
+  const vw = window.innerWidth, vh = window.innerHeight;
+  const turn = vh > vw;
+  st.style.width = (turn ? vh : vw) + 'px';
+  st.style.height = (turn ? vw : vh) + 'px';
+  st.style.transform = 'translate(-50%, -50%)' + (turn ? ' rotate(90deg)' : '');
+}
+async function tvFrame() {
+  if (!_tv.open) return;
+  let wait = 150;
+  try {
+    const r = await fetch('/api/tv/frame?t=' + Date.now(), {cache: 'no-store'});
+    if (r.ok) {
+      const url = URL.createObjectURL(await r.blob());
+      const img = document.getElementById('tv-img');
+      img.src = url;
+      if (_tv.url) URL.revokeObjectURL(_tv.url);
+      _tv.url = url;
+      img.style.display = '';
+      document.getElementById('tv-msg').style.display = 'none';
+    } else {
+      const m = document.getElementById('tv-msg');
+      m.textContent = r.status === 404 ? 'This machine has no TV board to show.' : 'Waiting for the TV picture...';
+      m.style.display = '';
+      wait = 1000;
+    }
+  } catch (e) { wait = 1000; }
+  if (_tv.open) _tv.timer = setTimeout(tvFrame, wait);
+}
+function tvOpen() {
+  const box = document.getElementById('tab-listen');
+  if (box && !box.checked) { box.checked = true; box.dispatchEvent(new Event('change')); }
+  _tv.open = true;
+  document.getElementById('tv-overlay').classList.add('open');
+  document.getElementById('tv-img').style.display = 'none';
+  const m = document.getElementById('tv-msg');
+  m.textContent = 'Connecting to the TV...'; m.style.display = '';
+  tvLayout();
+  clearTimeout(_tv.timer);
+  tvFrame();
+}
+function tvClose() {
+  _tv.open = false;
+  clearTimeout(_tv.timer);
+  document.getElementById('tv-overlay').classList.remove('open');
+}
+window.addEventListener('resize', () => { if (_tv.open) tvLayout(); });
+document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && _tv.open) tvClose(); });
+</script>
 
 <script>
 const AVATAR_COLOR_VARS = { red: '#ff3b30', amber: '#f5a623', cyan: '#3ec9e0', green: '#3ba55c', violet: '#b06bff' };

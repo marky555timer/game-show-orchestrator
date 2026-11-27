@@ -105,7 +105,7 @@ app = FastAPI(title="Game Show Orchestrator Remote") if FastAPI else None
 # MP3 stream, range requests and the host preview image pass untouched --
 # gzip there buys nothing and would buffer the stream.
 _NO_GZIP_PREFIXES = ("/api/audio/", "/api/library/audio", "/api/medley/clip",
-                     "/api/shows/bed-audio", "/api/host/preview")
+                     "/api/shows/bed-audio", "/api/host/preview", "/api/tv/frame")
 
 
 class _GzipExceptMedia:
@@ -753,6 +753,28 @@ if app is not None:
         return {"ok": True, "player_id": body.player_id, "name": p.get("name") or p.get("initials"),
                 "initials": p.get("initials", ""), "emoji": p.get("emoji") or player_profile.DEFAULT_EMOJI,
                 "avatar_color": p.get("avatar_color", state.AVATAR_COLORS[0]), "score": p.get("score", 0)}
+
+    @app.get("/api/tv/frame")
+    def tv_frame():
+        """The TV preview (2026-11-28): the latest frame graphics/rig_view.py saved. Asking keeps it saving
+        (RIG_VIEW_PREVIEW_WANT_PATH); with no TV window on this machine there is nothing to show."""
+        from fastapi import Response
+        try:
+            with open(config.RIG_VIEW_PREVIEW_WANT_PATH, "a"):
+                pass
+            os.utime(config.RIG_VIEW_PREVIEW_WANT_PATH, None)
+        except OSError:
+            pass
+        if not config.PRACTICE_RIG:
+            return Response(status_code=404, content=b"no TV on this machine")
+        try:
+            if time.time() - os.path.getmtime(config.RIG_VIEW_PREVIEW_PATH) > 15:
+                return Response(status_code=503, content=b"TV preview starting")
+            with open(config.RIG_VIEW_PREVIEW_PATH, "rb") as f:
+                data = f.read()
+        except OSError:
+            return Response(status_code=503, content=b"TV preview starting")
+        return Response(content=data, media_type="image/jpeg", headers={"Cache-Control": "no-store"})
 
     @app.get("/api/show/progress")
     def show_progress():

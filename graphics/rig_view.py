@@ -876,6 +876,40 @@ def _set_tv_mode(mode):
         print(f"[RIG VIEW] Could not set the TV to {mode} ({e}) -- staying at its current mode.")
 
 
+_prev = {"at": 0.0, "busy": False}
+
+
+def _preview(screen):
+    """The Remote page's TV preview (2026-11-28): only while someone is watching (the web server touches
+    RIG_VIEW_PREVIEW_WANT_PATH on every frame request), a scaled copy of the screen saved as a JPEG at
+    RIG_VIEW_PREVIEW_FPS. The scale happens here (a few ms); the JPEG encode on a thread."""
+    now = time.time()
+    if _prev["busy"] or now - _prev["at"] < 1.0 / max(1, config.RIG_VIEW_PREVIEW_FPS):
+        return
+    _prev["at"] = now
+    try:
+        if now - os.path.getmtime(config.RIG_VIEW_PREVIEW_WANT_PATH) > config.RIG_VIEW_PREVIEW_IDLE_SECONDS:
+            return
+    except OSError:
+        return
+    W, H = screen.get_size()
+    w = min(W, int(config.RIG_VIEW_PREVIEW_WIDTH))
+    img = pygame.transform.smoothscale(screen, (w, max(1, int(H * w / W))))
+    _prev["busy"] = True
+
+    def save():
+        try:
+            tmp = config.RIG_VIEW_PREVIEW_PATH + ".tmp.jpg"
+            pygame.image.save(img, tmp)
+            os.replace(tmp, config.RIG_VIEW_PREVIEW_PATH)
+        except Exception as ex:
+            print(f"[RIG VIEW] Preview frame not saved: {ex}")
+        finally:
+            _prev["busy"] = False
+    import threading
+    threading.Thread(target=save, daemon=True).start()
+
+
 def main():
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     try:
@@ -922,6 +956,7 @@ def main():
             if got is not None:
                 frame = got
         draw(screen, *frame)
+        _preview(screen)
 
 
 if __name__ == "__main__":
