@@ -1926,7 +1926,8 @@ CLIFF_CLIMB_SOUND = resource_path("audio", "gameMusic", "cliffhanger.wav")
 # TV climb camera (graphics/rig_view.py, 2026-11-26): zoom in on the climber and follow him during a
 # climb so the back of the room can see, then back out.
 CLIFF_CAM_ZOOM = 5.0            # about four ruler marks across the screen (operator photo, 2026-11-26)
-CLIFF_CAM_EASE_SECONDS = 1.0    # zoom in / out glide
+CLIFF_CAM_EASE_SECONDS = 1.0    # zoom-out glide (going in is a cut, 2026-11-27)
+CLIFF_CAM_CUT_OUT = False       # True: coming back out is a cut too
 CLIFF_CAM_HOLD_SECONDS = 1.5    # stay zoomed this long after he stops, then back out
 # Original vector art (2026-11-27, tools/make_cliff_art.py): the mountain (with the CLIFF_HEADROOM sky built
 # in) and the climber, drawn sharp at any zoom.

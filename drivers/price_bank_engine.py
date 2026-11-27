@@ -37,6 +37,9 @@ _YEARS = []
 # Keyed by (year, product) rather than row index so hand-editing/reordering
 # the CSV mid-session can't accidentally resurrect an already-used question.
 _used_keys = set()
+# Products already asked this session (2026-11-27: two ground-beef questions from different years in one
+# "Wait, how much?" game felt repetitive) -- the same product isn't asked again until every product has been.
+_used_products = set()
 
 
 def _row_key(row):
@@ -141,6 +144,11 @@ def remaining():
 
 def reset_session():
     _used_keys.clear()
+    _used_products.clear()
+
+
+def _product_key(row):
+    return " ".join((row.get("product") or "").lower().split())
 
 
 def _years_for_decade(decade):
@@ -165,9 +173,15 @@ def _years_by_proximity(target_year):
 def _pick_unused(target_year, decade=""):
     years = _years_for_decade(decade) if decade else _years_by_proximity(target_year)
     for year in years:
-        pool = [r for r in _BY_YEAR[year] if _row_key(r) not in _used_keys]
+        pool = [r for r in _BY_YEAR[year]
+                if _row_key(r) not in _used_keys and _product_key(r) not in _used_products]
         if pool:
             return random.choice(pool)
+    if _used_products:
+        # Every unasked question is a product already seen this session: start the product list over.
+        print(f"[PRICE BANK] All {len(_used_products)} products asked this session -- products may repeat now.")
+        _used_products.clear()
+        return _pick_unused(target_year, decade)
     return None
 
 
@@ -199,11 +213,13 @@ def draw_price_question(target_year=None, decade=""):
         print(f"[PRICE BANK] All {len(_ROWS)} questions used this session -- "
               f"recycling the bank from the start.")
         _used_keys.clear()
+        _used_products.clear()
         row = _pick_unused(target_year, decade)
         if row is None:
             return None
 
     _used_keys.add(_row_key(row))
+    _used_products.add(_product_key(row))
 
     year = row["year"]
     if decade:

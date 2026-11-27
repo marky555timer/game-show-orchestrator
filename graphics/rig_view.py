@@ -638,8 +638,9 @@ def _draw_cliff(screen, c):
 
 def _cliff_camera(c, now, fx, fy, W, H):
     """The climb camera: (zoom, view left, view top) in fitted screen coords. Zoom config.CLIFF_CAM_ZOOM
-    centred on the climber (fx, fy) during a climb (and CLIFF_CAM_HOLD_SECONDS after), 1x otherwise; zoom and
-    centre glide (CLIFF_CAM_EASE_SECONDS) instead of jumping."""
+    centred on the climber (fx, fy) during a climb (and CLIFF_CAM_HOLD_SECONDS after), 1x otherwise. Going in is
+    a cut straight to the close-up (2026-11-27: the zoom-in glide was unpleasant); coming back out glides
+    (CLIFF_CAM_EASE_SECONDS), or cuts too with config.CLIFF_CAM_CUT_OUT."""
     climbing = c["phase"] == "climb"
     if climbing:
         _cam["climb_end"] = now
@@ -647,7 +648,11 @@ def _cliff_camera(c, now, fx, fy, W, H):
     dt = min(0.25, max(0.0, now - (_cam["t"] or now)))
     _cam["t"] = now
     rate = 1.0 - math.exp(-dt * 3.0 / max(0.05, config.CLIFF_CAM_EASE_SECONDS))
-    _cam["z"] += (want - _cam["z"]) * rate
+    if want > _cam["z"] + 0.01 or (want < _cam["z"] and getattr(config, "CLIFF_CAM_CUT_OUT", False)):
+        _cam["z"] = want                                         # cut: no zoom move
+        _cam["cx"], _cam["cy"] = fx, fy
+    else:
+        _cam["z"] += (want - _cam["z"]) * rate
     if _cam["cx"] is None:
         _cam["cx"], _cam["cy"] = fx, fy
     _cam["cx"] += (fx - _cam["cx"]) * min(1.0, rate * 2.5)      # follows his motion closely
