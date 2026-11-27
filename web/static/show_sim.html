@@ -1015,12 +1015,35 @@ const SERVER_AUDIO_LAG = 0.6;
 Object.assign(LV, { buf: [], seq: -1, off: null, bestRtt: 1e9, bestAt: 0, drawn: -1,
                     nudge: Number(localStorage.getItem('tc_tv_nudge') || 0) });
 function audioEl() { try { return parent.document.getElementById('tab-listen-audio'); } catch (e) { return null; } }
-function liveDelay() {
+// The audio buffer swings up and down by a second or so as the stream arrives in bursts. Following it
+// directly made the picture freeze, then rush, over and over (2026-11-28). So: sample it 4x a second,
+// aim for the average of the last 15 s, and after the first line-up let the delay drift towards that
+// at most DELAY_SLEW seconds per second (a 3% speed change nobody sees). The host's nudge applies at once.
+const DELAY_SLEW = 0.03;
+Object.assign(LV, { samples: [], aim: null, cur: null, lastTick: 0, audioOn: false });
+function audioBuffered() {
   const au = audioEl();
-  if (!au || au.paused || !au.getAttribute('src')) return Math.max(0, LV.nudge);
-  let buffered = 0;
-  try { if (au.buffered.length) buffered = Math.max(0, au.buffered.end(au.buffered.length - 1) - au.currentTime); } catch (e) {}
-  return Math.max(0, buffered + SERVER_AUDIO_LAG + LV.nudge);
+  if (!au || au.paused || !au.getAttribute('src')) return null;
+  try { if (au.buffered.length) return Math.max(0, au.buffered.end(au.buffered.length - 1) - au.currentTime); } catch (e) {}
+  return null;
+}
+setInterval(() => {
+  const b = audioBuffered();
+  if (b == null) { LV.samples = []; LV.audioOn = false; return; }
+  LV.audioOn = true;
+  LV.samples.push(b); if (LV.samples.length > 60) LV.samples.shift();
+}, 250);
+function liveDelay() {
+  let base = LV.audioOn && LV.samples.length
+    ? LV.samples.reduce((a, x) => a + x, 0) / LV.samples.length + SERVER_AUDIO_LAG : 0;
+  // never closer to live than the batches can keep up with (else it runs out of frames and steps)
+  const floor = 0.3 + 2 * (0.2 + Math.min(1, LV.bestRtt < 1e8 ? LV.bestRtt : 0.5));
+  base = Math.max(base, floor);
+  const now = performance.now() / 1000, dt = Math.min(0.5, now - (LV.lastTick || now));
+  LV.lastTick = now;
+  if (LV.cur == null || (LV.audioOn && LV.samples.length < 8)) LV.cur = base;     // first line-up: jump
+  else LV.cur += Math.max(-DELAY_SLEW * dt, Math.min(DELAY_SLEW * dt, base - LV.cur));
+  return Math.max(floor, LV.cur + LV.nudge);
 }
 function liveStream() {
   const msg = document.getElementById('live-msg');
@@ -1031,7 +1054,11 @@ function liveStream() {
       if (r.status === 401) { location.href = '/auth/login?next=' + encodeURIComponent(location.pathname + location.search); return; }
       const d = await r.json(), t1 = performance.now() / 1000, rtt = t1 - t0;
       // clock offset (show machine - this browser) from the quickest round trip lately
-      if (rtt < LV.bestRtt || t1 - LV.bestAt > 20) { LV.bestRtt = rtt; LV.bestAt = t1; LV.off = d.now - (t0 + t1) / 2; }
+      // (only quick round trips count, and the offset moves gently -- a jump here would also make it step)
+      const est = d.now - (t0 + t1) / 2;
+      LV.bestRtt = Math.min(LV.bestRtt * 1.002, rtt);
+      if (LV.off == null) LV.off = est;
+      else if (rtt <= LV.bestRtt * 1.3) LV.off += (est - LV.off) * 0.1;
       for (const [seq, t, b64] of d.frames) { LV.buf.push({ seq, t, data: liveB64(b64) }); LV.seq = Math.max(LV.seq, seq); }
       msg.textContent = '';
     } catch (e) { msg.textContent = 'Reconnecting to the board...'; }
@@ -1057,7 +1084,7 @@ function liveNudgeUi() {
   box.innerHTML = '<button data-d="-0.25">&minus;</button><span id="live-sync-v"></span><button data-d="0.25">+</button>';
   document.body.appendChild(box);
   const show = () => { document.getElementById('live-sync-v').textContent =
-    'picture ' + liveDelay().toFixed(1) + ' s late' + (LV.nudge ? ' (' + (LV.nudge > 0 ? '+' : '') + LV.nudge.toFixed(2) + ')' : ''); };
+    'picture ' + Math.max(0, (LV.cur || 0) + LV.nudge).toFixed(1) + ' s late' + (LV.nudge ? ' (' + (LV.nudge > 0 ? '+' : '') + LV.nudge.toFixed(2) + ')' : ''); };
   box.querySelectorAll('button').forEach((b) => b.addEventListener('click', () => {
     LV.nudge = Math.round((LV.nudge + Number(b.dataset.d)) * 100) / 100;
     localStorage.setItem('tc_tv_nudge', String(LV.nudge)); show();
