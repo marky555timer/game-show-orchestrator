@@ -760,39 +760,19 @@ if app is not None:
         from graphics import tv_live
         return dict(tv_live.layout(), ok=True)
 
-    @app.get("/api/tv/live")
-    async def tv_live_stream(request: Request):
-        """The Remote page's TV preview (2026-11-28): the board's live state -- LED matrix bits, marquee
-        bulbs, button lights (graphics/tv_live.py) -- up to 20 frames a second while it changes, as
-        server-sent events (one base64 frame per event). Server-sent events, not a raw byte stream: the
-        Cloudflare tunnel holds a raw stream back (the board stayed blank on a phone outside the LAN)."""
-        import base64
-        from graphics import tv_live
-
-        async def gen():
-            last, sent_at = -1, 0.0
-            yield ": hello\n\n"
-            while True:
-                if await request.is_disconnected():
-                    break
-                tv_live.watching()
-                seq, data = tv_live.latest()
-                now = time.monotonic()
-                if data and (seq != last or now - sent_at > 2.0):
-                    last, sent_at = seq, now
-                    yield "data: " + base64.b64encode(data).decode() + "\n\n"
-                await asyncio.sleep(0.04)
-        return StreamingResponse(gen(), media_type="text/event-stream",
-                                 headers={"Cache-Control": "no-store, no-transform", "X-Accel-Buffering": "no"})
-
-    @app.get("/api/tv/now")
-    def tv_now():
-        """The newest board frame (base64), for a browser whose live stream doesn't get through."""
+    @app.get("/api/tv/frames")
+    def tv_frames(since: int = -1):
+        """The Remote page's TV preview (2026-11-28): every board frame newer than `since` (LED matrix
+        bits, marquee bulbs, button lights -- graphics/tv_live.py), each stamped with when it was shown.
+        The page fetches these in batches a few times a second and plays them back smoothly, delayed to
+        line up with the audio stream. (A live stream of single frames came through the Cloudflare
+        tunnel blank or at ~2 fps.)"""
         import base64
         from graphics import tv_live
         tv_live.watching()
-        seq, data = tv_live.latest()
-        return {"ok": True, "seq": seq, "data": base64.b64encode(data).decode()}
+        now, frames = tv_live.since(since)
+        return {"ok": True, "now": now,
+                "frames": [[seq, round(t, 3), base64.b64encode(d).decode()] for seq, t, d in frames]}
 
     @app.get("/api/show/progress")
     def show_progress():

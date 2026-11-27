@@ -83,6 +83,10 @@
   body.live canvas { height: 96vh; width: auto; max-width: calc(96vw - 120px); object-fit: contain; }
   body.live .buttons { display: flex; flex-direction: column; gap: 5vh; padding: 0; }
   body.live .arcade { width: min(84px, 17vh); height: min(84px, 17vh); -webkit-tap-highlight-color: transparent; user-select: none; }
+  #live-sync { position: fixed; left: 10px; top: 8px; display: flex; gap: 8px; align-items: center; color: #777;
+    font-size: .8rem; z-index: 5; }
+  #live-sync button { background: #202024; color: #ccc; border: 1px solid #333; border-radius: 6px; width: 34px; height: 30px;
+    font-size: 1.1rem; cursor: pointer; }
   #live-msg { position: fixed; left: 0; right: 0; bottom: 8px; text-align: center; color: #777; font-size: .85rem; }
 </style>
 </head>
@@ -1003,28 +1007,62 @@ function liveB64(b64) {
   for (let i = 0; i < bin.length; i++) u[i] = bin.charCodeAt(i);
   return u;
 }
-// Server-sent events (one base64 frame each); if none arrive within 4 s (something on the way holds the
-// stream back) it polls /api/tv/now instead, about 8 times a second.
+// Frames come in batches (/api/tv/frames, a few fetches a second), each stamped with the show machine's
+// clock; they play back smoothly LV.delay seconds late, so the picture lines up with the audio stream,
+// which runs behind the room: its buffer in this browser (measured) + SERVER_AUDIO_LAG for the capture
+// and encoder on the show machine + the host's nudge (- / + on screen, remembered). No audio: no delay.
+const SERVER_AUDIO_LAG = 0.6;
+Object.assign(LV, { buf: [], seq: -1, off: null, bestRtt: 1e9, bestAt: 0, drawn: -1,
+                    nudge: Number(localStorage.getItem('tc_tv_nudge') || 0) });
+function audioEl() { try { return parent.document.getElementById('tab-listen-audio'); } catch (e) { return null; } }
+function liveDelay() {
+  const au = audioEl();
+  if (!au || au.paused || !au.getAttribute('src')) return Math.max(0, LV.nudge);
+  let buffered = 0;
+  try { if (au.buffered.length) buffered = Math.max(0, au.buffered.end(au.buffered.length - 1) - au.currentTime); } catch (e) {}
+  return Math.max(0, buffered + SERVER_AUDIO_LAG + LV.nudge);
+}
 function liveStream() {
   const msg = document.getElementById('live-msg');
-  let gotAt = 0, polling = false, lastSeq = -1;
-  const es = new EventSource('/api/tv/live');
-  es.onmessage = (e) => { gotAt = Date.now(); msg.textContent = ''; liveApply(liveB64(e.data)); };
-  es.onerror = () => { if (!polling) msg.textContent = 'Reconnecting to the board...'; };
-  setTimeout(function check() {
-    if (gotAt || polling) return;
-    polling = true; es.close();
-    (async function poll() {
-      try {
-        const r = await fetch('/api/tv/now?t=' + Date.now(), { cache: 'no-store' });
-        if (r.status === 401) { location.href = '/auth/login?next=' + encodeURIComponent(location.pathname + location.search); return; }
-        const d = await r.json();
-        if (d.ok && d.data && d.seq !== lastSeq) { lastSeq = d.seq; liveApply(liveB64(d.data)); }
-        msg.textContent = '';
-      } catch (e) { msg.textContent = 'Reconnecting to the board...'; }
-      setTimeout(poll, 120);
-    })();
-  }, 4000);
+  (async function poll() {
+    const t0 = performance.now() / 1000;
+    try {
+      const r = await fetch('/api/tv/frames?since=' + LV.seq + '&t=' + Date.now(), { cache: 'no-store' });
+      if (r.status === 401) { location.href = '/auth/login?next=' + encodeURIComponent(location.pathname + location.search); return; }
+      const d = await r.json(), t1 = performance.now() / 1000, rtt = t1 - t0;
+      // clock offset (show machine - this browser) from the quickest round trip lately
+      if (rtt < LV.bestRtt || t1 - LV.bestAt > 20) { LV.bestRtt = rtt; LV.bestAt = t1; LV.off = d.now - (t0 + t1) / 2; }
+      for (const [seq, t, b64] of d.frames) { LV.buf.push({ seq, t, data: liveB64(b64) }); LV.seq = Math.max(LV.seq, seq); }
+      msg.textContent = '';
+    } catch (e) { msg.textContent = 'Reconnecting to the board...'; }
+    setTimeout(poll, 200);
+  })();
+}
+function liveFrame() {
+  if (LV.off == null || !LV.buf.length) return false;
+  const target = performance.now() / 1000 + LV.off - liveDelay();
+  let k = -1;
+  for (let i = 0; i < LV.buf.length; i++) { if (LV.buf[i].t <= target) k = i; else break; }
+  if (k < 0) k = 0;                                    // only newer frames so far: show the oldest
+  if (k > 0) LV.buf.splice(0, k);                      // older ones are done with
+  const f = LV.buf[0];
+  if (f.seq === LV.drawn) return false;
+  LV.drawn = f.seq;
+  liveApply(f.data);
+  return true;
+}
+function liveNudgeUi() {
+  const box = document.createElement('div');
+  box.id = 'live-sync';
+  box.innerHTML = '<button data-d="-0.25">&minus;</button><span id="live-sync-v"></span><button data-d="0.25">+</button>';
+  document.body.appendChild(box);
+  const show = () => { document.getElementById('live-sync-v').textContent =
+    'picture ' + liveDelay().toFixed(1) + ' s late' + (LV.nudge ? ' (' + (LV.nudge > 0 ? '+' : '') + LV.nudge.toFixed(2) + ')' : ''); };
+  box.querySelectorAll('button').forEach((b) => b.addEventListener('click', () => {
+    LV.nudge = Math.round((LV.nudge + Number(b.dataset.d)) * 100) / 100;
+    localStorage.setItem('tc_tv_nudge', String(LV.nudge)); show();
+  }));
+  setInterval(show, 1000); show();
 }
 // The preview's four buttons press the real ones (same as the /buttons page): held buttons are re-sent
 // every second, and let go if the page loses focus.
@@ -1052,10 +1090,13 @@ async function liveInit() {
   const [cat, lay] = await Promise.all([getJSON(EP.songs), getJSON('/api/tv/layout')]);
   SIM = cat.sim || {}; LV.layout = lay;
   layout();
-  const loop = () => { draw(performance.now() / 1000); requestAnimationFrame(loop); };
+  // redraw only when the frame changes (the marquee bulbs are the costly part)
+  draw(performance.now() / 1000);
+  const loop = () => { if (liveFrame()) draw(performance.now() / 1000); requestAnimationFrame(loop); };
   requestAnimationFrame(loop);
   liveStream();
   liveButtons();
+  liveNudgeUi();
 }
 
 (async function init() {
