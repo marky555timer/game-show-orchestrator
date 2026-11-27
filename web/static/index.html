@@ -248,6 +248,8 @@
     <h2 style="display:flex;justify-content:space-between;align-items:baseline">Leaderboard <span id="lb-sub" style="font-size:.75rem;color:#888;font-weight:400"></span></h2>
     <div id="lb-q" style="display:none;margin:-2px 0 8px;padding:8px 10px;border-radius:8px;background:#1d2533;border-left:4px solid #4a90e2"></div>
     <div id="lb-prog" style="display:none;margin:-2px 0 8px;padding:6px 10px;border-radius:8px;background:#202024;font-size:.85rem;color:#ccc;line-height:1.45"></div>
+    <!-- Up next (2026-11-28, was the "Upcoming Question (Host Preview)" block lower down) -->
+    <div id="lb-next" style="display:none;margin:-2px 0 8px;padding:6px 10px;border-radius:8px;background:#202024;font-size:.85rem;color:#ccc;line-height:1.4"></div>
     <div id="lb-rows"><div style="color:#777">No teams yet.</div></div>
     <!-- Bots (2026-11-25): drivers/bot_engine.py -->
     <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap">
@@ -369,7 +371,8 @@
     const what = d.phase === 'intro' ? `Intro, then round ${d.round} of ${d.rounds}: <b>${d.type_label}</b>`
       : d.in_break ? `Intermission &middot; next: round ${d.round} of ${d.rounds}, <b>${d.type_label}</b>`
       : `Round <b>${d.round}</b> of ${d.rounds}: <b>${d.type_label}</b>`;
-    el.innerHTML = `${what} &middot; ${togo}<br>` +
+    const cat = d.category ? ` &middot; category <b style="color:#9cc9ff">${d.category}</b>` : '';
+    el.innerHTML = `${what}${cat} &middot; ${togo}<br>` +
       `${d.in_break ? 'Break ends in' : 'This round: about'} <b>${mins(d.round_left_s)}</b>${d.in_break ? '' : ' left'} &middot; ` +
       `show ends about <b style="color:#ffd400">${fin}</b> (${mins(d.show_left_s)}) ` +
       `<span style="color:#777;font-size:.75rem">from ${d.basis}</span>`;
@@ -385,7 +388,6 @@
     <div class="now-artist" id="np-artist"></div>
     <div class="now-tags" id="np-tags"></div>
     <div class="now-timer" id="autodj-remaining">--:--</div>
-    <button class="btn" style="margin-top:8px" id="audition-btn" onclick="auditionEnding()">AUDITION ENDING (jump to -15s)</button>
   </section>
 
   <!-- Dark-phase lockdown (2026-08-18): shown ONLY while show_phase ==
@@ -428,33 +430,32 @@
 
     <section>
       <button class="btn primary big" onclick="transportNext()">NEXT TRACK</button>
-      <button class="btn big" style="margin-top:8px" onclick="transportPrev()">&laquo; PREVIOUS TRACK</button>
       <!-- ASK QUESTIONS panic button (2026-10-27, drivers/ask_questions.py):
            unchecks Suppress Questions, asks now (unasked first, then repeats),
            or jumps to the next song that has questions. -->
       <button class="btn ask big" style="margin-top:8px" id="ask-btn" onclick="askQuestions()">ASK QUESTIONS</button>
       <div id="ask-out" style="font-size:.8rem;color:#bbb;margin-top:4px;min-height:1em"></div>
-      <label style="display:flex;align-items:center;gap:6px;font-weight:700;margin-top:6px">
-        <input type="checkbox" id="suppress-q-checkbox" onchange="toggleJukebox()">
-        Suppress Questions
-      </label>
-      <button class="btn danger big" style="margin-top:8px" onclick="cancelQuestion()">CANCEL QUESTION</button>
-      <button class="btn big" style="margin-top:8px" onclick="reconnectGamepad()">RECONNECT GAMEPAD</button>
 
-      <div class="row" style="align-items:center;margin-top:14px">
+      <!-- Sound effects (2026-11-28): collapsed by default -->
+      <details id="sfx-group" style="margin-top:10px; padding:8px 10px; border:1px solid #333; border-radius:8px; background:#18181b;">
+        <summary style="cursor:pointer; font-weight:700; font-size:.85rem">Sound effects</summary>
+        <div class="row" style="align-items:center;margin-top:8px">
+          <label style="display:flex;align-items:center;gap:6px;font-weight:700">
+            <input type="checkbox" id="announcements-checkbox" onchange="announcementsToggle()">
+            ANNOUNCEMENTS
+          </label>
+          <label style="display:flex;align-items:center;gap:6px;font-weight:700;margin-left:8px">
+            <input type="checkbox" id="sweepers-checkbox" onchange="sweepersToggle()">
+            SWEEPERS
+          </label>
+          <label style="display:flex;align-items:center;gap:6px;font-weight:700;margin-left:8px">
+            <input type="checkbox" id="sfx-checkbox" onchange="sfxToggle()">
+            SOUND EFFECTS
+          </label>
+        </div>
+      </details>
+      <div class="row" style="align-items:center;margin-top:10px">
         <label style="display:flex;align-items:center;gap:6px;font-weight:700">
-          <input type="checkbox" id="announcements-checkbox" onchange="announcementsToggle()">
-          ANNOUNCEMENTS
-        </label>
-        <label style="display:flex;align-items:center;gap:6px;font-weight:700;margin-left:8px">
-          <input type="checkbox" id="sweepers-checkbox" onchange="sweepersToggle()">
-          SWEEPERS
-        </label>
-        <label style="display:flex;align-items:center;gap:6px;font-weight:700;margin-left:8px">
-          <input type="checkbox" id="sfx-checkbox" onchange="sfxToggle()">
-          SOUND EFFECTS
-        </label>
-        <label style="display:flex;align-items:center;gap:6px;font-weight:700;margin-left:8px">
           <input type="checkbox" id="autoadvance-checkbox" onchange="autoAdvanceToggle()">
           AUTO-ADVANCE AFTER QUIZ
         </label>
@@ -474,6 +475,7 @@
       <h2>Volume</h2>
       <input type="range" id="volume-slider" min="0" max="100" value="100" oninput="volumeSlide(this.value)">
       <div class="volume-value" id="volume-value">100%</div>
+      <button class="btn" id="mono-btn" style="margin-top:8px" onclick="toggleMono()">MUSIC: STEREO</button>
       <div class="row" style="margin-top:10px;align-items:center">
         <!-- Duck-call blower (2026-10-18): honks by itself on every 2nd wrong answer in a row -->
         <button class="btn" title="Duck-call blower, relay 4 (10 s cooldown between honks)" onclick="testHonk(false)">HONK</button>
@@ -625,16 +627,6 @@
       </div>
     </section>
 
-    <section>
-      <h2>Upcoming Question (Host Preview)</h2>
-      <div id="host-preview-empty" style="color:#999; font-size:.9rem;">No question queued yet.</div>
-      <div id="host-preview-body" style="display:none">
-        <div class="preview-row"><div class="label">Type</div><div class="value" id="hp-type"></div></div>
-        <div class="preview-row"><div class="label">Category</div><div class="value" id="hp-category"></div></div>
-        <div class="preview-row"><div class="label">Prompt</div><div class="value" id="hp-prompt"></div></div>
-        <div class="preview-row"><div class="label">Correct Answer</div><div class="value" id="hp-answer"></div></div>
-      </div>
-    </section>
 
     <!-- 2026-11-22: the PLAY PRICE GAME button is gone (price questions run inside "Wait, how much?"
          rounds now). -->
@@ -687,7 +679,8 @@
         <div style="font-size:.82rem; color:#ccc; margin-bottom:10px;" id="show-banner-text"></div>
         <button class="btn" onclick="backToMenu()">BACK TO SHOW MENU</button>
       </div>
-      <div class="dj-look-subhead">Hold DMX Uplights Solid</div>
+      <details id="dmx-hold-group" style="margin-top:10px; padding:8px 10px; border:1px solid #333; border-radius:8px; background:#18181b;">
+      <summary style="cursor:pointer; font-weight:700; font-size:.85rem">DMX colors (hold uplights solid)</summary>
       <label style="display:flex;align-items:center;gap:6px;font-size:.85rem;font-weight:700">
         <input type="checkbox" id="dmx-hold-checkbox" onchange="dmxHoldSend({enabled: this.checked})">
         Solid color only &mdash; no flashes or effects (stays on between games)
@@ -702,6 +695,7 @@
           oninput="document.getElementById('dmx-hold-brightness-label').textContent=this.value"
           onchange="dmxHoldSend({brightness: parseInt(this.value, 10)})">
       </label>
+      </details>
     </section>
 
     <details class="advanced-group" id="advanced-panel" ontoggle="advancedOnToggle()">
@@ -948,7 +942,6 @@
            instant, and a second press puts everything back. -->
       <button class="btn big" id="pause-btn" style="margin-bottom:12px" onclick="togglePause()">PAUSE SHOW</button>
       <button class="btn danger big" id="blackout-btn" style="margin-bottom:12px" onclick="toggleBlackout()">BLACKOUT + MUTE</button>
-      <button class="btn" id="mono-btn" onclick="toggleMono()">MUSIC: STEREO</button>
 
       <!-- Collapsed by default on purpose (2026-10-27): each of these ends the show. -->
       <details class="advanced-group" style="margin-top:14px;margin-bottom:0;padding:10px 0 0">
@@ -1282,13 +1275,11 @@ async function refreshAutoDj() {
   document.getElementById('autodj-remaining').textContent =
     (d.enabled ? '' : '(OFF) ') + mm + ':' + ss;
   refreshMedley();
-  document.getElementById('suppress-q-checkbox').checked = !!d.jukebox;
 }
 
 let _askOutTimer = null;
 async function askQuestions() {
   const out = document.getElementById('ask-out');
-  document.getElementById('suppress-q-checkbox').checked = false;
   out.textContent = 'Asking...';
   const d = await api('/api/questions/ask', {method: 'POST'});
   out.textContent = (d && d.message) || 'No answer from the Pi.';
@@ -1347,20 +1338,17 @@ async function tdDemo() {
 }
 
 async function refreshHostPreview() {
+  // Up next, in the leaderboard (2026-11-28): type / category, the question and its answer.
   const d = await api('/api/host/preview');
-  const emptyEl = document.getElementById('host-preview-empty');
-  const bodyEl = document.getElementById('host-preview-body');
-  if (!d || !d.available) {
-    emptyEl.style.display = '';
-    bodyEl.style.display = 'none';
-    return;
-  }
-  emptyEl.style.display = 'none';
-  bodyEl.style.display = '';
-  document.getElementById('hp-type').textContent = d.type || '—';
-  document.getElementById('hp-category').textContent = d.category || '—';
-  document.getElementById('hp-prompt').textContent = d.prompt || d.headline || '—';
-  document.getElementById('hp-answer').textContent = d.correct_answer || '—';
+  const el = document.getElementById('lb-next');
+  if (!el) return;
+  if (!d || !d.available) { el.style.display = 'none'; return; }
+  const esc = (x) => String(x == null ? '' : x).replace(/[&<>"']/g, (c) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const tag = [d.type, d.category].filter(Boolean).map(esc).join(' &middot; ');
+  el.innerHTML = `<span style="font-size:.7rem;color:#999;text-transform:uppercase;letter-spacing:.06em">Up next${tag ? ' &middot; ' + tag : ''}</span><br>` +
+    `${esc(d.prompt || d.headline || '')}` +
+    (d.correct_answer ? ` <span style="color:#4cd964;font-weight:700">&rarr; ${esc(d.correct_answer)}</span>` : '');
+  el.style.display = '';
 }
 
 // ------------------------------------------
@@ -2359,7 +2347,6 @@ async function refreshGamepadStatus() {
   }
   document.getElementById('sfx-checkbox').checked = !!d.sfx_enabled;
   document.getElementById('sweepers-checkbox').checked = !!d.sweepers_enabled;
-  document.getElementById('suppress-q-checkbox').checked = !!d.questions_suppressed;
 
   const count = d.quiz_player_count || 0;
   document.getElementById('quiz-player-count').textContent =

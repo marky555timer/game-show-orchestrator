@@ -730,6 +730,21 @@ def progress(now=None):
         "name": str(spec.get("name") or f"Round {idx + 1}"),     # (during a break: the coming round)
         "in_break": in_break, "rounds_left": len(rounds) - (idx + 1),
         "round_left_s": round(cur_left), "show_left_s": round(total), "finish_at": now + total,
-        "basis": basis,
+        "basis": basis, "category": _round_category(spec, in_break),
     })
     return out
+
+
+def _round_category(spec, in_break):
+    """What the round is about, for the host's leaderboard stats (2026-11-28): a category round's label
+    ("80s Rock"), else the round's decade, else the show's decade range."""
+    short = lambda d: d[2:] if len(d) == 5 and d[:2] in ("19", "20") and d[:4] < "2000" else d
+    if not in_break and state.category_round:
+        return str(state.category_round.get("label") or "")
+    dec = (spec or {}).get("decade") or ("" if in_break else state.round_decade)
+    if dec:
+        return short(dec)
+    base = list(state.show_base_decades or [])
+    if base and len(base) < 8:
+        return short(base[0]) if len(base) == 1 else f"{short(base[0])} to {short(base[-1])}"
+    return "any decade"
