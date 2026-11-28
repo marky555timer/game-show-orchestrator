@@ -108,9 +108,15 @@
     background: #ffd228; color: #000; border: none; border-radius: 22px; font-size: 1.05rem; font-weight: 800;
     padding: 12px 20px; cursor: pointer; }
   /* Cliffhanger control panel (2026-11-28): /cliff inside the Remote page, over everything (the TV too) */
-  #cliff-overlay { display: none; position: fixed; inset: 0; z-index: 10010; background: #0b0b0d; }
+  #cliff-overlay { display: none; position: fixed; inset: 0; z-index: 10010; background: #0b0b0d; box-sizing: border-box; }
   #cliff-overlay.open { display: block; }
-  #cliff-overlay iframe { border: 0; width: 100%; height: 100%; }
+  #cliff-overlay iframe { border: 0; width: 100%; height: 100%; display: block; }
+  /* TV + Cliffhanger split (2026-11-28): with the TV open, the panel docks beside it (phone sideways) or
+     under it (phone upright) instead of covering it. Sizes are set in px by tvLayout(). */
+  #cliff-tv { position: absolute; top: 8px; right: 8px; z-index: 1; background: rgba(40,40,44,.9); color: #fff;
+    border: 1px solid #555; border-radius: 18px; font-size: .95rem; font-weight: 700; padding: 6px 12px; cursor: pointer; }
+  body.cliff-split #tv-turn, body.cliff-split #tv-cliff, body.cliff-split #cliff-tv { display: none !important; }
+  body.cliff-split #tv-close { font-size: .9rem; padding: 6px 12px; }
   #cliff-dock { display: none; position: sticky; top: 0; z-index: 50; width: 100%; margin: 0 0 10px;
     background: #ffd228; color: #000; border: none; border-radius: 10px; font-size: 1.1rem; font-weight: 800;
     padding: 14px; cursor: pointer; }
@@ -1034,7 +1040,10 @@
   <button id="tv-close" onclick="tvClose()">&#10005; CLOSE</button>
   <button id="tv-cliff" onclick="cliffOpen()">CLIFFHANGER CONTROLS</button>
 </div>
-<div id="cliff-overlay"><iframe id="cliff-frame" title="Cliffhanger controls"></iframe></div>
+<div id="cliff-overlay">
+  <iframe id="cliff-frame" title="Cliffhanger controls"></iframe>
+  <button id="cliff-tv" onclick="tvOpen()" title="Show the TV beside these controls">&#128250; TV</button>
+</div>
 <script>
 // TV preview (2026-11-28): the Show Designer's preview page in live mode (/designer/sim?live=1) draws the
 // board as it is right now from the show's live panel/bulb data -- smooth, and works on any machine.
@@ -1045,10 +1054,44 @@
 // the picture turned 90 degrees, re-measured a few times after each turn of the phone (the browser reports
 // the new size late, which left the picture sideways); TURN adds another quarter turn if it still sits wrong.
 let _tv = {open: false, locked: false, extra: Number(localStorage.getItem('tc_tv_turn') || 0)};
+// TV + Cliffhanger split (2026-11-28): the Cliffhanger panel used to cover the TV completely. With both
+// open, the screen is now shared -- phone sideways: TV on the left, panel CLIFF_PANEL_W px on the right;
+// phone upright: TV across the top (not turned), panel underneath. Absolute px, re-measured on every turn.
+const CLIFF_PANEL_W = 380;      // px, panel width beside the TV (capped at 45% of the screen)
+const CLIFF_TV_ASPECT = 1.6;    // the mountain picture (911 x ~570): sets the TV height above the panel
+function cliffIsOpen() { return document.getElementById('cliff-overlay').classList.contains('open'); }
+function tvPlace(el, r) {
+  el.style.left = r[0] + 'px'; el.style.top = r[1] + 'px';
+  el.style.width = r[2] + 'px'; el.style.height = r[3] + 'px';
+  el.style.right = el.style.bottom = 'auto';
+}
 function tvLayout() {
-  const st = document.getElementById('tv-stage');
+  const st = document.getElementById('tv-stage'), cl = document.getElementById('cliff-overlay');
+  const cb = document.getElementById('tv-close');
   const vw = document.documentElement.clientWidth || window.innerWidth;
   const vh = document.documentElement.clientHeight || window.innerHeight;
+  const split = _tv.open && cliffIsOpen();
+  document.body.classList.toggle('cliff-split', split);
+  if (split) {
+    let tv, pn;
+    if (vw > vh) {
+      const pw = Math.min(CLIFF_PANEL_W, Math.round(vw * 0.45));
+      tv = [0, 0, vw - pw, vh]; pn = [vw - pw, 0, pw, vh];
+      cl.style.borderTop = ''; cl.style.borderLeft = '2px solid #ffd228';
+    } else {
+      const th = Math.min(Math.round(vw / CLIFF_TV_ASPECT), Math.round(vh * 0.45));
+      tv = [0, 0, vw, th]; pn = [0, th, vw, vh - th];
+      cl.style.borderLeft = ''; cl.style.borderTop = '2px solid #ffd228';
+    }
+    tvPlace(st, tv); st.style.transform = 'none';
+    tvPlace(cl, pn);
+    cb.style.top = '6px'; cb.style.right = (vw - tv[2] + 6) + 'px';
+    return;
+  }
+  // One view at a time: TV full screen (turned for a phone held upright), panel full screen
+  ['left', 'top', 'width', 'height', 'right', 'bottom', 'borderLeft', 'borderTop'].forEach((p) => { cl.style[p] = ''; });
+  cb.style.top = cb.style.right = '';
+  st.style.left = st.style.top = '';
   const deg = ((vh > vw ? 90 : 0) + _tv.extra) % 360;
   const side = deg % 180 !== 0;
   st.style.width = (side ? vh : vw) + 'px';
@@ -1068,7 +1111,8 @@ function tvTurn() {
 async function tvLockLandscape() {
   _tv.locked = false;
   try {
-    const ov = document.getElementById('tv-overlay');
+    // The whole page goes full screen (not just the TV layer), so the Cliffhanger panel can sit beside it.
+    const ov = document.documentElement;
     if (!document.fullscreenElement && ov.requestFullscreen) await ov.requestFullscreen({ navigationUI: 'hide' });
     if (screen.orientation && screen.orientation.lock) { await screen.orientation.lock('landscape'); _tv.locked = true; }
   } catch (e) { /* not allowed here (iPhone, desktop): the picture turns itself instead */ }
@@ -1087,6 +1131,7 @@ function tvClose() {
   _tv.open = false;
   document.getElementById('tv-frame').src = 'about:blank';     // stops the board feed (not the audio)
   document.getElementById('tv-overlay').classList.remove('open');
+  tvLayout();                                                    // an open Cliffhanger panel goes back to full screen
   try { if (screen.orientation && screen.orientation.unlock) screen.orientation.unlock(); } catch (e) {}
   if (document.fullscreenElement && document.exitFullscreen) document.exitFullscreen().catch(() => {});
 }
@@ -1106,10 +1151,12 @@ function cliffOpen() {
   const ov = document.getElementById('cliff-overlay'), fr = document.getElementById('cliff-frame');
   if (!fr.getAttribute('src') || fr.getAttribute('src') === 'about:blank') fr.src = '/cliff?embed=1';
   ov.classList.add('open');
+  if (_tv.open) tvRelayout();                                    // TV already up: share the screen with it
 }
 function cliffClose() {
   document.getElementById('cliff-overlay').classList.remove('open');
   document.getElementById('cliff-frame').src = 'about:blank';
+  if (_tv.open) tvRelayout();                                    // TV back to full screen
 }
 function cliffActive(on) {
   document.getElementById('cliff-dock').style.display = on ? 'block' : 'none';
