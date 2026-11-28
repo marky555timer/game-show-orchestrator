@@ -87,6 +87,7 @@
     font-size: .8rem; z-index: 5; }
   #live-sync button { background: #202024; color: #ccc; border: 1px solid #333; border-radius: 6px; width: 34px; height: 30px;
     font-size: 1.1rem; cursor: pointer; }
+  #cliff-cv { display: none; position: fixed; inset: 0; width: 100vw; height: 100vh; z-index: 3; background: #000; }
   #live-msg { position: fixed; left: 0; right: 0; bottom: 8px; text-align: center; color: #777; font-size: .85rem; }
 </style>
 </head>
@@ -1012,7 +1013,7 @@ function liveB64(b64) {
 // which runs behind the room: its buffer in this browser (measured) + SERVER_AUDIO_LAG for the capture
 // and encoder on the show machine + the host's nudge (- / + on screen, remembered). No audio: no delay.
 const SERVER_AUDIO_LAG = 0.6;
-Object.assign(LV, { buf: [], seq: -1, off: null, bestRtt: 1e9, bestAt: 0, drawn: -1,
+Object.assign(LV, { cliffs: [], cliffJson: '', wallOff: 0, buf: [], seq: -1, off: null, bestRtt: 1e9, bestAt: 0, drawn: -1,
                     nudge: Number(localStorage.getItem('tc_tv_nudge') || 0) });
 function audioEl() { try { return parent.document.getElementById('tab-listen-audio'); } catch (e) { return null; } }
 // The audio buffer swings up and down by a second or so as the stream arrives in bursts. Following it
@@ -1060,6 +1061,10 @@ function liveStream() {
       if (LV.off == null) LV.off = est;
       else if (rtt <= LV.bestRtt * 1.3) LV.off += (est - LV.off) * 0.1;
       for (const [seq, t, b64] of d.frames) { LV.buf.push({ seq, t, data: liveB64(b64) }); LV.seq = Math.max(LV.seq, seq); }
+      // Cliffhanger state, kept on the same timeline as the frames (only when it changes)
+      const cj = JSON.stringify(d.cliff || null);
+      if (cj !== LV.cliffJson) { LV.cliffJson = cj; LV.cliffs.push({ t: d.now, v: d.cliff || null }); }
+      LV.wallOff = d.wall - d.now;
       msg.textContent = '';
     } catch (e) { msg.textContent = 'Reconnecting to the board...'; }
     setTimeout(poll, 200);
@@ -1068,6 +1073,7 @@ function liveStream() {
 function liveFrame() {
   if (LV.off == null || !LV.buf.length) return false;
   const target = performance.now() / 1000 + LV.off - liveDelay();
+  LV.target = target;
   let k = -1;
   for (let i = 0; i < LV.buf.length; i++) { if (LV.buf[i].t <= target) k = i; else break; }
   if (k < 0) k = 0;                                    // only newer frames so far: show the oldest
@@ -1077,6 +1083,128 @@ function liveFrame() {
   LV.drawn = f.seq;
   liveApply(f.data);
   return true;
+}
+// ------------------------------------------------ Cliffhanger on the TV preview (2026-11-28)
+// While a Cliffhanger is on, the real TV shows the mountain with the climber, not the board; this draws the
+// same picture (a port of graphics/rig_view.py::_draw_cliff and its climb camera), from the same state and
+// on the same delayed timeline as the board, so it lines up with the audio.
+const CL = { cfg: null, bg: null, man: null, cv: null, cam: { z: 1, cx: null, cy: null, t: 0, end: 0 }, snapUntil: 0 };
+function cliffLoad() {
+  CL.cv = document.createElement('canvas'); CL.cv.id = 'cliff-cv'; document.body.appendChild(CL.cv);
+  const img = (src) => new Promise((res) => { const i = new Image(); i.onload = () => res(i); i.onerror = () => res(null); i.src = src; });
+  Promise.all([getJSON('/api/tv/cliff-config'), img('/api/tv/art/bg'), img('/api/tv/art/climber')])
+    .then(([c, b, m]) => { CL.cfg = c; CL.bg = b; CL.man = m; }).catch(() => {});
+}
+function cliffState(target) {
+  // the Cliffhanger state as it was at `target` (show machine time)
+  let k = -1;
+  for (let i = 0; i < LV.cliffs.length; i++) { if (LV.cliffs[i].t <= target) k = i; else break; }
+  if (k < 0) return null;
+  if (k > 0) LV.cliffs.splice(0, k);
+  return LV.cliffs[0].v;
+}
+function cliffText(ctx, text, x, y, size, color, center) {
+  ctx.font = 'bold ' + Math.round(size) + 'px system-ui, sans-serif';
+  ctx.textAlign = center ? 'center' : 'left'; ctx.textBaseline = 'top';
+  ctx.lineWidth = Math.max(2, size / 7); ctx.strokeStyle = '#000'; ctx.lineJoin = 'round';
+  ctx.strokeText(text, x, y); ctx.fillStyle = color; ctx.fillText(text, x, y);
+  return size * 1.15;
+}
+function cliffCamera(c, now, fx, fy, W, H) {
+  const g = CL.cfg, cam = CL.cam, climbing = c.phase === 'climb';
+  if (climbing) cam.end = now;
+  const want = (climbing || now - cam.end < g.CLIFF_CAM_HOLD_SECONDS) ? g.CLIFF_CAM_ZOOM : 1.0;
+  const dt = Math.min(0.25, Math.max(0, now - (cam.t || now)));
+  cam.t = now;
+  const rate = 1 - Math.exp(-dt * 3 / Math.max(0.05, g.CLIFF_CAM_EASE_SECONDS));
+  if (want > cam.z + 0.01 || (want < cam.z && g.CLIFF_CAM_CUT_OUT)) { cam.z = want; cam.cx = fx; cam.cy = fy; }
+  else cam.z += (want - cam.z) * rate;
+  if (cam.cx == null) { cam.cx = fx; cam.cy = fy; }
+  cam.cx += (fx - cam.cx) * Math.min(1, rate * 2.5);
+  cam.cy += (fy - cam.cy) * Math.min(1, rate * 2.5);
+  const z = cam.z;
+  if (z < 1.01) return [1, 0, 0];
+  const f = Math.min(1, (z - 1) / Math.max(0.01, g.CLIFF_CAM_ZOOM - 1));
+  const vx = W / 2 + (cam.cx - W / 2) * f, vy = H / 2 + (cam.cy - H / 2) * f, w = W / z, h = H / z;
+  return [z, Math.min(Math.max(0, vx - w / 2), W - w), Math.min(Math.max(0, vy - h / 2), H - h)];
+}
+function cliffDraw(c, now) {
+  const cv = CL.cv, g = CL.cfg, dpr = Math.min(2, window.devicePixelRatio || 1);
+  const W = Math.round(innerWidth * dpr), H = Math.round(innerHeight * dpr);
+  if (cv.width !== W || cv.height !== H) { cv.width = W; cv.height = H; }
+  const ctx = cv.getContext('2d');
+  const aw = 911, ah = 527 + g.CLIFF_HEADROOM, k = Math.min(W / aw, H / ah);
+  const ox = (W - aw * k) / 2, oy = (H - ah * k) / 2;
+  const pt = (m) => [ox + (g.CLIFF_RULER_ZERO[0] + g.CLIFF_RULER_STEP[0] * m) * k,
+                     oy + (g.CLIFF_RULER_ZERO[1] + g.CLIFF_RULER_STEP[1] * m + g.CLIFF_HEADROOM) * k];
+  let s;
+  if (c.phase === 'climb') s = c.from + Math.min(c.to - c.from, Math.max(0, (now - c.t0) / Math.max(0.1, c.sps)));
+  else if ((c.phase === 'fall' || c.phase === 'result') && c.result !== 'win' && c.fall_at) s = c.to;
+  else s = c.shown;
+  if (c.phase === 'between' || (c.phase === 'result' && c.result === 'win')) s = Math.min(c.total, c.spaces);
+  const [x, y] = pt(s * g.CLIFF_MARKS_PER_SPACE);
+  let cx = x + g.CLIFF_CLIMBER_OFFSET[0] * k, cy = y + g.CLIFF_CLIMBER_OFFSET[1] * k, rot = 0;
+  if (c.fall_at && now >= c.fall_at) {
+    const t = now - c.fall_at;
+    cx += 45 * k * t; cy += 0.5 * 800 * k * t * t - 110 * k * t; rot = 300 * t;   // (canvas turns the other way)
+  }
+  const sw = 54 * k, sh = 92 * k;
+  let [z, x0, y0] = cliffCamera(c, now, cx + sw / 2, cy + sh / 2, W, H);
+  if (z >= 1.01) {
+    x0 = Math.min(Math.max(x0, ox), Math.max(ox, ox + aw * k - W / z));
+    y0 = Math.min(Math.max(y0, oy), Math.max(oy, oy + ah * k - H / z));
+  }
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  ctx.fillStyle = '#000'; ctx.fillRect(0, 0, W, H);
+  ctx.save();
+  ctx.beginPath(); ctx.rect(ox, oy, aw * k, ah * k); ctx.clip();
+  ctx.setTransform(z, 0, 0, z, -x0 * z, -y0 * z);
+  if (CL.bg) ctx.drawImage(CL.bg, ox, oy, aw * k, ah * k);
+  if (CL.man) {
+    ctx.translate(cx + sw / 2, cy + sh / 2);
+    if (rot) ctx.rotate(rot * Math.PI / 180);
+    ctx.drawImage(CL.man, -sw / 2, -sh / 2, sw, sh);
+  }
+  ctx.restore();
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  // the scoreboard, top left over the sky
+  const fs = 30 * k;
+  let ty = oy + 14 * k;
+  const tx = ox + 18 * k;
+  ty += cliffText(ctx, 'CLIFFHANGER', tx, ty, fs, '#ffd228');
+  ty += cliffText(ctx, 'Song ' + c.song + ' of ' + c.songs, tx, ty, fs, '#fff');
+  if (c.guess != null) {
+    if (c.title) ty += cliffText(ctx, '\u201c' + c.title + '\u201d' + (c.artist ? '  \u2014  ' + c.artist : ''), tx, ty, fs, '#8cdcff');
+    ty += cliffText(ctx, 'Guess ' + c.guess + '  \u00b7  It was ' + c.year, tx, ty, fs, '#fff');
+    ty += cliffText(ctx, c.off + ' year' + (c.off !== 1 ? 's' : '') + ' off', tx, ty, fs, c.off ? '#ff7878' : '#78ff8c');
+  }
+  cliffText(ctx, 'Total ' + c.total + ' / ' + c.spaces, tx, ty, fs, '#ffd228');
+  if (c.phase === 'result' || (c.phase === 'fall' && now - c.fall_at > 1.6)) {
+    const won = c.result === 'win';
+    cliffText(ctx, won ? 'SAFE!  +1500' : 'HE FELL!  -1500', W / 2, H * 0.40, 75 * k, won ? '#5af078' : '#ff4646', true);
+  }
+}
+// Each animation frame: the mountain if a Cliffhanger is on at the (delayed) picture time, else the board.
+// BEGIN GAME: the board (the question on the panels) stays up q_tv seconds, then fades to the mountain.
+function cliffFrame() {
+  if (!CL.cv || LV.target == null) return false;
+  const target = LV.target;                            // the board's picture time (liveFrame, this frame)
+  const c = cliffState(target);
+  const wall = target + (LV.wallOff || 0);
+  let alpha = 0;
+  if (c && CL.cfg) {
+    const el = wall - (c.q_t0 || 0), hold = c.q_tv || 0, fade = c.q_fade || 0;
+    if (!c.q_t0 || el >= hold + fade) alpha = 1;
+    else if (el >= hold && fade > 0) { const t = (el - hold) / fade; alpha = t * t * (3 - 2 * t); }
+  }
+  if (alpha > 0) {
+    cliffDraw(c, wall);
+    CL.cv.style.opacity = String(alpha);
+    CL.cv.style.display = 'block';
+    return true;
+  }
+  if (CL.cv.style.display !== 'none') { CL.cv.style.display = 'none'; CL.cam = { z: 1, cx: null, cy: null, t: 0, end: 0 }; }
+  return false;
 }
 function liveNudgeUi() {
   const box = document.createElement('div');
@@ -1119,7 +1247,13 @@ async function liveInit() {
   layout();
   // redraw only when the frame changes (the marquee bulbs are the costly part)
   draw(performance.now() / 1000);
-  const loop = () => { if (liveFrame()) draw(performance.now() / 1000); requestAnimationFrame(loop); };
+  cliffLoad();
+  const loop = () => {
+    const changed = liveFrame();
+    const onMountain = cliffFrame() && CL.cv.style.opacity === '1';
+    if (changed && !onMountain) draw(performance.now() / 1000);
+    requestAnimationFrame(loop);
+  };
   requestAnimationFrame(loop);
   liveStream();
   liveButtons();

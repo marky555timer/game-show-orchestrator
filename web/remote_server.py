@@ -771,8 +771,26 @@ if app is not None:
         from graphics import tv_live
         tv_live.watching()
         now, frames = tv_live.since(since)
-        return {"ok": True, "now": now,
+        # Cliffhanger (2026-11-28): the TV shows the mountain, not the board -- the page draws it from the
+        # same state graphics/rig_view.py uses (its times are wall clock: "wall" maps them onto "now").
+        from drivers import cliffhanger_engine
+        return {"ok": True, "now": now, "wall": time.time(), "cliff": cliffhanger_engine.view(),
                 "frames": [[seq, round(t, 3), base64.b64encode(d).decode()] for seq, t, d in frames]}
+
+    @app.get("/api/tv/art/{which}")
+    def tv_art(which: str):
+        """The Cliffhanger mountain / climber drawings (graphics/art) for the TV preview."""
+        path = {"bg": config.CLIFF_ART_BG, "climber": config.CLIFF_ART_CLIMBER}.get(which)
+        if not path or not os.path.isfile(path):
+            return JSONResponse({"ok": False}, status_code=404)
+        return FileResponse(path, media_type="image/svg+xml", headers={"Cache-Control": "public, max-age=3600"})
+
+    @app.get("/api/tv/cliff-config")
+    def tv_cliff_config():
+        return {k: getattr(config, k) for k in (
+            "CLIFF_RULER_ZERO", "CLIFF_RULER_STEP", "CLIFF_HEADROOM", "CLIFF_CLIMBER_OFFSET", "CLIFF_MARKS_PER_SPACE",
+            "CLIFF_CAM_ZOOM", "CLIFF_CAM_EASE_SECONDS", "CLIFF_CAM_HOLD_SECONDS")} | {
+            "CLIFF_CAM_CUT_OUT": bool(getattr(config, "CLIFF_CAM_CUT_OUT", False))}
 
     @app.get("/api/show/progress")
     def show_progress():
