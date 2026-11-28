@@ -102,6 +102,18 @@
   #tv-stage { position: absolute; left: 50%; top: 50%; display: flex; align-items: center; justify-content: center; }
   #tv-close { position: fixed; top: 10px; right: 10px; z-index: 10001; background: rgba(40,40,44,.85); color: #fff;
     border: 1px solid #555; border-radius: 22px; font-size: 1.05rem; font-weight: 700; padding: 10px 18px; cursor: pointer; }
+  #tv-turn { position: fixed; top: 10px; right: 140px; z-index: 10001; background: rgba(40,40,44,.85); color: #fff;
+    border: 1px solid #555; border-radius: 22px; font-size: 1.05rem; font-weight: 700; padding: 10px 16px; cursor: pointer; }
+  #tv-cliff { display: none; position: fixed; bottom: 12px; left: 50%; transform: translateX(-50%); z-index: 10001;
+    background: #ffd228; color: #000; border: none; border-radius: 22px; font-size: 1.05rem; font-weight: 800;
+    padding: 12px 20px; cursor: pointer; }
+  /* Cliffhanger control panel (2026-11-28): /cliff inside the Remote page, over everything (the TV too) */
+  #cliff-overlay { display: none; position: fixed; inset: 0; z-index: 10010; background: #0b0b0d; }
+  #cliff-overlay.open { display: block; }
+  #cliff-overlay iframe { border: 0; width: 100%; height: 100%; }
+  #cliff-dock { display: none; position: sticky; top: 0; z-index: 50; width: 100%; margin: 0 0 10px;
+    background: #ffd228; color: #000; border: none; border-radius: 10px; font-size: 1.1rem; font-weight: 800;
+    padding: 14px; cursor: pointer; }
   .hamburger-btn {
     background: none; border: 1px solid #333; border-radius: 8px; color: #f2f2f2;
     font-size: 1.2rem; line-height: 1; padding: 6px 12px; cursor: pointer;
@@ -647,6 +659,7 @@
     <!-- 2026-11-22: the PLAY PRICE GAME button is gone (price questions run inside "Wait, how much?"
          rounds now). -->
 
+    <button id="cliff-dock" onclick="cliffOpen()">&#9650; CLIFFHANGER CONTROLS</button>
     <section id="rounds-section">
       <h2>Rounds</h2>
       <div id="rounds-status" style="font-size:.9rem; margin-bottom:8px">&hellip;</div>
@@ -660,7 +673,7 @@
       <div id="solo-status" style="font-size:.85rem; color:#ccc; margin:4px 0 6px"></div>
       <!-- Cliffhanger host controls (drivers/cliffhanger_engine.py) -->
       <div id="cliff-box" style="display:none; border:1px solid #444; border-radius:8px; padding:8px; margin-bottom:8px">
-        <a class="btn primary" href="/cliff" style="display:block; text-align:center; margin-bottom:6px; text-decoration:none">OPEN CLIFFHANGER HOST SCREEN</a>
+        <a class="btn primary" href="#" onclick="cliffOpen(); return false" style="display:block; text-align:center; margin-bottom:6px; text-decoration:none">OPEN CLIFFHANGER HOST SCREEN</a>
         <div id="cliff-song" style="font-size:.9rem; margin-bottom:6px"></div>
         <div class="row" id="cliff-guess-row" style="align-items:center; gap:6px">
           <label style="font-size:.85rem">Guess <input type="number" id="cliff-guess" style="width:84px" min="1900" max="2100" placeholder="1984"></label>
@@ -1017,22 +1030,49 @@
 <script src="/listen.js"></script>
 <div id="tv-overlay">
   <div id="tv-stage"><iframe id="tv-frame" title="TV board" style="border:0;width:100%;height:100%;background:#000"></iframe></div>
+  <button id="tv-turn" onclick="tvTurn()" title="Turn the picture if it sits sideways">&#8635; TURN</button>
   <button id="tv-close" onclick="tvClose()">&#10005; CLOSE</button>
+  <button id="tv-cliff" onclick="cliffOpen()">CLIFFHANGER CONTROLS</button>
 </div>
+<div id="cliff-overlay"><iframe id="cliff-frame" title="Cliffhanger controls"></iframe></div>
 <script>
 // TV preview (2026-11-28): the Show Designer's preview page in live mode (/designer/sim?live=1) draws the
 // board as it is right now from the show's live panel/bulb data -- smooth, and works on any machine.
 // Opening it also starts the show-audio stream (the "Stream the show's audio here" box) if it isn't on;
 // closing leaves the stream playing, so reopening is instant. The stream stops only with that box.
-// A phone held upright gets the picture turned 90 degrees.
-let _tv = {open: false};
+// The picture is always landscape. Where the browser allows it (Android) the TV goes full screen and the
+// screen is locked sideways, so turning the phone does nothing. Elsewhere (iPhone) a phone held upright gets
+// the picture turned 90 degrees, re-measured a few times after each turn of the phone (the browser reports
+// the new size late, which left the picture sideways); TURN adds another quarter turn if it still sits wrong.
+let _tv = {open: false, locked: false, extra: Number(localStorage.getItem('tc_tv_turn') || 0)};
 function tvLayout() {
   const st = document.getElementById('tv-stage');
-  const vw = window.innerWidth, vh = window.innerHeight;
-  const turn = vh > vw;
-  st.style.width = (turn ? vh : vw) + 'px';
-  st.style.height = (turn ? vw : vh) + 'px';
-  st.style.transform = 'translate(-50%, -50%)' + (turn ? ' rotate(90deg)' : '');
+  const vw = document.documentElement.clientWidth || window.innerWidth;
+  const vh = document.documentElement.clientHeight || window.innerHeight;
+  const deg = ((vh > vw ? 90 : 0) + _tv.extra) % 360;
+  const side = deg % 180 !== 0;
+  st.style.width = (side ? vh : vw) + 'px';
+  st.style.height = (side ? vw : vh) + 'px';
+  st.style.transform = 'translate(-50%, -50%)' + (deg ? ' rotate(' + deg + 'deg)' : '');
+}
+function tvRelayout() {
+  if (!_tv.open) return;
+  tvLayout();
+  [120, 350, 800].forEach((ms) => setTimeout(() => { if (_tv.open) tvLayout(); }, ms));
+}
+function tvTurn() {
+  _tv.extra = (_tv.extra + 90) % 360;
+  localStorage.setItem('tc_tv_turn', String(_tv.extra));
+  tvLayout();
+}
+async function tvLockLandscape() {
+  _tv.locked = false;
+  try {
+    const ov = document.getElementById('tv-overlay');
+    if (!document.fullscreenElement && ov.requestFullscreen) await ov.requestFullscreen({ navigationUI: 'hide' });
+    if (screen.orientation && screen.orientation.lock) { await screen.orientation.lock('landscape'); _tv.locked = true; }
+  } catch (e) { /* not allowed here (iPhone, desktop): the picture turns itself instead */ }
+  tvRelayout();
 }
 function tvOpen() {
   const box = document.getElementById('tab-listen');
@@ -1041,14 +1081,40 @@ function tvOpen() {
   document.getElementById('tv-overlay').classList.add('open');
   tvLayout();
   document.getElementById('tv-frame').src = '/designer/sim?live=1';
+  tvLockLandscape();
 }
 function tvClose() {
   _tv.open = false;
   document.getElementById('tv-frame').src = 'about:blank';     // stops the board feed (not the audio)
   document.getElementById('tv-overlay').classList.remove('open');
+  try { if (screen.orientation && screen.orientation.unlock) screen.orientation.unlock(); } catch (e) {}
+  if (document.fullscreenElement && document.exitFullscreen) document.exitFullscreen().catch(() => {});
 }
-window.addEventListener('resize', () => { if (_tv.open) tvLayout(); });
-document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && _tv.open) tvClose(); });
+window.addEventListener('resize', tvRelayout);
+window.addEventListener('orientationchange', tvRelayout);
+if (screen.orientation && screen.orientation.addEventListener) screen.orientation.addEventListener('change', tvRelayout);
+document.addEventListener('fullscreenchange', tvRelayout);
+document.addEventListener('keydown', (e) => {
+  if (e.key !== 'Escape') return;
+  if (document.getElementById('cliff-overlay').classList.contains('open')) cliffClose(); else if (_tv.open) tvClose();
+});
+// Cliffhanger control panel (2026-11-28): the /cliff page (pregame, then the year box) opens right here,
+// over the Remote page and the TV, as soon as a Cliffhanger round's pregame comes up. It used to send this
+// page off to /cliff, which was easy to lose (and closed the TV). While a Cliffhanger is on, the yellow
+// CLIFFHANGER CONTROLS button (top of this page, and on the TV) always brings it back.
+function cliffOpen() {
+  const ov = document.getElementById('cliff-overlay'), fr = document.getElementById('cliff-frame');
+  if (!fr.getAttribute('src') || fr.getAttribute('src') === 'about:blank') fr.src = '/cliff?embed=1';
+  ov.classList.add('open');
+}
+function cliffClose() {
+  document.getElementById('cliff-overlay').classList.remove('open');
+  document.getElementById('cliff-frame').src = 'about:blank';
+}
+function cliffActive(on) {
+  document.getElementById('cliff-dock').style.display = on ? 'block' : 'none';
+  document.getElementById('tv-cliff').style.display = on ? 'block' : 'none';
+}
 </script>
 
 <script>
@@ -2084,7 +2150,7 @@ async function roundsRefresh() {
   el.innerHTML = d.in_intermission
     ? `<b>Intermission</b> &mdash; next: ${d.name} (${d.type})${d.goal ? ', first to ' + d.goal : ''}`
     : d.type === 'solo_challenge' && d.solo_game === 'cliffhanger'
-      ? `<b>${d.name}${planned}</b> (Cliffhanger) &mdash; <a href="/cliff" style="color:#ffd228">open the pregame screen</a>`
+      ? `<b>${d.name}${planned}</b> (Cliffhanger) &mdash; <a href="#" onclick="cliffOpen(); return false" style="color:#ffd228">open the controls</a>`
     : d.type === 'solo_challenge'
       ? `<b>${d.name}${planned}</b> (${d.solo_game === 'simon' ? 'Tipsy Simon' : 'solo challenge'}) &mdash; pick the team below and press START CHALLENGE`
       : `<b>${d.name}${planned}</b> (${d.type}) &mdash; ${d.goal ? 'first to ' + d.goal + 'p' : 'most points wins'} &middot; ${d.unit || 'song'} ${Math.min(d.songs_played, d.song_limit)} of ${d.song_limit}`;
@@ -2114,12 +2180,13 @@ async function soloRefresh() {
   // A Simon / Cliffhanger round fixes its game (2026-11-22).
   if (d.round_game && d.round_game !== _soloRoundGame) { gameSel.value = d.round_game; }
   _soloRoundGame = d.round_game || '';
-  // A Cliffhanger round's pregame just came up: go to its control panel (once per pregame, so BACK sticks).
+  // A Cliffhanger round's pregame just came up: open its control panel here (once per pregame, so CLOSE
+  // sticks; the yellow button brings it back).
   if (d.pregame && d.pregame.id && sessionStorage.getItem('cliffPregame') !== d.pregame.id) {
     sessionStorage.setItem('cliffPregame', d.pregame.id);
-    location.href = '/cliff';
-    return;
+    cliffOpen();
   }
+  cliffActive(!!(d.pregame || d.cliff || (d.round_game === 'cliffhanger')));
   const v = d.view;
   const st = document.getElementById('solo-status');
   if (v && v.phase === 'playing') st.textContent = `${v.team} is playing ${v.challenge}` + (v.round != null ? ` -- ${v.round} cleared` : '');
@@ -2177,7 +2244,7 @@ async function soloStart() {
   const r = await api('/api/solo/start', { method: 'POST', headers: { 'Content-Type': 'application/json' },
                                           body: JSON.stringify({ player_id: pid, challenge: game }) });
   if (r && !r.ok) alert(r.message || 'Could not start the challenge.');
-  else if (game === 'cliffhanger') { location.href = '/cliff'; return; }   // the simple host page
+  else if (game === 'cliffhanger') cliffOpen();   // the simple host panel
   soloRefresh();
 }
 async function soloCancel() {

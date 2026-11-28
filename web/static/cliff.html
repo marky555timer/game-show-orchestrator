@@ -65,10 +65,16 @@
   <label id="auto-wrap" style="display:flex;gap:8px;align-items:center;justify-content:center;margin:10px 0;color:#bbb;font-size:.9rem">
     <input type="checkbox" id="auto" onchange="setAuto(this.checked)"> AUTO HOST (no one at this page: begins after 15 s, guesses each song)
   </label>
-  <button id="back" onclick="location.href='/'">BACK</button>
+  <button id="back" onclick="goBack()">BACK</button>
 </div>
 <script>
 let lastKey = '', sending = false;
+// Opened inside the Remote page (2026-11-28): BACK closes this panel instead of loading the Remote page.
+const EMBED = window.parent !== window;
+function goBack() {
+  if (EMBED) { try { parent.cliffClose(); return; } catch (e) {} }
+  location.href = '/';
+}
 const PHASE = {
   buzz: 'Wrong!',
   climb: 'He is climbing…',
